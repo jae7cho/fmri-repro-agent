@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fmri-repro-agent"
+version = "0.0.1"
+description = "An LLM-based agentic tool that ingests a published fMRI research paper (PDF) and emits a ready-to-run replication package."
+readme = "README.md"
+requires-python = ">=3.12"
+license = "Apache-2.0"
+authors = [
+    { name = "Jae Wook Cho", email = "jae7cho@gmail.com" },
+]
+keywords = ["fmri", "neuroimaging", "reproducibility", "bids", "fmriprep", "llm", "agent"]
+classifiers = [
+    "Development Status :: 2 - Pre-Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pre-commit",
+]
+docs = []
+
+[project.urls]
+Repository = "https://github.com/jae7cho/fmri-repro-agent"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fmri_repro"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.format]
+# Standard defaults: double quotes, 4-space indent, trailing commas where appropriate.
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_ignores = true
+files = ["src", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
