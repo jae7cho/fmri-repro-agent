@@ -1,0 +1,49 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Build artifacts
+build/
+dist/
+*.egg
+*.egg-info/
+pip-wheel-metadata/
+
+# --- Environments ---
+.env
+.venv/
+venv/
+env/
+ENV/
+
+# direnv
+.envrc
+.direnv/
+
+# --- uv ---
+# NOTE: uv.lock is intentionally NOT ignored — it should be committed.
+
+# --- Testing / linting / type checking ---
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# --- macOS ---
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+
+# --- VS Code ---
+.vscode/
+
+# --- JetBrains (PyCharm etc.) ---
+.idea/
+*.iml

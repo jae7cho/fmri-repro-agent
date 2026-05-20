@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "fmri-repro-agent"
+version: "0.0.1"
+date-released: 2026-05-19
+license: Apache-2.0
+authors:
+  - family-names: Cho
+    given-names: "Jae Wook"
+    orcid: "0009-0009-6646-0564"
+    email: "jae7cho@gmail.com"
+repository-code: "https://github.com/jae7cho/fmri-repro-agent"
+abstract: >-
+  An LLM-based agentic tool that ingests a published fMRI research paper
+  (PDF) and emits a ready-to-run replication package — BIDS metadata,
+  fMRIPrep pipeline configuration, BIDS Stats Models JSON, container
+  specifications, and Slurm submission scripts. Each output is accompanied
+  by an explicit confidence and missingness report distinguishing stated,
+  inferred, and unresolved parameters.
