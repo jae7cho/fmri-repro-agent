@@ -47,3 +47,7 @@ Icon?
 # --- JetBrains (PyCharm etc.) ---
 .idea/
 *.iml
+
+# --- Local-only (Claude Code, private hooks) ---
+.local/
+CLAUDE.local.md
