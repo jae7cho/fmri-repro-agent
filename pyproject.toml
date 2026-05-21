@@ -21,7 +21,9 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
-dependencies = []
+dependencies = [
+    "pydantic>=2.13.4,<3",
+]
 
 [project.optional-dependencies]
 dev = [

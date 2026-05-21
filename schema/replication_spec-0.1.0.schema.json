@@ -1,0 +1,820 @@
+{
+  "$defs": {
+    "AcquisitionParams": {
+      "description": "SEED ONLY \u2014 stub to be grown in later chats.",
+      "properties": {
+        "echo_time_ms": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "n_volumes": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "repetition_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        }
+      },
+      "required": [
+        "repetition_time_s",
+        "echo_time_ms",
+        "n_volumes"
+      ],
+      "title": "AcquisitionParams",
+      "type": "object"
+    },
+    "AlternativeInference_float_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[float]",
+      "type": "object"
+    },
+    "AlternativeInference_int_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[int]",
+      "type": "object"
+    },
+    "DateInferredVersionBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "date_inferred_version",
+          "default": "date_inferred_version",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "inferred_version": {
+          "title": "Inferred Version",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "paper_date": {
+          "format": "date",
+          "title": "Paper Date",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "inferred_version",
+        "paper_date"
+      ],
+      "title": "DateInferredVersionBasis",
+      "type": "object"
+    },
+    "Extracted_float_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[float]",
+      "type": "object"
+    },
+    "Extracted_int_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[int]",
+      "type": "object"
+    },
+    "FieldConventionBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "field_convention",
+          "default": "field_convention",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "FieldConventionBasis",
+      "type": "object"
+    },
+    "FirstLevelModel": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "FirstLevelModel",
+      "type": "object"
+    },
+    "GroupLevelModel": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "GroupLevelModel",
+      "type": "object"
+    },
+    "InferredDefault_float_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_float_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[float]",
+      "type": "object"
+    },
+    "InferredDefault_int_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_int_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[int]",
+      "type": "object"
+    },
+    "LabPriorBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "lab_prior",
+          "default": "lab_prior",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "lab_id": {
+          "title": "Lab Id",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "lab_id"
+      ],
+      "title": "LabPriorBasis",
+      "type": "object"
+    },
+    "LeftMissing": {
+      "properties": {
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "status": {
+          "const": "LEFT_MISSING",
+          "default": "LEFT_MISSING",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "LeftMissing",
+      "type": "object"
+    },
+    "MissingFromPaper": {
+      "properties": {
+        "searched_terms": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Searched Terms",
+          "type": "array"
+        },
+        "sections_searched": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sections Searched",
+          "type": "array"
+        },
+        "status": {
+          "const": "MISSING_FROM_PAPER",
+          "default": "MISSING_FROM_PAPER",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "searched_terms",
+        "sections_searched"
+      ],
+      "title": "MissingFromPaper",
+      "type": "object"
+    },
+    "NotApplicable": {
+      "description": "Extraction succeeded; no inference applies. Explicit per never-null ethos.",
+      "properties": {
+        "status": {
+          "const": "NOT_APPLICABLE",
+          "default": "NOT_APPLICABLE",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "NotApplicable",
+      "type": "object"
+    },
+    "PaperRef": {
+      "properties": {
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "PaperRef",
+      "type": "object"
+    },
+    "Preprocessing": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "Preprocessing",
+      "type": "object"
+    },
+    "PriorPublicationBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "prior_publication",
+          "default": "prior_publication",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "citation"
+      ],
+      "title": "PriorPublicationBasis",
+      "type": "object"
+    },
+    "ProvenancedField_float_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "EXTRACTED": "#/$defs/Extracted_float_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_float_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_float_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_float_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[float]",
+      "type": "object"
+    },
+    "ProvenancedField_int_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "EXTRACTED": "#/$defs/Extracted_int_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_int_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_int_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_int_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[int]",
+      "type": "object"
+    },
+    "RunMeta": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "paper": {
+          "$ref": "#/$defs/PaperRef"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "paper"
+      ],
+      "title": "RunMeta",
+      "type": "object"
+    },
+    "Span": {
+      "description": "Char-offset back-pointer into ParsedPaper.text. Internal-consistency only;\nsubstring existence vs. the paper is a downstream Tier-1 check.",
+      "properties": {
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "text"
+      ],
+      "title": "Span",
+      "type": "object"
+    },
+    "Thresholding": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "Thresholding",
+      "type": "object"
+    },
+    "VersionDefaultBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "version_default",
+          "default": "version_default",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "version"
+      ],
+      "title": "VersionDefaultBasis",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "acquisition": {
+      "$ref": "#/$defs/AcquisitionParams"
+    },
+    "first_level": {
+      "$ref": "#/$defs/FirstLevelModel"
+    },
+    "group_level": {
+      "$ref": "#/$defs/GroupLevelModel"
+    },
+    "preprocessing": {
+      "$ref": "#/$defs/Preprocessing"
+    },
+    "run": {
+      "$ref": "#/$defs/RunMeta"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "thresholding": {
+      "$ref": "#/$defs/Thresholding"
+    }
+  },
+  "required": [
+    "run",
+    "acquisition",
+    "preprocessing",
+    "first_level",
+    "group_level",
+    "thresholding"
+  ],
+  "title": "ReplicationSpec",
+  "type": "object"
+}

@@ -1,0 +1,78 @@
+{
+  "schema_version": "0.1.0",
+  "run": {
+    "run_id": "00000000000000000000000000000000",
+    "created_at": "2026-05-20T00:00:00Z",
+    "paper": {
+      "source": "10.1234/example",
+      "sha256": null
+    }
+  },
+  "acquisition": {
+    "repetition_time_s": {
+      "field_id": "acquisition.repetition_time_s",
+      "extraction": {
+        "status": "EXTRACTED",
+        "value": 2.0,
+        "spans": [
+          {
+            "start": 1234,
+            "end": 1240,
+            "text": "TR = 2s",
+            "section": "Methods"
+          }
+        ],
+        "confidence": 0.97
+      },
+      "inference": {
+        "status": "NOT_APPLICABLE"
+      }
+    },
+    "echo_time_ms": {
+      "field_id": "acquisition.echo_time_ms",
+      "extraction": {
+        "status": "MISSING_FROM_PAPER",
+        "searched_terms": ["TE", "echo time", "echo-time"],
+        "sections_searched": ["Methods", "Imaging Acquisition"]
+      },
+      "inference": {
+        "status": "INFERRED_DEFAULT",
+        "value": 30.0,
+        "basis": {
+          "basis_type": "version_default",
+          "tool": "fMRIPrep",
+          "version": "23.2.1",
+          "note": null
+        },
+        "confidence": 0.95,
+        "alternative_inferences": [
+          {
+            "value": 25.0,
+            "basis": {
+              "basis_type": "lab_prior",
+              "lab_id": "poldrack_lab_2023",
+              "note": null
+            },
+            "confidence": 0.5
+          }
+        ]
+      }
+    },
+    "n_volumes": {
+      "field_id": "acquisition.n_volumes",
+      "extraction": {
+        "status": "MISSING_FROM_PAPER",
+        "searched_terms": ["n_volumes", "number of volumes", "TRs"],
+        "sections_searched": ["Methods"]
+      },
+      "inference": {
+        "status": "LEFT_MISSING",
+        "reason": "not reported and no defensible default; user must supply"
+      }
+    }
+  },
+  "preprocessing": {},
+  "first_level": {},
+  "group_level": {},
+  "thresholding": {}
+}
