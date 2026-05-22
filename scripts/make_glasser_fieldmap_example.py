@@ -18,13 +18,23 @@ To regenerate: ``python scripts/make_glasser_fieldmap_example.py``.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
+from fmri_repro.spec.preprocessing import (
+    NuisanceRegression,
+    PipelineRef,
+    Preprocessing,
+    SpatialSmoothing,
+    SurfaceProjection,
+    TemporalFiltering,
+)
 from fmri_repro.spec.provenance import (
+    DateInferredVersionBasis,
     Deferral,
     DeferredToCitation,
     Extracted,
+    InferredDefault,
     LeftMissing,
     MissingFromPaper,
     NotApplicable,
@@ -46,7 +56,6 @@ from fmri_repro.spec.v0_1_0 import (
     MRAcquisitionType,
     PaperRef,
     ParallelTechnique,
-    Preprocessing,
     PulseSequenceType,
     ReplicationSpec,
     RunMeta,
@@ -412,6 +421,334 @@ def _two_mm_voxel_only_fmap(suffix: str, descriptor: str, start: int) -> Fieldma
 
 
 # ---------------------------------------------------------------------------
+# Preprocessing — HCP Minimal Preprocessing Pipelines (Glasser 2013).
+#
+# Demonstrates:
+#  - ``PipelineRef`` with version inferred via ``DateInferredVersionBasis``
+#    (paper predates fixed S1200 release; Configurator narrows by date).
+#  - A surface-aware chain: surface_projection (fsLR_32k / msm_all),
+#    nuisance_regression (Friston-24 + WM + CSF), butterworth_bandpass
+#    0.01-0.1 Hz, FWHM-6 smoothing on the template surface.
+# ---------------------------------------------------------------------------
+
+
+def _hcp_preprocessing() -> Preprocessing:
+    """HCP MPP-style pipeline applied to the rest BOLD (LR run)."""
+    bold_ref = AcquisitionRef(
+        suffix="bold",
+        entities=AcquisitionEntities(task="rest", dir="LR"),
+    )
+    inner_pipeline_ref = PipelineRef(
+        name="HCP Minimal Preprocessing Pipelines",
+        version=ProvenancedField[str](
+            field_id="version",
+            extraction=DeferredToCitation(
+                deferrals=[
+                    Deferral(
+                        ref="Glasser 2013",
+                        span=Span(
+                            start=900,
+                            end=940,
+                            text="processed with the HCP MPP (Glasser 2013)",
+                            section=_METHODS,
+                        ),
+                        target_kind="pipeline",
+                    ),
+                ],
+                searched_terms=["HCP MPP version", "minimal preprocessing pipelines"],
+                sections_searched=[_METHODS],
+            ),
+            inference=InferredDefault[str](
+                value="2013-circa",
+                basis=DateInferredVersionBasis(
+                    tool="HCP MPP",
+                    inferred_version="2013-circa",
+                    paper_date=date(2013, 10, 15),
+                    note="Configurator-inferred from paper date.",
+                ),
+                confidence=0.7,
+                alternative_inferences=[],
+            ),
+        ),
+    )
+    return Preprocessing(
+        applies_to=[bold_ref],
+        # Outer DeferredToCitation(target_kind="pipeline") — the Glasser 2013
+        # paper cites the HCP MPP but doesn't state a discrete pipeline version
+        # itself; Configurator fills the inferred PipelineRef.
+        base_pipeline=ProvenancedField[PipelineRef](
+            field_id="base_pipeline",
+            extraction=DeferredToCitation(
+                deferrals=[
+                    Deferral(
+                        ref="Glasser 2013",
+                        span=Span(
+                            start=900,
+                            end=920,
+                            text="HCP minimal pipelines",
+                            section=_METHODS,
+                        ),
+                        target_kind="pipeline",
+                    ),
+                ],
+                searched_terms=["base pipeline", "HCP MPP"],
+                sections_searched=[_METHODS],
+            ),
+            inference=InferredDefault[PipelineRef](
+                value=inner_pipeline_ref,
+                basis=DateInferredVersionBasis(
+                    tool="HCP MPP",
+                    inferred_version="2013-circa",
+                    paper_date=date(2013, 10, 15),
+                ),
+                confidence=0.7,
+                alternative_inferences=[],
+            ),
+        ),
+        steps=[
+            SurfaceProjection(
+                target_surface=ProvenancedField[str](
+                    field_id="target_surface",
+                    extraction=Extracted[str](
+                        value="fsLR_32k",
+                        spans=[
+                            Span(
+                                start=1000,
+                                end=1010,
+                                text="fsLR_32k",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                vol2surf_sampling=ProvenancedField[str](
+                    field_id="vol2surf_sampling",
+                    extraction=MissingFromPaper(
+                        searched_terms=["ribbon", "vol2surf"],
+                        sections_searched=[_METHODS],
+                    ),
+                    inference=InferredDefault[str](
+                        value="ribbon_constrained",
+                        basis=DateInferredVersionBasis(
+                            tool="HCP MPP",
+                            inferred_version="2013-circa",
+                            paper_date=date(2013, 10, 15),
+                            note="HCP-MPP default sampling.",
+                        ),
+                        confidence=0.7,
+                        alternative_inferences=[],
+                    ),
+                ),
+                surface_registration=ProvenancedField[str](
+                    field_id="surface_registration",
+                    extraction=Extracted[str](
+                        value="msm_all",
+                        spans=[
+                            Span(
+                                start=1100,
+                                end=1107,
+                                text="MSMAll",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                cifti=ProvenancedField[bool](
+                    field_id="cifti",
+                    extraction=Extracted[bool](
+                        value=True,
+                        spans=[
+                            Span(
+                                start=1200,
+                                end=1205,
+                                text="CIFTI",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+            ),
+            NuisanceRegression(
+                motion_expansion=ProvenancedField[str](
+                    field_id="motion_expansion",
+                    extraction=Extracted[str](
+                        value="friston24",
+                        spans=[
+                            Span(
+                                start=1300,
+                                end=1330,
+                                text="24 Friston motion regressors",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                tissue_regressors=ProvenancedField[list[str]](
+                    field_id="tissue_regressors",
+                    extraction=Extracted[list[str]](
+                        value=["white_matter", "ventricles"],
+                        spans=[
+                            Span(
+                                start=1340,
+                                end=1360,
+                                text="WM + CSF regression",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                physio_regressors=ProvenancedField[str](
+                    field_id="physio_regressors",
+                    extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
+                    inference=LeftMissing(reason="not reported"),
+                ),
+                physio_n_regressors=ProvenancedField[int](
+                    field_id="physio_n_regressors",
+                    extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
+                    inference=LeftMissing(reason="not reported"),
+                ),
+                detrend=ProvenancedField[str](
+                    field_id="detrend",
+                    extraction=Extracted[str](
+                        value="linear",
+                        spans=[
+                            Span(
+                                start=1380,
+                                end=1395,
+                                text="linear detrend",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+            ),
+            TemporalFiltering(
+                effective_band_hz=ProvenancedField[tuple[float | None, float | None]](
+                    field_id="effective_band_hz",
+                    extraction=Extracted[tuple[float | None, float | None]](
+                        value=(0.01, 0.1),
+                        spans=[
+                            Span(
+                                start=1400,
+                                end=1420,
+                                text="bandpass 0.01-0.1 Hz",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                method=ProvenancedField[str](
+                    field_id="method",
+                    extraction=Extracted[str](
+                        value="butterworth_bandpass",
+                        spans=[
+                            Span(
+                                start=1430,
+                                end=1450,
+                                text="Butterworth bandpass",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.92,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                low_hz=ProvenancedField[float](
+                    field_id="low_hz",
+                    extraction=Extracted[float](
+                        value=0.01,
+                        spans=[
+                            Span(
+                                start=1460,
+                                end=1470,
+                                text="0.01 Hz",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                high_hz=ProvenancedField[float](
+                    field_id="high_hz",
+                    extraction=Extracted[float](
+                        value=0.1,
+                        spans=[
+                            Span(
+                                start=1480,
+                                end=1490,
+                                text="0.1 Hz",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                order=_missing("order", int),
+                cutoff=_missing("cutoff", float),
+                scale=_missing("scale", int),
+                nominal_band_hz=_missing("nominal_band_hz", tuple),
+            ),
+            SpatialSmoothing(
+                fwhm_mm=ProvenancedField[float](
+                    field_id="fwhm_mm",
+                    extraction=Extracted[float](
+                        value=6.0,
+                        spans=[
+                            Span(
+                                start=1500,
+                                end=1520,
+                                text="FWHM 6 mm on surface",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.92,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                space=ProvenancedField[str](
+                    field_id="space",
+                    extraction=Extracted[str](
+                        value="template_surface",
+                        spans=[
+                            Span(
+                                start=1530,
+                                end=1550,
+                                text="smoothed on fsLR_32k surface",
+                                section=_METHODS,
+                            ),
+                        ],
+                        confidence=0.92,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                kernel_type=ProvenancedField[str](
+                    field_id="kernel_type",
+                    extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
+                    inference=LeftMissing(reason="kernel type not pinned"),
+                ),
+                approach=_missing("approach", str),
+            ),
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def _build_study() -> StudySpec:
@@ -431,7 +768,7 @@ def _build_study() -> StudySpec:
             _two_mm_voxel_only_fmap("magnitude1", "magnitude1 fmap", 620),
             _two_mm_voxel_only_fmap("magnitude2", "magnitude2 fmap", 640),
         ],
-        preprocessing=Preprocessing(),
+        preprocessing=[_hcp_preprocessing()],
         first_level=FirstLevelModel(),
         group_level=GroupLevelModel(),
         thresholding=Thresholding(),

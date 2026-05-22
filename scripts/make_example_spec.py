@@ -24,6 +24,16 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fmri_repro.spec.preprocessing import (
+    Despike,
+    MotionCorrection,
+    NonsteadystateRemoval,
+    NuisanceRegression,
+    PipelineRef,
+    Preprocessing,
+    SpatialSmoothing,
+    TemporalFiltering,
+)
 from fmri_repro.spec.provenance import (
     Deferral,
     DeferredToCitation,
@@ -36,6 +46,7 @@ from fmri_repro.spec.provenance import (
     NotApplicable,
     ProvenancedField,
     Span,
+    VersionDefaultBasis,
 )
 from fmri_repro.spec.v0_1_0 import (
     AcquisitionEntities,
@@ -52,7 +63,6 @@ from fmri_repro.spec.v0_1_0 import (
     MRAcquisitionType,
     PaperRef,
     ParallelTechnique,
-    Preprocessing,
     PulseSequenceType,
     ReplicationSpec,
     RunMeta,
@@ -617,11 +627,263 @@ def _msc_bold() -> FunctionalAcquisition:
 
 
 # ---------------------------------------------------------------------------
+# Preprocessing — Cho HNU (CCS base) and Cho MSC (minimal demo).
+#
+# Each Preprocessing exercises:
+#  - ``base_pipeline``: ``PipelineRef`` with ``version`` carrying provenance
+#    (deferred-to-pipeline for HNU; inferred-via-version_default for MSC), and
+#    ``NotApplicable`` is exercised in the test fixtures (Bassett-style).
+#  - Per-kind uniqueness via distinct ``kind`` discriminators.
+#  - Conservative inference: ``inference_applicable=False`` fields use
+#    MISSING + LEFT_MISSING; the few inference-applicable fields use
+#    field-convention defaults under the basis ceiling.
+# ---------------------------------------------------------------------------
+
+
+def _hnu_preprocessing() -> Preprocessing:
+    """CCS-style pipeline applied to the HNU1 rest BOLD.
+
+    Demonstrates nested base_pipeline provenance: outer ``Extracted`` (paper
+    named CCS) wrapping an inner ``PipelineRef.version`` that is itself
+    ``DeferredToCitation`` (paper cites Xu 2015 without pinning a version).
+    """
+    inner_pipeline_ref = PipelineRef(
+        name="CCS",
+        version=ProvenancedField[str](
+            field_id="version",
+            extraction=DeferredToCitation(
+                deferrals=[
+                    Deferral(
+                        ref="Xu 2015 - CCS",
+                        span=_span("preprocessed with CCS (Xu et al., 2015)", 1000),
+                        target_kind="pipeline",
+                    ),
+                ],
+                searched_terms=["CCS", "Connectome Computation System"],
+                sections_searched=[_METHODS],
+            ),
+            inference=LeftMissing(reason="pipeline version not pinned in paper"),
+        ),
+    )
+    return Preprocessing(
+        applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
+        base_pipeline=ProvenancedField[PipelineRef](
+            field_id="base_pipeline",
+            extraction=Extracted[PipelineRef](
+                value=inner_pipeline_ref,
+                spans=[_span("CCS pipeline", 950)],
+                confidence=0.93,
+            ),
+            inference=NotApplicable(),
+        ),
+        steps=[
+            NonsteadystateRemoval(
+                n_nonsteadystate_discarded=ProvenancedField[int](
+                    field_id="n_nonsteadystate_discarded",
+                    extraction=Extracted[int](
+                        value=4,
+                        spans=[_span("first 4 volumes discarded", 1100)],
+                        confidence=0.92,
+                    ),
+                    inference=NotApplicable(),
+                ),
+            ),
+            Despike(
+                method=ProvenancedField[str](
+                    field_id="method",
+                    extraction=Extracted[str](
+                        value="afni_3dDespike",
+                        spans=[_span("AFNI 3dDespike", 1140)],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                threshold=_missing("threshold", float),
+            ),
+            MotionCorrection(
+                method=ProvenancedField[str](
+                    field_id="method",
+                    extraction=Extracted[str](
+                        value="mcflirt",
+                        spans=[_span("FSL MCFLIRT", 1200)],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                reference_scan=_missing("reference_scan", str),
+                similarity_metric=_missing("similarity_metric", str),
+                interpolation=_missing("interpolation", str),
+                nonrigid=_missing("nonrigid", bool),
+                transform_type=_missing("transform_type", str),
+                fieldmap_unwarping=_missing("fieldmap_unwarping", bool),
+                unwarping_method=_missing("unwarping_method", str),
+                slice_to_volume=_missing("slice_to_volume", bool),
+            ),
+            NuisanceRegression(
+                motion_expansion=ProvenancedField[str](
+                    field_id="motion_expansion",
+                    extraction=Extracted[str](
+                        value="friston24",
+                        spans=[_span("24 motion regressors (Friston)", 1300)],
+                        confidence=0.92,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                tissue_regressors=ProvenancedField[list[str]](
+                    field_id="tissue_regressors",
+                    extraction=Extracted[list[str]](
+                        value=["white_matter", "ventricles"],
+                        spans=[_span("WM + CSF regression", 1340)],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                physio_regressors=_missing("physio_regressors", str),
+                physio_n_regressors=_missing("physio_n_regressors", int),
+                detrend=ProvenancedField[str](
+                    field_id="detrend",
+                    extraction=Extracted[str](
+                        value="linear",
+                        spans=[_span("linear detrend", 1380)],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+            ),
+            TemporalFiltering(
+                effective_band_hz=ProvenancedField[tuple[float | None, float | None]](
+                    field_id="effective_band_hz",
+                    extraction=Extracted[tuple[float | None, float | None]](
+                        value=(0.01, 0.1),
+                        spans=[_span("bandpass 0.01-0.1 Hz", 1400)],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                method=ProvenancedField[str](
+                    field_id="method",
+                    extraction=Extracted[str](
+                        value="butterworth_bandpass",
+                        spans=[_span("Butterworth bandpass", 1420)],
+                        confidence=0.93,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                low_hz=ProvenancedField[float](
+                    field_id="low_hz",
+                    extraction=Extracted[float](
+                        value=0.01,
+                        spans=[_span("0.01 Hz", 1440)],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                high_hz=ProvenancedField[float](
+                    field_id="high_hz",
+                    extraction=Extracted[float](
+                        value=0.1,
+                        spans=[_span("0.1 Hz", 1460)],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                order=_missing("order", int),
+                cutoff=_missing("cutoff", float),
+                scale=_missing("scale", int),
+                nominal_band_hz=_missing("nominal_band_hz", tuple),
+            ),
+        ],
+    )
+
+
+def _msc_preprocessing() -> Preprocessing:
+    """Minimal demonstration pipeline applied to the MSC rest BOLD.
+
+    Demonstrates outer Extracted (paper named fMRIPrep) with inner-version
+    InferredDefault (Configurator backfilled the version via version_default)."""
+    inner_pipeline_ref = PipelineRef(
+        name="fMRIPrep",
+        version=ProvenancedField[str](
+            field_id="version",
+            extraction=MissingFromPaper(
+                searched_terms=["fMRIPrep version"],
+                sections_searched=[_METHODS],
+            ),
+            inference=InferredDefault[str](
+                value="23.2.1",
+                basis=VersionDefaultBasis(
+                    tool="fMRIPrep",
+                    version="23.2.1",
+                    note="MSC representative version for v0.1.0 fixture",
+                ),
+                confidence=0.9,
+                alternative_inferences=[],
+            ),
+        ),
+    )
+    return Preprocessing(
+        applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
+        base_pipeline=ProvenancedField[PipelineRef](
+            field_id="base_pipeline",
+            extraction=Extracted[PipelineRef](
+                value=inner_pipeline_ref,
+                spans=[_span("fMRIPrep pipeline", 950)],
+                confidence=0.95,
+            ),
+            inference=NotApplicable(),
+        ),
+        steps=[
+            MotionCorrection(
+                method=ProvenancedField[str](
+                    field_id="method",
+                    extraction=Extracted[str](
+                        value="mcflirt",
+                        spans=[_span("FSL MCFLIRT", 1500)],
+                        confidence=0.95,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                reference_scan=_missing("reference_scan", str),
+                similarity_metric=_missing("similarity_metric", str),
+                interpolation=_missing("interpolation", str),
+                nonrigid=_missing("nonrigid", bool),
+                transform_type=_missing("transform_type", str),
+                fieldmap_unwarping=_missing("fieldmap_unwarping", bool),
+                unwarping_method=_missing("unwarping_method", str),
+                slice_to_volume=_missing("slice_to_volume", bool),
+            ),
+            SpatialSmoothing(
+                fwhm_mm=ProvenancedField[float](
+                    field_id="fwhm_mm",
+                    extraction=Extracted[float](
+                        value=6.0,
+                        spans=[_span("FWHM 6 mm Gaussian", 1550)],
+                        confidence=0.94,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                space=ProvenancedField[str](
+                    field_id="space",
+                    extraction=Extracted[str](
+                        value="mni_volume",
+                        spans=[_span("smoothed in MNI volume", 1570)],
+                        confidence=0.9,
+                    ),
+                    inference=NotApplicable(),
+                ),
+                kernel_type=_missing("kernel_type", str),
+                approach=_missing("approach", str),
+            ),
+        ],
+    )
+
+
+# ---------------------------------------------------------------------------
 # Assembly
 # ---------------------------------------------------------------------------
 def _empty_stubs() -> dict[str, object]:
+    """Empty placeholders for the still-stub groups (first/group/thresholding)."""
     return {
-        "preprocessing": Preprocessing(),
         "first_level": FirstLevelModel(),
         "group_level": GroupLevelModel(),
         "thresholding": Thresholding(),
@@ -636,6 +898,7 @@ def _build_study() -> StudySpec:
             source_url="http://fcon_1000.projects.nitrc.org/indi/CoRR/html/hnu_1.html",
         ),
         acquisitions=[_hnu_t1w(), _hnu_bold(), _hnu_epi_fieldmap()],
+        preprocessing=[_hnu_preprocessing()],
         **_empty_stubs(),
     )
     msc = ReplicationSpec(
@@ -646,6 +909,7 @@ def _build_study() -> StudySpec:
             site="WUSTL",
         ),
         acquisitions=[_msc_bold()],
+        preprocessing=[_msc_preprocessing()],
         **_empty_stubs(),
     )
     return StudySpec(

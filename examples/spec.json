@@ -1324,7 +1324,494 @@
           ]
         }
       ],
-      "preprocessing": {},
+      "preprocessing": [
+        {
+          "applies_to": [
+            {
+              "suffix": "bold",
+              "entities": {
+                "task": "rest",
+                "run": null,
+                "dir": null,
+                "acq": null
+              }
+            }
+          ],
+          "base_pipeline": {
+            "field_id": "base_pipeline",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": {
+                "name": "CCS",
+                "version": {
+                  "field_id": "version",
+                  "extraction": {
+                    "status": "DEFERRED_TO_CITATION",
+                    "deferrals": [
+                      {
+                        "ref": "Xu 2015 - CCS",
+                        "span": {
+                          "start": 1000,
+                          "end": 1039,
+                          "text": "preprocessed with CCS (Xu et al., 2015)",
+                          "section": "Methods"
+                        },
+                        "target_kind": "pipeline"
+                      }
+                    ],
+                    "searched_terms": [
+                      "CCS",
+                      "Connectome Computation System"
+                    ],
+                    "sections_searched": [
+                      "Methods"
+                    ]
+                  },
+                  "inference": {
+                    "status": "LEFT_MISSING",
+                    "reason": "pipeline version not pinned in paper"
+                  }
+                }
+              },
+              "spans": [
+                {
+                  "start": 950,
+                  "end": 962,
+                  "text": "CCS pipeline",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.93
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "steps": [
+            {
+              "kind": "nonsteadystate_removal",
+              "n_nonsteadystate_discarded": {
+                "field_id": "n_nonsteadystate_discarded",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 4,
+                  "spans": [
+                    {
+                      "start": 1100,
+                      "end": 1125,
+                      "text": "first 4 volumes discarded",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.92
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              }
+            },
+            {
+              "kind": "despike",
+              "method": {
+                "field_id": "method",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "afni_3dDespike",
+                  "spans": [
+                    {
+                      "start": 1140,
+                      "end": 1154,
+                      "text": "AFNI 3dDespike",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "threshold": {
+                "field_id": "threshold",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            },
+            {
+              "kind": "motion_correction",
+              "method": {
+                "field_id": "method",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "mcflirt",
+                  "spans": [
+                    {
+                      "start": 1200,
+                      "end": 1211,
+                      "text": "FSL MCFLIRT",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "reference_scan": {
+                "field_id": "reference_scan",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "similarity_metric": {
+                "field_id": "similarity_metric",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "interpolation": {
+                "field_id": "interpolation",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "nonrigid": {
+                "field_id": "nonrigid",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "transform_type": {
+                "field_id": "transform_type",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "fieldmap_unwarping": {
+                "field_id": "fieldmap_unwarping",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "unwarping_method": {
+                "field_id": "unwarping_method",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "slice_to_volume": {
+                "field_id": "slice_to_volume",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            },
+            {
+              "kind": "nuisance_regression",
+              "motion_expansion": {
+                "field_id": "motion_expansion",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "friston24",
+                  "spans": [
+                    {
+                      "start": 1300,
+                      "end": 1330,
+                      "text": "24 motion regressors (Friston)",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.92
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "tissue_regressors": {
+                "field_id": "tissue_regressors",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": [
+                    "white_matter",
+                    "ventricles"
+                  ],
+                  "spans": [
+                    {
+                      "start": 1340,
+                      "end": 1359,
+                      "text": "WM + CSF regression",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "physio_regressors": {
+                "field_id": "physio_regressors",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "physio_n_regressors": {
+                "field_id": "physio_n_regressors",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "detrend": {
+                "field_id": "detrend",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "linear",
+                  "spans": [
+                    {
+                      "start": 1380,
+                      "end": 1394,
+                      "text": "linear detrend",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              }
+            },
+            {
+              "kind": "temporal_filtering",
+              "effective_band_hz": {
+                "field_id": "effective_band_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": [
+                    0.01,
+                    0.1
+                  ],
+                  "spans": [
+                    {
+                      "start": 1400,
+                      "end": 1420,
+                      "text": "bandpass 0.01-0.1 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "method": {
+                "field_id": "method",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "butterworth_bandpass",
+                  "spans": [
+                    {
+                      "start": 1420,
+                      "end": 1440,
+                      "text": "Butterworth bandpass",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.93
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "low_hz": {
+                "field_id": "low_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 0.01,
+                  "spans": [
+                    {
+                      "start": 1440,
+                      "end": 1447,
+                      "text": "0.01 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "high_hz": {
+                "field_id": "high_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 0.1,
+                  "spans": [
+                    {
+                      "start": 1460,
+                      "end": 1466,
+                      "text": "0.1 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "order": {
+                "field_id": "order",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "cutoff": {
+                "field_id": "cutoff",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "scale": {
+                "field_id": "scale",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "nominal_band_hz": {
+                "field_id": "nominal_band_hz",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            }
+          ]
+        }
+      ],
       "first_level": {},
       "group_level": {},
       "thresholding": {}
@@ -2025,7 +2512,271 @@
           }
         }
       ],
-      "preprocessing": {},
+      "preprocessing": [
+        {
+          "applies_to": [
+            {
+              "suffix": "bold",
+              "entities": {
+                "task": "rest",
+                "run": null,
+                "dir": null,
+                "acq": null
+              }
+            }
+          ],
+          "base_pipeline": {
+            "field_id": "base_pipeline",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": {
+                "name": "fMRIPrep",
+                "version": {
+                  "field_id": "version",
+                  "extraction": {
+                    "status": "MISSING_FROM_PAPER",
+                    "searched_terms": [
+                      "fMRIPrep version"
+                    ],
+                    "sections_searched": [
+                      "Methods"
+                    ]
+                  },
+                  "inference": {
+                    "status": "INFERRED_DEFAULT",
+                    "value": "23.2.1",
+                    "basis": {
+                      "basis_type": "version_default",
+                      "tool": "fMRIPrep",
+                      "version": "23.2.1",
+                      "note": "MSC representative version for v0.1.0 fixture"
+                    },
+                    "confidence": 0.9,
+                    "alternative_inferences": []
+                  }
+                }
+              },
+              "spans": [
+                {
+                  "start": 950,
+                  "end": 967,
+                  "text": "fMRIPrep pipeline",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "steps": [
+            {
+              "kind": "motion_correction",
+              "method": {
+                "field_id": "method",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "mcflirt",
+                  "spans": [
+                    {
+                      "start": 1500,
+                      "end": 1511,
+                      "text": "FSL MCFLIRT",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "reference_scan": {
+                "field_id": "reference_scan",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "similarity_metric": {
+                "field_id": "similarity_metric",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "interpolation": {
+                "field_id": "interpolation",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "nonrigid": {
+                "field_id": "nonrigid",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "transform_type": {
+                "field_id": "transform_type",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "fieldmap_unwarping": {
+                "field_id": "fieldmap_unwarping",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "unwarping_method": {
+                "field_id": "unwarping_method",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "slice_to_volume": {
+                "field_id": "slice_to_volume",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            },
+            {
+              "kind": "spatial_smoothing",
+              "fwhm_mm": {
+                "field_id": "fwhm_mm",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 6.0,
+                  "spans": [
+                    {
+                      "start": 1550,
+                      "end": 1568,
+                      "text": "FWHM 6 mm Gaussian",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.94
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "space": {
+                "field_id": "space",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "mni_volume",
+                  "spans": [
+                    {
+                      "start": 1570,
+                      "end": 1592,
+                      "text": "smoothed in MNI volume",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "kernel_type": {
+                "field_id": "kernel_type",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "approach": {
+                "field_id": "approach",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            }
+          ]
+        }
+      ],
       "first_level": {},
       "group_level": {},
       "thresholding": {}

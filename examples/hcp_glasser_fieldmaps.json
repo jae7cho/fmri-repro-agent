@@ -2216,7 +2216,485 @@
           ]
         }
       ],
-      "preprocessing": {},
+      "preprocessing": [
+        {
+          "applies_to": [
+            {
+              "suffix": "bold",
+              "entities": {
+                "task": "rest",
+                "run": null,
+                "dir": "LR",
+                "acq": null
+              }
+            }
+          ],
+          "base_pipeline": {
+            "field_id": "base_pipeline",
+            "extraction": {
+              "status": "DEFERRED_TO_CITATION",
+              "deferrals": [
+                {
+                  "ref": "Glasser 2013",
+                  "span": {
+                    "start": 900,
+                    "end": 920,
+                    "text": "HCP minimal pipelines",
+                    "section": "Methods"
+                  },
+                  "target_kind": "pipeline"
+                }
+              ],
+              "searched_terms": [
+                "base pipeline",
+                "HCP MPP"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": {
+                "name": "HCP Minimal Preprocessing Pipelines",
+                "version": {
+                  "field_id": "version",
+                  "extraction": {
+                    "status": "DEFERRED_TO_CITATION",
+                    "deferrals": [
+                      {
+                        "ref": "Glasser 2013",
+                        "span": {
+                          "start": 900,
+                          "end": 940,
+                          "text": "processed with the HCP MPP (Glasser 2013)",
+                          "section": "Methods"
+                        },
+                        "target_kind": "pipeline"
+                      }
+                    ],
+                    "searched_terms": [
+                      "HCP MPP version",
+                      "minimal preprocessing pipelines"
+                    ],
+                    "sections_searched": [
+                      "Methods"
+                    ]
+                  },
+                  "inference": {
+                    "status": "INFERRED_DEFAULT",
+                    "value": "2013-circa",
+                    "basis": {
+                      "basis_type": "date_inferred_version",
+                      "tool": "HCP MPP",
+                      "inferred_version": "2013-circa",
+                      "paper_date": "2013-10-15",
+                      "note": "Configurator-inferred from paper date."
+                    },
+                    "confidence": 0.7,
+                    "alternative_inferences": []
+                  }
+                }
+              },
+              "basis": {
+                "basis_type": "date_inferred_version",
+                "tool": "HCP MPP",
+                "inferred_version": "2013-circa",
+                "paper_date": "2013-10-15",
+                "note": null
+              },
+              "confidence": 0.7,
+              "alternative_inferences": []
+            }
+          },
+          "steps": [
+            {
+              "kind": "surface_projection",
+              "target_surface": {
+                "field_id": "target_surface",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "fsLR_32k",
+                  "spans": [
+                    {
+                      "start": 1000,
+                      "end": 1010,
+                      "text": "fsLR_32k",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "vol2surf_sampling": {
+                "field_id": "vol2surf_sampling",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [
+                    "ribbon",
+                    "vol2surf"
+                  ],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "INFERRED_DEFAULT",
+                  "value": "ribbon_constrained",
+                  "basis": {
+                    "basis_type": "date_inferred_version",
+                    "tool": "HCP MPP",
+                    "inferred_version": "2013-circa",
+                    "paper_date": "2013-10-15",
+                    "note": "HCP-MPP default sampling."
+                  },
+                  "confidence": 0.7,
+                  "alternative_inferences": []
+                }
+              },
+              "surface_registration": {
+                "field_id": "surface_registration",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "msm_all",
+                  "spans": [
+                    {
+                      "start": 1100,
+                      "end": 1107,
+                      "text": "MSMAll",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "cifti": {
+                "field_id": "cifti",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": true,
+                  "spans": [
+                    {
+                      "start": 1200,
+                      "end": 1205,
+                      "text": "CIFTI",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              }
+            },
+            {
+              "kind": "nuisance_regression",
+              "motion_expansion": {
+                "field_id": "motion_expansion",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "friston24",
+                  "spans": [
+                    {
+                      "start": 1300,
+                      "end": 1330,
+                      "text": "24 Friston motion regressors",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "tissue_regressors": {
+                "field_id": "tissue_regressors",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": [
+                    "white_matter",
+                    "ventricles"
+                  ],
+                  "spans": [
+                    {
+                      "start": 1340,
+                      "end": 1360,
+                      "text": "WM + CSF regression",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "physio_regressors": {
+                "field_id": "physio_regressors",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported"
+                }
+              },
+              "physio_n_regressors": {
+                "field_id": "physio_n_regressors",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported"
+                }
+              },
+              "detrend": {
+                "field_id": "detrend",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "linear",
+                  "spans": [
+                    {
+                      "start": 1380,
+                      "end": 1395,
+                      "text": "linear detrend",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.9
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              }
+            },
+            {
+              "kind": "temporal_filtering",
+              "effective_band_hz": {
+                "field_id": "effective_band_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": [
+                    0.01,
+                    0.1
+                  ],
+                  "spans": [
+                    {
+                      "start": 1400,
+                      "end": 1420,
+                      "text": "bandpass 0.01-0.1 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "method": {
+                "field_id": "method",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "butterworth_bandpass",
+                  "spans": [
+                    {
+                      "start": 1430,
+                      "end": 1450,
+                      "text": "Butterworth bandpass",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.92
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "low_hz": {
+                "field_id": "low_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 0.01,
+                  "spans": [
+                    {
+                      "start": 1460,
+                      "end": 1470,
+                      "text": "0.01 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "high_hz": {
+                "field_id": "high_hz",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 0.1,
+                  "spans": [
+                    {
+                      "start": 1480,
+                      "end": 1490,
+                      "text": "0.1 Hz",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.95
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "order": {
+                "field_id": "order",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "cutoff": {
+                "field_id": "cutoff",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "scale": {
+                "field_id": "scale",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              },
+              "nominal_band_hz": {
+                "field_id": "nominal_band_hz",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            },
+            {
+              "kind": "spatial_smoothing",
+              "fwhm_mm": {
+                "field_id": "fwhm_mm",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": 6.0,
+                  "spans": [
+                    {
+                      "start": 1500,
+                      "end": 1520,
+                      "text": "FWHM 6 mm on surface",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.92
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "space": {
+                "field_id": "space",
+                "extraction": {
+                  "status": "EXTRACTED",
+                  "value": "template_surface",
+                  "spans": [
+                    {
+                      "start": 1530,
+                      "end": 1550,
+                      "text": "smoothed on fsLR_32k surface",
+                      "section": "Methods"
+                    }
+                  ],
+                  "confidence": 0.92
+                },
+                "inference": {
+                  "status": "NOT_APPLICABLE"
+                }
+              },
+              "kernel_type": {
+                "field_id": "kernel_type",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "kernel type not pinned"
+                }
+              },
+              "approach": {
+                "field_id": "approach",
+                "extraction": {
+                  "status": "MISSING_FROM_PAPER",
+                  "searched_terms": [],
+                  "sections_searched": [
+                    "Methods"
+                  ]
+                },
+                "inference": {
+                  "status": "LEFT_MISSING",
+                  "reason": "not reported in paper"
+                }
+              }
+            }
+          ]
+        }
+      ],
       "first_level": {},
       "group_level": {},
       "thresholding": {}

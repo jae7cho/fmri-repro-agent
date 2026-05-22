@@ -94,14 +94,40 @@ def _fieldmap_payload(
     return payload
 
 
+def _minimal_preprocessing_payload(
+    functional_refs: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Construct the smallest valid ``Preprocessing`` payload covering the
+    given functional acquisitions: one ``nonsteadystate_removal`` step,
+    ``base_pipeline=NotApplicable``."""
+    return {
+        "applies_to": functional_refs,
+        "base_pipeline": {"status": "NOT_APPLICABLE"},
+        "steps": [
+            {
+                "kind": "nonsteadystate_removal",
+                "n_nonsteadystate_discarded": _missing_pf("n_nonsteadystate_discarded"),
+            },
+        ],
+    }
+
+
 def _replication_spec_payload(
     acquisitions: list[dict[str, Any]],
     site: str | None = None,
 ) -> dict[str, Any]:
+    # Auto-generate a minimal Preprocessing covering every functional (bold)
+    # acquisition so the new ReplicationSpec partition rule is satisfied.
+    functional_refs = [
+        {"suffix": a["suffix"], "entities": a.get("entities", {}) or {}}
+        for a in acquisitions
+        if a.get("suffix") == "bold"
+    ]
+    preprocessing = [_minimal_preprocessing_payload(functional_refs)] if functional_refs else []
     return {
         "dataset": {"name": "TEST", "site": site},
         "acquisitions": acquisitions,
-        "preprocessing": {},
+        "preprocessing": preprocessing,
         "first_level": {},
         "group_level": {},
         "thresholding": {},
@@ -489,7 +515,8 @@ def test_smoke_construct_replication_spec_in_code() -> None:
     again = ReplicationSpec.model_validate_json(js)
     assert spec == again
     # Stubs are reachable
-    assert isinstance(spec.preprocessing, Preprocessing)
+    assert isinstance(spec.preprocessing, list)
+    assert all(isinstance(p, Preprocessing) for p in spec.preprocessing)
     assert isinstance(spec.first_level, FirstLevelModel)
     assert isinstance(spec.group_level, GroupLevelModel)
     assert isinstance(spec.thresholding, Thresholding)

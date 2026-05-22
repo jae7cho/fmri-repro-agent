@@ -40,7 +40,20 @@ from uuid import uuid4
 
 from pydantic import BaseModel, Field, model_validator
 
+from fmri_repro.spec.preprocessing import Preprocessing as Preprocessing
 from fmri_repro.spec.provenance import ProvenancedField
+from fmri_repro.spec.refs import (
+    AcquisitionEntities as AcquisitionEntities,
+)
+from fmri_repro.spec.refs import (
+    AcquisitionRef as AcquisitionRef,
+)
+from fmri_repro.spec.refs import (
+    FieldMeta as FieldMeta,
+)
+from fmri_repro.spec.refs import (
+    bids_stem as bids_stem,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -74,40 +87,9 @@ class StudyAnalysis(BaseModel):
     out of scope for v0.1.0."""
 
 
-# ---------------------------------------------------------------------------
-# Acquisition identity (BIDS entities + bids_stem path helper)
-# ---------------------------------------------------------------------------
-class AcquisitionEntities(BaseModel):
-    """BIDS entities that together with the suffix identify an acquisition protocol."""
-
-    task: str | None = None
-    run: int | None = None
-    dir: str | None = None  # phase-encoding entity, e.g. "LR" / "AP"
-    acq: str | None = None
-
-
-class AcquisitionRef(BaseModel):
-    """Reference from a fieldmap's ``intended_for`` to another acquisition in the same spec."""
-
-    suffix: str
-    entities: AcquisitionEntities = AcquisitionEntities()
-
-
-# Order in which BIDS composes entities into a filename stem (relevant subset).
-_BIDS_ENTITY_ORDER: tuple[str, ...] = ("task", "acq", "dir", "run")
-
-
-def bids_stem(suffix: str, entities: AcquisitionEntities) -> str:
-    """Compose a BIDS filename stem like ``"task-rest_dir-LR_bold"`` (without
-    file extension). Acquisitions without entities reduce to the bare suffix
-    (e.g. ``"T1w"``)."""
-    parts: list[str] = []
-    for ent in _BIDS_ENTITY_ORDER:
-        val = getattr(entities, ent)
-        if val is not None:
-            parts.append(f"{ent}-{val}")
-    parts.append(suffix)
-    return "_".join(parts)
+# Acquisition identity (``AcquisitionEntities`` / ``AcquisitionRef`` /
+# ``bids_stem``) is defined in :mod:`fmri_repro.spec.refs` and re-exported at
+# the top of this module so that existing imports keep working unchanged.
 
 
 # ---------------------------------------------------------------------------
@@ -175,16 +157,10 @@ class BrainCoverage(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Per-field metadata (registry — split per arm; see catalog v0.1.0)
+# Per-field metadata (registry — split per arm; see catalog v0.1.0).
+# ``FieldMeta`` itself is re-exported from :mod:`fmri_repro.spec.refs` at the
+# top of this module (the class is shared with the preprocessing registries).
 # ---------------------------------------------------------------------------
-class FieldMeta(BaseModel):
-    justification_axis: Literal["cobidas", "pipeline", "both"]
-    inference_applicable: bool
-    source: Literal["sidecar", "header", "derived", "none"]
-    bids_key: str | None = None
-    unit: str | None = None
-
-
 COMMON_FIELD_META: dict[str, FieldMeta] = {
     # MRI System
     "manufacturer": FieldMeta(
@@ -636,12 +612,10 @@ Acquisition = Annotated[
 
 
 # ---------------------------------------------------------------------------
-# Other groups (stubs, grown in later milestones)
+# Other groups (stubs, grown in later milestones).
+# ``Preprocessing`` is now defined in :mod:`fmri_repro.spec.preprocessing` and
+# re-exported at the top of this module.
 # ---------------------------------------------------------------------------
-class Preprocessing(BaseModel):
-    """TODO: grow in a later chat."""
-
-
 class FirstLevelModel(BaseModel):
     """TODO: grow in a later chat."""
 
@@ -677,7 +651,7 @@ class ReplicationSpec(BaseModel):
 
     dataset: DatasetRef
     acquisitions: list[Acquisition] = Field(min_length=1)
-    preprocessing: Preprocessing
+    preprocessing: list[Preprocessing] = Field(default_factory=list)
     first_level: FirstLevelModel
     group_level: GroupLevelModel
     thresholding: Thresholding
@@ -703,6 +677,70 @@ class ReplicationSpec(BaseModel):
                     raise ValueError(
                         f"intended_for {rk} does not resolve to any acquisition in this spec"
                     )
+        return self
+
+    @model_validator(mode="after")
+    def _check_preprocessing_partition(self) -> Self:
+        """Functional partition: every :class:`FunctionalAcquisition` is
+        covered by exactly one :class:`Preprocessing` entry. Anatomical /
+        fieldmap acquisitions are not required to be covered. ``applies_to``
+        and ``intended_fieldmap`` references must resolve to a present
+        acquisition in this spec.
+
+        If ``preprocessing`` is empty, the partition is enforced trivially —
+        there must be no functional acquisitions in the spec. (An empty
+        ``preprocessing`` list is a transitional state distinct from a
+        non-empty list whose entries fail to cover every functional.)
+        """
+        all_keys = {_acquisition_key(a) for a in self.acquisitions}
+        functional_keys = {
+            _acquisition_key(a) for a in self.acquisitions if isinstance(a, FunctionalAcquisition)
+        }
+
+        # Empty preprocessing is permitted iff there are no functional
+        # acquisitions to cover. (Mirrors the never-null ethos: empty list
+        # signals "not yet specified", which is only coherent when there's
+        # nothing to specify yet.)
+        if not self.preprocessing:
+            if functional_keys:
+                raise ValueError(
+                    f"preprocessing is empty but {len(functional_keys)} functional "
+                    f"acquisition(s) require coverage"
+                )
+            return self
+
+        coverage: dict[
+            tuple[str, str | None, int | None, str | None, str | None],
+            int,
+        ] = {}
+        for pp in self.preprocessing:
+            for ref in pp.applies_to:
+                rk = _ref_key(ref)
+                if rk not in all_keys:
+                    raise ValueError(
+                        f"Preprocessing.applies_to {rk} does not resolve to "
+                        f"any acquisition in this spec"
+                    )
+                coverage[rk] = coverage.get(rk, 0) + 1
+            # Resolve DistortionCorrection.intended_fieldmap (when not N/A).
+            for step in pp.steps:
+                fmap_ref = getattr(step, "intended_fieldmap", None)
+                if fmap_ref is None or not isinstance(fmap_ref, AcquisitionRef):
+                    continue
+                rk = _ref_key(fmap_ref)
+                if rk not in all_keys:
+                    raise ValueError(
+                        f"DistortionCorrection.intended_fieldmap {rk} does not "
+                        f"resolve to any acquisition in this spec"
+                    )
+
+        for fk in functional_keys:
+            n = coverage.get(fk, 0)
+            if n != 1:
+                raise ValueError(
+                    f"functional acquisition {fk} is covered by {n} Preprocessing "
+                    f"entries; expected exactly 1"
+                )
         return self
 
 
