@@ -1,0 +1,4687 @@
+{
+  "$defs": {
+    "AcquisitionEntities": {
+      "description": "BIDS entities that together with the suffix identify an acquisition protocol.",
+      "properties": {
+        "acq": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Acq"
+        },
+        "dir": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dir"
+        },
+        "run": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Run"
+        },
+        "task": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task"
+        }
+      },
+      "title": "AcquisitionEntities",
+      "type": "object"
+    },
+    "AcquisitionRef": {
+      "description": "Reference from a fieldmap's ``intended_for`` to another acquisition in the same spec.",
+      "properties": {
+        "entities": {
+          "$ref": "#/$defs/AcquisitionEntities",
+          "default": {
+            "acq": null,
+            "dir": null,
+            "run": null,
+            "task": null
+          }
+        },
+        "suffix": {
+          "title": "Suffix",
+          "type": "string"
+        }
+      },
+      "required": [
+        "suffix"
+      ],
+      "title": "AcquisitionRef",
+      "type": "object"
+    },
+    "AlternativeInference_AxisDirection_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/AxisDirection"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[AxisDirection]",
+      "type": "object"
+    },
+    "AlternativeInference_BrainCoverage_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/BrainCoverage"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[BrainCoverage]",
+      "type": "object"
+    },
+    "AlternativeInference_ImagingType_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/ImagingType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[ImagingType]",
+      "type": "object"
+    },
+    "AlternativeInference_MRAcquisitionType_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/MRAcquisitionType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[MRAcquisitionType]",
+      "type": "object"
+    },
+    "AlternativeInference_ParallelTechnique_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/ParallelTechnique"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[ParallelTechnique]",
+      "type": "object"
+    },
+    "AlternativeInference_PulseSequenceType_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/PulseSequenceType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[PulseSequenceType]",
+      "type": "object"
+    },
+    "AlternativeInference_SliceOrderPattern_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrderPattern"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[SliceOrderPattern]",
+      "type": "object"
+    },
+    "AlternativeInference_SliceOrientation_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrientation"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[SliceOrientation]",
+      "type": "object"
+    },
+    "AlternativeInference_bool_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[bool]",
+      "type": "object"
+    },
+    "AlternativeInference_float_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[float]",
+      "type": "object"
+    },
+    "AlternativeInference_int_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[int]",
+      "type": "object"
+    },
+    "AlternativeInference_list_float__": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[list[float]]",
+      "type": "object"
+    },
+    "AlternativeInference_str_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[str]",
+      "type": "object"
+    },
+    "AlternativeInference_tuple_float__________": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[tuple[float, ...]]",
+      "type": "object"
+    },
+    "AlternativeInference_tuple_float__float__float__": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[tuple[float, float, float]]",
+      "type": "object"
+    },
+    "AlternativeInference_tuple_int__________": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[tuple[int, ...]]",
+      "type": "object"
+    },
+    "AnatomicalAcquisition": {
+      "properties": {
+        "echo_time_ms": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "entities": {
+          "$ref": "#/$defs/AcquisitionEntities",
+          "default": {
+            "acq": null,
+            "dir": null,
+            "run": null,
+            "task": null
+          }
+        },
+        "field_strength_t": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "flip_angle_deg": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "fov_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__________"
+        },
+        "imaging_type": {
+          "$ref": "#/$defs/ProvenancedField_ImagingType_"
+        },
+        "manufacturer": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "matrix_size": {
+          "$ref": "#/$defs/ProvenancedField_tuple_int__________"
+        },
+        "mr_acquisition_type": {
+          "$ref": "#/$defs/ProvenancedField_MRAcquisitionType_"
+        },
+        "partial_fourier": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "pulse_sequence_type": {
+          "$ref": "#/$defs/ProvenancedField_PulseSequenceType_"
+        },
+        "receive_coil": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "repetition_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "scanner_model": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "suffix": {
+          "enum": [
+            "T1w",
+            "T2w"
+          ],
+          "title": "Suffix",
+          "type": "string"
+        },
+        "voxel_size_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__float__float__"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "scanner_model",
+        "field_strength_t",
+        "receive_coil",
+        "pulse_sequence_type",
+        "imaging_type",
+        "mr_acquisition_type",
+        "partial_fourier",
+        "repetition_time_s",
+        "flip_angle_deg",
+        "voxel_size_mm",
+        "matrix_size",
+        "fov_mm",
+        "suffix",
+        "echo_time_ms"
+      ],
+      "title": "AnatomicalAcquisition",
+      "type": "object"
+    },
+    "AxisDirection": {
+      "description": "BIDS-style i/j/k axis with optional sign reversal.",
+      "enum": [
+        "i",
+        "i-",
+        "j",
+        "j-",
+        "k",
+        "k-"
+      ],
+      "title": "AxisDirection",
+      "type": "string"
+    },
+    "BrainCoverage": {
+      "properties": {
+        "brainstem_included": {
+          "title": "Brainstem Included",
+          "type": "boolean"
+        },
+        "cerebellum_included": {
+          "title": "Cerebellum Included",
+          "type": "boolean"
+        },
+        "whole_brain": {
+          "title": "Whole Brain",
+          "type": "boolean"
+        },
+        "z_extent_mm": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Z Extent Mm"
+        }
+      },
+      "required": [
+        "whole_brain",
+        "cerebellum_included",
+        "brainstem_included"
+      ],
+      "title": "BrainCoverage",
+      "type": "object"
+    },
+    "DatasetRef": {
+      "description": "The context (dataset and/or site) this spec describes.",
+      "properties": {
+        "accession": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Accession"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "site": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Site"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Url"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "DatasetRef",
+      "type": "object"
+    },
+    "DateInferredVersionBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "date_inferred_version",
+          "default": "date_inferred_version",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "inferred_version": {
+          "title": "Inferred Version",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "paper_date": {
+          "format": "date",
+          "title": "Paper Date",
+          "type": "string"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "inferred_version",
+        "paper_date"
+      ],
+      "title": "DateInferredVersionBasis",
+      "type": "object"
+    },
+    "Deferral": {
+      "description": "One paper\u2192citation hand-off: the citation pointed at and the sentence saying so.",
+      "properties": {
+        "ref": {
+          "title": "Ref",
+          "type": "string"
+        },
+        "span": {
+          "$ref": "#/$defs/Span"
+        },
+        "target_kind": {
+          "default": "paper",
+          "enum": [
+            "paper",
+            "pipeline",
+            "dataset_doc"
+          ],
+          "title": "Target Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "ref",
+        "span"
+      ],
+      "title": "Deferral",
+      "type": "object"
+    },
+    "DeferredToCitation": {
+      "description": "Paper explicitly refers methodological detail to another source.\n\nDistinct from MISSING_FROM_PAPER (which means \"we looked and found nothing\"):\nhere the paper *names* a citation. Coupled like MISSING for inference\npurposes \u2014 ``ProvenancedField`` rejects NOT_APPLICABLE on this arm.",
+      "properties": {
+        "deferrals": {
+          "items": {
+            "$ref": "#/$defs/Deferral"
+          },
+          "minItems": 1,
+          "title": "Deferrals",
+          "type": "array"
+        },
+        "searched_terms": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Searched Terms",
+          "type": "array"
+        },
+        "sections_searched": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sections Searched",
+          "type": "array"
+        },
+        "status": {
+          "const": "DEFERRED_TO_CITATION",
+          "default": "DEFERRED_TO_CITATION",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "deferrals",
+        "searched_terms",
+        "sections_searched"
+      ],
+      "title": "DeferredToCitation",
+      "type": "object"
+    },
+    "DerivedBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "derived",
+          "default": "derived",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source_field_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Field Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "source_field_ids"
+      ],
+      "title": "DerivedBasis",
+      "type": "object"
+    },
+    "Extracted_AxisDirection_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/AxisDirection"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[AxisDirection]",
+      "type": "object"
+    },
+    "Extracted_BrainCoverage_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BrainCoverage"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[BrainCoverage]",
+      "type": "object"
+    },
+    "Extracted_ImagingType_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ImagingType"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[ImagingType]",
+      "type": "object"
+    },
+    "Extracted_MRAcquisitionType_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/MRAcquisitionType"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[MRAcquisitionType]",
+      "type": "object"
+    },
+    "Extracted_ParallelTechnique_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ParallelTechnique"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[ParallelTechnique]",
+      "type": "object"
+    },
+    "Extracted_PulseSequenceType_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/PulseSequenceType"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[PulseSequenceType]",
+      "type": "object"
+    },
+    "Extracted_SliceOrderPattern_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrderPattern"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[SliceOrderPattern]",
+      "type": "object"
+    },
+    "Extracted_SliceOrientation_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrientation"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[SliceOrientation]",
+      "type": "object"
+    },
+    "Extracted_bool_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[bool]",
+      "type": "object"
+    },
+    "Extracted_float_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[float]",
+      "type": "object"
+    },
+    "Extracted_int_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[int]",
+      "type": "object"
+    },
+    "Extracted_list_float__": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[list[float]]",
+      "type": "object"
+    },
+    "Extracted_str_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[str]",
+      "type": "object"
+    },
+    "Extracted_tuple_float__________": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[tuple[float, ...]]",
+      "type": "object"
+    },
+    "Extracted_tuple_float__float__float__": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[tuple[float, float, float]]",
+      "type": "object"
+    },
+    "Extracted_tuple_int__________": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[tuple[int, ...]]",
+      "type": "object"
+    },
+    "FieldConventionBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "field_convention",
+          "default": "field_convention",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "FieldConventionBasis",
+      "type": "object"
+    },
+    "FieldmapAcquisition": {
+      "properties": {
+        "echo_times_ms": {
+          "$ref": "#/$defs/ProvenancedField_list_float__"
+        },
+        "effective_echo_spacing_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "entities": {
+          "$ref": "#/$defs/AcquisitionEntities",
+          "default": {
+            "acq": null,
+            "dir": null,
+            "run": null,
+            "task": null
+          }
+        },
+        "field_strength_t": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "flip_angle_deg": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "fov_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__________"
+        },
+        "imaging_type": {
+          "$ref": "#/$defs/ProvenancedField_ImagingType_"
+        },
+        "intended_for": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/AcquisitionRef"
+          },
+          "title": "Intended For",
+          "type": "array"
+        },
+        "manufacturer": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "matrix_size": {
+          "$ref": "#/$defs/ProvenancedField_tuple_int__________"
+        },
+        "mr_acquisition_type": {
+          "$ref": "#/$defs/ProvenancedField_MRAcquisitionType_"
+        },
+        "partial_fourier": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "phase_encoding_direction": {
+          "$ref": "#/$defs/ProvenancedField_AxisDirection_"
+        },
+        "pulse_sequence_type": {
+          "$ref": "#/$defs/ProvenancedField_PulseSequenceType_"
+        },
+        "receive_coil": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "repetition_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "scanner_model": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "suffix": {
+          "enum": [
+            "epi",
+            "phasediff",
+            "magnitude1",
+            "magnitude2",
+            "fieldmap"
+          ],
+          "title": "Suffix",
+          "type": "string"
+        },
+        "total_readout_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "voxel_size_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__float__float__"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "scanner_model",
+        "field_strength_t",
+        "receive_coil",
+        "pulse_sequence_type",
+        "imaging_type",
+        "mr_acquisition_type",
+        "partial_fourier",
+        "repetition_time_s",
+        "flip_angle_deg",
+        "voxel_size_mm",
+        "matrix_size",
+        "fov_mm",
+        "suffix",
+        "phase_encoding_direction",
+        "effective_echo_spacing_s",
+        "total_readout_time_s",
+        "echo_times_ms"
+      ],
+      "title": "FieldmapAcquisition",
+      "type": "object"
+    },
+    "FirstLevelModel": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "FirstLevelModel",
+      "type": "object"
+    },
+    "FunctionalAcquisition": {
+      "properties": {
+        "acquisition_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "brain_coverage": {
+          "$ref": "#/$defs/ProvenancedField_BrainCoverage_"
+        },
+        "distortion_correction_onscanner": {
+          "$ref": "#/$defs/ProvenancedField_bool_"
+        },
+        "echo_time_ms": {
+          "$ref": "#/$defs/ProvenancedField_list_float__"
+        },
+        "effective_echo_spacing_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "entities": {
+          "$ref": "#/$defs/AcquisitionEntities",
+          "default": {
+            "acq": null,
+            "dir": null,
+            "run": null,
+            "task": null
+          }
+        },
+        "field_strength_t": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "flip_angle_deg": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "fov_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__________"
+        },
+        "imaging_type": {
+          "$ref": "#/$defs/ProvenancedField_ImagingType_"
+        },
+        "manufacturer": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "matrix_size": {
+          "$ref": "#/$defs/ProvenancedField_tuple_int__________"
+        },
+        "mr_acquisition_type": {
+          "$ref": "#/$defs/ProvenancedField_MRAcquisitionType_"
+        },
+        "multiband_factor": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "n_dummy_scanner": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "n_echoes": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "n_slices": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "n_volumes": {
+          "$ref": "#/$defs/ProvenancedField_int_"
+        },
+        "parallel_factor": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "parallel_technique": {
+          "$ref": "#/$defs/ProvenancedField_ParallelTechnique_"
+        },
+        "partial_fourier": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "pe_reversal": {
+          "$ref": "#/$defs/ProvenancedField_bool_"
+        },
+        "phase_encoding_direction": {
+          "$ref": "#/$defs/ProvenancedField_AxisDirection_"
+        },
+        "phase_encoding_reported": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "prospective_motion_correction": {
+          "$ref": "#/$defs/ProvenancedField_bool_"
+        },
+        "pulse_sequence_type": {
+          "$ref": "#/$defs/ProvenancedField_PulseSequenceType_"
+        },
+        "receive_coil": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "recon_matrix_differs": {
+          "$ref": "#/$defs/ProvenancedField_bool_"
+        },
+        "repetition_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "scanner_model": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "shimming": {
+          "$ref": "#/$defs/ProvenancedField_str_"
+        },
+        "signal_inhomogeneity_correction": {
+          "$ref": "#/$defs/ProvenancedField_bool_"
+        },
+        "slice_angulation_deg": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "slice_encoding_direction": {
+          "$ref": "#/$defs/ProvenancedField_AxisDirection_"
+        },
+        "slice_gap_mm": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "slice_order_pattern": {
+          "$ref": "#/$defs/ProvenancedField_SliceOrderPattern_"
+        },
+        "slice_orientation": {
+          "$ref": "#/$defs/ProvenancedField_SliceOrientation_"
+        },
+        "slice_timing_s": {
+          "$ref": "#/$defs/ProvenancedField_list_float__"
+        },
+        "suffix": {
+          "const": "bold",
+          "default": "bold",
+          "title": "Suffix",
+          "type": "string"
+        },
+        "total_readout_time_s": {
+          "$ref": "#/$defs/ProvenancedField_float_"
+        },
+        "voxel_size_mm": {
+          "$ref": "#/$defs/ProvenancedField_tuple_float__float__float__"
+        }
+      },
+      "required": [
+        "manufacturer",
+        "scanner_model",
+        "field_strength_t",
+        "receive_coil",
+        "pulse_sequence_type",
+        "imaging_type",
+        "mr_acquisition_type",
+        "partial_fourier",
+        "repetition_time_s",
+        "flip_angle_deg",
+        "voxel_size_mm",
+        "matrix_size",
+        "fov_mm",
+        "echo_time_ms",
+        "n_echoes",
+        "acquisition_time_s",
+        "n_volumes",
+        "n_slices",
+        "slice_gap_mm",
+        "slice_orientation",
+        "slice_angulation_deg",
+        "brain_coverage",
+        "slice_order_pattern",
+        "slice_timing_s",
+        "slice_encoding_direction",
+        "multiband_factor",
+        "parallel_technique",
+        "parallel_factor",
+        "phase_encoding_reported",
+        "phase_encoding_direction",
+        "pe_reversal",
+        "effective_echo_spacing_s",
+        "total_readout_time_s",
+        "prospective_motion_correction",
+        "signal_inhomogeneity_correction",
+        "distortion_correction_onscanner",
+        "recon_matrix_differs",
+        "shimming",
+        "n_dummy_scanner"
+      ],
+      "title": "FunctionalAcquisition",
+      "type": "object"
+    },
+    "GroupLevelModel": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "GroupLevelModel",
+      "type": "object"
+    },
+    "ImagingType": {
+      "enum": [
+        "epi",
+        "spiral",
+        "other"
+      ],
+      "title": "ImagingType",
+      "type": "string"
+    },
+    "InferredDefault_AxisDirection_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_AxisDirection_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/AxisDirection"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[AxisDirection]",
+      "type": "object"
+    },
+    "InferredDefault_BrainCoverage_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_BrainCoverage_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/BrainCoverage"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[BrainCoverage]",
+      "type": "object"
+    },
+    "InferredDefault_ImagingType_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_ImagingType_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ImagingType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[ImagingType]",
+      "type": "object"
+    },
+    "InferredDefault_MRAcquisitionType_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_MRAcquisitionType_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/MRAcquisitionType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[MRAcquisitionType]",
+      "type": "object"
+    },
+    "InferredDefault_ParallelTechnique_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_ParallelTechnique_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/ParallelTechnique"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[ParallelTechnique]",
+      "type": "object"
+    },
+    "InferredDefault_PulseSequenceType_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_PulseSequenceType_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/PulseSequenceType"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[PulseSequenceType]",
+      "type": "object"
+    },
+    "InferredDefault_SliceOrderPattern_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_SliceOrderPattern_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrderPattern"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[SliceOrderPattern]",
+      "type": "object"
+    },
+    "InferredDefault_SliceOrientation_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_SliceOrientation_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SliceOrientation"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[SliceOrientation]",
+      "type": "object"
+    },
+    "InferredDefault_bool_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_bool_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[bool]",
+      "type": "object"
+    },
+    "InferredDefault_float_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_float_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "number"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[float]",
+      "type": "object"
+    },
+    "InferredDefault_int_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_int_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[int]",
+      "type": "object"
+    },
+    "InferredDefault_list_float__": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_list_float__"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[list[float]]",
+      "type": "object"
+    },
+    "InferredDefault_str_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_str_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[str]",
+      "type": "object"
+    },
+    "InferredDefault_tuple_float__________": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_tuple_float__________"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "number"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[tuple[float, ...]]",
+      "type": "object"
+    },
+    "InferredDefault_tuple_float__float__float__": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_tuple_float__float__float__"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "maxItems": 3,
+          "minItems": 3,
+          "prefixItems": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            },
+            {
+              "type": "number"
+            }
+          ],
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[tuple[float, float, float]]",
+      "type": "object"
+    },
+    "InferredDefault_tuple_int__________": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_tuple_int__________"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Value",
+          "type": "array"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[tuple[int, ...]]",
+      "type": "object"
+    },
+    "LabPriorBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "lab_prior",
+          "default": "lab_prior",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "lab_id": {
+          "title": "Lab Id",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "lab_id"
+      ],
+      "title": "LabPriorBasis",
+      "type": "object"
+    },
+    "LeftMissing": {
+      "properties": {
+        "reason": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason"
+        },
+        "status": {
+          "const": "LEFT_MISSING",
+          "default": "LEFT_MISSING",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "LeftMissing",
+      "type": "object"
+    },
+    "MRAcquisitionType": {
+      "enum": [
+        "2D",
+        "3D"
+      ],
+      "title": "MRAcquisitionType",
+      "type": "string"
+    },
+    "MissingFromPaper": {
+      "properties": {
+        "searched_terms": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Searched Terms",
+          "type": "array"
+        },
+        "sections_searched": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Sections Searched",
+          "type": "array"
+        },
+        "status": {
+          "const": "MISSING_FROM_PAPER",
+          "default": "MISSING_FROM_PAPER",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "searched_terms",
+        "sections_searched"
+      ],
+      "title": "MissingFromPaper",
+      "type": "object"
+    },
+    "NotApplicable": {
+      "description": "Extraction succeeded; no inference applies. Explicit per never-null ethos.",
+      "properties": {
+        "status": {
+          "const": "NOT_APPLICABLE",
+          "default": "NOT_APPLICABLE",
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "title": "NotApplicable",
+      "type": "object"
+    },
+    "PaperRef": {
+      "properties": {
+        "sha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sha256"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source"
+      ],
+      "title": "PaperRef",
+      "type": "object"
+    },
+    "ParallelTechnique": {
+      "enum": [
+        "GRAPPA",
+        "SENSE",
+        "mSENSE",
+        "other",
+        "none"
+      ],
+      "title": "ParallelTechnique",
+      "type": "string"
+    },
+    "Preprocessing": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "Preprocessing",
+      "type": "object"
+    },
+    "PriorPublicationBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "prior_publication",
+          "default": "prior_publication",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "citation": {
+          "title": "Citation",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        }
+      },
+      "required": [
+        "citation"
+      ],
+      "title": "PriorPublicationBasis",
+      "type": "object"
+    },
+    "ProvenancedField_AxisDirection_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_AxisDirection_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_AxisDirection_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_AxisDirection_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_AxisDirection_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[AxisDirection]",
+      "type": "object"
+    },
+    "ProvenancedField_BrainCoverage_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_BrainCoverage_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_BrainCoverage_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_BrainCoverage_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_BrainCoverage_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[BrainCoverage]",
+      "type": "object"
+    },
+    "ProvenancedField_ImagingType_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_ImagingType_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_ImagingType_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_ImagingType_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_ImagingType_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[ImagingType]",
+      "type": "object"
+    },
+    "ProvenancedField_MRAcquisitionType_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_MRAcquisitionType_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_MRAcquisitionType_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_MRAcquisitionType_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_MRAcquisitionType_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[MRAcquisitionType]",
+      "type": "object"
+    },
+    "ProvenancedField_ParallelTechnique_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_ParallelTechnique_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_ParallelTechnique_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_ParallelTechnique_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_ParallelTechnique_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[ParallelTechnique]",
+      "type": "object"
+    },
+    "ProvenancedField_PulseSequenceType_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_PulseSequenceType_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_PulseSequenceType_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_PulseSequenceType_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_PulseSequenceType_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[PulseSequenceType]",
+      "type": "object"
+    },
+    "ProvenancedField_SliceOrderPattern_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_SliceOrderPattern_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_SliceOrderPattern_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_SliceOrderPattern_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_SliceOrderPattern_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[SliceOrderPattern]",
+      "type": "object"
+    },
+    "ProvenancedField_SliceOrientation_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_SliceOrientation_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_SliceOrientation_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_SliceOrientation_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_SliceOrientation_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[SliceOrientation]",
+      "type": "object"
+    },
+    "ProvenancedField_bool_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_bool_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_bool_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_bool_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_bool_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[bool]",
+      "type": "object"
+    },
+    "ProvenancedField_float_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_float_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_float_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_float_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_float_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[float]",
+      "type": "object"
+    },
+    "ProvenancedField_int_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_int_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_int_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_int_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_int_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[int]",
+      "type": "object"
+    },
+    "ProvenancedField_list_float__": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_list_float__",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_list_float__"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_list_float__",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_list_float__"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[list[float]]",
+      "type": "object"
+    },
+    "ProvenancedField_str_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_str_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_str_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_str_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_str_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[str]",
+      "type": "object"
+    },
+    "ProvenancedField_tuple_float__________": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_tuple_float__________",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_tuple_float__________"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_tuple_float__________",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_tuple_float__________"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[tuple[float, ...]]",
+      "type": "object"
+    },
+    "ProvenancedField_tuple_float__float__float__": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_tuple_float__float__float__",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_tuple_float__float__float__"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_tuple_float__float__float__",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_tuple_float__float__float__"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[tuple[float, float, float]]",
+      "type": "object"
+    },
+    "ProvenancedField_tuple_int__________": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_tuple_int__________",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_tuple_int__________"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_tuple_int__________",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_tuple_int__________"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[tuple[int, ...]]",
+      "type": "object"
+    },
+    "PulseSequenceType": {
+      "enum": [
+        "gradient_echo",
+        "spin_echo",
+        "other"
+      ],
+      "title": "PulseSequenceType",
+      "type": "string"
+    },
+    "ReplicationSpec": {
+      "description": "Per-dataset replication unit. Wrapped by :class:`StudySpec`.",
+      "properties": {
+        "acquisitions": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "T1w": "#/$defs/AnatomicalAcquisition",
+                "T2w": "#/$defs/AnatomicalAcquisition",
+                "bold": "#/$defs/FunctionalAcquisition",
+                "epi": "#/$defs/FieldmapAcquisition",
+                "fieldmap": "#/$defs/FieldmapAcquisition",
+                "magnitude1": "#/$defs/FieldmapAcquisition",
+                "magnitude2": "#/$defs/FieldmapAcquisition",
+                "phasediff": "#/$defs/FieldmapAcquisition"
+              },
+              "propertyName": "suffix"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/FunctionalAcquisition"
+              },
+              {
+                "$ref": "#/$defs/AnatomicalAcquisition"
+              },
+              {
+                "$ref": "#/$defs/FieldmapAcquisition"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Acquisitions",
+          "type": "array"
+        },
+        "dataset": {
+          "$ref": "#/$defs/DatasetRef"
+        },
+        "first_level": {
+          "$ref": "#/$defs/FirstLevelModel"
+        },
+        "group_level": {
+          "$ref": "#/$defs/GroupLevelModel"
+        },
+        "preprocessing": {
+          "$ref": "#/$defs/Preprocessing"
+        },
+        "thresholding": {
+          "$ref": "#/$defs/Thresholding"
+        }
+      },
+      "required": [
+        "dataset",
+        "acquisitions",
+        "preprocessing",
+        "first_level",
+        "group_level",
+        "thresholding"
+      ],
+      "title": "ReplicationSpec",
+      "type": "object"
+    },
+    "RunMeta": {
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "paper": {
+          "$ref": "#/$defs/PaperRef"
+        },
+        "run_id": {
+          "title": "Run Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "paper"
+      ],
+      "title": "RunMeta",
+      "type": "object"
+    },
+    "SliceOrderPattern": {
+      "enum": [
+        "ascending",
+        "descending",
+        "interleaved_ascending",
+        "interleaved_descending",
+        "unknown"
+      ],
+      "title": "SliceOrderPattern",
+      "type": "string"
+    },
+    "SliceOrientation": {
+      "enum": [
+        "axial",
+        "sagittal",
+        "coronal",
+        "oblique"
+      ],
+      "title": "SliceOrientation",
+      "type": "string"
+    },
+    "Span": {
+      "description": "Char-offset back-pointer into ParsedPaper.text. Internal-consistency only;\nsubstring existence vs. the paper is a downstream Tier-1 check.",
+      "properties": {
+        "end": {
+          "exclusiveMinimum": 0,
+          "title": "End",
+          "type": "integer"
+        },
+        "section": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Section"
+        },
+        "start": {
+          "minimum": 0,
+          "title": "Start",
+          "type": "integer"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "start",
+        "end",
+        "text"
+      ],
+      "title": "Span",
+      "type": "object"
+    },
+    "StudyAnalysis": {
+      "description": "TODO: cross-dataset analysis layer (concatenation, FC, reliability) \u2014\nout of scope for v0.1.0.",
+      "properties": {},
+      "title": "StudyAnalysis",
+      "type": "object"
+    },
+    "Thresholding": {
+      "description": "TODO: grow in a later chat.",
+      "properties": {},
+      "title": "Thresholding",
+      "type": "object"
+    },
+    "VersionDefaultBasis": {
+      "properties": {
+        "basis_type": {
+          "const": "version_default",
+          "default": "version_default",
+          "title": "Basis Type",
+          "type": "string"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "tool": {
+          "title": "Tool",
+          "type": "string"
+        },
+        "version": {
+          "title": "Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tool",
+        "version"
+      ],
+      "title": "VersionDefaultBasis",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "run": {
+      "$ref": "#/$defs/RunMeta"
+    },
+    "schema_version": {
+      "const": "0.1.0",
+      "default": "0.1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "specs": {
+      "items": {
+        "$ref": "#/$defs/ReplicationSpec"
+      },
+      "minItems": 1,
+      "title": "Specs",
+      "type": "array"
+    },
+    "study_analysis": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/StudyAnalysis"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "required": [
+    "run",
+    "specs"
+  ],
+  "title": "StudySpec",
+  "type": "object"
+}

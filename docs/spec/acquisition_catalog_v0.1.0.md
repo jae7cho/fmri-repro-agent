@@ -82,9 +82,9 @@ schema (`src/schema/objects/metadata.yaml`, BIDS 1.11.x).
 
 | Field | Type | Unit | BIDS key | Source | Justify | Infer |
 |---|---|---|---|---|---|---|
-| voxel_size_mm | tuple[float,float,float] | mm | — | header | C/P | N |
+| voxel_size_mm | tuple[float,float,float] | mm | — | derived | C/P | deriv |
 | slice_gap_mm | float | mm | — | header | C | N |
-| matrix_size | tuple[int, ...] | — | — | header | C | N |
+| matrix_size | tuple[int, ...] | — | — | derived | C | deriv |
 | fov_mm | tuple[float, ...] | mm | — | derived | C | deriv |
 | n_slices | int | — | (len SliceTiming) | header | C | N |
 | n_volumes | int | — | — | header | C | N |
@@ -92,8 +92,13 @@ schema (`src/schema/objects/metadata.yaml`, BIDS 1.11.x).
 | slice_angulation_deg | float | deg | — | header | C(cond) | N |
 | brain_coverage | BrainCoverage | — | (no key) | none | C | N |
 
-`fov_mm` derived from `[acquisition.voxel_size_mm, acquisition.matrix_size]`.
-`matrix_size`/`fov_mm` are length 2 (2D) or 3 (3D).
+`voxel_size_mm` / `matrix_size` / `fov_mm` form a mutually derivable triple
+(any one from the other two): `voxel = fov / matrix`, `fov = voxel × matrix`,
+`matrix = fov / voxel`. All three are `inference_applicable=True` with a
+`derived` basis whose `source_field_ids` cites the other two. In v0.2+ the
+recovery layer prefers NIfTI-header values for `voxel_size_mm` / `matrix_size`
+when the dataset is on disk.
+`matrix_size` / `fov_mm` are length 2 (2D) or 3 (3D).
 
 ### Slice order & timing
 

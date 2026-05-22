@@ -11,6 +11,9 @@ from pydantic import ValidationError
 
 from fmri_repro.spec.provenance import (
     AlternativeInference,
+    Deferral,
+    DeferredToCitation,
+    DerivedBasis,
     Extracted,
     FieldConventionBasis,
     InferredDefault,
@@ -212,12 +215,14 @@ def test_json_schema_export(payload_type: type) -> None:
         "PriorPublicationBasis",
         "LabPriorBasis",
         "FieldConventionBasis",
+        "DerivedBasis",
     ):
         assert basis_def in defs, f"{basis_def} missing from $defs for {payload_type}"
     # Both extraction arms and all three inference arms must be reachable.
     # Names are pydantic-generated; check substrings.
     def_names = "\n".join(defs.keys())
     assert "MissingFromPaper" in def_names
+    assert "DeferredToCitation" in def_names
     assert "LeftMissing" in def_names
     assert "NotApplicable" in def_names
     assert "Extracted" in def_names
@@ -244,3 +249,129 @@ def test_provenanced_field_json_round_trip() -> None:
     js = pf.model_dump_json()
     restored = ProvenancedField[float].model_validate_json(js)
     assert restored == pf
+
+
+# ---------------------------------------------------------------------------
+# 13. DerivedBasis accepted under ceiling (boundary: 0.70 ≤ 0.70)
+# ---------------------------------------------------------------------------
+def test_derived_basis_at_ceiling_accepted() -> None:
+    inf = InferredDefault[float](
+        value=300.0,
+        basis=DerivedBasis(source_field_ids=["acquisition.n_volumes", "acquisition.tr"]),
+        confidence=0.70,
+        alternative_inferences=[],
+    )
+    assert inf.basis.basis_type == "derived"
+
+
+# ---------------------------------------------------------------------------
+# 14. DerivedBasis ceiling — confidence > 0.70 rejected
+# ---------------------------------------------------------------------------
+def test_derived_basis_ceiling_exceeded() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        InferredDefault[float](
+            value=300.0,
+            basis=DerivedBasis(source_field_ids=["acquisition.tr"]),
+            confidence=0.71,
+            alternative_inferences=[],
+        )
+    msg = str(excinfo.value)
+    assert "derived" in msg
+    assert "0.7" in msg
+
+
+# ---------------------------------------------------------------------------
+# 15. DerivedBasis source_field_ids — empty or omitted rejected
+# ---------------------------------------------------------------------------
+def test_derived_basis_source_field_ids_required() -> None:
+    with pytest.raises(ValidationError):
+        DerivedBasis(source_field_ids=[])
+    with pytest.raises(ValidationError):
+        DerivedBasis.model_validate({})  # field omitted
+
+
+# ---------------------------------------------------------------------------
+# DEFERRED_TO_CITATION arm
+# ---------------------------------------------------------------------------
+def _deferral() -> Deferral:
+    return Deferral(
+        ref="Gordon 2017",
+        span=Span(
+            start=0,
+            end=40,
+            text="preprocessing as in Gordon et al. (2017)",
+            section="Methods",
+        ),
+        target_kind="paper",
+    )
+
+
+# ---------------------------------------------------------------------------
+# 16. DEFERRED_TO_CITATION + LEFT_MISSING — happy path, round-trips
+# ---------------------------------------------------------------------------
+def test_deferred_to_citation_accepts_with_one_deferral() -> None:
+    pf = ProvenancedField[float](
+        field_id="acquisition.partial_fourier",
+        extraction=DeferredToCitation(
+            deferrals=[_deferral()],
+            searched_terms=["partial fourier"],
+            sections_searched=["Methods"],
+        ),
+        inference=LeftMissing(reason="paper defers to cited methods"),
+    )
+    assert pf.extraction.status == "DEFERRED_TO_CITATION"
+    assert ProvenancedField[float].model_validate_json(pf.model_dump_json()) == pf
+
+
+# ---------------------------------------------------------------------------
+# 17. DeferredToCitation rejects empty deferrals
+# ---------------------------------------------------------------------------
+def test_deferred_to_citation_rejects_empty_deferrals() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        DeferredToCitation(
+            deferrals=[],
+            searched_terms=[],
+            sections_searched=["Methods"],
+        )
+    assert "deferrals" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# 18. DEFERRED_TO_CITATION + NOT_APPLICABLE rejected
+# ---------------------------------------------------------------------------
+def test_deferred_plus_not_applicable_rejected() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        ProvenancedField[float](
+            field_id="acquisition.partial_fourier",
+            extraction=DeferredToCitation(
+                deferrals=[_deferral()],
+                searched_terms=[],
+                sections_searched=["Methods"],
+            ),
+            inference=NotApplicable(),
+        )
+    msg = str(excinfo.value)
+    assert "DEFERRED_TO_CITATION" in msg
+    assert "INFERRED_DEFAULT or LEFT_MISSING" in msg
+
+
+# ---------------------------------------------------------------------------
+# 19. DEFERRED_TO_CITATION + INFERRED_DEFAULT accepted (under ceiling)
+# ---------------------------------------------------------------------------
+def test_deferred_plus_inferred_default_accepted() -> None:
+    pf = ProvenancedField[float](
+        field_id="acquisition.partial_fourier",
+        extraction=DeferredToCitation(
+            deferrals=[_deferral()],
+            searched_terms=["partial fourier"],
+            sections_searched=["Methods"],
+        ),
+        inference=InferredDefault[float](
+            value=0.75,
+            basis=VersionDefaultBasis(tool="fMRIPrep", version="23.2.1"),
+            confidence=0.9,
+            alternative_inferences=[],
+        ),
+    )
+    assert pf.inference.status == "INFERRED_DEFAULT"
+    assert ProvenancedField[float].model_validate_json(pf.model_dump_json()) == pf

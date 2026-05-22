@@ -25,6 +25,7 @@ BASIS_CEILINGS: dict[str, float] = {
     "prior_publication": 0.60,
     "lab_prior": 0.50,
     "field_convention": 0.40,
+    "derived": 0.70,
 }
 
 
@@ -56,6 +57,28 @@ class Extracted(BaseModel, Generic[T]):
 class MissingFromPaper(BaseModel):
     status: Literal["MISSING_FROM_PAPER"] = "MISSING_FROM_PAPER"
     searched_terms: list[str]  # required (no default); empty list allowed
+    sections_searched: list[str]
+
+
+class Deferral(BaseModel):
+    """One paper→citation hand-off: the citation pointed at and the sentence saying so."""
+
+    ref: str  # citation label / DOI / pipeline name
+    span: Span  # the deferring sentence
+    target_kind: Literal["paper", "pipeline", "dataset_doc"] = "paper"
+
+
+class DeferredToCitation(BaseModel):
+    """Paper explicitly refers methodological detail to another source.
+
+    Distinct from MISSING_FROM_PAPER (which means "we looked and found nothing"):
+    here the paper *names* a citation. Coupled like MISSING for inference
+    purposes — ``ProvenancedField`` rejects NOT_APPLICABLE on this arm.
+    """
+
+    status: Literal["DEFERRED_TO_CITATION"] = "DEFERRED_TO_CITATION"
+    deferrals: list[Deferral] = Field(min_length=1)
+    searched_terms: list[str]
     sections_searched: list[str]
 
 
@@ -93,12 +116,19 @@ class FieldConventionBasis(BaseModel):
     note: str | None = None
 
 
+class DerivedBasis(BaseModel):
+    basis_type: Literal["derived"] = "derived"
+    source_field_ids: list[str] = Field(min_length=1)
+    note: str | None = None
+
+
 Basis = Annotated[
     VersionDefaultBasis
     | DateInferredVersionBasis
     | PriorPublicationBasis
     | LabPriorBasis
-    | FieldConventionBasis,
+    | FieldConventionBasis
+    | DerivedBasis,
     Field(discriminator="basis_type"),
 ]
 
@@ -148,7 +178,7 @@ class NotApplicable(BaseModel):
 class ProvenancedField(BaseModel, Generic[T]):
     field_id: str  # dotted path e.g. "acquisition.tr" — for flat reports/Critic
     extraction: Annotated[
-        Extracted[T] | MissingFromPaper,
+        Extracted[T] | MissingFromPaper | DeferredToCitation,
         Field(discriminator="status"),
     ]
     inference: Annotated[
@@ -164,6 +194,6 @@ class ProvenancedField(BaseModel, Generic[T]):
                 f"EXTRACTED requires inference=NOT_APPLICABLE (got {inf}); "
                 "Configurator must not touch extracted values."
             )
-        if ext == "MISSING_FROM_PAPER" and inf == "NOT_APPLICABLE":
-            raise ValueError("MISSING_FROM_PAPER requires INFERRED_DEFAULT or LEFT_MISSING.")
+        if ext in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION") and inf == "NOT_APPLICABLE":
+            raise ValueError(f"{ext} requires INFERRED_DEFAULT or LEFT_MISSING.")
         return self

@@ -1,78 +1,2035 @@
 {
   "schema_version": "0.1.0",
   "run": {
-    "run_id": "00000000000000000000000000000000",
+    "run_id": "00000000000000000000000000000001",
     "created_at": "2026-05-20T00:00:00Z",
     "paper": {
       "source": "10.1234/example",
       "sha256": null
     }
   },
-  "acquisition": {
-    "repetition_time_s": {
-      "field_id": "acquisition.repetition_time_s",
-      "extraction": {
-        "status": "EXTRACTED",
-        "value": 2.0,
-        "spans": [
-          {
-            "start": 1234,
-            "end": 1240,
-            "text": "TR = 2s",
-            "section": "Methods"
-          }
-        ],
-        "confidence": 0.97
+  "specs": [
+    {
+      "dataset": {
+        "name": "HNU1",
+        "accession": "HNU_1",
+        "source_url": "http://fcon_1000.projects.nitrc.org/indi/CoRR/html/hnu_1.html",
+        "site": null
       },
-      "inference": {
-        "status": "NOT_APPLICABLE"
-      }
-    },
-    "echo_time_ms": {
-      "field_id": "acquisition.echo_time_ms",
-      "extraction": {
-        "status": "MISSING_FROM_PAPER",
-        "searched_terms": ["TE", "echo time", "echo-time"],
-        "sections_searched": ["Methods", "Imaging Acquisition"]
-      },
-      "inference": {
-        "status": "INFERRED_DEFAULT",
-        "value": 30.0,
-        "basis": {
-          "basis_type": "version_default",
-          "tool": "fMRIPrep",
-          "version": "23.2.1",
-          "note": null
-        },
-        "confidence": 0.95,
-        "alternative_inferences": [
-          {
-            "value": 25.0,
-            "basis": {
-              "basis_type": "lab_prior",
-              "lab_id": "poldrack_lab_2023",
-              "note": null
+      "acquisitions": [
+        {
+          "manufacturer": {
+            "field_id": "manufacturer",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Siemens",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.98
             },
-            "confidence": 0.5
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "scanner_model": {
+            "field_id": "scanner_model",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Prisma",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "field_strength_t": {
+            "field_id": "field_strength_t",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 3.0,
+              "spans": [
+                {
+                  "start": 107,
+                  "end": 109,
+                  "text": "3T",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.99
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "receive_coil": {
+            "field_id": "receive_coil",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pulse_sequence_type": {
+            "field_id": "pulse_sequence_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "gradient_echo",
+              "spans": [
+                {
+                  "start": 200,
+                  "end": 217,
+                  "text": "gradient-echo EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "imaging_type": {
+            "field_id": "imaging_type",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "mr_acquisition_type": {
+            "field_id": "mr_acquisition_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "2D",
+              "spans": [
+                {
+                  "start": 220,
+                  "end": 226,
+                  "text": "2D EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.93
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "partial_fourier": {
+            "field_id": "partial_fourier",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "repetition_time_s": {
+            "field_id": "repetition_time_s",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 2.0,
+              "spans": [
+                {
+                  "start": 300,
+                  "end": 310,
+                  "text": "TR = 2.0 s",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.97
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "flip_angle_deg": {
+            "field_id": "flip_angle_deg",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 80.0,
+              "spans": [
+                {
+                  "start": 340,
+                  "end": 354,
+                  "text": "flip angle 80°",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "voxel_size_mm": {
+            "field_id": "voxel_size_mm",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                3.0,
+                3.0,
+                3.0
+              ],
+              "spans": [
+                {
+                  "start": 400,
+                  "end": 419,
+                  "text": "3 x 3 x 3 mm voxels",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "matrix_size": {
+            "field_id": "matrix_size",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "fov_mm": {
+            "field_id": "fov_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "FOV",
+                "field of view"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                192.0,
+                192.0,
+                108.0
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "voxel_size_mm",
+                  "matrix_size"
+                ],
+                "note": "voxel_size_mm * matrix_size, per axis"
+              },
+              "confidence": 0.55,
+              "alternative_inferences": []
+            }
+          },
+          "suffix": "T1w",
+          "entities": {
+            "task": null,
+            "run": null,
+            "dir": null,
+            "acq": null
+          },
+          "echo_time_ms": {
+            "field_id": "echo_time_ms",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 2.34,
+              "spans": [
+                {
+                  "start": 700,
+                  "end": 712,
+                  "text": "TE = 2.34 ms",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
           }
-        ]
-      }
+        },
+        {
+          "manufacturer": {
+            "field_id": "manufacturer",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Siemens",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.98
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "scanner_model": {
+            "field_id": "scanner_model",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Prisma",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "field_strength_t": {
+            "field_id": "field_strength_t",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 3.0,
+              "spans": [
+                {
+                  "start": 107,
+                  "end": 109,
+                  "text": "3T",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.99
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "receive_coil": {
+            "field_id": "receive_coil",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pulse_sequence_type": {
+            "field_id": "pulse_sequence_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "gradient_echo",
+              "spans": [
+                {
+                  "start": 200,
+                  "end": 217,
+                  "text": "gradient-echo EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "imaging_type": {
+            "field_id": "imaging_type",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "mr_acquisition_type": {
+            "field_id": "mr_acquisition_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "2D",
+              "spans": [
+                {
+                  "start": 220,
+                  "end": 226,
+                  "text": "2D EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.93
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "partial_fourier": {
+            "field_id": "partial_fourier",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "repetition_time_s": {
+            "field_id": "repetition_time_s",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 2.0,
+              "spans": [
+                {
+                  "start": 300,
+                  "end": 310,
+                  "text": "TR = 2.0 s",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.97
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "flip_angle_deg": {
+            "field_id": "flip_angle_deg",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 80.0,
+              "spans": [
+                {
+                  "start": 340,
+                  "end": 354,
+                  "text": "flip angle 80°",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "voxel_size_mm": {
+            "field_id": "voxel_size_mm",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                3.0,
+                3.0,
+                3.0
+              ],
+              "spans": [
+                {
+                  "start": 400,
+                  "end": 419,
+                  "text": "3 x 3 x 3 mm voxels",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "matrix_size": {
+            "field_id": "matrix_size",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "fov_mm": {
+            "field_id": "fov_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "FOV",
+                "field of view"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                192.0,
+                192.0,
+                108.0
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "voxel_size_mm",
+                  "matrix_size"
+                ],
+                "note": "voxel_size_mm * matrix_size, per axis"
+              },
+              "confidence": 0.55,
+              "alternative_inferences": []
+            }
+          },
+          "suffix": "bold",
+          "entities": {
+            "task": "rest",
+            "run": null,
+            "dir": null,
+            "acq": null
+          },
+          "echo_time_ms": {
+            "field_id": "echo_time_ms",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                30.0
+              ],
+              "spans": [
+                {
+                  "start": 320,
+                  "end": 330,
+                  "text": "TE = 30 ms",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "n_echoes": {
+            "field_id": "n_echoes",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "acquisition_time_s": {
+            "field_id": "acquisition_time_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "scan duration",
+                "acquisition time"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": 600.0,
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "n_volumes",
+                  "repetition_time_s"
+                ],
+                "note": "n_volumes * repetition_time_s"
+              },
+              "confidence": 0.65,
+              "alternative_inferences": []
+            }
+          },
+          "n_volumes": {
+            "field_id": "n_volumes",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 300,
+              "spans": [
+                {
+                  "start": 440,
+                  "end": 451,
+                  "text": "300 volumes",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "n_slices": {
+            "field_id": "n_slices",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 36,
+              "spans": [
+                {
+                  "start": 420,
+                  "end": 429,
+                  "text": "36 slices",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "slice_gap_mm": {
+            "field_id": "slice_gap_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_orientation": {
+            "field_id": "slice_orientation",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_angulation_deg": {
+            "field_id": "slice_angulation_deg",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "brain_coverage": {
+            "field_id": "brain_coverage",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_order_pattern": {
+            "field_id": "slice_order_pattern",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "interleaved_ascending",
+              "spans": [
+                {
+                  "start": 460,
+                  "end": 493,
+                  "text": "interleaved ascending slice order",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.9
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "slice_timing_s": {
+            "field_id": "slice_timing_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "slice timing",
+                "SliceTiming"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                0.0,
+                1.0,
+                0.0556,
+                1.0556
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "slice_order_pattern",
+                  "n_slices",
+                  "repetition_time_s"
+                ],
+                "note": "reconstructed from slice_order_pattern + n_slices + TR"
+              },
+              "confidence": 0.5,
+              "alternative_inferences": []
+            }
+          },
+          "slice_encoding_direction": {
+            "field_id": "slice_encoding_direction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "multiband_factor": {
+            "field_id": "multiband_factor",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 4,
+              "spans": [
+                {
+                  "start": 500,
+                  "end": 518,
+                  "text": "multiband factor 4",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.92
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "parallel_technique": {
+            "field_id": "parallel_technique",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "GRAPPA",
+                "SENSE",
+                "parallel imaging"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": "none",
+              "basis": {
+                "basis_type": "field_convention",
+                "source": "BIDS ParallelAcquisitionTechnique ∅ → 'none'",
+                "note": "convention: absence of mention defaults to no parallel technique"
+              },
+              "confidence": 0.35,
+              "alternative_inferences": []
+            }
+          },
+          "parallel_factor": {
+            "field_id": "parallel_factor",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "phase_encoding_reported": {
+            "field_id": "phase_encoding_reported",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "phase_encoding_direction": {
+            "field_id": "phase_encoding_direction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pe_reversal": {
+            "field_id": "pe_reversal",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "effective_echo_spacing_s": {
+            "field_id": "effective_echo_spacing_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "total_readout_time_s": {
+            "field_id": "total_readout_time_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "prospective_motion_correction": {
+            "field_id": "prospective_motion_correction",
+            "extraction": {
+              "status": "DEFERRED_TO_CITATION",
+              "deferrals": [
+                {
+                  "ref": "Gordon 2017",
+                  "span": {
+                    "start": 550,
+                    "end": 615,
+                    "text": "scanner-side motion handling as described in Gordon et al. (2017)",
+                    "section": "Methods"
+                  },
+                  "target_kind": "paper"
+                }
+              ],
+              "searched_terms": [
+                "prospective motion correction",
+                "PMC"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "paper defers to cited methods"
+            }
+          },
+          "signal_inhomogeneity_correction": {
+            "field_id": "signal_inhomogeneity_correction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "distortion_correction_onscanner": {
+            "field_id": "distortion_correction_onscanner",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "recon_matrix_differs": {
+            "field_id": "recon_matrix_differs",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "shimming": {
+            "field_id": "shimming",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "shim",
+                "shimming"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "reporting-only; not modeled by pipeline in v0.1.0"
+            }
+          },
+          "n_dummy_scanner": {
+            "field_id": "n_dummy_scanner",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          }
+        },
+        {
+          "manufacturer": {
+            "field_id": "manufacturer",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Siemens",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.98
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "scanner_model": {
+            "field_id": "scanner_model",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Prisma",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 125,
+                  "text": "Siemens 3T Prisma scanner",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "field_strength_t": {
+            "field_id": "field_strength_t",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 3.0,
+              "spans": [
+                {
+                  "start": 107,
+                  "end": 109,
+                  "text": "3T",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.99
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "receive_coil": {
+            "field_id": "receive_coil",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pulse_sequence_type": {
+            "field_id": "pulse_sequence_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "gradient_echo",
+              "spans": [
+                {
+                  "start": 200,
+                  "end": 217,
+                  "text": "gradient-echo EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "imaging_type": {
+            "field_id": "imaging_type",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "mr_acquisition_type": {
+            "field_id": "mr_acquisition_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "2D",
+              "spans": [
+                {
+                  "start": 220,
+                  "end": 226,
+                  "text": "2D EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.93
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "partial_fourier": {
+            "field_id": "partial_fourier",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "repetition_time_s": {
+            "field_id": "repetition_time_s",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 2.0,
+              "spans": [
+                {
+                  "start": 300,
+                  "end": 310,
+                  "text": "TR = 2.0 s",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.97
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "flip_angle_deg": {
+            "field_id": "flip_angle_deg",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 80.0,
+              "spans": [
+                {
+                  "start": 340,
+                  "end": 354,
+                  "text": "flip angle 80°",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "voxel_size_mm": {
+            "field_id": "voxel_size_mm",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                3.0,
+                3.0,
+                3.0
+              ],
+              "spans": [
+                {
+                  "start": 400,
+                  "end": 419,
+                  "text": "3 x 3 x 3 mm voxels",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "matrix_size": {
+            "field_id": "matrix_size",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "fov_mm": {
+            "field_id": "fov_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "FOV",
+                "field of view"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                192.0,
+                192.0,
+                108.0
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "voxel_size_mm",
+                  "matrix_size"
+                ],
+                "note": "voxel_size_mm * matrix_size, per axis"
+              },
+              "confidence": 0.55,
+              "alternative_inferences": []
+            }
+          },
+          "suffix": "epi",
+          "entities": {
+            "task": null,
+            "run": null,
+            "dir": "PA",
+            "acq": null
+          },
+          "phase_encoding_direction": {
+            "field_id": "phase_encoding_direction",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "j",
+              "spans": [
+                {
+                  "start": 800,
+                  "end": 821,
+                  "text": "phase encoding j (PA)",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.9
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "effective_echo_spacing_s": {
+            "field_id": "effective_echo_spacing_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "total_readout_time_s": {
+            "field_id": "total_readout_time_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "echo_times_ms": {
+            "field_id": "echo_times_ms",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                30.0
+              ],
+              "spans": [
+                {
+                  "start": 820,
+                  "end": 841,
+                  "text": "TE = 30 ms (fieldmap)",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.9
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "intended_for": [
+            {
+              "suffix": "bold",
+              "entities": {
+                "task": "rest",
+                "run": null,
+                "dir": null,
+                "acq": null
+              }
+            }
+          ]
+        }
+      ],
+      "preprocessing": {},
+      "first_level": {},
+      "group_level": {},
+      "thresholding": {}
     },
-    "n_volumes": {
-      "field_id": "acquisition.n_volumes",
-      "extraction": {
-        "status": "MISSING_FROM_PAPER",
-        "searched_terms": ["n_volumes", "number of volumes", "TRs"],
-        "sections_searched": ["Methods"]
+    {
+      "dataset": {
+        "name": "MSC",
+        "accession": "ds000224",
+        "source_url": "https://openneuro.org/datasets/ds000224",
+        "site": "WUSTL"
       },
-      "inference": {
-        "status": "LEFT_MISSING",
-        "reason": "not reported and no defensible default; user must supply"
-      }
+      "acquisitions": [
+        {
+          "manufacturer": {
+            "field_id": "manufacturer",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Siemens",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 119,
+                  "text": "Siemens 3T Trio Tim",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.98
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "scanner_model": {
+            "field_id": "scanner_model",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "Trio Tim",
+              "spans": [
+                {
+                  "start": 100,
+                  "end": 119,
+                  "text": "Siemens 3T Trio Tim",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "field_strength_t": {
+            "field_id": "field_strength_t",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 3.0,
+              "spans": [
+                {
+                  "start": 107,
+                  "end": 109,
+                  "text": "3T",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.99
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "receive_coil": {
+            "field_id": "receive_coil",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pulse_sequence_type": {
+            "field_id": "pulse_sequence_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "gradient_echo",
+              "spans": [
+                {
+                  "start": 200,
+                  "end": 217,
+                  "text": "gradient-echo EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "imaging_type": {
+            "field_id": "imaging_type",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "mr_acquisition_type": {
+            "field_id": "mr_acquisition_type",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "2D",
+              "spans": [
+                {
+                  "start": 220,
+                  "end": 226,
+                  "text": "2D EPI",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.92
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "partial_fourier": {
+            "field_id": "partial_fourier",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "repetition_time_s": {
+            "field_id": "repetition_time_s",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 2.2,
+              "spans": [
+                {
+                  "start": 300,
+                  "end": 310,
+                  "text": "TR = 2.2 s",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.97
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "flip_angle_deg": {
+            "field_id": "flip_angle_deg",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 80.0,
+              "spans": [
+                {
+                  "start": 340,
+                  "end": 354,
+                  "text": "flip angle 80°",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "voxel_size_mm": {
+            "field_id": "voxel_size_mm",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                4.0,
+                4.0,
+                4.0
+              ],
+              "spans": [
+                {
+                  "start": 400,
+                  "end": 419,
+                  "text": "4 x 4 x 4 mm voxels",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.96
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "matrix_size": {
+            "field_id": "matrix_size",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "fov_mm": {
+            "field_id": "fov_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "FOV",
+                "field of view"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                256.0,
+                256.0,
+                144.0
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "voxel_size_mm",
+                  "matrix_size"
+                ],
+                "note": "voxel_size_mm * matrix_size, per axis"
+              },
+              "confidence": 0.55,
+              "alternative_inferences": []
+            }
+          },
+          "suffix": "bold",
+          "entities": {
+            "task": "rest",
+            "run": null,
+            "dir": null,
+            "acq": null
+          },
+          "echo_time_ms": {
+            "field_id": "echo_time_ms",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": [
+                27.0
+              ],
+              "spans": [
+                {
+                  "start": 320,
+                  "end": 330,
+                  "text": "TE = 27 ms",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.95
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "n_echoes": {
+            "field_id": "n_echoes",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "acquisition_time_s": {
+            "field_id": "acquisition_time_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "scan duration",
+                "acquisition time"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": 1800.0,
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "n_volumes",
+                  "repetition_time_s"
+                ],
+                "note": "n_volumes * repetition_time_s"
+              },
+              "confidence": 0.65,
+              "alternative_inferences": []
+            }
+          },
+          "n_volumes": {
+            "field_id": "n_volumes",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 818,
+              "spans": [
+                {
+                  "start": 440,
+                  "end": 451,
+                  "text": "818 volumes",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "n_slices": {
+            "field_id": "n_slices",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": 36,
+              "spans": [
+                {
+                  "start": 420,
+                  "end": 429,
+                  "text": "36 slices",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.94
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "slice_gap_mm": {
+            "field_id": "slice_gap_mm",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_orientation": {
+            "field_id": "slice_orientation",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_angulation_deg": {
+            "field_id": "slice_angulation_deg",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "brain_coverage": {
+            "field_id": "brain_coverage",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "slice_order_pattern": {
+            "field_id": "slice_order_pattern",
+            "extraction": {
+              "status": "EXTRACTED",
+              "value": "interleaved_ascending",
+              "spans": [
+                {
+                  "start": 460,
+                  "end": 493,
+                  "text": "interleaved ascending slice order",
+                  "section": "Methods"
+                }
+              ],
+              "confidence": 0.88
+            },
+            "inference": {
+              "status": "NOT_APPLICABLE"
+            }
+          },
+          "slice_timing_s": {
+            "field_id": "slice_timing_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "slice timing",
+                "SliceTiming"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": [
+                0.0,
+                1.1,
+                0.0611,
+                1.1611
+              ],
+              "basis": {
+                "basis_type": "derived",
+                "source_field_ids": [
+                  "slice_order_pattern",
+                  "n_slices",
+                  "repetition_time_s"
+                ],
+                "note": "reconstructed from slice_order_pattern + n_slices + TR"
+              },
+              "confidence": 0.5,
+              "alternative_inferences": []
+            }
+          },
+          "slice_encoding_direction": {
+            "field_id": "slice_encoding_direction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "multiband_factor": {
+            "field_id": "multiband_factor",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "multiband",
+                "simultaneous multi-slice"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported; MSC Trio was single-band"
+            }
+          },
+          "parallel_technique": {
+            "field_id": "parallel_technique",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "GRAPPA",
+                "SENSE",
+                "parallel imaging"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "INFERRED_DEFAULT",
+              "value": "none",
+              "basis": {
+                "basis_type": "field_convention",
+                "source": "BIDS ParallelAcquisitionTechnique ∅ → 'none'",
+                "note": "convention: absence of mention defaults to no parallel technique"
+              },
+              "confidence": 0.35,
+              "alternative_inferences": []
+            }
+          },
+          "parallel_factor": {
+            "field_id": "parallel_factor",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "phase_encoding_reported": {
+            "field_id": "phase_encoding_reported",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "phase_encoding_direction": {
+            "field_id": "phase_encoding_direction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "pe_reversal": {
+            "field_id": "pe_reversal",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "effective_echo_spacing_s": {
+            "field_id": "effective_echo_spacing_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "total_readout_time_s": {
+            "field_id": "total_readout_time_s",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "prospective_motion_correction": {
+            "field_id": "prospective_motion_correction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "signal_inhomogeneity_correction": {
+            "field_id": "signal_inhomogeneity_correction",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "distortion_correction_onscanner": {
+            "field_id": "distortion_correction_onscanner",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "recon_matrix_differs": {
+            "field_id": "recon_matrix_differs",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          },
+          "shimming": {
+            "field_id": "shimming",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [
+                "shim",
+                "shimming"
+              ],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "reporting-only; not modeled by pipeline in v0.1.0"
+            }
+          },
+          "n_dummy_scanner": {
+            "field_id": "n_dummy_scanner",
+            "extraction": {
+              "status": "MISSING_FROM_PAPER",
+              "searched_terms": [],
+              "sections_searched": [
+                "Methods"
+              ]
+            },
+            "inference": {
+              "status": "LEFT_MISSING",
+              "reason": "not reported in paper"
+            }
+          }
+        }
+      ],
+      "preprocessing": {},
+      "first_level": {},
+      "group_level": {},
+      "thresholding": {}
     }
-  },
-  "preprocessing": {},
-  "first_level": {},
-  "group_level": {},
-  "thresholding": {}
+  ],
+  "study_analysis": null
 }
