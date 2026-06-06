@@ -1,0 +1,7 @@
+The final sample used in this study included 217 (104 male, age = 28.5 +/− 3.7 years)
+unrelated participants. Extensive descriptions of the data and the minimal preprocessing
+applied can be found in prior publications (e.g., (Marcus et al., 2013; Glasser et al., 2013). In
+brief, for each participant, the dataset includes 4 resting fMRI (rfMRI) scans obtained across
+two days - namely REST1_LR, REST1_RL, REST2_LR, and REST2_RL in HCP files.
+Here the LR and RL represent left-to-right and right-to-left phase coding directions that
+were used in the gradient-echo EPI sequence (TR = 0.

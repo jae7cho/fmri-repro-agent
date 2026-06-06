@@ -1,0 +1,4 @@
+# Citation cache: PDFs and the registry are local artifacts (large / machine-specific).
+# The directory itself is tracked via citation_cache/.gitkeep.
+citation_cache/*.pdf
+citation_cache/index.yaml

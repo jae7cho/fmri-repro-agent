@@ -1,0 +1,62 @@
+Methods
+Ten veterans (1 female; median age = 56.0 yrs, range = 39 to 67 yrs) who met Structured
+Clinical Interview for DSM-IV criteria for schizophrenia or schizoaffective disorder
+participated. Subjects were receiving stable doses of antipsychotic medication, with five
+also receiving stable antidepressant medication, for at least six weeks prior to enrollment.
+Antipsychotic dosage was calculated for each patient in olanzapine equivalents according
+to Leucht et al. (24) (mean dosage = 13.67 mg/day, SD = 10.82). Patients with significant
+medical or neurological conditions, or diagnosis of substance use disorder within three
+months of enrollment, were excluded. The Washington DC V A and Georgetown University
+Institutional Review Boards approved the study; all subjects provided informed consent.
+Schwartz et al. Page 2
+Clin Schizophr Relat Psychoses. Author manuscript; available in PMC 2023 June 20.
+Author Manuscript Author Manuscript Author Manuscript Author Manuscript
+The intervention was a 12-week (3 days/week) combination aerobic and strength training
+program supervised by an exercise physiologist. Subjects exercised at the Washington DC
+V A Wellness Center according to individualized plans. The intervention consisted of 30
+minutes on a treadmill, stationary bicycle, or elliptical trainer augmented by weight training
+for upper and lower extremities. The intensity of aerobic exercise was determined for each
+participant and was set at 60% to 80% of peak heart rate achieved during a standard
+treadmill test, taking into consideration the individual’s resting heart rate. Subjects were
+encouraged to keep their heart rate within the target range using heart rate read-outs on the
+exercise equipment.
+Assessments were performed within 7 days of the start and end of the intervention. Aerobic
+capacity was assessed using the exercise treadmill test. Peak aerobic capacity was measured
+by metabolic equivalent (MET), estimated with standardized equations on the basis of peak
+speed and peak time for the Bruce protocol (25). Serum BDNF levels were quantified using
+an enzyme immunoassay (Quantikine® ELISA Human BDNF Immunoassay). The Positive
+and Negative Syndrome Scale (PANSS; 26) was used to assess symptoms. In the spatial
+memory task (also administered at week 6), subjects viewed one, two, or three dots on a
+computer screen and after a 3-second delay judged whether a single dot was in the same
+or different location as one of the previously presented dots. In the pattern separation task,
+subjects performed an incidental task on pictures of objects followed by a test in which they
+identified targets (previously presented items), lures (visually similar to targets), and foils
+(new items) (27). The measure of pattern separation is correct identification of lures.
+Magnetic resonance imaging (MRI) was conducted on a 3T Siemens Trio. Data for the
+high resolution T1-weighted structural scan were acquired with echo time (TE) = 2.52
+ms, repetition time (TR) = 1900 ms, field of view (FOV) = 256 × 256 mm2, voxel size
+(isotropic) = 1mm, and 9° flip angle. For resting-state functional MRI, whole-brain images
+were acquired using T2-sensitive gradient echo planar imaging with TE = 30 ms, TR =
+3000 ms, FOV = 205 × 205 mm, voxel size = 3.2 × 3.2 × 3mm, and 90 o flip angle,
+during a 5 mins/51secs scan. CONN functional connectivity toolbox was used to perform
+standard preprocessing and denoising steps, including slice-timing and motion correction,
+spatial normalization (resampled at 2×2×2mm) into MNI standard space, smoothing (8mm
+kernel), nuisance regression (6 motion parameters, CSF and white matter signal, and
+high motion volumes, i.e. > 3 standard deviations of average signal or >.5mm framewise
+displacement (16.6 +/−17 for pre, and 14.5+/−15.9 for post) “scrubbed”) and bandpass
+filtering (0.008-0.09 Hz).
+Based on findings of functional segregation along the horizontal axis of the hippocampus
+(28, 29), we used a mask in SPM Marsbar (30) to divide the hippocampus into anterior,
+body, and posterior regions of interest (ROIs), resulting in three ROIs in each hemisphere
+(total = 6 ROIs). Time series for each ROI were correlated to that of every other voxel in
+the brain (Pearson’s correlation r values were transformed to Z scores), which produced a
+whole-brain connectivity map for each subject at pre and post-intervention that was entered
+into paired t-tests in CONN to test for second level FC differences. To avoid the potential
+for inflated false positive inference errors (31) for pre-post intervention differences, we
+used parametric statistics in CONN that is based on random field theory assumptions (32,
+Schwartz et al. Page 3
+Clin Schizophr Relat Psychoses. Author manuscript; available in PMC 2023 June 20.
+Author Manuscript Author Manuscript Author Manuscript Author Manuscript
+33), using a voxel- based height threshold of P < .001 combined with FDR-corrected
+cluster-level P < .0083, which is corrected for the number of seeds based on Bonferroni
+correction (P < .05/6).

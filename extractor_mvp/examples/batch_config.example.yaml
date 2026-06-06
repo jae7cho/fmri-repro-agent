@@ -1,0 +1,11 @@
+# Batch MVP runner config. Paths are relative to THIS file's location.
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: ../results/batch_sfn
+papers:
+  - paper_id: schwartz_2018
+    path: ../../../tested_lit/Schwartz_2018.pdf
+  - paper_id: cho_2021
+    path: ../../../fmri-defaults-kb/.papers/Cho_2021.pdf
+  # add more papers here for the abstract-supporting run:
+  # - paper_id: smith_2013
+  #   path: ../../../fmri-defaults-kb/.papers/Smith_2013_rest_in_HCP.pdf

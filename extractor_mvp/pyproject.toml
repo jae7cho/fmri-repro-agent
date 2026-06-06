@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "extractor-mvp"
+version = "0.0.1"
+description = "MVP Methods Extractor: text-in -> span-grounded ProvenancedField values. Single-pipeline, single-pass; proves the end-to-end grounding loop for the SfN abstract."
+authors = [{ name = "Jae Wook Cho", email = "jae7cho@gmail.com" }]
+license = "Apache-2.0"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "litellm>=1.0",
+    "instructor>=1.0",
+    "pydantic>=2.13.4,<3",
+    # extraction outputs are typed against the agent spec.
+    "fmri-repro-agent",
+]
+
+[tool.uv.sources]
+fmri-repro-agent = { path = "..", editable = true }
+
+[project.optional-dependencies]
+dev = ["ruff", "mypy", "pytest", "pypdf"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/extractor_mvp"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Intentional ambiguous-Unicode: the normalization maps and the span-resolver
+# test fixtures must contain ligatures / math signs / smart quotes verbatim.
+"src/extractor_mvp/span_resolver.py" = ["RUF001", "RUF003"]
+"tests/test_span_resolver.py" = ["RUF001", "RUF002", "RUF003"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_return_any = true
+warn_unused_ignores = true
+files = ["src", "tests"]
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = ["litellm", "litellm.*", "instructor", "instructor.*", "pypdf", "pypdf.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+pythonpath = ["src"]
+markers = [
+    "live: requires live Bedrock API access (network + AWS creds); skipped by default. Run with `pytest -m live`.",
+]
