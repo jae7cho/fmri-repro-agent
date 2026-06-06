@@ -148,7 +148,7 @@ Pipeline Configurator may fill (basis in parens); all others are extracted-or-mi
 ### 12. `intensity_normalization`
 - **Prov:** D.3 *Intensity normalization* (NON-mandatory). Grand-mean / per-run scaling.
 - **Canonical:** `scope: Literal["per_run","global"]`
-- **Method:** convention (SPM grand-mean→100 / FSL mode→10000 / other) + value
+- **Method:** convention (SPM grand-mean→100 [mean, single factor] / FSL grand-mean→10000 [mean, single factor, e.g. FEAT, fslmaths `-ing`] / FSL median→10000 [median, per-volume] / other) + value
 - **Infer:** convention+value are version_default-only candidates — `inference_applicable=False`
   this round; flip when the KB lands.
 

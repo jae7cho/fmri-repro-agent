@@ -2113,7 +2113,7 @@
       "title": "AlternativeInference[Literal['spline', 'spectral', 'other']]",
       "type": "object"
     },
-    "AlternativeInference_Literal__spm_grand_mean_100____fsl_mode_10000____other___": {
+    "AlternativeInference_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___": {
       "properties": {
         "basis": {
           "discriminator": {
@@ -2158,7 +2158,11 @@
         "value": {
           "enum": [
             "spm_grand_mean_100",
-            "fsl_mode_10000",
+            "fsl_grand_mean_10000",
+            "fsl_median_10000",
+            "voxel_temporal_zscore",
+            "global_median_1000",
+            "global_mode_1000",
             "other"
           ],
           "title": "Value",
@@ -2170,7 +2174,7 @@
         "basis",
         "confidence"
       ],
-      "title": "AlternativeInference[Literal['spm_grand_mean_100', 'fsl_mode_10000', 'other']]",
+      "title": "AlternativeInference[Literal['spm_grand_mean_100', 'fsl_grand_mean_10000', 'fsl_median_10000', 'voxel_temporal_zscore', 'global_median_1000', 'global_mode_1000', 'other']]",
       "type": "object"
     },
     "AlternativeInference_Literal__susceptibility_fieldmap____gradient_nonlinearity____fieldmap_less___": {
@@ -5085,7 +5089,7 @@
       "title": "Extracted[Literal['spline', 'spectral', 'other']]",
       "type": "object"
     },
-    "Extracted_Literal__spm_grand_mean_100____fsl_mode_10000____other___": {
+    "Extracted_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___": {
       "properties": {
         "confidence": {
           "maximum": 1.0,
@@ -5110,7 +5114,11 @@
         "value": {
           "enum": [
             "spm_grand_mean_100",
-            "fsl_mode_10000",
+            "fsl_grand_mean_10000",
+            "fsl_median_10000",
+            "voxel_temporal_zscore",
+            "global_median_1000",
+            "global_mode_1000",
             "other"
           ],
           "title": "Value",
@@ -5122,7 +5130,7 @@
         "spans",
         "confidence"
       ],
-      "title": "Extracted[Literal['spm_grand_mean_100', 'fsl_mode_10000', 'other']]",
+      "title": "Extracted[Literal['spm_grand_mean_100', 'fsl_grand_mean_10000', 'fsl_median_10000', 'voxel_temporal_zscore', 'global_median_1000', 'global_mode_1000', 'other']]",
       "type": "object"
     },
     "Extracted_Literal__susceptibility_fieldmap____gradient_nonlinearity____fieldmap_less___": {
@@ -8738,11 +8746,11 @@
       "title": "InferredDefault[Literal['spline', 'spectral', 'other']]",
       "type": "object"
     },
-    "InferredDefault_Literal__spm_grand_mean_100____fsl_mode_10000____other___": {
+    "InferredDefault_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___": {
       "properties": {
         "alternative_inferences": {
           "items": {
-            "$ref": "#/$defs/AlternativeInference_Literal__spm_grand_mean_100____fsl_mode_10000____other___"
+            "$ref": "#/$defs/AlternativeInference_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___"
           },
           "title": "Alternative Inferences",
           "type": "array"
@@ -8796,7 +8804,11 @@
         "value": {
           "enum": [
             "spm_grand_mean_100",
-            "fsl_mode_10000",
+            "fsl_grand_mean_10000",
+            "fsl_median_10000",
+            "voxel_temporal_zscore",
+            "global_median_1000",
+            "global_mode_1000",
             "other"
           ],
           "title": "Value",
@@ -8809,7 +8821,7 @@
         "confidence",
         "alternative_inferences"
       ],
-      "title": "InferredDefault[Literal['spm_grand_mean_100', 'fsl_mode_10000', 'other']]",
+      "title": "InferredDefault[Literal['spm_grand_mean_100', 'fsl_grand_mean_10000', 'fsl_median_10000', 'voxel_temporal_zscore', 'global_median_1000', 'global_mode_1000', 'other']]",
       "type": "object"
     },
     "InferredDefault_Literal__susceptibility_fieldmap____gradient_nonlinearity____fieldmap_less___": {
@@ -10219,7 +10231,7 @@
     "IntensityNormalization": {
       "properties": {
         "convention": {
-          "$ref": "#/$defs/ProvenancedField_Literal__spm_grand_mean_100____fsl_mode_10000____other___"
+          "$ref": "#/$defs/ProvenancedField_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___"
         },
         "kind": {
           "const": "intensity_normalization",
@@ -12648,20 +12660,20 @@
       "title": "ProvenancedField[Literal['spline', 'spectral', 'other']]",
       "type": "object"
     },
-    "ProvenancedField_Literal__spm_grand_mean_100____fsl_mode_10000____other___": {
+    "ProvenancedField_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___": {
       "properties": {
         "extraction": {
           "discriminator": {
             "mapping": {
               "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
-              "EXTRACTED": "#/$defs/Extracted_Literal__spm_grand_mean_100____fsl_mode_10000____other___",
+              "EXTRACTED": "#/$defs/Extracted_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___",
               "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
             },
             "propertyName": "status"
           },
           "oneOf": [
             {
-              "$ref": "#/$defs/Extracted_Literal__spm_grand_mean_100____fsl_mode_10000____other___"
+              "$ref": "#/$defs/Extracted_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___"
             },
             {
               "$ref": "#/$defs/MissingFromPaper"
@@ -12679,7 +12691,7 @@
         "inference": {
           "discriminator": {
             "mapping": {
-              "INFERRED_DEFAULT": "#/$defs/InferredDefault_Literal__spm_grand_mean_100____fsl_mode_10000____other___",
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___",
               "LEFT_MISSING": "#/$defs/LeftMissing",
               "NOT_APPLICABLE": "#/$defs/NotApplicable"
             },
@@ -12687,7 +12699,7 @@
           },
           "oneOf": [
             {
-              "$ref": "#/$defs/InferredDefault_Literal__spm_grand_mean_100____fsl_mode_10000____other___"
+              "$ref": "#/$defs/InferredDefault_Literal__spm_grand_mean_100____fsl_grand_mean_10000____fsl_median_10000____voxel_temporal_zscore____global_median_1000____global_mode_1000____other___"
             },
             {
               "$ref": "#/$defs/LeftMissing"
@@ -12704,7 +12716,7 @@
         "extraction",
         "inference"
       ],
-      "title": "ProvenancedField[Literal['spm_grand_mean_100', 'fsl_mode_10000', 'other']]",
+      "title": "ProvenancedField[Literal['spm_grand_mean_100', 'fsl_grand_mean_10000', 'fsl_median_10000', 'voxel_temporal_zscore', 'global_median_1000', 'global_mode_1000', 'other']]",
       "type": "object"
     },
     "ProvenancedField_Literal__susceptibility_fieldmap____gradient_nonlinearity____fieldmap_less___": {
