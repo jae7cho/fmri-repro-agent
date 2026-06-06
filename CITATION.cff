@@ -8,9 +8,16 @@ license: Apache-2.0
 authors:
   - family-names: Cho
     given-names: "Jae Wook"
-    orcid: "0009-0009-6646-0564"
+    orcid: "https://orcid.org/0009-0009-6646-0564"
     email: "jae7cho@gmail.com"
 repository-code: "https://github.com/jae7cho/fmri-repro-agent"
+keywords:
+  - "fMRI"
+  - "reproducibility"
+  - "BIDS"
+  - "neuroimaging"
+  - "fMRIPrep"
+  - "replication"
 abstract: >-
   An LLM-based agentic tool that ingests a published fMRI research paper
   (PDF) and emits a ready-to-run replication package — BIDS metadata,

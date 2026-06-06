@@ -215,15 +215,16 @@ INTENSITY_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
 
 SPATIAL_NORMALIZATION_FIELD_META: dict[str, FieldMeta] = {
     # ``target_space`` / ``resolution_mm`` are version_default-only (defensible
-    # only when a base pipeline is named). KB integration → flip to True later.
+    # only when a base pipeline is named). KB integration landed (kb_client.
+    # base_pipeline.fill_dependent_defaults gates on version certainty).
     "target_space": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
     "resolution_mm": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
         unit="mm",
     ),
@@ -258,10 +259,10 @@ SPATIAL_NORMALIZATION_FIELD_META: dict[str, FieldMeta] = {
 SURFACE_PROJECTION_FIELD_META: dict[str, FieldMeta] = {
     # ``target_surface`` / ``surface_registration`` are version_default-only
     # (defensible only when a base pipeline is named, e.g. HCP MPP → fsLR_32k
-    # / MSMAll). KB integration → flip to True later.
+    # / MSMAll). KB integration landed.
     "target_surface": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
     "vol2surf_sampling": FieldMeta(
@@ -271,7 +272,7 @@ SURFACE_PROJECTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "surface_registration": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
     "cifti": FieldMeta(
@@ -403,10 +404,10 @@ SCRUB_FIELD_META: dict[str, FieldMeta] = {
 TEMPORAL_FILTERING_FIELD_META: dict[str, FieldMeta] = {
     # ``effective_band_hz`` is version_default-only when a base pipeline is
     # named — field_convention defaults would be confirmation-bias. KB
-    # integration → flip to True later.
+    # integration landed.
     "effective_band_hz": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
         unit="Hz",
     ),
@@ -458,15 +459,15 @@ INTENSITY_NORMALIZATION_FIELD_META: dict[str, FieldMeta] = {
         source="derived",
     ),
     # ``convention`` / ``value`` are version_default-only (defensible only
-    # when a base pipeline / software is known). KB integration → flip later.
+    # when a base pipeline / software is known). KB integration landed.
     "convention": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
     "value": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
 }

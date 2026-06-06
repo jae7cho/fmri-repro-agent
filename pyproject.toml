@@ -23,12 +23,17 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.13.4,<3",
+    "fmri-defaults-kb",
 ]
+
+[tool.uv.sources]
+fmri-defaults-kb = { path = "../fmri-defaults-kb", editable = true }
 
 [project.optional-dependencies]
 dev = [
     "ruff",
     "mypy",
+    "types-PyYAML",
     "pytest",
     "pytest-cov",
     "pre-commit",
@@ -63,3 +68,12 @@ files = ["src", "tests"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-ra --strict-markers"
+
+[dependency-groups]
+dev = [
+    "boto3==1.43.23",
+    "instructor==1.15.1",
+    "litellm==1.87.1",
+    "pandas>=3.0.3",
+    "pypdf>=6.13.0",
+]

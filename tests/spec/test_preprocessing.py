@@ -695,11 +695,9 @@ _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
     (Scrub, "criterion", "fd_power", str),
     (SpatialSmoothing, "fwhm_mm", 6.0, float),
     (CompCor, "variant", "a", str),
-    # Demoted to False this round (Fix 3):
-    (SpatialNormalization, "target_space", "MNI152NLin6Asym", str),
-    (SurfaceProjection, "target_surface", "fsLR_32k", str),
-    (IntensityNormalization, "convention", "spm_grand_mean_100", str),
-    (TemporalFiltering, "effective_band_hz", (0.01, 0.1), tuple[float | None, float | None]),
+    # Note: target_space, target_surface, convention, effective_band_hz
+    # were flipped to inference_applicable=True once the fmri-defaults-kb
+    # pipeline registry + kb_client.base_pipeline integration landed.
 ]
 
 
