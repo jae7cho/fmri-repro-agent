@@ -12,15 +12,19 @@ import dataclasses
 import json
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from extractor_mvp.batch import _tally, _translate_spans
 from extractor_mvp.batch_config import BatchConfig, load_batch_config
+from extractor_mvp.batch_utils import build_citation_resolver
 from extractor_mvp.field_diff import compute_field_diffs
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.multi_acquisition_extractor import extract_multi_acquisition
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.pdf_loader import load_pdf_text
+from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
+
+if TYPE_CHECKING:
+    from extractor_mvp.citation_resolver import CitationResolver
 
 SUMMARY_COLUMNS = [
     "paper_id",
@@ -87,15 +91,21 @@ def _empty(
     )
 
 
-def _process_paper(paper_id: str, path: Path, model: str) -> MultiAcquisitionPaperResult:
+def _process_paper(
+    paper_id: str, path: Path, model: str, citation_resolver: CitationResolver | None = None
+) -> MultiAcquisitionPaperResult:
     text, parser = load_pdf_text(path)
     if parser == "failed":
         return _empty(paper_id, path, "pdf_parse_failed", None, "pypdf returned no text")
 
     methods = find_methods_section(text)
-    paper = ParsedPaper(text=methods.text, source=paper_id, parser="pypdf")
+    paper = ParsedPaper(
+        text=methods.text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
+    )
     try:
-        result = extract_multi_acquisition(paper, model)
+        result = extract_multi_acquisition(
+            paper, model, citation_resolver=citation_resolver, paper_date=paper.pdf_date
+        )
     except Exception as exc:  # Pass 1/2 transport or validation error
         return MultiAcquisitionPaperResult(
             paper_id,
@@ -191,9 +201,10 @@ def _process_paper(paper_id: str, path: Path, model: str) -> MultiAcquisitionPap
 def run_multi_acquisition_batch(config: BatchConfig) -> list[MultiAcquisitionPaperResult]:
     papers_dir = config.output_dir / "papers"
     papers_dir.mkdir(parents=True, exist_ok=True)
+    citation_resolver = build_citation_resolver(config)
     results: list[MultiAcquisitionPaperResult] = []
     for paper in config.papers:
-        r = _process_paper(paper.paper_id, paper.path, config.model)
+        r = _process_paper(paper.paper_id, paper.path, config.model, citation_resolver)
         results.append(r)
         if r.result_json is not None:
             (papers_dir / f"{paper.paper_id}.json").write_text(

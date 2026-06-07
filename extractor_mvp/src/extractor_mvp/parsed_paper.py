@@ -3,6 +3,7 @@ into ``ParsedPaper.text``."""
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -24,6 +25,7 @@ class ParsedPaper(BaseModel):
     source: str = Field(description="Filename or DOI for traceability")
     parser: Literal["pdftotext", "pypdf", "marker", "manual"] = "manual"
     pages: list[PageSpan] = Field(default_factory=list)  # optional; may be empty
+    pdf_date: date | None = None  # PDF /CreationDate, if parseable; drives KB version inference
 
     def page_for_offset(self, offset: int) -> int | None:
         """Return the 1-indexed page number containing ``offset``, or None."""

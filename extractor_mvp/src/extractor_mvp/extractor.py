@@ -685,6 +685,48 @@ def _any_step_fields_left_missing(preprocessing: Preprocessing) -> bool:
     return False
 
 
+def _resolve_deferrals(
+    preprocessing: Preprocessing,
+    deferral_records: list[DeferralRecord],
+    *,
+    paper_date: date | None,
+    citation_resolver: CitationResolver | None,
+) -> Preprocessing:
+    """Apply one-hop deferral resolution to a single Preprocessing.
+
+    (2) Per-field deferrals -> citation resolver (PriorPublicationBasis).
+    (3) Base-pipeline deferral -> KB path (recognized pipelines at VersionDefaultBasis
+        when ``paper_date`` is known) then the citation fallback for the step fields the
+        KB leaves open. Shared by :func:`extract` and the multi-acquisition runner.
+    """
+    per_field = [d for d in deferral_records if d.field != "base_pipeline"]
+    if citation_resolver is not None and per_field:
+        preprocessing = _apply_resolved_citations(
+            preprocessing, citation_resolver.resolve_all(per_field)
+        )
+
+    base_pipeline = [d for d in deferral_records if d.field == "base_pipeline"]
+    if base_pipeline:
+        if paper_date is not None:
+            # Configurator helpers; imported lazily so the KB stays an optional dep.
+            from fmri_repro.kb_client.base_pipeline import (
+                fill_dependent_defaults,
+                infer_base_pipeline_version,
+            )
+
+            preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
+            preprocessing = fill_dependent_defaults(preprocessing, paper_date)
+
+        if citation_resolver is not None and _any_step_fields_left_missing(preprocessing):
+            resolved = citation_resolver.resolve_base_pipeline_deferral(
+                base_pipeline, preprocessing
+            )
+            if resolved:
+                preprocessing = _apply_resolved_citations(preprocessing, resolved)
+
+    return preprocessing
+
+
 def extract(
     parsed_paper: ParsedPaper,
     model: str,
@@ -708,31 +750,10 @@ def extract(
     preprocessing, diagnostics, deferral_records = extract_preprocessing(
         parsed_paper, model, client=client
     )
-
-    # (2) Per-field citation deferrals.
-    per_field_deferrals = [d for d in deferral_records if d.field != "base_pipeline"]
-    if citation_resolver is not None and per_field_deferrals:
-        resolved = citation_resolver.resolve_all(per_field_deferrals)
-        preprocessing = _apply_resolved_citations(preprocessing, resolved)
-
-    # (3) Base-pipeline deferral: KB path, then citation fallback.
-    base_pipeline_deferrals = [d for d in deferral_records if d.field == "base_pipeline"]
-    if base_pipeline_deferrals:
-        if paper_date is not None:
-            # Configurator helpers; imported lazily so the KB stays an optional dep.
-            from fmri_repro.kb_client.base_pipeline import (
-                fill_dependent_defaults,
-                infer_base_pipeline_version,
-            )
-
-            preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
-            preprocessing = fill_dependent_defaults(preprocessing, paper_date)
-
-        if citation_resolver is not None and _any_step_fields_left_missing(preprocessing):
-            resolved = citation_resolver.resolve_base_pipeline_deferral(
-                base_pipeline_deferrals, preprocessing
-            )
-            if resolved:
-                preprocessing = _apply_resolved_citations(preprocessing, resolved)
-
+    preprocessing = _resolve_deferrals(
+        preprocessing,
+        deferral_records,
+        paper_date=paper_date,
+        citation_resolver=citation_resolver,
+    )
     return preprocessing, diagnostics, deferral_records

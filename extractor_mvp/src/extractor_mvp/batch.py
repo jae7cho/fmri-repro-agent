@@ -22,13 +22,17 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from extractor_mvp.batch_config import BatchConfig, load_batch_config
-from extractor_mvp.extractor import extract_preprocessing
+from extractor_mvp.batch_utils import build_citation_resolver
+from extractor_mvp.extractor import extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.pdf_loader import load_pdf_text
+from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
+
+if TYPE_CHECKING:
+    from extractor_mvp.citation_resolver import CitationResolver
 
 # Multi-acquisition heuristic: ≥2 distinct DATASET mentions flags likely-multi.
 # Pipeline tools alone don't flag (most papers cite several tools).
@@ -144,7 +148,9 @@ def _translate_spans(prep_dump: dict[str, Any], start_offset: int) -> None:
                 span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
 
 
-def _process_paper(paper_id: str, path: Path, model: str) -> PaperResult:
+def _process_paper(
+    paper_id: str, path: Path, model: str, citation_resolver: CitationResolver | None = None
+) -> PaperResult:
     text, parser = load_pdf_text(path)
     if parser == "failed":
         return PaperResult(
@@ -169,10 +175,14 @@ def _process_paper(paper_id: str, path: Path, model: str) -> PaperResult:
 
     methods = find_methods_section(text)
     multi = _count_distinct_datasets(methods.text) >= 2
-    paper = ParsedPaper(text=methods.text, source=paper_id, parser="pypdf")
+    paper = ParsedPaper(
+        text=methods.text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
+    )
 
     try:
-        preprocessing, diagnostics, deferrals = extract_preprocessing(paper, model)
+        preprocessing, diagnostics, deferrals = extract(
+            paper, model, citation_resolver=citation_resolver, paper_date=paper.pdf_date
+        )
     except Exception as exc:  # LLM/transport/validation error -> recorded, batch continues
         return PaperResult(
             paper_id,
@@ -238,10 +248,11 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
     """Process all papers; per-paper errors are caught so the batch continues."""
     papers_dir = config.output_dir / "papers"
     papers_dir.mkdir(parents=True, exist_ok=True)
+    citation_resolver = build_citation_resolver(config)
     results: list[PaperResult] = []
 
     for paper in config.papers:
-        result = _process_paper(paper.paper_id, paper.path, config.model)
+        result = _process_paper(paper.paper_id, paper.path, config.model, citation_resolver)
         results.append(result)
         if result.extraction_json is not None:
             (papers_dir / f"{paper.paper_id}.json").write_text(

@@ -21,6 +21,9 @@ class PdfPaper(BaseModel):
 class BatchConfig(BaseModel):
     model: str  # e.g. "bedrock/anthropic.claude-sonnet-4-5-..."
     output_dir: Path = Path("results/batch")
+    # KB/citation fallback for base-pipeline deferrals. Resolved relative to the
+    # config file; if the dir is absent the batch runs without citation fallback.
+    citation_cache_dir: Path = Path("citation_cache")
     papers: list[PdfPaper] = Field(min_length=1)
 
     @model_validator(mode="after")
@@ -46,4 +49,14 @@ def load_batch_config(config_path: Path) -> BatchConfig:
     output_dir = (
         config.output_dir if config.output_dir.is_absolute() else (base / config.output_dir)
     )
-    return BatchConfig(model=config.model, output_dir=output_dir, papers=resolved_papers)
+    cache_dir = (
+        config.citation_cache_dir
+        if config.citation_cache_dir.is_absolute()
+        else (base / config.citation_cache_dir)
+    )
+    return BatchConfig(
+        model=config.model,
+        output_dir=output_dir,
+        citation_cache_dir=cache_dir,
+        papers=resolved_papers,
+    )

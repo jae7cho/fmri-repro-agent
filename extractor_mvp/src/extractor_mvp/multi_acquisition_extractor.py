@@ -19,13 +19,15 @@ from extractor_mvp.acquisition_discovery import (
 )
 from extractor_mvp.extractor import (
     ExtractionDiagnostic,
-    _apply_resolved_citations,
+    _resolve_deferrals,
     build_client,
     extract_preprocessing_for_acquisition,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from extractor_mvp.citation_resolver import CitationResolver
 
 
@@ -42,15 +44,16 @@ def extract_multi_acquisition(
     *,
     client: Any | None = None,
     citation_resolver: CitationResolver | None = None,
+    paper_date: date | None = None,
 ) -> MultiAcquisitionResult:
     """Two-pass extraction. Single-acquisition papers naturally produce N=1.
 
     A Pass-2 failure for one acquisition is recorded as a diagnostic and the
     remaining acquisitions still run (the whole paper is not aborted).
 
-    If a ``citation_resolver`` is supplied, each acquisition's DEFERRED_TO_CITATION
-    fields are resolved one hop and their inference arm upgraded in place of the run
-    (LeftMissing -> InferredDefault), mirroring the single-pass :func:`extract`.
+    Each acquisition's deferrals are routed through the shared
+    :func:`_resolve_deferrals` (per-field citation resolution + base-pipeline
+    KB/citation routing), mirroring the single-pass :func:`extract`.
     """
     client = client or build_client()
     discovery = discover_acquisitions(parsed_paper, model, client=client)
@@ -62,9 +65,9 @@ def extract_multi_acquisition(
             prep, diags, deferrals = extract_preprocessing_for_acquisition(
                 parsed_paper, acq.paper_name, acq.characterizing_quote, model, client=client
             )
-            if citation_resolver is not None and deferrals:
-                resolved = citation_resolver.resolve_all(deferrals)
-                prep = _apply_resolved_citations(prep, resolved)
+            prep = _resolve_deferrals(
+                prep, deferrals, paper_date=paper_date, citation_resolver=citation_resolver
+            )
             extractions[acq.acquisition_id] = prep
             diagnostics[acq.acquisition_id] = diags
         except Exception as exc:  # one acquisition failing must not abort the paper

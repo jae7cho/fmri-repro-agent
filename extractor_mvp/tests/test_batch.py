@@ -12,7 +12,7 @@ from extractor_mvp.batch_config import BatchConfig, PdfPaper
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     PreprocessingExtraction,
-    extract_preprocessing,
+    extract,
 )
 
 FULL_TEXT = "Methods\nData were normalized to MNI152NLin6Asym at 2 mm.\nResults\nFindings."
@@ -42,11 +42,11 @@ def _patch(monkeypatch: Any) -> None:
     fake_client = SimpleNamespace(
         chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
     )
-    # real extractor, but driven by the canned client (so spans resolve on the real slice)
+    # real orchestrator, but driven by the canned client (so spans resolve on the real slice)
     monkeypatch.setattr(
         batch,
-        "extract_preprocessing",
-        lambda paper, model: extract_preprocessing(paper, model, client=fake_client),
+        "extract",
+        lambda paper, model, **kwargs: extract(paper, model, client=fake_client),
     )
 
 

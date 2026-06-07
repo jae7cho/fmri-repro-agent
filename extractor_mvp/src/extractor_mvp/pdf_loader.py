@@ -2,8 +2,13 @@
 
 from __future__ import annotations
 
+import re
+from datetime import date
 from pathlib import Path
 from typing import Literal
+
+# PDF /CreationDate is "D:YYYYMMDD..." (the "D:" prefix and trailing tz are optional).
+_PDF_DATE_RE = re.compile(r"D?:?\s*(\d{4})(\d{2})(\d{2})")
 
 
 def load_pdf_text(path: Path) -> tuple[str, Literal["pypdf", "failed"]]:
@@ -26,3 +31,26 @@ def load_pdf_text(path: Path) -> tuple[str, Literal["pypdf", "failed"]]:
     if not text:
         return "", "failed"
     return text, "pypdf"
+
+
+def pdf_creation_date(path: Path) -> date | None:
+    """Best-effort PDF publication date from the ``/CreationDate`` metadata.
+
+    Parses the leading ``YYYYMMDD`` of a ``D:YYYYMMDDHHmmSS...`` string into a
+    :class:`datetime.date`. Returns ``None`` if the metadata is absent or
+    unparseable (missing/corrupt PDF, no CreationDate, malformed value, or an
+    impossible date) — callers treat ``None`` as "date unknown".
+    """
+    try:
+        from pypdf import PdfReader
+
+        meta = PdfReader(str(path)).metadata
+        raw = meta.get("/CreationDate") if meta else None
+        if not raw:
+            return None
+        m = _PDF_DATE_RE.match(str(raw))
+        if m is None:
+            return None
+        return date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except Exception:  # unreadable PDF / impossible date / anything else -> unknown
+        return None
