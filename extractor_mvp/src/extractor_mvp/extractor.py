@@ -22,6 +22,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from fmri_repro.spec.provenance import InferredDefault
 
     from extractor_mvp.citation_resolver import CitationResolver
@@ -627,13 +629,14 @@ def extract_preprocessing_for_acquisition(
 def _apply_resolved_citations(
     preprocessing: Preprocessing, resolved: dict[str, InferredDefault]
 ) -> Preprocessing:
-    """Return a NEW Preprocessing with resolved deferred fields' inference upgraded.
+    """Return a NEW Preprocessing with resolved fields' inference arm upgraded.
 
     For each field whose dotted path is in ``resolved`` and whose extraction arm is
-    DEFERRED_TO_CITATION, rebuild the ProvenancedField: the extraction arm
-    (DeferredToCitation) is kept UNCHANGED and only the inference arm upgrades from
-    LeftMissing to the resolved InferredDefault. Rebuilding via the model
-    constructor re-runs the provenance coupling validator. Never mutates in place.
+    NOT EXTRACTED — ``DEFERRED_TO_CITATION`` (per-field path) or ``MISSING_FROM_PAPER``
+    (base-pipeline expansion) — rebuild the ProvenancedField: the extraction arm is
+    kept UNCHANGED and only the inference arm upgrades (LeftMissing -> InferredDefault).
+    EXTRACTED fields are never touched (couple_stages forbids EXTRACTED + INFERRED_DEFAULT).
+    Rebuilding via the model constructor re-runs the coupling validator. Never mutates in place.
     """
     if not resolved:
         return preprocessing
@@ -645,14 +648,41 @@ def _apply_resolved_citations(
                 continue
             pf = getattr(step, fname)
             inferred = resolved.get(f"{step.kind}.{pf.field_id}")
-            if inferred is not None and pf.extraction.status == "DEFERRED_TO_CITATION":
+            if inferred is not None and pf.extraction.status != "EXTRACTED":
                 updates[fname] = type(pf)(
                     field_id=pf.field_id,
                     extraction=pf.extraction,  # unchanged
                     inference=inferred,  # LeftMissing -> InferredDefault
                 )
         new_steps.append(step.model_copy(update=updates) if updates else step)
-    return preprocessing.model_copy(update={"steps": new_steps})
+    updated: Preprocessing = preprocessing.model_copy(update={"steps": new_steps})
+    return updated
+
+
+# The six targeted Layer-2 step fields (bare field_id). Filler fields are always
+# LEFT_MISSING ("not_targeted_by_mvp"), so the routing gate must look only at these.
+_LAYER2_FIELD_IDS: frozenset[str] = frozenset(
+    {
+        "target_space",
+        "resolution_mm",
+        "surface_registration",
+        "target_surface",
+        "convention",
+        "value",
+    }
+)
+
+
+def _any_step_fields_left_missing(preprocessing: Preprocessing) -> bool:
+    """True if any of the six targeted Layer-2 fields still have LEFT_MISSING inference."""
+    for step in preprocessing.steps:
+        for fname in type(step).model_fields:
+            if fname == "kind":
+                continue
+            pf = getattr(step, fname)
+            if pf.field_id in _LAYER2_FIELD_IDS and pf.inference.status == "LEFT_MISSING":
+                return True
+    return False
 
 
 def extract(
@@ -661,18 +691,48 @@ def extract(
     *,
     client: Any | None = None,
     citation_resolver: CitationResolver | None = None,
+    paper_date: date | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
-    """Single-pass extraction with optional one-hop citation resolution.
+    """Single-pass extraction with one-hop deferral resolution.
 
-    Runs Pass 2 (:func:`extract_preprocessing`); if a ``citation_resolver`` is
-    supplied and any fields came back DEFERRED_TO_CITATION, resolves those deferrals
-    and upgrades the affected fields' inference arm (LeftMissing -> InferredDefault).
-    The extraction arm and the returned ``deferral_records`` are unchanged.
+    Pipeline:
+      1. Pass 2 (:func:`extract_preprocessing`).
+      2. Per-field deferrals (a step field defers to a citation) -> resolve one hop
+         via the citation resolver (PriorPublicationBasis).
+      3. Base-pipeline deferrals -> KB path first (recognized pipelines at
+         VersionDefaultBasis, 0.95, via the Configurator helpers) when ``paper_date``
+         is known; then the citation fallback (PriorPublicationBasis, 0.60) for any
+         step fields the KB left open.
+    The extraction arms and the returned ``deferral_records`` are unchanged.
     """
     preprocessing, diagnostics, deferral_records = extract_preprocessing(
         parsed_paper, model, client=client
     )
-    if citation_resolver is not None and deferral_records:
-        resolved = citation_resolver.resolve_all(deferral_records)
+
+    # (2) Per-field citation deferrals.
+    per_field_deferrals = [d for d in deferral_records if d.field != "base_pipeline"]
+    if citation_resolver is not None and per_field_deferrals:
+        resolved = citation_resolver.resolve_all(per_field_deferrals)
         preprocessing = _apply_resolved_citations(preprocessing, resolved)
+
+    # (3) Base-pipeline deferral: KB path, then citation fallback.
+    base_pipeline_deferrals = [d for d in deferral_records if d.field == "base_pipeline"]
+    if base_pipeline_deferrals:
+        if paper_date is not None:
+            # Configurator helpers; imported lazily so the KB stays an optional dep.
+            from fmri_repro.kb_client.base_pipeline import (
+                fill_dependent_defaults,
+                infer_base_pipeline_version,
+            )
+
+            preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
+            preprocessing = fill_dependent_defaults(preprocessing, paper_date)
+
+        if citation_resolver is not None and _any_step_fields_left_missing(preprocessing):
+            resolved = citation_resolver.resolve_base_pipeline_deferral(
+                base_pipeline_deferrals, preprocessing
+            )
+            if resolved:
+                preprocessing = _apply_resolved_citations(preprocessing, resolved)
+
     return preprocessing, diagnostics, deferral_records

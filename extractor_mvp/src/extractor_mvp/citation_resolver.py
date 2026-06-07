@@ -138,6 +138,86 @@ class CitationResolver:
 
         return resolved
 
+    def resolve_base_pipeline_deferral(
+        self,
+        deferral_records: list,  # only field=="base_pipeline" records
+        current_preprocessing: Preprocessing,
+    ) -> dict[str, InferredDefault[Any]]:
+        """Fallback path for unrecognized pipelines or version-uncertain KB lookups.
+
+        Fetches the cited pipeline paper, runs full Layer-2 extraction, and returns
+        an ``InferredDefault`` at ``PriorPublicationBasis`` (ceiling 0.60) for each
+        step field that is currently ``LEFT_MISSING`` in ``current_preprocessing``.
+
+        Uses the same compound-ref splitting (via PaperFetcher), cycle detection,
+        and depth guard as :meth:`resolve_all`. Keys are step-field dotted paths
+        (e.g. ``"spatial_normalization.target_space"``) so the result drops
+        straight into :func:`_apply_resolved_citations`.
+        """
+        resolved: dict[str, InferredDefault[Any]] = {}
+        # Only fields the extractor/Configurator left open are eligible to fill.
+        missing_now = {
+            dotted
+            for dotted, pf in _iter_fields(current_preprocessing)
+            if pf.inference.status == "LEFT_MISSING"
+        }
+        if not missing_now:
+            return resolved
+
+        depth = 0  # base-pipeline expansion is one-hop
+        seen: set[str] = set()
+        by_ref: dict[str, list] = {}
+        for rec in deferral_records:
+            by_ref.setdefault(rec.ref_string, []).append(rec)
+
+        for ref_string in by_ref:
+            canonical_id = self.fetcher.canonical_id_for(ref_string)
+            if canonical_id is None:
+                logger.warning("no canonical_id for base-pipeline ref %r; skipping", ref_string)
+                continue
+            if canonical_id in seen:
+                logger.warning("cycle detected for %s; skipping", canonical_id)
+                continue
+            if depth >= self.max_depth:
+                logger.warning("max_depth %d reached; skipping %s", self.max_depth, canonical_id)
+                continue
+            pdf_path = self.fetcher.resolve(ref_string)
+            if pdf_path is None:
+                logger.warning(
+                    "could not fetch pipeline PDF for %s (%r); skipping", canonical_id, ref_string
+                )
+                continue
+            seen.add(canonical_id)
+            try:
+                cited_prep = self._extract_cited(pdf_path, canonical_id)
+            except Exception as exc:  # a bad cited PDF must not abort the whole resolution
+                logger.warning(
+                    "extraction on cited pipeline paper %s failed: %s", canonical_id, exc
+                )
+                continue
+
+            for dotted, pf in _iter_fields(cited_prep):
+                if dotted not in missing_now or pf.extraction.status != "EXTRACTED":
+                    continue
+                if dotted in resolved:
+                    continue  # first cited source wins
+                source_conf = pf.extraction.confidence
+                confidence = min(
+                    source_conf * CITATION_CONFIDENCE_PENALTY,
+                    BASIS_CEILINGS["prior_publication"],
+                )
+                resolved[dotted] = InferredDefault(
+                    value=pf.extraction.value,
+                    basis=PriorPublicationBasis(
+                        citation=ref_string,
+                        note=f"one-hop base-pipeline expansion; source_confidence={source_conf:.2f}",
+                    ),
+                    confidence=confidence,
+                    alternative_inferences=[],
+                )
+
+        return resolved
+
     def _extract_cited(self, pdf_path: Any, canonical_id: str) -> Preprocessing:
         """Load the cited PDF, slice its methods, run the extractor; return its Preprocessing."""
         text, _parser = load_pdf_text(pdf_path)

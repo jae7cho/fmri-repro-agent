@@ -46,6 +46,8 @@ SUMMARY_COLUMNS = [
     "n_extracted",
     "n_deferred",
     "n_deferral_quote_unresolved",
+    "n_inferred_from_kb",
+    "n_inferred_from_citation",
     "n_missing_not_stated",
     "n_missing_quote_unresolved",
     "n_value_not_in_literal",
@@ -65,6 +67,8 @@ class PaperResult:
     n_extracted: int
     n_deferred: int
     n_deferral_quote_unresolved: int
+    n_inferred_from_kb: int
+    n_inferred_from_citation: int
     n_missing_not_stated: int
     n_missing_quote_unresolved: int
     n_value_not_in_literal: int
@@ -82,6 +86,8 @@ def _tally(preprocessing: Any) -> dict[str, int]:
         "n_extracted": 0,
         "n_deferred": 0,
         "n_deferral_quote_unresolved": 0,
+        "n_inferred_from_kb": 0,
+        "n_inferred_from_citation": 0,
         "n_missing_not_stated": 0,
         "n_missing_quote_unresolved": 0,
         "n_value_not_in_literal": 0,
@@ -91,6 +97,14 @@ def _tally(preprocessing: Any) -> dict[str, int]:
             if fname == "kind":
                 continue
             pf = getattr(step, fname)
+            # Inference-arm fills (orthogonal to the extraction buckets: a resolved
+            # per-field deferral is both DEFERRED extraction and INFERRED inference).
+            if pf.inference.status == "INFERRED_DEFAULT":
+                basis_type = getattr(pf.inference.basis, "basis_type", None)
+                if basis_type == "version_default":
+                    counts["n_inferred_from_kb"] += 1
+                elif basis_type == "prior_publication":
+                    counts["n_inferred_from_citation"] += 1
             if pf.extraction.status == "EXTRACTED":
                 counts["n_extracted"] += 1
                 continue
@@ -144,6 +158,8 @@ def _process_paper(paper_id: str, path: Path, model: str) -> PaperResult:
             0,  # n_extracted
             0,  # n_deferred
             0,  # n_deferral_quote_unresolved
+            0,  # n_inferred_from_kb
+            0,  # n_inferred_from_citation
             0,  # n_missing_not_stated
             0,  # n_missing_quote_unresolved
             0,  # n_value_not_in_literal
@@ -169,6 +185,8 @@ def _process_paper(paper_id: str, path: Path, model: str) -> PaperResult:
             0,  # n_extracted
             0,  # n_deferred
             0,  # n_deferral_quote_unresolved
+            0,  # n_inferred_from_kb
+            0,  # n_inferred_from_citation
             0,  # n_missing_not_stated
             0,  # n_missing_quote_unresolved
             0,  # n_value_not_in_literal
@@ -206,6 +224,8 @@ def _process_paper(paper_id: str, path: Path, model: str) -> PaperResult:
         counts["n_extracted"],
         counts["n_deferred"],
         counts["n_deferral_quote_unresolved"],
+        counts["n_inferred_from_kb"],
+        counts["n_inferred_from_citation"],
         counts["n_missing_not_stated"],
         counts["n_missing_quote_unresolved"],
         counts["n_value_not_in_literal"],

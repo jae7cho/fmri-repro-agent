@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+from datetime import date
 from functools import partial
 from pathlib import Path
 from types import SimpleNamespace
@@ -13,12 +14,17 @@ from typing import Any
 import pytest
 from fmri_repro.spec.provenance import InferredDefault, PriorPublicationBasis
 
-from extractor_mvp.citation_resolver import CITATION_CONFIDENCE_PENALTY, CitationResolver
+from extractor_mvp.citation_resolver import (
+    CITATION_CONFIDENCE_PENALTY,
+    CitationResolver,
+    _iter_fields,
+)
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     DeferralRecord,
     PreprocessingExtraction,
     _apply_resolved_citations,
+    extract,
     extract_preprocessing,
 )
 from extractor_mvp.paper_fetcher import PaperFetcher
@@ -166,7 +172,7 @@ def test_apply_resolved_citations_noop_on_empty():
     assert _apply_resolved_citations(prep, {}) is prep
 
 
-# --- 6b: live Cho 2021 -> Glasser 2013 -----------------------------------------
+# --- 7d: live Cho 2021 base-pipeline citation fallback (via extract() routing) --
 MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
 # The repo's purpose-built Cho-2021 HCP methods section. We use this (not the raw
 # Cho_2021.pdf) because the full-PDF auto-slice (~22 KB) dilutes deferral detection:
@@ -177,31 +183,40 @@ MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-
 CHO_SECTION = Path(__file__).resolve().parents[1] / "examples" / "cho_2021_hcp_section.txt"
 
 
-@pytest.mark.xfail(
-    reason="CitationResolver keys on per-field dotted paths; base_pipeline-level "
-    "deferrals require a different expansion path: fetch cited pipeline paper "
-    "-> extract step fields -> populate with PriorPublicationBasis. "
-    "Per-field resolver still works for papers with direct step-level deferrals. "
-    "Follow-up: CitationResolver.resolve_base_pipeline_deferral()."
-)
 @pytest.mark.live
-def test_cho_2021_defers_and_resolves_to_glasser():
+def test_cho_2021_base_pipeline_citation_fallback():
+    """Cho defers its base pipeline (HCP) to Glasser/Marcus. Via extract() routing
+    with paper_date set: the KB path runs first, but HCP is multi-version (no
+    default_version) -> resolves date_inferred -> fill_dependent_defaults no-ops; the
+    citation fallback then fetches Glasser and fills the step fields at
+    PriorPublicationBasis (confidence <= 0.60).
+
+    Reframed from the Part B per-field resolver test (was xfail because Cho's deferral
+    is base-pipeline-level, not per-field; now routed through
+    CitationResolver.resolve_base_pipeline_deferral via extract()).
+    """
     assert CHO_SECTION.is_file(), f"missing fixture: {CHO_SECTION}"
     assert CACHE_DIR.is_dir(), f"missing citation cache: {CACHE_DIR}"
 
     paper = ParsedPaper(
         text=CHO_SECTION.read_text(encoding="utf-8"), source="cho_2021", parser="manual"
     )
-    _prep, _diags, deferrals = extract_preprocessing(paper, MODEL)
-    assert deferrals, "expected at least one DEFERRED_TO_CITATION field in the Cho HCP section"
-
     fetcher = PaperFetcher(CACHE_DIR)
     resolver = CitationResolver(partial(extract_preprocessing, model=MODEL), fetcher)
-    resolved = resolver.resolve_all(deferrals)
+    prep, _diags, _deferrals = extract(
+        paper, MODEL, citation_resolver=resolver, paper_date=date(2021, 1, 1)
+    )
 
-    assert resolved, "expected at least one field resolved one-hop into Glasser 2013"
-    for field, inferred in resolved.items():
-        assert inferred.basis.basis_type == "prior_publication", field
-        assert inferred.confidence <= 0.60, (field, inferred.confidence)
-    # penalty actually applied (source 0.8 * 0.70 = 0.56)
-    assert any(v.confidence <= 0.8 * CITATION_CONFIDENCE_PENALTY + 1e-9 for v in resolved.values())
+    pp_fields = [
+        (dotted, pf)
+        for dotted, pf in _iter_fields(prep)
+        if pf.inference.status == "INFERRED_DEFAULT"
+        and pf.inference.basis.basis_type == "prior_publication"
+    ]
+    assert pp_fields, "expected >=1 step field filled via base-pipeline citation fallback"
+    for _dotted, pf in pp_fields:
+        assert pf.inference.confidence <= 0.60
+    # penalty applied (source 0.8 * 0.70 = 0.56)
+    assert any(
+        pf.inference.confidence <= 0.8 * CITATION_CONFIDENCE_PENALTY + 1e-9 for _, pf in pp_fields
+    )

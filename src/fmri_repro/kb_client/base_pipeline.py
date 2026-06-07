@@ -166,13 +166,13 @@ def fill_dependent_defaults(preprocessing: Preprocessing, paper_date: date | Non
     if pipeline_id is None:
         return preprocessing
 
-    certain_version = _get_certain_version(pipeline_ref.version)
-    if certain_version is None:
+    version = certain_version(pipeline_ref.version)
+    if version is None:
         return preprocessing
 
     field_paths = [f"{kind}.{name}" for kind, name in SEVEN_DEMOTED_FIELDS]
     try:
-        results = get_param_defaults(pipeline_id, certain_version, field_paths)
+        results = get_param_defaults(pipeline_id, version, field_paths)
     except KbUnknownPipelineError:
         return preprocessing
 
@@ -180,7 +180,7 @@ def fill_dependent_defaults(preprocessing: Preprocessing, paper_date: date | Non
         result = results.get(f"{kind}.{name}")
         if result is None:
             continue
-        _apply_param_result(preprocessing, kind, name, result, pipeline_id, certain_version)
+        _apply_param_result(preprocessing, kind, name, result, pipeline_id, version)
 
     return preprocessing
 
@@ -212,7 +212,7 @@ def _outer_extraction_uncertain(
     return base_pipeline.extraction.status in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION")
 
 
-def _get_certain_version(version_pf: ProvenancedField[str]) -> str | None:
+def certain_version(version_pf: ProvenancedField[str]) -> str | None:
     """Return the version string if certain, else None."""
     if version_pf.extraction.status == "EXTRACTED":
         return cast(str, version_pf.extraction.value)
