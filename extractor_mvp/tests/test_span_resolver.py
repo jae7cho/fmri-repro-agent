@@ -140,3 +140,45 @@ def test_normalize_offset_map_ligature_offsets():
     norm, offs = normalize_with_offset_map("ﬂx")
     assert norm == "flx"
     assert offs == [0, 0, 1, 2]  # f->0, l->0, x->1, sentinel->2
+
+
+# --- Measurement-token whitespace splits (pypdf artifact) -------------------
+
+
+def test_measurement_split_unit_letters():
+    # pypdf split "3mm" into "3m m"; LLM quoted the clean form.
+    _resolves_to(
+        "resampled to 3mm voxels",
+        "data were resampled to 3m m voxels",
+        "resampled to 3m m voxels",
+        "resampled to 3mm voxels",
+    )
+
+
+def test_measurement_split_unit_and_superscript():
+    # the liu_2013 case: pypdf renders "3 × 3 × 3mm³" as "3 × 3 × 3m m\n3"; the
+    # LLM quotes it cleanly as "3 × 3 × 3mm3" (× preserved, unit/superscript joined).
+    text = "resampled at\nthe 3 × 3 × 3m m\n3 resolution of the MNI normalized brain space"
+    r = resolve_quote("the 3 × 3 × 3mm3 resolution of the MNI normalized brain space", text)
+    assert r.failure_reason is None and r.span is not None
+    assert text[r.span.start : r.span.end] == (
+        "the 3 × 3 × 3m m\n3 resolution of the MNI normalized brain space"
+    )
+
+
+def test_measurement_split_does_not_merge_identifier_and_word():
+    # "MNI152 space" must NOT collapse to "MNI152space" (no single-letter flank).
+    norm, _ = normalize_with_offset_map("warped to MNI152 space")
+    assert norm == "warped to MNI152 space"
+
+
+def test_measurement_split_does_not_merge_number_and_word():
+    # "20 subjects" / "Table 3 shows" are ordinary word boundaries — preserved.
+    assert normalize_with_offset_map("20 subjects")[0] == "20 subjects"
+    assert normalize_with_offset_map("Table 3 shows")[0] == "Table 3 shows"
+
+
+def test_measurement_number_space_unit_preserved():
+    # "2 mm" (number-space-unit, not glued) is left alone — neither side is a
+    # single LETTER, so it stays resolvable only via the whitespace tier.
+    assert normalize_with_offset_map("at 2 mm isotropic")[0] == "at 2 mm isotropic"

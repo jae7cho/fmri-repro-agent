@@ -136,6 +136,64 @@ These fields capture preprocessing steps the AUTHORS added beyond the base pipel
 Look for language like "additionally", "further processed", "we applied", "we smoothed".
 If the paper only states a base pipeline and defers all details, these fields are missing.
 
+## Layer 2 field definitions
+
+For the six targeted Layer-2 fields below, apply these scoped definitions. Use the
+canonical value when the paper's term maps to one; otherwise return the paper's term
+verbatim (see the typed-field rule above).
+
+target_space: The standard/atlas space the functional data were normalized to.
+Canonical values: MNI152NLin6Asym, MNI152NLin2009cAsym, Talairach, native_volume, other.
+  extracted: "registered to MNI152NLin6Asym" -> value=MNI152NLin6Asym
+  If the paper names a space without a precise variant, return its term verbatim
+  (e.g. bare "MNI" or "MNI152" with no NLin variant -> return that term).
+  missing: data analyzed only in subject/native functional space, no atlas target.
+
+resolution_mm: The isotropic voxel size of the functional data IN ATLAS SPACE after
+spatial normalization, measured in mm. Extract ONLY when the paper states this in the
+context of normalization, resampling, or registration to a standard/atlas space.
+
+status="extracted" examples:
+  "resampled in atlas space on an isotropic 3 mm grid" -> value=3.0
+  "normalized to MNI space and resampled to 3x3x3mm voxels" -> value=3.0
+  "resampled at the 3x3x3mm3 resolution of the MNI normalized brain space" -> value=3.0
+    (the "of the MNI/normalized brain space" clause is the atlas-space cue -- extract)
+
+status="missing" -- do NOT extract for any of the following:
+  - Acquisition voxel size from scanner parameters:
+    "FOV = 192x192mm; resolution = 3x3x3mm" -> missing (this is acquisition, not preprocessing)
+    "voxel size = 2mm; multiband factor = 8" -> missing (acquisition, not normalization)
+  - ROI sphere or searchlight radii:
+    "mean time series in 5-mm spheres" -> missing (sphere radius, not voxel resolution)
+    "within 6-mm spheres around coordinates" -> missing
+  - Template construction resolution:
+    "study-specific template generated from 120 subjects" -> missing (template building)
+  - Structural/anatomical image resolution
+
+If the paper only describes acquisition parameters and does not state the resolution
+after normalization, use status="missing".
+
+surface_registration: The surface registration approach aligning each subject's cortical
+surface to a template. Canonical values: freesurfer_recon, msm_sulc, msm_all, other.
+  extracted: "surfaces aligned with MSMAll" -> value=msm_all
+  missing: volume-only analysis, no surface registration step described.
+
+target_surface: The surface template to which volume data were projected.
+Canonical values: native, fsaverage, fsaverage5, fsaverage6, fsLR_32k, fsLR_164k, other.
+  extracted: "data were mapped to the fsLR 32k surface" -> value=fsLR_32k
+  missing: no surface projection -- data kept in volume space only.
+
+intensity_convention: The global/grand-mean intensity normalization convention applied
+to the 4D BOLD series. Canonical values: spm_grand_mean_100, fsl_grand_mean_10000,
+fsl_median_10000, voxel_temporal_zscore, global_median_1000, global_mode_1000, other.
+  extracted: "scaled each run to a grand mean of 10000" -> value=fsl_grand_mean_10000
+  missing: no intensity scaling/normalization of the time series is described.
+
+intensity_value: The target intensity magnitude after normalization (the number, e.g.
+1000 or 10000). Null for z-score conventions, which have no target magnitude.
+  extracted: "grand mean scaling to 10000" -> value=10000
+  missing: no intensity normalization stated, OR a z-score convention (no target value).
+
 ## Output status for each field
 
 For each field output exactly one of three statuses:
