@@ -51,6 +51,7 @@ Icon?
 # --- Local-only (Claude Code, private hooks) ---
 .local/
 CLAUDE.local.md
+.claude/settings.local.json
 
 # --- Self-contained pilot (own venv/caches; extract to its own repo when ready) ---
 blindness_pilot/
