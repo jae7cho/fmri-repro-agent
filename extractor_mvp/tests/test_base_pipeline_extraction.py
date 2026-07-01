@@ -124,7 +124,7 @@ def test_case_missing_name_missing_ref():
 
 
 # --- 6d: live Cho 2021 full PDF Layer-1 probe ----------------------------------
-MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-6")
 CHO_PDF = Path("/Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf")
 
 

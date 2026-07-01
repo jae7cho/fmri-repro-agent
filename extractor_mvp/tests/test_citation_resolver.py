@@ -173,7 +173,7 @@ def test_apply_resolved_citations_noop_on_empty():
 
 
 # --- 7d: live Cho 2021 base-pipeline citation fallback (via extract() routing) --
-MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0")
+MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-6")
 # The repo's purpose-built Cho-2021 HCP methods section. We use this (not the raw
 # Cho_2021.pdf) because the full-PDF auto-slice (~22 KB) dilutes deferral detection:
 # the LLM extracts/misses fields on the large slice instead of deferring, even though

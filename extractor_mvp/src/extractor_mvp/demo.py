@@ -1,7 +1,7 @@
 """CLI: text-in, JSON-out. Runs the MVP extractor and prints a per-field summary.
 
     python -m extractor_mvp.demo --text examples/schwartz_2018_methods.txt \\
-        --model bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0 \\
+        --model bedrock/us.anthropic.claude-sonnet-4-6 \\
         --output results/schwartz_2018.json
 """
 

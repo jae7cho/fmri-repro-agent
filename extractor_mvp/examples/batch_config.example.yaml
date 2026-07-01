@@ -1,5 +1,5 @@
 # Batch MVP runner config. Paths are relative to THIS file's location.
-model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+model: bedrock/us.anthropic.claude-sonnet-4-6
 output_dir: ../results/batch_sfn
 papers:
   - paper_id: schwartz_2018

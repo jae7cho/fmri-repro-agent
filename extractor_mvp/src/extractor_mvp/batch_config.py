@@ -19,7 +19,7 @@ class PdfPaper(BaseModel):
 
 
 class BatchConfig(BaseModel):
-    model: str  # e.g. "bedrock/anthropic.claude-sonnet-4-5-..."
+    model: str  # e.g. "bedrock/us.anthropic.claude-sonnet-4-6" (use the us.* inference profile)
     output_dir: Path = Path("results/batch")
     # KB/citation fallback for base-pipeline deferrals. Resolved relative to the
     # config file; if the dir is absent the batch runs without citation fallback.

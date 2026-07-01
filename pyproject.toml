@@ -71,7 +71,6 @@ addopts = "-ra --strict-markers"
 
 [dependency-groups]
 dev = [
-    "boto3==1.43.23",
     "instructor==1.15.1",
     "litellm==1.87.1",
     "pandas>=3.0.3",
