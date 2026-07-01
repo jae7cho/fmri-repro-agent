@@ -65,7 +65,9 @@ def test_run_batch_end_to_end(monkeypatch, tmp_path: Path):
     assert r.parser == "pypdf"
     assert r.methods_found_via == "header_match"
     assert r.n_extracted == 2  # target_space + resolution_mm resolved
-    assert r.n_missing_not_stated == 4  # the other 4 targeted fields
+    # 5 targeted fields land MISSING: was 4, +1 for temporal_standardization.method
+    # (Build 2 added it as a targeted field; the mock LLM doesn't provide it).
+    assert r.n_missing_not_stated == 5
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 

@@ -38,6 +38,8 @@ from fmri_repro.spec.preprocessing import (
     SurfaceRegistration,
     TargetSpace,
     TargetSurface,
+    TemporalStandardization,
+    TemporalStandardizationMethod,
 )
 from fmri_repro.spec.provenance import (
     Deferral,
@@ -91,6 +93,11 @@ class PreprocessingExtraction(BaseModel):
     base_pipeline_ref: FieldExtractionResult = Field(
         default_factory=lambda: FieldExtractionResult(status="missing")
     )  # deferred to "Glasser et al. 2013", or extracted attribution
+    # Build 2: per-voxel temporal z-scoring of the BOLD SIGNAL itself (Liu/Cho).
+    # Defaulted to status="missing" so pre-existing fixtures still construct.
+    temporal_standardization_method: FieldExtractionResult = Field(
+        default_factory=lambda: FieldExtractionResult(status="missing")
+    )  # voxel_temporal_zscore when the BOLD SIGNAL is z-scored (Liu/Cho); missing otherwise
 
 
 EXTRACTION_PROMPT = """\
@@ -183,16 +190,49 @@ Canonical values: native, fsaverage, fsaverage5, fsaverage6, fsLR_32k, fsLR_164k
   extracted: "data were mapped to the fsLR 32k surface" -> value=fsLR_32k
   missing: no surface projection -- data kept in volume space only.
 
-intensity_convention: The global/grand-mean intensity normalization convention applied
-to the 4D BOLD series. Canonical values: spm_grand_mean_100, fsl_grand_mean_10000,
-fsl_median_10000, voxel_temporal_zscore, global_median_1000, global_mode_1000, other.
+intensity_convention: The global/grand-mean intensity MAGNITUDE-scaling convention
+applied to the 4D BOLD series (scaling the signal so a summary statistic hits a target
+number). Canonical values: spm_grand_mean_100, fsl_grand_mean_10000, fsl_median_10000,
+global_median_1000, global_mode_1000, other.
   extracted: "scaled each run to a grand mean of 10000" -> value=fsl_grand_mean_10000
-  missing: no intensity scaling/normalization of the time series is described.
+  missing: no magnitude scaling of the time series is described.
+  NOT this field: per-voxel z-scoring / standardization to unit variance -> that is
+    temporal_standardization_method, NOT an intensity convention. Fisher z-transform of
+    correlations, DVARS, and statistical-map z-scores are NOT intensity conventions.
 
 intensity_value: The target intensity magnitude after normalization (the number, e.g.
-1000 or 10000). Null for z-score conventions, which have no target magnitude.
+1000 or 10000).
   extracted: "grand mean scaling to 10000" -> value=10000
-  missing: no intensity normalization stated, OR a z-score convention (no target value).
+  missing: no magnitude scaling stated.
+
+temporal_standardization_method: Whether the PREPROCESSED BOLD SIGNAL ITSELF was
+temporally standardized per voxel (each voxel's time series transformed to zero mean and
+unit variance across time, i.e. z-scored over time) as a preprocessing step before
+analysis. Canonical values: voxel_temporal_zscore, other.
+  extracted: "for each voxel, the signal was temporally normalized by subtracting its
+    mean and dividing by its temporal standard deviation" -> value=voxel_temporal_zscore
+  extracted: "the BOLD time series were z-scored" -> value=voxel_temporal_zscore
+  missing: no per-voxel temporal standardization of the signal is described.
+
+  CRITICAL -- this field is ONLY for standardization of the BOLD SIGNAL ITSELF. It is
+  "missing" (do NOT populate it) for ALL of the following, even though they use words
+  like "standardized", "z-score", "unit variance", "zero mean":
+    - Fisher r-to-z transform of CORRELATION / CONNECTIVITY values
+      ("correlations were Fisher z-transformed") -> NOT this field.
+    - Standardization of NUISANCE REGRESSORS / the design matrix
+      ("regressors were standardized to zero-mean unit variance") -> NOT this field.
+    - Standardization of ICA / PCA COMPONENTS after decomposition
+      ("ICA component time series standardized to mean 0 SD 1") -> NOT this field
+      (components are analysis products, not the signal).
+    - Standardization of MVPA / classification FEATURES
+      ("across-feature normalization") -> NOT this field.
+    - Standardization of BEHAVIORAL / PHENOTYPE scores (IQ, symptom scales) -> NOT this
+      field.
+    - DVARS or other QC METRICS that are "standardized" -> NOT this field.
+    - Z-scores in STATISTICAL MAPS / activation tables -> NOT this field.
+  Ask: is the paper transforming the fMRI SIGNAL that carries forward into analysis, or
+  is it transforming something DERIVED from the signal (a correlation, a regressor, a
+  component, a feature, a metric)? Only the former is voxel_temporal_zscore.
 
 ## Output status for each field
 
@@ -293,6 +333,16 @@ _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
         IntensityNormalizationConvention,
     ),
     ("intensity_value", "value", "intensity_normalization.value", None, float),
+    # No value_context (no sibling number); field_id "method" != "convention", so the
+    # value_context guard at _extract_from_prompt leaves it None. Direct Literal
+    # validation (no synonym table — "method" is not a SYNONYMS_BY_FIELD key).
+    (
+        "temporal_standardization_method",
+        "method",
+        "temporal_standardization.method",
+        TemporalStandardizationMethod,
+        TemporalStandardizationMethod,
+    ),
 ]
 
 
@@ -573,6 +623,9 @@ def _assemble(
         value=pf["intensity_value"],
         scope=_missing_pf("scope", str, untargeted),
     )
+    temporal_standardization = TemporalStandardization(
+        method=pf["temporal_standardization_method"],
+    )
     if isinstance(base_pipeline, MissingFromPaper):
         base_pipeline_field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](
             field_id="base_pipeline",
@@ -584,7 +637,7 @@ def _assemble(
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
-        steps=[spatial, surface, intensity],
+        steps=[spatial, surface, intensity, temporal_standardization],
     )
 
 
