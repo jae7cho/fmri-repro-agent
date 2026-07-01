@@ -77,6 +77,8 @@ SURFACE_REGISTRATION_SYNONYMS: dict[str, list[str]] = {
         "folding-based registration",  # specific operation name
         "sphere.reg",  # FS file produced by recon-all
         "FS recon-all",
+        "recon-all",  # recon-all is unambiguously FreeSurfer
+        "FreeSurfer recon-all",
     ],
     "msm_sulc": [
         "msm_sulc",
@@ -88,16 +90,19 @@ SURFACE_REGISTRATION_SYNONYMS: dict[str, list[str]] = {
     "msm_all": ["msm_all", "MSMAll", "MSM-All", "MSM with multiple modalities"],
 }
 # "FreeSurfer" alone is insufficient to identify the registration method.
+# Bare sphere/spherical registration is FS-vs-MSM ambiguous -> underspecified, not resolved.
 SURFACE_REGISTRATION_UNDERSPECIFIED: list[str] = [
     "FreeSurfer",
     "FreeSurfer-based",
     "via FreeSurfer",
+    "sphere registration",
+    "spherical registration",
 ]
 
 TARGET_SURFACE_SYNONYMS: dict[str, list[str]] = {
     "native": ["native midthickness", "native surface", "subject's native surface"],
     "fsaverage": ["fsaverage", "fsaverage template"],
-    "fsaverage5": ["fsaverage5", "fsaverage 5"],
+    "fsaverage5": ["fsaverage5", "fsaverage 5", "fsaverge5"],  # observed typo (Chen p4)
     "fsaverage6": ["fsaverage6", "fsaverage 6"],
     "fsLR_32k": ["32k_fs_LR", "fs_LR 32k", "fsLR 32k", "32k grayordinates", "fs_LR_32k"],
     "fsLR_164k": ["164k_fs_LR", "fs_LR 164k", "fsLR 164k", "fs_LR_164k"],
@@ -109,6 +114,11 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
         "grand-mean scaling@10000",
         "FSL grand-mean@10000",
         "fslmaths -ing@10000",
+        "global mean@10000",  # value-context form (Chen "global mean ... to 10,000")
+        "mean intensity@10000",
+        # Direct-phrase fallbacks for when value_context is not supplied.
+        "global mean intensity to 10000",
+        "global mean intensity to 10,000",
     ],
     "fsl_median_10000": [
         "fsl_median_10000",
@@ -183,6 +193,28 @@ def resolve_to_literal(
             if _alias_matches(alias, raw_lower, value_context):
                 matched[member] = alias
                 break
+
+    # Token-prefix containment collapse: drop member A when its matched alias is a
+    # strict prefix-substring of member B's matched alias AND the char in B's alias
+    # immediately following the A-substring is alphanumeric (so "fsaverage" inside
+    # "fsaverage5" collapses to the more specific 5, but "foo" inside "foo bar"
+    # stays — the next char is a space, so both remain and the result is ambiguous).
+    def _next_char_alnum(alias_a: str, alias_b: str) -> bool:
+        j = alias_b.index(alias_a) + len(alias_a)
+        return j < len(alias_b) and alias_b[j].isalnum()
+
+    drops = {
+        a
+        for a, alias_a in matched.items()
+        if any(
+            b != a
+            and alias_a.lower() != alias_b.lower()
+            and alias_a.lower() in alias_b.lower()
+            and _next_char_alnum(alias_a.lower(), alias_b.lower())
+            for b, alias_b in matched.items()
+        )
+    }
+    matched = {k: v for k, v in matched.items() if k not in drops}
 
     if len(matched) == 1:
         member, alias = next(iter(matched.items()))

@@ -380,8 +380,17 @@ def classify(extraction: dict, inference: dict) -> tuple[str, str, str]:
         "extraction_quote_unresolved": "Quote unresolved",
         "deferral_quote_unresolved": "Deferral unresolved",
         "deferred_pending_citation_resolution": "Deferred (pending)",
+        "not_targeted_by_mvp": "Not targeted (out of MVP scope)",
+        "not_stated_in_text": "Not reported",
+        "no_base_pipeline_named": "No base pipeline",
+        "version_deferred_to_kb": "Inferred via KB",
     }
-    return reason_map.get(inf_reason, "Missing"), "", ""
+    # Reasons may be namespaced with a ":" suffix (e.g.
+    # "extraction_quote_unresolved:quote_not_found"); match the full string first,
+    # then fall back to the pre-colon prefix.
+    inf_key = inf_reason.split(":", 1)[0]
+    label = reason_map.get(inf_reason) or reason_map.get(inf_key, "Missing")
+    return label, "", ""
 
 
 def build_df(results_dir: Path) -> pd.DataFrame:

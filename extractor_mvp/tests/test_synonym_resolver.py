@@ -98,3 +98,68 @@ def test_ambiguous_when_two_members_claim_term():
     syn = {"member_a": ["foo"], "member_b": ["foo bar"]}
     # "foo bar" contains both "foo" (a) and "foo bar" (b) -> ambiguous
     assert resolve_to_literal("foo bar baz", syn).status == "ambiguous"
+
+
+# --- Tier-2 additions: target_surface typo + token-prefix containment collapse,
+#     surface_registration sphere/recon-all, fsl grand-mean 10000 ---------------
+
+from extractor_mvp.synonym_resolver import TARGET_SURFACE_SYNONYMS  # noqa: E402
+
+
+def _tsurf(raw, value_context=None):
+    return resolve_to_literal(raw, TARGET_SURFACE_SYNONYMS, None, value_context)
+
+
+def _surf(raw, value_context=None):
+    return resolve_to_literal(
+        raw, SURFACE_REGISTRATION_SYNONYMS, SURFACE_REGISTRATION_UNDERSPECIFIED, value_context
+    )
+
+
+def test_fsaverge5_typo_resolves():
+    r = _tsurf("down-sampled to the fsaverge5 surface grid")
+    assert r.resolved == "fsaverage5" and r.status == "resolved"
+
+
+def test_fsaverage5_correct_spelling_resolves():
+    # The bug being fixed: "fsaverage5" also matched "fsaverage", going ambiguous.
+    # Token-prefix containment collapse drops "fsaverage" (next char "5" is alnum).
+    r = _tsurf("fsaverage5")
+    assert r.resolved == "fsaverage5" and r.status == "resolved"
+
+
+def test_fsaverage6_resolves():
+    r = _tsurf("fsaverage6")
+    assert r.resolved == "fsaverage6" and r.status == "resolved"
+
+
+def test_both_fsaverage5_and_6_is_ambiguous():
+    # Sanity: collapse drops the shared "fsaverage" prefix but the two distinct
+    # specific members both remain -> ambiguous (not silently coerced).
+    r = _tsurf("projected to fsaverage5 and later fsaverage6")
+    assert r.status == "ambiguous" and r.resolved is None
+
+
+def test_sphere_registration_underspecified():
+    r = _surf("registration was performed via a sphere registration")
+    assert r.status == "underspecified" and r.resolved is None
+
+
+def test_recon_all_resolves_freesurfer():
+    r = _surf("surfaces generated using FreeSurfer's default recon-all (version 5.0)")
+    assert r.resolved == "freesurfer_recon" and r.status == "resolved"
+
+
+_CHEN_GLOBAL_MEAN = "normalized the 4D global mean intensity to 10,000"
+
+
+def test_chen_global_mean_10000_with_value_context():
+    # value_context path: "global mean@10000" fires when the sibling numeric == 10000.
+    r = _conv(_CHEN_GLOBAL_MEAN, 10000)
+    assert r.resolved == "fsl_grand_mean_10000" and r.status == "resolved"
+
+
+def test_chen_global_mean_10000_without_value_context():
+    # direct-phrase fallback path: resolves even when no numeric context is supplied.
+    r = _conv(_CHEN_GLOBAL_MEAN, None)
+    assert r.resolved == "fsl_grand_mean_10000" and r.status == "resolved"
