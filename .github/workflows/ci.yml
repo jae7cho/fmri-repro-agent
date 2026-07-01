@@ -18,16 +18,30 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+        with:
+          path: fmri-repro-agent
+      # Sibling path dependency: uv.sources maps fmri-defaults-kb to
+      # ../fmri-defaults-kb, so it must be checked out next to the main repo for
+      # `uv sync --frozen` to resolve the editable path in CI.
+      - uses: actions/checkout@v6
+        with:
+          repository: jae7cho/fmri-defaults-kb
+          path: fmri-defaults-kb
       - uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
       - name: Install dependencies
+        working-directory: fmri-repro-agent
         run: uv sync --all-extras --frozen
       - name: Ruff lint
+        working-directory: fmri-repro-agent
         run: uv run ruff check .
       - name: Ruff format check
+        working-directory: fmri-repro-agent
         run: uv run ruff format --check .
       - name: Mypy
+        working-directory: fmri-repro-agent
         run: uv run mypy src
       - name: Pytest
+        working-directory: fmri-repro-agent
         run: uv run pytest --cov=fmri_repro --cov-report=term-missing
