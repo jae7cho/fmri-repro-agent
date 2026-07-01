@@ -66,6 +66,7 @@ from fmri_repro.spec.preprocessing import (
     SpatialSmoothing,
     SurfaceProjection,
     TemporalFiltering,
+    TemporalStandardization,
     _check_step_bijection,
 )
 from fmri_repro.spec.provenance import (
@@ -85,6 +86,7 @@ from fmri_repro.spec.provenance import (
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from fmri_repro.spec.v0_1_0 import ReplicationSpec
+from fmri_repro.spec.v0_2_0 import StudySpec as CurrentStudySpec
 from tests.spec.test_acquisition import (
     _anatomical_payload,
     _fieldmap_payload,
@@ -332,6 +334,10 @@ def _spatial_smoothing(fwhm: float = 6.0, space: str = "mni_volume") -> SpatialS
     )
 
 
+def _temporal_standardization() -> TemporalStandardization:
+    return TemporalStandardization(method=_pf_missing("method", str))
+
+
 # ---------------------------------------------------------------------------
 # Preprocessing + ReplicationSpec assembly helpers
 # ---------------------------------------------------------------------------
@@ -460,6 +466,16 @@ def test_two_despike_steps_rejected() -> None:
         )
     assert "duplicate preprocessing step kind" in str(excinfo.value)
     assert "despike" in str(excinfo.value)
+
+
+def test_temporal_standardization_step_accepted_in_preprocessing() -> None:
+    # The new terminal step is a distinct kind and is accepted in a steps list.
+    prep = Preprocessing(
+        applies_to=[_bold_ref()],
+        base_pipeline=NotApplicable(),
+        steps=[_temporal_standardization()],
+    )
+    assert [s.kind for s in prep.steps] == ["temporal_standardization"]
 
 
 def test_despike_and_scrub_accepted_at_different_positions() -> None:
@@ -1160,6 +1176,7 @@ _STEP_BUILDERS: dict[str, Any] = {
     "temporal_filtering": _temporal_filtering_butter,
     "intensity_normalization": _intensity_normalization,
     "spatial_smoothing": _spatial_smoothing,
+    "temporal_standardization": _temporal_standardization,
 }
 
 
@@ -1203,6 +1220,7 @@ def test_preprocstep_union_in_json_schema_export() -> None:
         "TemporalFiltering",
         "IntensityNormalization",
         "SpatialSmoothing",
+        "TemporalStandardization",
     ):
         assert cls_name in blob, f"{cls_name} missing from PreprocStep schema"
 
@@ -1429,7 +1447,8 @@ def test_schema_export_contains_all_preprocessing_kinds(
     finally:
         sys.path.remove(str(EXPORT_SCRIPT.parent))
 
-    out_path = tmp_path / "schema" / "study_spec-0.1.0.schema.json"
+    version = CurrentStudySpec.model_fields["schema_version"].default
+    out_path = tmp_path / "schema" / f"study_spec-{version}.schema.json"
     schema = json.loads(out_path.read_text())
     def_names = "\n".join(schema["$defs"].keys())
     for name in (
@@ -1451,6 +1470,7 @@ def test_schema_export_contains_all_preprocessing_kinds(
         "TemporalFiltering",
         "IntensityNormalization",
         "SpatialSmoothing",
+        "TemporalStandardization",
     ):
         assert name in def_names, f"{name!r} not in $defs"
 

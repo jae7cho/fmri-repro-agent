@@ -55,6 +55,7 @@ from fmri_repro.spec.preprocessing import (
     SpatialSmoothing,
     SurfaceProjection,
     TemporalFiltering,
+    TemporalStandardization,
 )
 
 # Hand-mirror of the PreprocStep discriminated union, kept explicit so the
@@ -79,6 +80,7 @@ _STEP_CLASSES: tuple[type[BaseModel], ...] = (
     TemporalFiltering,
     IntensityNormalization,
     SpatialSmoothing,
+    TemporalStandardization,
 )
 
 
@@ -300,6 +302,7 @@ def test_contracts_cover_known_shared_fields() -> None:
         ("surface_projection", "surface_registration"),
         ("surface_projection", "target_surface"),
         ("spatial_normalization", "target_space"),
+        ("temporal_standardization", "method"),
     }
     missing = expected - set(CONTRACTS.keys())
     assert not missing, f"CONTRACTS missing expected vocab fields: {missing}"

@@ -12,6 +12,10 @@ from pydantic import ValidationError
 
 from fmri_repro.spec.v0_1_0 import FunctionalAcquisition, StudySpec
 
+# export_schema.py emits the CURRENT versioned root; import it to derive the
+# exported filename (the 0.1.0 StudySpec above stays for the frozen example).
+from fmri_repro.spec.v0_2_0 import StudySpec as CurrentStudySpec
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_PATH = REPO_ROOT / "examples" / "spec.json"
 EXPORT_SCRIPT = REPO_ROOT / "scripts" / "export_schema.py"
@@ -125,7 +129,11 @@ def test_export_schema_writes_expected_file(
     finally:
         sys.path.remove(str(EXPORT_SCRIPT.parent))
 
-    out_path = tmp_path / "schema" / "study_spec-0.1.0.schema.json"
+    # Filename is derived from the model's declared version (parametric — a future
+    # minor won't need editing here); the version const below stays a concrete
+    # literal so an unintended bump is caught.
+    version = CurrentStudySpec.model_fields["schema_version"].default
+    out_path = tmp_path / "schema" / f"study_spec-{version}.schema.json"
     assert out_path.exists(), f"export_schema did not produce {out_path}"
     schema = json.loads(out_path.read_text())
     assert schema, "schema file is empty"
@@ -136,9 +144,10 @@ def test_export_schema_writes_expected_file(
     for field in ("schema_version", "run", "specs", "study_analysis"):
         assert field in props, f"missing top-level field {field!r}"
 
-    # schema_version is pinned to "0.1.0" (Literal exports as const or enum)
+    # schema_version is pinned to "0.2.0" (Literal exports as const or enum).
+    # Concrete literal (NOT derived) so an accidental future bump fails this test.
     sv = props["schema_version"]
-    assert sv.get("const") == "0.1.0" or sv.get("enum") == ["0.1.0"]
+    assert sv.get("const") == "0.2.0" or sv.get("enum") == ["0.2.0"]
 
     # $defs should contain ReplicationSpec, DatasetRef, StudyAnalysis, all three
     # extraction arms, and all three inference arms.

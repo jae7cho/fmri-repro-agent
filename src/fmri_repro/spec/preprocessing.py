@@ -36,7 +36,7 @@ and the ordered ``steps`` list (list position IS the order — COBIDAS §4.3).
 
 from __future__ import annotations
 
-from typing import Annotated, Any, ClassVar, Literal, Self
+from typing import Annotated, ClassVar, Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -958,26 +958,12 @@ IntensityNormalizationConvention = Literal[
     # FSL/Nipype per-volume convention: scale each volume so its median equals
     # 10000 (median-based, per-volume — not the same as `-ing`).
     "fsl_median_10000",
-    # New in v0.1.1 — operation-prefixed (<scope>_<statistic>_<target>), distinct
-    # from the tool-prefixed conventions above. Surfaced by the SfN batch run.
-    # Per-voxel temporal z-score: (x - mean_t) / SD_t. No target magnitude (Liu 2013).
-    "voxel_temporal_zscore",
     # Scale so the global median = 1000 (Mueller 2021).
     "global_median_1000",
     # Scale so the global mode = 1000 (Power 2014, Poldrack 2015; WashU/Petersen-lab).
     "global_mode_1000",
     "other",
 ]
-
-
-def _resolved_field_value(pf: Any) -> Any:
-    """The effective value of a ProvenancedField: the Extracted value if present,
-    else the InferredDefault value, else None (missing / deferred / left-missing)."""
-    if pf.extraction.status == "EXTRACTED":
-        return pf.extraction.value
-    if pf.inference.status == "INFERRED_DEFAULT":
-        return pf.inference.value
-    return None
 
 
 class IntensityNormalization(BaseModel):
@@ -993,23 +979,6 @@ class IntensityNormalization(BaseModel):
     @model_validator(mode="after")
     def _check_invariants(self) -> Self:
         _validate_step_invariants(self, INTENSITY_NORMALIZATION_FIELD_META)
-        return self
-
-    @model_validator(mode="after")
-    def _zscore_has_no_magnitude(self) -> Self:
-        """``voxel_temporal_zscore`` is unitless — it has no target magnitude, so
-        ``value`` must carry no concrete number (MissingFromPaper/LeftMissing or
-        NotApplicable). A concrete Extracted/InferredDefault ``value`` paired with
-        the z-score convention is a contradiction and is rejected."""
-        if (
-            _resolved_field_value(self.convention) == "voxel_temporal_zscore"
-            and _resolved_field_value(self.value) is not None
-        ):
-            raise ValueError(
-                "convention 'voxel_temporal_zscore' has no target magnitude; "
-                "IntensityNormalization.value must be MissingFromPaper/LeftMissing "
-                "or NotApplicable, not a concrete number."
-            )
         return self
 
 
@@ -1036,6 +1005,40 @@ class SpatialSmoothing(BaseModel):
         return self
 
 
+# 14. TemporalStandardization — DIVERGENCE (added as a discrete step): per-voxel
+# temporal standardization of the BOLD signal (z-score across time). Terminal
+# conditioning before analysis. NOT intensity magnitude scaling (that is
+# IntensityNormalization); NOT standardization of regressors/components/features/
+# connectivity (those are analysis-stage). The object is the preprocessed BOLD
+# signal itself. Liu 2013, Cho 2021. The impossibility of a target magnitude is
+# structural here — this step has no ``value`` field (replacing the former
+# IntensityNormalization._zscore_has_no_magnitude validator).
+TemporalStandardizationMethod = Literal["voxel_temporal_zscore", "other"]
+
+
+TEMPORAL_STANDARDIZATION_FIELD_META: dict[str, FieldMeta] = {
+    "method": FieldMeta(
+        justification_axis="both",
+        inference_applicable=False,  # do not infer a standardization method
+        source="derived",
+    ),
+}
+
+
+class TemporalStandardization(BaseModel):
+    kind: Literal["temporal_standardization"] = "temporal_standardization"
+    method: ProvenancedField[TemporalStandardizationMethod]
+
+    cobidas_row: ClassVar[str] = "DIVERGENCE"  # no COBIDAS D.3 row for signal standardization
+    STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
+    ARM_REGISTRY: ClassVar[dict[str, FieldMeta]] = TEMPORAL_STANDARDIZATION_FIELD_META
+
+    @model_validator(mode="after")
+    def _check_invariants(self) -> Self:
+        _validate_step_invariants(self, TEMPORAL_STANDARDIZATION_FIELD_META)
+        return self
+
+
 # ---------------------------------------------------------------------------
 # Module-level bijection guards — raise on import if any registry diverges
 # from its class.
@@ -1056,6 +1059,7 @@ _check_step_bijection(Scrub, SCRUB_FIELD_META)
 _check_step_bijection(TemporalFiltering, TEMPORAL_FILTERING_FIELD_META)
 _check_step_bijection(IntensityNormalization, INTENSITY_NORMALIZATION_FIELD_META)
 _check_step_bijection(SpatialSmoothing, SPATIAL_SMOOTHING_FIELD_META)
+_check_step_bijection(TemporalStandardization, TEMPORAL_STANDARDIZATION_FIELD_META)
 
 
 # ---------------------------------------------------------------------------
@@ -1077,7 +1081,8 @@ PreprocStep = Annotated[
     | Scrub
     | TemporalFiltering
     | IntensityNormalization
-    | SpatialSmoothing,
+    | SpatialSmoothing
+    | TemporalStandardization,
     Field(discriminator="kind"),
 ]
 
