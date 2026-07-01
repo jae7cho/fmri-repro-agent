@@ -330,6 +330,14 @@ GLOSSARY = [
         "fsl_susan | afni_3dBlurInMask | fslmaths | other",
         "",
     ),
+    (
+        "temporal_standardization",
+        "method",
+        "Per-voxel temporal standardization of the BOLD signal (z-score over time) "
+        "as a terminal preprocessing step",
+        "voxel_temporal_zscore | other",
+        "",
+    ),
 ]
 
 STATUS_LEGEND = [
