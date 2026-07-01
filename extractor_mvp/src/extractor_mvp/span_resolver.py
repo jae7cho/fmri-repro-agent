@@ -75,6 +75,42 @@ def _measurement_ws_drop_indices(text: str) -> set[int]:
     return drops
 
 
+def _hyphenation_drop_indices(text: str) -> set[int]:
+    """Indices to drop for a line-wrap soft-hyphen: a word-internal hyphen immediately
+    followed (allowing spaces before the break) by a newline. PDF text extraction
+    hard-wraps words at the hyphen (``normal-\\nized``); dropping the hyphen and the
+    newline/space run rejoins the halves (``normalized``) so a quote carrying the intact
+    word matches.
+
+    Scoped conservatively — fires ONLY when the hyphen is (a) preceded by an
+    alphanumeric (the left word-half), (b) followed by optional spaces, then a newline,
+    then optional whitespace, and (c) that run is followed by an alphanumeric (the right
+    word-half). So ``grand-mean`` / ``z-score`` / ``0.01-0.1`` (hyphen + non-newline) and
+    ``word - \\nword`` (hyphen not attached to a word) are left untouched. Diagnosed on
+    liu_2013 (``temporally normal-\\nized``).
+    """
+    n = len(text)
+    drops: set[int] = set()
+    i = 0
+    while i < n:
+        if text[i] != "-" or i == 0 or not text[i - 1].isalnum():
+            i += 1
+            continue
+        j = i + 1
+        while j < n and text[j] in " \t":  # optional spaces between hyphen and the break
+            j += 1
+        if j < n and text[j] == "\n":
+            k = j + 1
+            while k < n and text[k] in " \t\n":  # trailing whitespace after the break
+                k += 1
+            if k < n and text[k].isalnum():
+                drops.update(range(i, k))  # hyphen through the newline/space run
+                i = k
+                continue
+        i += 1
+    return drops
+
+
 def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
     """NFKD-fold + strip combining marks + apply explicit mappings, tracking offsets.
 
@@ -83,11 +119,11 @@ def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
     ``normalized[i]`` originates from, and ``offset_map[len(normalized)] == len(text)``
     (sentinel for terminal slicing). ASCII-only text round-trips unchanged with an
     identity map. A ligature like ﬂ at position k yields 'f','l' both mapped to k;
-    combining marks — and pypdf-split measurement whitespace (see
-    :func:`_measurement_ws_drop_indices`) — contribute no normalized char and no
-    offset entry.
+    combining marks — pypdf-split measurement whitespace (see
+    :func:`_measurement_ws_drop_indices`) — and line-wrap soft-hyphens (see
+    :func:`_hyphenation_drop_indices`) contribute no normalized char and no offset entry.
     """
-    drop_idx = _measurement_ws_drop_indices(text)
+    drop_idx = _measurement_ws_drop_indices(text) | _hyphenation_drop_indices(text)
     out_chars: list[str] = []
     out_offsets: list[int] = []
     for orig_idx, ch in enumerate(text):
