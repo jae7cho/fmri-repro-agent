@@ -112,10 +112,13 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
     "fsl_grand_mean_10000": [
         "fsl_grand_mean_10000",
         "grand-mean scaling@10000",
+        "grand mean scaling@10000",  # space variant (fixes hyphen false-negative)
+        "grand mean@10000",  # space variant; "grand mean" denotes the convention
         "FSL grand-mean@10000",
         "fslmaths -ing@10000",
         "global mean@10000",  # value-context form (Chen "global mean ... to 10,000")
-        "mean intensity@10000",
+        # Dropped "mean intensity@10000": bare "mean intensity" false-fired on a
+        # registration sentence ("registering the mean intensity image") — Marek probe.
         # Direct-phrase fallbacks for when value_context is not supplied.
         "global mean intensity to 10000",
         "global mean intensity to 10,000",
@@ -123,7 +126,9 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
     "fsl_median_10000": [
         "fsl_median_10000",
         "median scaling@10000",
-        "median@10000",
+        "median intensity@10000",
+        # Dropped bare "median@10000": "median" alone false-fires on statistics
+        # vocabulary (median sample size / effect size) — Marek probe.
         "per-volume median@10000",
     ],
     "spm_grand_mean_100": [
@@ -131,25 +136,26 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
         "SPM grand-mean@100",
         "grand-mean scaling@100",
     ],
-    "voxel_temporal_zscore": [
-        "voxel_temporal_zscore",
-        "z-score",
-        "z-scored",
-        "temporal z-score",
-        "voxel-wise z-score",
-        "per-voxel temporal z-score",
-        "subtracting its mean and then dividing by its temporal standard deviation",
-    ],
+    # voxel_temporal_zscore intentionally has NO resolver entry: per-voxel temporal
+    # z-scoring is not a magnitude-scaling convention, so it must not resolve here
+    # (z-score category-error corpus finding). The Literal member + its no-magnitude
+    # validator remain in the schema (PATH 0); only this synonym mapping is removed.
     "global_median_1000": [
         "global_median_1000",
         "global median scaling@1000",
-        "median@1000",
+        "median scaling@1000",
+        "median intensity@1000",
+        "median value@1000",
+        # Dropped bare "median@1000" (false-fires on statistics vocabulary — Marek probe).
         "median = 1,000",
         "Global signal scaling (median = 1,000)",
     ],
     "global_mode_1000": [
         "global_mode_1000",
-        "mode@1000",
+        "mode value@1000",
+        "mode scaling@1000",
+        # Dropped bare "mode@1000" (false-fires on "default mode" / "mode of covariation"
+        # — Marek probe). Direct phrases below still carry the convention unambiguously.
         "mode value of 1000",
         "mode value of 1,000",
         "normalized to a mode of 1,000",

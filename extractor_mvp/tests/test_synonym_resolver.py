@@ -49,8 +49,16 @@ def _conv(raw, value_context=None):
 
 
 def test_mode_with_value_1000_resolves():
-    assert _conv("mode", 1000).resolved == "global_mode_1000"
+    """global_mode_1000 resolves on convention-bearing phrasing, not the bare word
+    'mode'. Bare 'mode@1000' was removed because it false-fired on 'default mode' /
+    'mode of covariation' (Marek false-fire probe); the term must denote the
+    convention, with the number only disambiguating."""
+    # positive: convention-bearing terms + value context, and direct phrase
+    assert _conv("mode value", 1000).resolved == "global_mode_1000"
+    assert _conv("mode scaling", 1000).resolved == "global_mode_1000"
     assert _conv("normalized to a mode of 1,000").resolved == "global_mode_1000"
+    # negative: the bare word no longer resolves even with the number
+    assert _conv("mode", 1000).status != "resolved"
 
 
 def test_mode_with_wrong_or_no_value_does_not_resolve():
@@ -59,13 +67,33 @@ def test_mode_with_wrong_or_no_value_does_not_resolve():
 
 
 def test_median_value_context_disambiguates():
-    assert _conv("median", 1000).resolved == "global_median_1000"
-    assert _conv("median", 10000).resolved == "fsl_median_10000"
+    """Value-context flips median between global_median_1000 (1000) and
+    fsl_median_10000 (10000) — but only via convention-bearing phrasing. Bare
+    'median@1000'/'median@10000' were removed because 'median' alone false-fired on
+    statistics vocabulary (median sample size / effect size — Marek false-fire probe)."""
+    # positive: convention-bearing term, value context flips the member
+    assert _conv("median scaling", 1000).resolved == "global_median_1000"
+    assert _conv("median scaling", 10000).resolved == "fsl_median_10000"
+    assert _conv("median intensity", 1000).resolved == "global_median_1000"
+    # negative: bare 'median' no longer resolves at either value context
+    assert _conv("median", 1000).status != "resolved"
+    assert _conv("median", 10000).status != "resolved"
 
 
-def test_zscore_resolves_without_value():
-    assert _conv("z-score").resolved == "voxel_temporal_zscore"
-    assert _conv("voxel-wise z-score").resolved == "voxel_temporal_zscore"
+def test_zscore_is_not_an_intensity_convention():
+    """Per-voxel temporal z-scoring is NOT a magnitude-scaling convention (z-score
+    category-error corpus finding), so it must not resolve in the intensity table.
+    PATH 0: the Literal member + its no-magnitude validator remain in the schema
+    (see tests/spec/test_intensity_zscore.py); only the resolver mapping was removed.
+    Rewritten from the former test_zscore_resolves_without_value, which asserted the
+    now-removed behavior."""
+    assert _conv("z-score").status != "resolved"
+    assert _conv("z-scored").status != "resolved"
+    assert _conv("voxel-wise z-score").status != "resolved"
+    assert (
+        _conv("subtracting its mean and then dividing by its temporal standard deviation").status
+        != "resolved"
+    )
 
 
 # --- surface registration underspecification --------------------------------
@@ -163,3 +191,38 @@ def test_chen_global_mean_10000_without_value_context():
     # direct-phrase fallback path: resolves even when no numeric context is supplied.
     r = _conv(_CHEN_GLOBAL_MEAN, None)
     assert r.resolved == "fsl_grand_mean_10000" and r.status == "resolved"
+
+
+# --- v6 intensity pass: Marek false-fire regressions + true-positive preservation --
+# Justification: numeric/value-context probe on Marek 2022 + 25-paper corpus grep.
+# Bare-word value-context aliases (median@N, mode@1000, mean intensity@10000) and the
+# z-score entry were removed; see the commit message for the probe details.
+
+
+def test_intensity_false_fire_regressions_do_not_resolve():
+    """Statistics/anatomy vocabulary + a magnitude number must NOT resolve to a
+    convention (the core Marek false-fire risk)."""
+    assert _conv("the median study sample size is about 25", 1000).status != "resolved"
+    assert _conv("the median study sample size is about 25", 10000).status != "resolved"
+    assert _conv("A default mode of brain function", 1000).status != "resolved"
+    assert _conv("registering the mean intensity image", 10000).status != "resolved"
+
+
+def test_intensity_true_positives_preserved():
+    """Real corpus phrasings still resolve to the correct convention."""
+    # Marek 2022: whole-brain-mode value of 1,000
+    assert (
+        _conv("intensity normalization to a whole-brain-mode value of 1,000", 1000).resolved
+        == "global_mode_1000"
+    )
+    # Chen 2015: 4D global mean intensity to 10,000
+    assert _conv("global mean intensity to 10,000", 10000).resolved == "fsl_grand_mean_10000"
+    assert _conv("median scaling", 1000).resolved == "global_median_1000"
+    assert _conv("median scaling", 10000).resolved == "fsl_median_10000"
+
+
+def test_grand_mean_hyphen_and_space_both_resolve():
+    """Hyphen false-negative fix: both spellings resolve at vc=10000 (previously only
+    the hyphenated 'grand-mean scaling@10000' alias existed)."""
+    assert _conv("grand mean scaling", 10000).resolved == "fsl_grand_mean_10000"
+    assert _conv("grand-mean scaling", 10000).resolved == "fsl_grand_mean_10000"
