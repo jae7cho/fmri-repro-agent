@@ -45,3 +45,36 @@ jobs:
       - name: Pytest
         working-directory: fmri-repro-agent
         run: uv run pytest --cov=fmri_repro --cov-report=term-missing
+
+  extractor-mvp:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          path: fmri-repro-agent
+      # extractor_mvp depends on fmri-repro-agent (path=..) which depends on
+      # fmri-defaults-kb (path=../../fmri-defaults-kb); check out the sibling so
+      # the editable path chain resolves.
+      - uses: actions/checkout@v6
+        with:
+          repository: jae7cho/fmri-defaults-kb
+          path: fmri-defaults-kb
+      - uses: astral-sh/setup-uv@v8.1.0
+        with:
+          enable-cache: true
+      - name: Install dependencies
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv sync --all-extras --frozen
+      - name: Ruff lint
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv run ruff check .
+      - name: Ruff format check
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv run ruff format --check .
+      - name: Mypy
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv run mypy src
+      # Offline suite only; @live tests need Bedrock/AWS creds not present in CI.
+      - name: Pytest (offline)
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv run pytest -m "not live"
