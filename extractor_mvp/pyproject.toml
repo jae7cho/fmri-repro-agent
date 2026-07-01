@@ -26,7 +26,7 @@ dependencies = [
 fmri-repro-agent = { path = "..", editable = true }
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "pypdf", "types-PyYAML"]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "pypdf", "types-PyYAML"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/extractor_mvp"]

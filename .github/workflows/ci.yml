@@ -13,6 +13,12 @@ concurrency:
 permissions:
   contents: read
 
+env:
+  # Pin the fmri-defaults-kb sibling checkout for reproducible CI (its editable
+  # path contents aren't captured by uv.lock). Bump this SHA when this repo needs
+  # newer KB contents.
+  KB_REF: c92cb93d3a2a1bf30353d5211db217c5c08c4a22
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -27,9 +33,11 @@ jobs:
         with:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
+          ref: ${{ env.KB_REF }}
       - uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-dependency-glob: fmri-repro-agent/uv.lock
       - name: Install dependencies
         working-directory: fmri-repro-agent
         run: uv sync --all-extras --frozen
@@ -44,7 +52,7 @@ jobs:
         run: uv run mypy src
       - name: Pytest
         working-directory: fmri-repro-agent
-        run: uv run pytest --cov=fmri_repro --cov-report=term-missing
+        run: uv run pytest --cov=fmri_repro --cov-report=term-missing --cov-fail-under=95
 
   extractor-mvp:
     runs-on: ubuntu-latest
@@ -59,9 +67,11 @@ jobs:
         with:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
+          ref: ${{ env.KB_REF }}
       - uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: true
+          cache-dependency-glob: fmri-repro-agent/extractor_mvp/uv.lock
       - name: Install dependencies
         working-directory: fmri-repro-agent/extractor_mvp
         run: uv sync --all-extras --frozen
@@ -77,4 +87,4 @@ jobs:
       # Offline suite only; @live tests need Bedrock/AWS creds not present in CI.
       - name: Pytest (offline)
         working-directory: fmri-repro-agent/extractor_mvp
-        run: uv run pytest -m "not live"
+        run: uv run pytest -m "not live" --cov=extractor_mvp --cov-report=term-missing --cov-fail-under=70
