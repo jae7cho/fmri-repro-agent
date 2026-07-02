@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any
 
 from extractor_mvp.batch_config import BatchConfig, load_batch_config
 from extractor_mvp.batch_utils import build_citation_resolver
-from extractor_mvp.extractor import extract
+from extractor_mvp.extractor import ResolutionRecord, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
@@ -179,9 +179,14 @@ def _process_paper(
         text=methods.text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
     )
 
+    resolutions: list[ResolutionRecord] = []
     try:
         preprocessing, diagnostics, deferrals = extract(
-            paper, model, citation_resolver=citation_resolver, paper_date=paper.pdf_date
+            paper,
+            model,
+            citation_resolver=citation_resolver,
+            paper_date=paper.pdf_date,
+            resolutions=resolutions,
         )
     except Exception as exc:  # LLM/transport/validation error -> recorded, batch continues
         return PaperResult(
@@ -217,6 +222,9 @@ def _process_paper(
         "counts": counts,
         "preprocessing": prep_dump,
         "diagnostics": [dataclasses.asdict(d) for d in diagnostics],
+        # SUCCESS-path capture: raw LLM value + resolved value/alias for each
+        # successfully-extracted targeted field (diagnostic-only; see ResolutionRecord).
+        "resolutions": [dataclasses.asdict(r) for r in resolutions],
         # Fork B reads deferred_fields to drive citation resolution without parsing
         # the provenance coupling. target_kind is the ORIGINAL LLM value (incl
         # "supplement"); pending_resolution flags fields awaiting Fork B.

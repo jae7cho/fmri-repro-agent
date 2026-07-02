@@ -149,6 +149,13 @@ For the six targeted Layer-2 fields below, apply these scoped definitions. Use t
 canonical value when the paper's term maps to one; otherwise return the paper's term
 verbatim (see the typed-field rule above).
 
+FIREWALL: extract only what the paper STATES. Do NOT infer a canonical tool, space,
+or method from the pipeline's identity, lab conventions, or your own knowledge of
+what a named pipeline typically uses. If the paper names a pipeline (e.g. CCS,
+fMRIPrep, HCP) but states only a generic method term for a field, return that generic
+term verbatim -- do NOT substitute the tool the pipeline is known to use. Naming the
+tool is correct ONLY when the paper's own text names it.
+
 target_space: The standard/atlas space the functional data were normalized to.
 Canonical values: MNI152NLin6Asym, MNI152NLin2009cAsym, Talairach, native_volume, other.
   extracted: "registered to MNI152NLin6Asym" -> value=MNI152NLin6Asym
@@ -180,21 +187,37 @@ status="missing" -- do NOT extract for any of the following:
 If the paper only describes acquisition parameters and does not state the resolution
 after normalization, use status="missing".
 
-surface_registration: The surface registration approach aligning each subject's cortical
-surface to a template. Canonical values: freesurfer_recon, msm_sulc, msm_all, other.
-  extracted: "surfaces aligned with MSMAll" -> value=msm_all
+surface_registration: The surface registration approach aligning each subject's
+cortical surface to a template. Canonical values: freesurfer_recon, msm_sulc,
+msm_all, other.
+  extracted (paper NAMES the tool): "surfaces aligned with MSMAll" -> value=msm_all;
+    "registered with FreeSurfer recon-all" -> value=freesurfer_recon.
+  If the paper names only a generic registration METHOD without naming the tool
+    (e.g. "sphere registration", "spherical registration", "surfaces were
+    reconstructed and registered") return that term VERBATIM -- do NOT infer
+    freesurfer_recon or msm_* from pipeline context. Bare "sphere registration" is
+    ambiguous across FreeSurfer/MSM/others.
   missing: volume-only analysis, no surface registration step described.
 
 target_surface: The surface template to which volume data were projected.
 Canonical values: native, fsaverage, fsaverage5, fsaverage6, fsLR_32k, fsLR_164k, other.
-  extracted: "data were mapped to the fsLR 32k surface" -> value=fsLR_32k
+  extracted (paper NAMES the surface): "data were mapped to the fsLR 32k surface"
+    -> value=fsLR_32k; "resampled onto fsaverage5" -> value=fsaverage5.
+  If the paper implies a surface only via pipeline context without naming it (e.g. it
+    names an HCP/FreeSurfer pipeline but never states the target surface) return the
+    paper's term VERBATIM -- do NOT infer fsaverage/fsLR from pipeline context.
   missing: no surface projection -- data kept in volume space only.
 
 intensity_convention: The global/grand-mean intensity MAGNITUDE-scaling convention
 applied to the 4D BOLD series (scaling the signal so a summary statistic hits a target
 number). Canonical values: spm_grand_mean_100, fsl_grand_mean_10000, fsl_median_10000,
 global_median_1000, global_mode_1000, other.
-  extracted: "scaled each run to a grand mean of 10000" -> value=fsl_grand_mean_10000
+  extracted (paper NAMES the convention): "scaled each run to a grand mean of 10000"
+    -> value=fsl_grand_mean_10000.
+  If the paper uses generic scaling language without a convention that maps to a
+    canonical member (e.g. "intensity normalized" with no target, "grand-mean scaled"
+    with no number) return that term VERBATIM -- do NOT infer a canonical convention
+    from pipeline context (e.g. fMRIPrep/FSL/SPM).
   missing: no magnitude scaling of the time series is described.
   NOT this field: per-voxel z-scoring / standardization to unit variance -> that is
     temporal_standardization_method, NOT an intensity convention. Fisher z-transform of
@@ -280,6 +303,26 @@ class ExtractionDiagnostic:
     failure_reason: str
     raw_value: object | None
     raw_quote: str | None
+
+
+@dataclass(frozen=True)
+class ResolutionRecord:
+    """A SUCCESSFULLY-extracted targeted field, capturing what the LLM emitted
+    (``raw_value``) alongside what the synonym resolver produced (``resolved_value``,
+    ``matched_alias``). The counterpart to :class:`ExtractionDiagnostic` for the
+    success path: ``ExtractionDiagnostic`` retains ``fe.value`` on failure, but on
+    success the raw value is otherwise discarded (only the resolved value reaches the
+    ProvenancedField). Diagnostic-only — never alters the spec/ProvenancedField schema.
+
+    Lets us tell a firewall leak's LAYER apart: if ``raw_value`` is already a canonical
+    literal (e.g. an inferred tool name) while the paper never names it, the leak is at
+    the PROMPT/LLM layer; if ``raw_value`` is the paper's own phrasing but
+    ``resolved_value`` is a different literal, the leak is at the RESOLVER."""
+
+    field: str  # dotted path, e.g. "surface_projection.surface_registration"
+    raw_value: object | None  # str(fe.value) as the LLM emitted it
+    resolved_value: object | None  # the value written to the ProvenancedField
+    matched_alias: str | None  # which synonym alias matched (None if exact member / non-literal)
 
 
 @dataclass(frozen=True)
@@ -665,9 +708,18 @@ value for this acquisition — use status="missing" for that field.
 
 
 def _extract_from_prompt(
-    parsed_paper: ParsedPaper, model: str, prompt_text: str, client: Any | None
+    parsed_paper: ParsedPaper,
+    model: str,
+    prompt_text: str,
+    client: Any | None,
+    resolutions: list[ResolutionRecord] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
-    """Run one LLM extraction call + the shared post-processing pipeline."""
+    """Run one LLM extraction call + the shared post-processing pipeline.
+
+    ``resolutions`` (optional): if a list is passed, one :class:`ResolutionRecord`
+    per SUCCESSFULLY-extracted targeted field is appended, capturing the raw LLM
+    value alongside the resolved value/alias. Default ``None`` collects nothing,
+    preserving the 3-tuple return and all existing callers' behavior."""
     client = client or build_client()
     extraction: PreprocessingExtraction = client.chat.completions.create(
         model=model,
@@ -686,10 +738,11 @@ def _extract_from_prompt(
     deferrals: list[DeferralRecord] = []
     for attr, field_id, dotted, literal_type, t in _FIELD_SPECS:
         value_context = intensity_value_ctx if field_id == "convention" else None
+        fe = getattr(extraction, attr)
         field_pf, diag, deferral = _process_field(
             field_id,
             dotted,
-            getattr(extraction, attr),
+            fe,
             literal_type,
             t,
             parsed_paper.text,
@@ -700,6 +753,31 @@ def _extract_from_prompt(
             diagnostics.append(diag)
         if deferral is not None:
             deferrals.append(deferral)
+        # Capture the raw LLM value on SUCCESS (extracted, no diagnostic, no deferral).
+        # Every extracted-branch failure returns a diagnostic, and missing/deferred are
+        # distinguishable by fe.status, so this trio uniquely identifies a clean success.
+        if (
+            resolutions is not None
+            and fe.status == "extracted"
+            and diag is None
+            and deferral is None
+        ):
+            matched_alias = None
+            if literal_type is not None:
+                synonyms_entry = SYNONYMS_BY_FIELD.get(field_id)
+                if synonyms_entry is not None:
+                    syns, under = synonyms_entry
+                    matched_alias = resolve_to_literal(
+                        str(fe.value), syns, under, value_context
+                    ).matched_alias
+            resolutions.append(
+                ResolutionRecord(
+                    field=dotted,
+                    raw_value=fe.value,
+                    resolved_value=field_pf.extraction.value,
+                    matched_alias=matched_alias,
+                )
+            )
 
     # Layer 1: base preprocessing pipeline (name + optional citation/deferral).
     base_pipeline, bp_deferral = _build_base_pipeline(
@@ -712,11 +790,24 @@ def _extract_from_prompt(
 
 
 def extract_preprocessing(
-    parsed_paper: ParsedPaper, model: str, *, client: Any | None = None
+    parsed_paper: ParsedPaper,
+    model: str,
+    *,
+    client: Any | None = None,
+    resolutions: list[ResolutionRecord] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
-    """Single-pass extraction -> (Preprocessing, diagnostics, deferral records)."""
+    """Single-pass extraction -> (Preprocessing, diagnostics, deferral records).
+
+    ``resolutions`` (optional): pass a list to collect per-field
+    :class:`ResolutionRecord`s for successfully-extracted targeted fields (raw LLM
+    value + resolved value/alias). Diagnostic capture only; default ``None`` is a
+    no-op that preserves existing behavior and the 3-tuple return."""
     return _extract_from_prompt(
-        parsed_paper, model, EXTRACTION_PROMPT.format(text=parsed_paper.text), client
+        parsed_paper,
+        model,
+        EXTRACTION_PROMPT.format(text=parsed_paper.text),
+        client,
+        resolutions,
     )
 
 
@@ -845,8 +936,15 @@ def extract(
     client: Any | None = None,
     citation_resolver: CitationResolver | None = None,
     paper_date: date | None = None,
+    resolutions: list[ResolutionRecord] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction with one-hop deferral resolution.
+
+    ``resolutions`` (optional): forwarded to :func:`extract_preprocessing` to collect
+    per-field :class:`ResolutionRecord`s (raw LLM value + resolved value/alias) for
+    successfully-extracted targeted fields. Deferral resolution never touches EXTRACTED
+    arms, so the captured records reflect the final shipped values. Default ``None`` is
+    a no-op, preserving the 3-tuple return.
 
     Pipeline:
       1. Pass 2 (:func:`extract_preprocessing`).
@@ -859,7 +957,7 @@ def extract(
     The extraction arms and the returned ``deferral_records`` are unchanged.
     """
     preprocessing, diagnostics, deferral_records = extract_preprocessing(
-        parsed_paper, model, client=client
+        parsed_paper, model, client=client, resolutions=resolutions
     )
     preprocessing = _resolve_deferrals(
         preprocessing,

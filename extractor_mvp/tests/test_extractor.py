@@ -83,6 +83,47 @@ def test_all_fields_resolve_to_extracted():
         assert TEXT[span.start : span.end] == span.text
 
 
+def test_resolutions_capture_raw_value_on_success():
+    # A field that resolves via a SYNONYM alias: the LLM emits the paper's phrasing,
+    # the resolver maps it to a canonical literal. The optional resolutions accumulator
+    # must retain BOTH — the raw LLM value AND the resolved value/alias — so a firewall
+    # leak's LAYER (prompt vs resolver) can be diagnosed from per-paper output. Only
+    # the resolved value otherwise reaches the ProvenancedField.
+    text = (
+        "Cortical surfaces were registered using FreeSurfer's spherical registration. "
+        "Data were normalized to MNI152NLin6Asym space at 2 mm isotropic resolution."
+    )
+    payload = PreprocessingExtraction(
+        target_space=_extracted("MNI152NLin6Asym", "normalized to MNI152NLin6Asym"),
+        resolution_mm=_missing(),
+        surface_registration=_extracted(
+            "FreeSurfer's spherical registration",
+            "registered using FreeSurfer's spherical registration",
+        ),
+        target_surface=_missing(),
+        intensity_convention=_missing(),
+        intensity_value=_missing(),
+    )
+    resolutions: list[Any] = []
+    prep, _, _ = extract_preprocessing(
+        _paper(text), "m", client=_fake_client(payload), resolutions=resolutions
+    )
+    # the field resolved successfully to the canonical literal
+    pf = _field(prep, "surface_projection.surface_registration")
+    assert pf.extraction.status == "EXTRACTED"
+    assert pf.extraction.value == "freesurfer_recon"
+    # ...and the accumulator retained the RAW value alongside the resolved one
+    rec = next(r for r in resolutions if r.field == "surface_projection.surface_registration")
+    assert rec.raw_value == "FreeSurfer's spherical registration"
+    assert rec.resolved_value == "freesurfer_recon"
+    assert rec.matched_alias == "FreeSurfer's spherical registration"
+    # only SUCCESSFUL targeted fields are recorded (missing fields produce no record)
+    assert not any(r.field == "surface_projection.target_surface" for r in resolutions)
+    # default (no accumulator passed) stays a no-op: existing 3-tuple callers unaffected
+    _, diags2, deferrals2 = extract_preprocessing(_paper(text), "m", client=_fake_client(payload))
+    assert diags2 == [] and deferrals2 == []
+
+
 def test_unresolvable_quote_becomes_missing_with_diagnostic():
     payload = _all_resolvable()
     payload.target_space = _extracted(
