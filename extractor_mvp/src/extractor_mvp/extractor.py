@@ -753,15 +753,12 @@ def _extract_from_prompt(
             diagnostics.append(diag)
         if deferral is not None:
             deferrals.append(deferral)
-        # Capture the raw LLM value on SUCCESS (extracted, no diagnostic, no deferral).
-        # Every extracted-branch failure returns a diagnostic, and missing/deferred are
-        # distinguishable by fe.status, so this trio uniquely identifies a clean success.
-        if (
-            resolutions is not None
-            and fe.status == "extracted"
-            and diag is None
-            and deferral is None
-        ):
+        # Capture the raw LLM value on SUCCESS. A clean success is exactly when
+        # _process_field returned an Extracted arm (the only path that does); every
+        # failure returns MissingFromPaper + a diagnostic, deferrals return
+        # DeferredToCitation. The isinstance check both signals success and narrows
+        # the extraction union so .value is well-typed.
+        if resolutions is not None and isinstance(field_pf.extraction, Extracted):
             matched_alias = None
             if literal_type is not None:
                 synonyms_entry = SYNONYMS_BY_FIELD.get(field_id)
