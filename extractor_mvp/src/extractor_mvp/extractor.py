@@ -240,8 +240,13 @@ analysis. Canonical values: voxel_temporal_zscore, other.
   CRITICAL -- this field is ONLY for standardization of the BOLD SIGNAL ITSELF. It is
   "missing" (do NOT populate it) for ALL of the following, even though they use words
   like "standardized", "z-score", "unit variance", "zero mean":
-    - Fisher r-to-z transform of CORRELATION / CONNECTIVITY values
-      ("correlations were Fisher z-transformed") -> NOT this field.
+    - Standardization of a FUNCTIONAL-CONNECTIVITY value or CONNECTIVITY-DERIVED product
+      -- a correlation / connectivity matrix, a connectivity map such as SFC, ReHo, or
+      seed-connectivity, a gradient -- to zero mean / unit variance -> NOT this field
+      (these are connectivity products derived from the signal, not the signal). This
+      applies REGARDLESS of the operation: Fisher r-to-z transform ("correlations were
+      Fisher z-transformed") OR z-scoring the product to unit variance ("the SFC map was
+      normalized to 0 mean and 1 variance").
     - Standardization of NUISANCE REGRESSORS / the design matrix
       ("regressors were standardized to zero-mean unit variance") -> NOT this field.
     - Standardization of ICA / PCA COMPONENTS after decomposition
