@@ -889,6 +889,11 @@ def _any_step_fields_left_missing(preprocessing: Preprocessing) -> bool:
     return False
 
 
+def _base_pipeline_extracted(bp: ProvenancedField | NotApplicable) -> bool:
+    """True iff ``base_pipeline`` is a paper-named (EXTRACTED) pipeline (not from-scratch)."""
+    return not isinstance(bp, NotApplicable) and bp.extraction.status == "EXTRACTED"
+
+
 def _resolve_deferrals(
     preprocessing: Preprocessing,
     deferral_records: list[DeferralRecord],
@@ -903,6 +908,17 @@ def _resolve_deferrals(
         when ``paper_date`` is known) then the citation fallback for the step fields the
         KB leaves open. Shared by :func:`extract` and the multi-acquisition runner.
     """
+    # Version inference for an EXTRACTED base pipeline: the name is available so
+    # resolve_version can fire. Fills ONLY the version field (date_inferred_version /
+    # version_default); fill_dependent_defaults is deliberately NOT called here — param fill
+    # on a merely inferred version would overwrite value_not_in_literal fields (e.g.
+    # target_space) with a KB default (false precision). The version-certainty gate stays.
+    # Mutually exclusive with the base-pipeline *deferral* branch below (extraction status).
+    if paper_date is not None and _base_pipeline_extracted(preprocessing.base_pipeline):
+        from fmri_repro.kb_client.base_pipeline import infer_base_pipeline_version
+
+        preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
+
     per_field = [d for d in deferral_records if d.field != "base_pipeline"]
     if citation_resolver is not None and per_field:
         preprocessing = _apply_resolved_citations(

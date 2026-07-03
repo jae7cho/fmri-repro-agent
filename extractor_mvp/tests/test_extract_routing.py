@@ -9,11 +9,26 @@ from types import SimpleNamespace
 from typing import Any
 
 import fmri_repro.kb_client.base_pipeline as kb_mod
+from fmri_repro.spec.preprocessing import (
+    IntensityNormalization,
+    PipelineRef,
+    Preprocessing,
+    SpatialNormalization,
+    SurfaceProjection,
+    TemporalFiltering,
+)
 from fmri_repro.spec.provenance import (
+    Extracted,
     InferredDefault,
+    LeftMissing,
+    MissingFromPaper,
+    NotApplicable,
     PriorPublicationBasis,
+    ProvenancedField,
+    Span,
     VersionDefaultBasis,
 )
+from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 
 from extractor_mvp.citation_resolver import CitationResolver, _iter_fields
 from extractor_mvp.extraction_result import FieldExtractionResult
@@ -21,6 +36,7 @@ from extractor_mvp.extractor import (
     PreprocessingExtraction,
     _any_step_fields_left_missing,
     _apply_resolved_citations,
+    _resolve_deferrals,
     extract,
     extract_preprocessing,
 )
@@ -209,3 +225,142 @@ def test_any_step_fields_left_missing_all_extracted_false():
         intensity_value=_ex("10000", "scaling to 10000"),
     )
     assert _any_step_fields_left_missing(_prep_from(payload)) is False
+
+
+# ---------------------------------------------------------------------------
+# Fix 2: version inference for EXTRACTED base pipelines (real local KB — CCS)
+# ---------------------------------------------------------------------------
+
+_CCS_DATE = date(2016, 1, 1)  # after CCS's earliest release (2015-01-05)
+_DEMOTED = (
+    ("spatial_normalization", "target_space"),
+    ("spatial_normalization", "resolution_mm"),
+    ("surface_projection", "target_surface"),
+    ("surface_projection", "surface_registration"),
+    ("temporal_filtering", "effective_band_hz"),
+    ("intensity_normalization", "convention"),
+    ("intensity_normalization", "value"),
+)
+
+
+def _m(field_id: str) -> ProvenancedField:
+    return ProvenancedField[str](
+        field_id=field_id,
+        extraction=MissingFromPaper(searched_terms=[], sections_searched=["M"]),
+        inference=LeftMissing(reason="not_stated_in_text"),
+    )
+
+
+def _extracted_base(name: str, version_pf: ProvenancedField) -> ProvenancedField:
+    return ProvenancedField[PipelineRef](
+        field_id="base_pipeline",
+        extraction=Extracted[PipelineRef](
+            value=PipelineRef(name=name, version=version_pf),
+            spans=[Span(start=0, end=len(name), text=name, section="M")],
+            confidence=0.9,
+        ),
+        inference=NotApplicable(),
+    )
+
+
+def _full_prep(base_pipeline: ProvenancedField | NotApplicable) -> Preprocessing:
+    """All four KB-targeted steps, every field MISSING; caller supplies base_pipeline."""
+    spatial = SpatialNormalization(
+        target_space=_m("target_space"),
+        resolution_mm=_m("resolution_mm"),
+        method=_m("method"),
+        warp=_m("warp"),
+        transform_type=_m("transform_type"),
+        interpolation=_m("interpolation"),
+        regularization=_m("regularization"),
+    )
+    surface = SurfaceProjection(
+        target_surface=_m("target_surface"),
+        vol2surf_sampling=_m("vol2surf_sampling"),
+        surface_registration=_m("surface_registration"),
+        cifti=_m("cifti"),
+    )
+    temporal = TemporalFiltering(
+        effective_band_hz=_m("effective_band_hz"),
+        method=_m("method"),
+        low_hz=_m("low_hz"),
+        high_hz=_m("high_hz"),
+        order=_m("order"),
+        cutoff=_m("cutoff"),
+        scale=_m("scale"),
+        nominal_band_hz=_m("nominal_band_hz"),
+    )
+    intensity = IntensityNormalization(
+        scope=_m("scope"), convention=_m("convention"), value=_m("value")
+    )
+    return Preprocessing(
+        applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
+        base_pipeline=base_pipeline,
+        steps=[spatial, surface, temporal, intensity],
+    )
+
+
+def _version_of(prep: Preprocessing) -> ProvenancedField:
+    bp = prep.base_pipeline
+    assert not isinstance(bp, NotApplicable)
+    ext = bp.extraction
+    assert ext.status == "EXTRACTED"
+    return ext.value.version
+
+
+def _resolve(prep: Preprocessing, *, paper_date: date | None) -> Preprocessing:
+    return _resolve_deferrals(prep, [], paper_date=paper_date, citation_resolver=None)
+
+
+def test_extracted_recognized_pipeline_infers_version():
+    prep = _resolve(_full_prep(_extracted_base("CCS", _m("version"))), paper_date=_CCS_DATE)
+    v = _version_of(prep)
+    assert v.inference.status == "INFERRED_DEFAULT"
+    assert v.inference.basis.basis_type == "date_inferred_version"
+    assert v.inference.value == "2015"
+
+
+def test_extracted_version_inference_does_not_fill_params():
+    # REGRESSION GUARD: only the version is filled; the seven demoted fields stay LeftMissing
+    # (proves fill_dependent_defaults is NOT invoked for extracted pipelines).
+    prep = _resolve(_full_prep(_extracted_base("CCS", _m("version"))), paper_date=_CCS_DATE)
+    by_kind = {s.kind: s for s in prep.steps}
+    for kind, name in _DEMOTED:
+        assert getattr(by_kind[kind], name).inference.status == "LEFT_MISSING", f"{kind}.{name}"
+
+
+def test_extracted_full_name_acronym_infers_version():
+    # Fix 1 + Fix 2 together (the chen path): "Full Name (ACRONYM)" resolves + version inferred.
+    prep = _resolve(
+        _full_prep(_extracted_base("Connectome Computation System (CCS)", _m("version"))),
+        paper_date=_CCS_DATE,
+    )
+    v = _version_of(prep)
+    assert v.inference.status == "INFERRED_DEFAULT"
+    assert v.inference.basis.basis_type == "date_inferred_version"
+
+
+def test_extracted_version_already_extracted_is_noop():
+    version = ProvenancedField[str](
+        field_id="version",
+        extraction=Extracted[str](
+            value="2015", spans=[Span(start=0, end=4, text="2015", section="M")], confidence=0.95
+        ),
+        inference=NotApplicable(),
+    )
+    prep = _resolve(_full_prep(_extracted_base("CCS", version)), paper_date=_CCS_DATE)
+    v = _version_of(prep)
+    assert v.extraction.status == "EXTRACTED"
+    assert v.extraction.value == "2015"
+
+
+def test_extracted_unrecognized_pipeline_version_stays_missing():
+    prep = _resolve(_full_prep(_extracted_base("SPM12", _m("version"))), paper_date=_CCS_DATE)
+    v = _version_of(prep)
+    assert v.inference.status == "LEFT_MISSING"  # recognize -> None; extracted claim left intact
+    assert prep.base_pipeline.extraction.status == "EXTRACTED"  # not demoted
+
+
+def test_notapplicable_base_pipeline_is_noop():
+    prep = _resolve(_full_prep(NotApplicable()), paper_date=_CCS_DATE)
+    assert isinstance(prep.base_pipeline, NotApplicable)  # no crash, no-op
