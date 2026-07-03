@@ -17,13 +17,20 @@ from fmri_repro.spec.preprocessing import (
     SpatialSmoothing,
 )
 from fmri_repro.spec.provenance import (
+    BASIS_CEILINGS,
+    Basis,
+    DateInferredVersionBasis,
     Deferral,
     DeferredToCitation,
+    DerivedBasis,
     Extracted,
+    FieldConventionBasis,
     InferredDefault,
+    LabPriorBasis,
     LeftMissing,
     MissingFromPaper,
     NotApplicable,
+    PriorPublicationBasis,
     ProvenancedField,
     Span,
     VersionDefaultBasis,
@@ -453,3 +460,254 @@ def test_to_text_shows_inferred_line(capsys):
     txt = render.to_text(prep)
     print(txt)
     assert "kernel_type: inferred: gaussian   (version_default, conf 0.9)" in txt
+
+
+# ---------------------------------------------------------------------------
+# View 4: to_protocol — tool-agnostic replication protocol
+# ---------------------------------------------------------------------------
+
+
+def _basis_row(basis: Basis, confidence: float) -> render.FieldRow:
+    """Minimal INFERRED_DEFAULT FieldRow for exercising _fmt_basis_note directly."""
+    return render.FieldRow(
+        path="step.field",
+        group="step",
+        state=render.INFERRED_DEFAULT,
+        basis_type=basis.basis_type,
+        confidence=confidence,
+        basis=basis,
+    )
+
+
+def _missing_reason(field_id: str, reason: str) -> ProvenancedField:
+    """A MISSING_FROM_PAPER field carrying a specific LeftMissing.reason."""
+    return ProvenancedField(
+        field_id=field_id,
+        extraction=MissingFromPaper(searched_terms=[], sections_searched=["Methods"]),
+        inference=LeftMissing(reason=reason),
+    )
+
+
+def test_protocol_pipeline_order_base_first_then_steps():
+    # 1. base_pipeline section precedes the steps section, in that order.
+    out = render.to_protocol(_synthetic_preprocessing(), source="synthetic")
+    i_title = out.index("# Replication Protocol — synthetic")
+    i_base = out.index("Base pipeline")
+    i_steps = out.index("## Preprocessing steps (pipeline order)")
+    i_step1 = out.index("### 1. spatial_smoothing")
+    assert i_title < i_base < i_steps < i_step1
+
+
+def test_protocol_each_state_renders_its_line():
+    # 2. one field per reachable display state -> its exact protocol line.
+    out = render.to_protocol(_synthetic_preprocessing())
+    assert "- fwhm_mm = 6.0   [from paper]" in out  # EXTRACTED
+    # MISSING: _missing_left uses an unknown reason -> unclassified callout wording
+    assert "- space: unspecified (reason: no defensible default)" in out
+    assert "- kernel_type = gaussian   [INFERRED — not stated in source]" in out  # INFERRED
+    assert (  # DEFERRED
+        "- approach: deferred to Esteban 2019 — resolve by consulting the cited source" in out
+    )
+
+
+def test_protocol_basis_note_dispatch_all_bases():
+    # 3. one field per basis_type; specifics + confidence/ceiling suffix.
+    from datetime import date
+
+    n_date = render._fmt_basis_note(
+        _basis_row(
+            DateInferredVersionBasis(
+                tool="fMRIPrep", inferred_version="25.2.5", paper_date=date(2015, 3, 1)
+            ),
+            0.75,
+        )
+    )
+    assert "inferred from publication date 2015-03-01: fMRIPrep 25.2.5" in n_date
+    assert f"(confidence 0.75 / ceiling {BASIS_CEILINGS['date_inferred_version']})" in n_date
+
+    n_ver = render._fmt_basis_note(
+        _basis_row(VersionDefaultBasis(tool="fMRIPrep", version="23.1.3"), 0.9)
+    )
+    assert "fMRIPrep 23.1.3 (version stated/confirmed)" in n_ver
+    assert f"ceiling {BASIS_CEILINGS['version_default']}" in n_ver
+
+    n_prior = render._fmt_basis_note(
+        _basis_row(PriorPublicationBasis(citation="Glasser 2013"), 0.6)
+    )
+    assert "from cited work Glasser 2013" in n_prior
+
+    n_lab = render._fmt_basis_note(_basis_row(LabPriorBasis(lab_id="poldrack_lab"), 0.5))
+    assert "lab default (poldrack_lab)" in n_lab
+
+    n_conv = render._fmt_basis_note(_basis_row(FieldConventionBasis(source="COBIDAS"), 0.4))
+    assert "field convention (COBIDAS)" in n_conv
+
+    n_der = render._fmt_basis_note(
+        _basis_row(DerivedBasis(source_field_ids=["surface_projection.target_surface"]), 0.7)
+    )
+    assert "derived from surface_projection.target_surface" in n_der
+    assert f"ceiling {BASIS_CEILINGS['derived']}" in n_der
+
+    # the Configurator-authored note is rendered verbatim when present
+    n_noted = render._fmt_basis_note(
+        _basis_row(VersionDefaultBasis(tool="X", version="1", note="per release notes"), 0.9)
+    )
+    assert "— per release notes" in n_noted
+
+
+def _one_field_spec(reason_field: ProvenancedField) -> Preprocessing:
+    """A SpatialSmoothing whose `space` carries a reason-bearing MISSING field; the
+    other three fields are EXTRACTED so only `space` is a gap. Base = from-scratch."""
+    smoothing = SpatialSmoothing(
+        fwhm_mm=_extracted("fwhm_mm", 6.0),
+        space=reason_field,
+        kernel_type=_extracted("kernel_type", "gaussian"),
+        approach=_extracted("approach", "fixed_kernel"),
+    )
+    return Preprocessing(applies_to=_applies_to(), base_pipeline=NotApplicable(), steps=[smoothing])
+
+
+def test_protocol_each_base_reason_renders_its_line():
+    # 4. each of the 6 known base reasons -> its exact _REASON_LINE callout.
+    expected = {
+        "not_stated_in_text": "not reported in source — you must specify",
+        "no_base_pipeline_named": "no base pipeline named in source — you must specify",
+        "version_deferred_to_kb": "version not reported in source — you must specify",
+        "value_not_in_literal": (
+            "reported in source but not resolvable to a controlled value — map manually"
+        ),
+        "not_targeted_by_mvp": "not assessed by current extractor",
+        "extraction_quote_unresolved": (
+            "value present in source but span unresolved (extractor limitation)"
+        ),
+    }
+    for reason, line in expected.items():
+        out = render.to_protocol(_one_field_spec(_missing_reason("space", reason)))
+        assert f"- space: {line}" in out, reason
+
+
+def test_protocol_suffixed_reason_uses_base():
+    # suffixed reason resolves via its base ("extraction_quote_unresolved").
+    out = render.to_protocol(
+        _one_field_spec(_missing_reason("space", "extraction_quote_unresolved:quote_not_found"))
+    )
+    assert "- space: value present in source but span unresolved (extractor limitation)" in out
+    assert "1 not covered by extractor" in out  # base -> not_covered bucket
+
+
+def test_protocol_unknown_reason_is_unclassified_not_a_source_gap():
+    # unknown reason -> "unclassified" bucket + literal callout, NOT a source bucket.
+    out = render.to_protocol(_one_field_spec(_missing_reason("space", "some_future_reason")))
+    assert "- space: unspecified (reason: some_future_reason)" in out
+    assert "1 unclassified" in out
+    assert "not reported in source" not in out
+    assert "unmappable to controlled vocabulary" not in out
+
+
+def test_protocol_header_bucket_math_and_not_covered_never_source():
+    # 5. header partitions gaps by reason; not_targeted_by_mvp -> not_covered, never source.
+    smoothing = SpatialSmoothing(
+        fwhm_mm=_extracted("fwhm_mm", 6.0),  # 1 specified
+        space=_missing_reason("space", "not_stated_in_text"),  # not_reported
+        kernel_type=_missing_reason("kernel_type", "value_not_in_literal"),  # unmappable
+        approach=_missing_reason("approach", "not_targeted_by_mvp"),  # not_covered
+    )
+    prep = Preprocessing(applies_to=_applies_to(), base_pipeline=NotApplicable(), steps=[smoothing])
+    out = render.to_protocol(prep)
+    header = next(ln for ln in out.splitlines() if ln.startswith("Completeness:"))
+    assert "1 specified in source" in header
+    assert "1 not reported in source" in header
+    assert "1 reported but unmappable to controlled vocabulary" in header
+    assert "1 not covered by extractor" in header
+    # not_covered is NEVER summed into a source-completeness figure
+    assert "specified in source · 1 not covered" not in header  # not adjacent-merged
+    # zero-count buckets omitted
+    assert "inferred" not in header and "deferred" not in header and "unclassified" not in header
+
+
+def test_protocol_left_missing_reason_set_after_flatten():
+    # regression for the gating bug: a (MISSING_FROM_PAPER, LeftMissing(reason=X)) field
+    # carries row.left_missing_reason == X after flatten() (NOT gated on display state).
+    prep = _one_field_spec(_missing_reason("space", "value_not_in_literal:underspecified"))
+    row = next(r for r in render.flatten(prep) if r.path.endswith(".space"))
+    assert row.state == render.MISSING_FROM_PAPER
+    assert row.left_missing_reason == "value_not_in_literal:underspecified"
+
+
+def test_protocol_base_pipeline_variants():
+    # 6a. named base (EXTRACTED) + EXTRACTED version sub-row.
+    base_named = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=Extracted(
+            value=PipelineRef(name="fMRIPrep", version=_extracted("version", "23.1.3")),
+            spans=[_span("fMRIPrep 23.1.3")],
+            confidence=0.95,
+        ),
+        inference=NotApplicable(),
+    )
+    out_a = render.to_protocol(
+        Preprocessing(applies_to=_applies_to(), base_pipeline=base_named, steps=[_one_step()])
+    )
+    assert "Base pipeline: fMRIPrep   [from paper]" in out_a
+    assert "  version = 23.1.3   [from paper]" in out_a
+
+    # 6b. from-scratch (NotApplicable) -> single sentinel line, no version recursion.
+    out_b = render.to_protocol(
+        Preprocessing(applies_to=_applies_to(), base_pipeline=NotApplicable(), steps=[_one_step()])
+    )
+    assert "Base pipeline: built from scratch (no named base pipeline)" in out_b
+    assert "version" not in out_b.split("## Preprocessing")[0]  # no version line in base section
+
+    # 6c. named base but version MISSING (the Chen case: version_deferred_to_kb).
+    base_noverson = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=Extracted(
+            value=PipelineRef(
+                name="CCS", version=_missing_reason("version", "version_deferred_to_kb")
+            ),
+            spans=[_span("CCS")],
+            confidence=0.95,
+        ),
+        inference=NotApplicable(),
+    )
+    out_c = render.to_protocol(
+        Preprocessing(applies_to=_applies_to(), base_pipeline=base_noverson, steps=[_one_step()])
+    )
+    assert "Base pipeline: CCS   [from paper]" in out_c
+    assert "  version: version not reported in source — you must specify" in out_c
+
+
+def test_protocol_deterministic():
+    # 7. two calls on the same spec are byte-identical.
+    prep = _synthetic_preprocessing()
+    assert render.to_protocol(prep, source="x") == render.to_protocol(prep, source="x")
+
+
+_CHEN_JSON = (
+    _REPO_ROOT / "extractor_mvp" / "results" / "batch_v6_full" / "papers" / "chen_2015.json"
+)
+
+
+@pytest.mark.skipif(not _CHEN_JSON.exists(), reason="gitignored batch output absent (e.g. CI)")
+def test_protocol_faithful_chen_fixture():
+    # 8. real chen_2015 spec: reason-partitioned header (5 specified · 3 not reported ·
+    # 1 unmappable · 8 not covered), 0 inferred, 0 deferred. The 8 not_covered fields are
+    # extractor-coverage, NOT source absence (the core honesty fix).
+    data = json.loads(_CHEN_JSON.read_text())
+    prep = Preprocessing.model_validate(data["preprocessing"])
+    out = render.to_protocol(prep, source="chen_2015")
+    assert out.count("[from paper]") == 5
+    assert "[INFERRED" not in out
+    assert (
+        "Completeness: 5 specified in source · 3 not reported in source · "
+        "1 reported but unmappable to controlled vocabulary · 8 not covered by extractor"
+    ) in out
+    assert out.count("not assessed by current extractor") == 8  # coverage gap, not absence
+    assert out.count("map manually") == 1  # value_not_in_literal
+    # multi-step pipeline order preserved
+    assert (
+        out.index("### 1. spatial_normalization")
+        < out.index("### 2. surface_projection")
+        < out.index("### 3. intensity_normalization")
+        < out.index("### 4. temporal_standardization")
+    )

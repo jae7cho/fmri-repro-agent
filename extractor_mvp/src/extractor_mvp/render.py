@@ -42,7 +42,12 @@ from dataclasses import dataclass
 from typing import Any
 
 from fmri_repro.spec.preprocessing import PipelineRef, Preprocessing
-from fmri_repro.spec.provenance import NotApplicable, ProvenancedField
+from fmri_repro.spec.provenance import (
+    BASIS_CEILINGS,
+    Basis,
+    NotApplicable,
+    ProvenancedField,
+)
 
 # Display-state tokens. ``BASE_NOT_APPLICABLE`` is the from-scratch base_pipeline
 # sentinel (one row, no version recursion); the rest mirror the five raw states.
@@ -96,6 +101,8 @@ class FieldRow:
     span_text: str | None = None
     basis_type: str | None = None
     confidence: float | None = None
+    basis: Basis | None = None  # full basis object, for protocol note rendering
+    left_missing_reason: str | None = None  # LeftMissing.reason, for protocol hole callouts
     searched_terms: list[str] | None = None
     deferral_refs: list[str] | None = None
 
@@ -172,6 +179,9 @@ def _row_from_field(
     if inf.status == "INFERRED_DEFAULT":
         row.basis_type = inf.basis.basis_type
         row.confidence = inf.confidence
+        row.basis = inf.basis
+    if inf.status == "LEFT_MISSING":
+        row.left_missing_reason = inf.reason
     return row
 
 
@@ -346,3 +356,189 @@ def to_bullets(preprocessing: Preprocessing) -> str:
         label = _SHORT_LABEL.get(r.state, r.state)
         lines.append(f"- {r.path}: {label}{_fmt_value_suffix(r)}")
     return "\n".join(lines) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# View 4: tool-agnostic replication protocol (Markdown)
+# ---------------------------------------------------------------------------
+#
+# Answers "how would I reproduce this, and what can't the paper tell me?" rather
+# than "did we extract correctly?". Holes are rendered as explicit actionable
+# callouts (COBIDAS: flag the unreported against a controlled vocabulary rather
+# than silently dropping it, Nichols et al. 2017), and inferred values are marked
+# distinctly from extracted ones with their basis + confidence-vs-ceiling.
+#
+# NOTE on the LEFT_MISSING display state: :func:`_display_state` collapses a
+# ``(MISSING extraction, LEFT_MISSING inference)`` field to the ``MISSING_FROM_PAPER``
+# *display* state, so the distinct ``LEFT_MISSING`` protocol line below is a
+# DEFENSIVE branch, unreachable via :func:`flatten` for a valid ``Preprocessing``
+# (same status as the ``LEFT_MISSING`` branch in :func:`_fmt_field_text`). Real
+# missing-and-not-inferred fields render with the ``MISSING_FROM_PAPER`` wording.
+
+
+# Reason partition for MISSING/LEFT_MISSING gap fields — separates source-absence
+# from extractor-coverage so the completeness count is not a conflation. Keyed on the
+# BASE reason (``reason.split(":",1)[0]``, to absorb suffixes like
+# ``extraction_quote_unresolved:quote_not_found``). An unknown base reason falls to
+# ``unclassified`` and is NEVER folded into a source-completeness bucket.
+_REASON_BUCKET: dict[str, str] = {
+    "not_stated_in_text": "not_reported",
+    "no_base_pipeline_named": "not_reported",
+    "version_deferred_to_kb": "not_reported",
+    "value_not_in_literal": "unmappable",
+    "not_targeted_by_mvp": "not_covered",  # mirrors batch.py _IGNORE_REASON
+    "extraction_quote_unresolved": "not_covered",
+}
+
+#: Per-field callout wording by base reason (source-absence vs extractor limitation).
+_REASON_LINE: dict[str, str] = {
+    "not_stated_in_text": "not reported in source — you must specify",
+    "no_base_pipeline_named": "no base pipeline named in source — you must specify",
+    "version_deferred_to_kb": "version not reported in source — you must specify",
+    "value_not_in_literal": (
+        "reported in source but not resolvable to a controlled value — map manually"
+    ),
+    "not_targeted_by_mvp": "not assessed by current extractor",
+    "extraction_quote_unresolved": "value present in source but span unresolved (extractor limitation)",
+}
+
+#: Completeness-header gap buckets: (bucket key, display label), fixed order, non-zero only.
+_BUCKET_HEADER: tuple[tuple[str, str], ...] = (
+    ("not_reported", "not reported in source"),
+    ("unmappable", "reported but unmappable to controlled vocabulary"),
+    ("not_covered", "not covered by extractor"),
+    ("unclassified", "unclassified"),
+)
+
+
+def _gap_bucket(row: FieldRow) -> str:
+    """Bucket a MISSING/LEFT_MISSING row by its base LeftMissing.reason."""
+    base = (row.left_missing_reason or "").split(":", 1)[0]
+    return _REASON_BUCKET.get(base, "unclassified")
+
+
+def _fmt_basis_note(row: FieldRow) -> str:
+    """Human basis note for an INFERRED_DEFAULT row: the basis specifics, the
+    Configurator-authored ``note`` (rendered verbatim, never authored here), and
+    ``confidence X / ceiling Y``. Dispatch is exhaustive over the ``Basis`` union."""
+    b = row.basis
+    if b is None:
+        return ""
+    if b.basis_type == "date_inferred_version":
+        core = f"inferred from publication date {b.paper_date}: {b.tool} {b.inferred_version}"
+    elif b.basis_type == "version_default":
+        core = f"{b.tool} {b.version} (version stated/confirmed)"
+    elif b.basis_type == "prior_publication":
+        core = f"from cited work {b.citation}"
+    elif b.basis_type == "lab_prior":
+        core = f"lab default ({b.lab_id})"
+    elif b.basis_type == "field_convention":
+        core = f"field convention ({b.source})"
+    elif b.basis_type == "derived":
+        core = f"derived from {', '.join(b.source_field_ids)}"
+    else:  # defensive; the union is closed
+        core = ""
+    if b.note:
+        core += f" — {b.note}"
+    ceiling = BASIS_CEILINGS[b.basis_type]
+    core += f" (confidence {row.confidence} / ceiling {ceiling})"
+    return core
+
+
+def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> str:
+    """One protocol line for ``row`` under ``label``, per display state.
+
+    ``equals_for_extracted`` picks ``label = value`` (step fields) vs ``label: value``
+    (the base_pipeline header line). Non-extracted states always use ``label: ...``.
+    """
+    st = row.state
+    sep = " = " if equals_for_extracted else ": "
+    if st == EXTRACTED:
+        line = f"{label}{sep}{_fmt_value(row.value)}   [from paper]"
+        if row.span_text:
+            line += f"  «{_truncate_quote(row.span_text)}»"
+        return line
+    if st == INFERRED_DEFAULT:
+        return f"{label}{sep}{_fmt_value(row.value)}   [INFERRED — not stated in source]"
+    if st == DEFERRED_TO_CITATION:
+        refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+        return f"{label}: deferred to {refs} — resolve by consulting the cited source"
+    if st in (MISSING_FROM_PAPER, LEFT_MISSING):
+        # Reason-partitioned callout: source-absence vs extractor-coverage. (LEFT_MISSING
+        # display is defensive — unreachable via flatten() — but treated identically.)
+        base = (row.left_missing_reason or "").split(":", 1)[0]
+        detail = _REASON_LINE.get(base, f"unspecified (reason: {base})")
+        return f"{label}: {detail}"
+    if st == BASE_NOT_APPLICABLE:
+        return f"{label}: built from scratch (no named base pipeline)"
+    return label
+
+
+def _protocol_note_lines(row: FieldRow) -> list[str]:
+    """The indented basis-note line(s) that follow an INFERRED bullet (else none)."""
+    if row.state == INFERRED_DEFAULT:
+        return [_fmt_basis_note(row)]
+    return []
+
+
+def to_protocol(preprocessing: Preprocessing, source: str | None = None) -> str:
+    """Tool-agnostic Markdown replication protocol over ``flatten()``.
+
+    Deterministic, no-LLM. Renders the base pipeline (name + a version sub-line), a
+    four-way completeness header (specified · inferred · deferred · require-your-input,
+    counted over the full ``flatten()`` tally), then each preprocessing step in
+    pipeline (list) order with its COBIDAS tag. Holes become explicit "REQUIRED — you
+    must specify" callouts; inferred values are marked and annotated with their basis.
+    """
+    rows = flatten(preprocessing)
+    lines: list[str] = []
+    lines.append(f"# Replication Protocol — {source}" if source else "# Replication Protocol")
+    lines.append("")
+
+    # --- Base pipeline (header line + optional version sub-line) ---
+    base_rows = [r for r in rows if r.group == "base_pipeline"]
+    base_main = next((r for r in base_rows if r.path == "base_pipeline"), None)
+    version_row = next((r for r in base_rows if r.path == "base_pipeline.version"), None)
+    if base_main is not None:
+        lines.append(_protocol_main(base_main, "Base pipeline", equals_for_extracted=False))
+        lines.extend(f"    {n}" for n in _protocol_note_lines(base_main))
+        if version_row is not None:
+            lines.append("  " + _protocol_main(version_row, "version", equals_for_extracted=True))
+            lines.extend(f"      {n}" for n in _protocol_note_lines(version_row))
+    lines.append("")
+
+    # --- Completeness header: reason-partitioned, non-zero segments only ---
+    # Source-completeness states (extracted/inferred/deferred), then the gap fields
+    # partitioned by reason so extractor-coverage is not conflated with source-absence.
+    counts = {state: 0 for state in _STATE_ORDER}
+    bucket_counts = {bucket: 0 for bucket, _ in _BUCKET_HEADER}
+    for r in rows:
+        counts[r.state] = counts.get(r.state, 0) + 1
+        if r.state in (MISSING_FROM_PAPER, LEFT_MISSING):
+            bucket_counts[_gap_bucket(r)] += 1
+    segments: list[str] = []
+    if counts[EXTRACTED]:
+        segments.append(f"{counts[EXTRACTED]} specified in source")
+    if counts[INFERRED_DEFAULT]:
+        segments.append(f"{counts[INFERRED_DEFAULT]} inferred")
+    if counts[DEFERRED_TO_CITATION]:
+        segments.append(f"{counts[DEFERRED_TO_CITATION]} deferred")
+    for bucket, label in _BUCKET_HEADER:
+        if bucket_counts[bucket]:
+            segments.append(f"{bucket_counts[bucket]} {label}")
+    lines.append("Completeness: " + " · ".join(segments))
+    lines.append("")
+
+    # --- Steps in pipeline (list) order ---
+    lines.append("## Preprocessing steps (pipeline order)")
+    lines.append("")
+    for n, step in enumerate(preprocessing.steps, start=1):
+        cobidas_row = getattr(type(step), "cobidas_row", None)
+        lines.append(f"### {n}. {step.kind}   (COBIDAS: {cobidas_row})")
+        for r in (row for row in rows if row.group == step.kind):
+            param = r.path.split(".", 1)[1] if "." in r.path else r.path
+            lines.append(f"- {_protocol_main(r, param, equals_for_extracted=True)}")
+            lines.extend(f"    {note}" for note in _protocol_note_lines(r))
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
