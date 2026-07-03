@@ -177,7 +177,7 @@ def _collapse_with_map(s: str) -> tuple[str, list[int]]:
     return "".join(out), index_map
 
 
-def resolve_quote(quote: str, text: str) -> SpanResolution:
+def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
     """Find ``quote`` in ``text`` and return a grounded ``Span``.
 
     1. exact substring (case-sensitive); exactly one match -> success
@@ -260,3 +260,47 @@ def resolve_quote(quote: str, text: str) -> SpanResolution:
         return SpanResolution(None, "quote_ambiguous")
 
     return SpanResolution(None, "quote_not_found")
+
+
+_TRAILING_SENTENCE_PUNCT = ".!?"
+
+
+def _strip_trailing_sentence_punct(quote: str) -> str:
+    """Strip a trailing run of sentence punctuation + whitespace from the END of a quote.
+
+    Only the tail is touched -- internal punctuation (and decimals like ``5.0``, which end
+    in a digit, not punctuation) are left intact. ``"...surface. "`` -> ``"...surface"``;
+    ``"...5.0."`` -> ``"...5.0"``; ``"...5.0"`` -> unchanged.
+    """
+    stripped = quote.rstrip()
+    while stripped and stripped[-1] in _TRAILING_SENTENCE_PUNCT:
+        stripped = stripped[:-1].rstrip()
+    return stripped
+
+
+def resolve_quote(quote: str, text: str) -> SpanResolution:
+    """Resolve ``quote`` to a grounded ``Span`` (see :func:`_resolve_quote_once` for tiers).
+
+    Adds ONE fallback, fired only after a primary ``quote_not_found`` (never after success
+    or ``quote_ambiguous``): re-attempt the SAME pipeline with trailing sentence punctuation
+    stripped from the quote. Motivating artifact (poldrack_2015 surface_registration): the
+    LLM quotes ``"...fsaverage surface."`` but pypdf flattened a superscript citation into
+    the parsed stream as ``"...fsaverage surface 51-54."``, separating the terminal period
+    from the last word so the contiguous match fails on that one char (425/426). Stripping
+    the trailing period lets ``"...fsaverage surface"`` ground. The rescue is accepted ONLY
+    on a unique match (``failure_reason is None``); an ambiguous or still-absent retry falls
+    through to the original ``quote_not_found``. Offset correctness is inherited from
+    ``_resolve_quote_once`` -- the returned span covers the stripped-quote match (ending at
+    the word), never the citation or the stripped punctuation. Deliberately narrow: it does
+    NOT drop citation markers mid-quote (no observed instance; over-matching numeric prose
+    like ``"version 5.0"`` would violate the fail-closed invariant).
+    """
+    primary = _resolve_quote_once(quote, text)
+    if primary.failure_reason != "quote_not_found":
+        return primary
+    stripped = _strip_trailing_sentence_punct(quote)
+    if stripped and stripped != quote:
+        retry = _resolve_quote_once(stripped, text)
+        if retry.failure_reason is None:
+            return retry
+    return primary

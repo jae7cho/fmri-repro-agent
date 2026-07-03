@@ -252,3 +252,92 @@ def test_dehyphenation_does_not_false_join_compound():
     r2 = resolve_quote("z-score and test-retest reliability", text2)
     assert r2.span is not None
     assert text2[r2.span.start : r2.span.end] == "z-score and test-retest reliability"
+
+
+# ---------------------------------------------------------------------------
+# Trailing-sentence-punctuation fallback (diagnosed on poldrack_2015: pypdf
+# flattened a superscript citation into "...fsaverage surface 51-54.", separating
+# the LLM quote's terminal period from the last word -> 425/426 chars match, only
+# the trailing "." fails). Fires ONLY after a primary quote_not_found.
+# ---------------------------------------------------------------------------
+
+from extractor_mvp.span_resolver import (  # noqa: E402
+    _resolve_quote_once,
+    _strip_trailing_sentence_punct,
+)
+
+
+def test_strip_trailing_punct_preserves_decimal_version():
+    # THE load-bearing boundary: a trailing sentence period adjacent to a decimal/version
+    # must strip ONLY the terminal period, never the decimal point -- a corrupted "5.0"->"5"
+    # would ship as a wrong-but-plausible version (feeds base_pipeline.version / KB).
+    assert _strip_trailing_sentence_punct("recon-all (version 5.0).") == "recon-all (version 5.0)"
+    assert _strip_trailing_sentence_punct("scaled to a grand mean of 10000.") == (
+        "scaled to a grand mean of 10000"
+    )
+    # a decimal with NO trailing sentence punctuation is left completely untouched
+    assert _strip_trailing_sentence_punct("processed with FSL 5.0.9") == "processed with FSL 5.0.9"
+    assert _strip_trailing_sentence_punct("resampled to 3.0 mm") == "resampled to 3.0 mm"
+    # trailing runs of sentence punctuation + whitespace collapse; internal is never touched
+    assert _strip_trailing_sentence_punct("the fsaverage surface.  ") == "the fsaverage surface"
+    assert _strip_trailing_sentence_punct("was it z-scored?!") == "was it z-scored"
+    assert (
+        _strip_trailing_sentence_punct("e.g. MNI space.") == "e.g. MNI space"
+    )  # internal "." kept
+    # nothing to strip -> identity
+    assert _strip_trailing_sentence_punct("no trailing punctuation here") == (
+        "no trailing punctuation here"
+    )
+
+
+# The poldrack class: a citation ("51-54") sits between the last quoted word and the
+# sentence period the LLM included, so "...surface." is not a contiguous substring.
+_CITE_TEXT = (
+    "Cortical surfaces were registered to the fsaverage surface 51-54. "
+    "The fsaverage-registered hemispheres were then processed."
+)
+_CITE_MATCH = "registered to the fsaverage surface"
+
+
+def test_trailing_punct_fallback_rescues_citation_tail():
+    # 3a POSITIVE: primary fails (period separated by the inline citation); the
+    # trailing-"." fallback rescues it.
+    quote = "registered to the fsaverage surface."
+    assert _resolve_quote_once(quote, _CITE_TEXT).failure_reason == "quote_not_found"
+    r = resolve_quote(quote, _CITE_TEXT)
+    assert r.failure_reason is None
+    assert r.span is not None
+
+
+def test_trailing_punct_fallback_offset_correctness_no_shift():
+    # 3b OFFSET CORRECTNESS (the test that catches a rescue-but-mis-map): the span,
+    # sliced from ORIGINAL text, is exactly the matched region -- NOT the citation, NOT
+    # the stripped period -- and offsets are unshifted.
+    quote = "registered to the fsaverage surface."
+    r = resolve_quote(quote, _CITE_TEXT)
+    assert r.span is not None
+    sliced = _CITE_TEXT[r.span.start : r.span.end]
+    assert sliced == _CITE_MATCH  # ends at "surface", excludes " 51-54" and "."
+    assert r.span.text == _CITE_MATCH
+    assert "51-54" not in sliced and not sliced.endswith(".")
+    assert r.span.start == _CITE_TEXT.index(_CITE_MATCH)  # not shifted by the drop
+
+
+def test_trailing_punct_fallback_does_not_manufacture_match_for_absent_text():
+    # 3c NEGATIVE: a genuinely-absent quote still fails after the fallback -- stripping
+    # trailing punctuation must not fabricate a match.
+    text = "Data were registered to MNI152NLin6Asym volume space only."
+    r = resolve_quote("aligned with MSMSulc onto the fsLR_32k surface.", text)
+    assert r.span is None
+    assert r.failure_reason == "quote_not_found"
+
+
+def test_trailing_punct_fallback_noop_when_primary_resolves():
+    # 3d NO-OP ON SUCCESS: a quote that resolves on the PRIMARY match (here, an exact
+    # whole-text match that legitimately INCLUDES its terminal period) is byte-identical
+    # to _resolve_quote_once -- the fallback never fires and never strips the period.
+    quote = TEXT  # ends in "resolution." -> tier-1 exact match including the period
+    primary = _resolve_quote_once(quote, TEXT)
+    assert primary.failure_reason is None and primary.span is not None
+    assert TEXT[primary.span.start : primary.span.end].endswith(".")  # period kept
+    assert resolve_quote(quote, TEXT) == primary  # wrapper == core, no divergence
