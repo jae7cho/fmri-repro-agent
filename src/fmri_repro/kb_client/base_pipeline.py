@@ -24,6 +24,7 @@ from datetime import date
 from typing import Final, cast
 
 from fmri_defaults_kb import (
+    ConditionalParam,
     KbAmbiguousError,
     KbUnknownPipelineError,
     ParamResult,
@@ -47,6 +48,7 @@ from fmri_repro.spec.provenance import (
     BASIS_CEILINGS,
     AlternativeInference,
     DateInferredVersionBasis,
+    DerivedBasis,
     InferredDefault,
     LeftMissing,
     NotApplicable,
@@ -271,6 +273,10 @@ def _apply_param_result(
     if current_pf.extraction.status == "EXTRACTED":
         return
 
+    if isinstance(result.value, ConditionalParam):
+        _apply_conditional(preprocessing, step, field_name, result.value, current_pf)
+        return
+
     new_inference: LeftMissing | InferredDefault
     if result.value is KbNotApplicable:
         new_inference = LeftMissing(
@@ -295,6 +301,45 @@ def _apply_param_result(
         field_name,
         _rebuild_provenanced_field(current_pf, inference=new_inference),
     )
+
+
+def _apply_conditional(
+    preprocessing: Preprocessing,
+    step: object,
+    field_name: str,
+    cond: ConditionalParam,
+    current_pf: ProvenancedField,
+) -> None:
+    """Resolve a default DERIVED from a sibling extracted field (B1).
+
+    Reads the extracted value of ``cond.conditional_on`` (a dotted spec-field path),
+    selects the matching rule, and writes an ``InferredDefault`` with ``DerivedBasis``
+    capped at ``BASIS_CEILINGS["derived"]`` (0.70). The B0 code-verified-vs-lineage
+    asymmetry rides on the rule's ``proposed_confidence`` + ``source`` (no source_type
+    enum). Fails closed — no inference — when the sibling field is absent / not
+    EXTRACTED, or its value matches no rule (the caller already guards the target field
+    being EXTRACTED).
+    """
+    sib_step_kind, _, sib_attr = cond.conditional_on.rpartition(".")
+    sib_step = _find_step(preprocessing, sib_step_kind)
+    if sib_step is None:
+        return
+    sib_pf: ProvenancedField | None = getattr(sib_step, sib_attr, None)
+    if sib_pf is None or sib_pf.extraction.status != "EXTRACTED":
+        return  # sibling not extracted -> no signal -> fail closed
+    sib_value = sib_pf.extraction.value
+    matched = next((r for r in cond.rules if sib_value in r.when), None)
+    if matched is None:
+        return  # extracted sibling value matches no rule -> fail closed
+    basis = DerivedBasis(source_field_ids=[cond.conditional_on], note=matched.source)
+    confidence = min(matched.proposed_confidence, BASIS_CEILINGS["derived"])
+    inferred: InferredDefault = InferredDefault(
+        value=matched.value,
+        basis=basis,
+        confidence=confidence,
+        alternative_inferences=[],
+    )
+    setattr(step, field_name, _rebuild_provenanced_field(current_pf, inference=inferred))
 
 
 def _find_step(preprocessing: Preprocessing, kind: str):
