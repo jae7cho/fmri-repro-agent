@@ -522,7 +522,10 @@ def test_protocol_basis_note_dispatch_all_bases():
             0.75,
         )
     )
-    assert "inferred from publication date 2015-03-01: fMRIPrep 25.2.5" in n_date
+    # source-neutral + upper-bound-honest: paper_date is /CreationDate (not the pub date),
+    # and resolve_version picks the latest release <= paper_date (a bound, not a pinpoint).
+    assert "fMRIPrep 25.2.5 — latest release on or before paper date 2015-03-01" in n_date
+    assert "publication date" not in n_date  # lock the over-claim fix against regression
     assert f"(confidence 0.75 / ceiling {BASIS_CEILINGS['date_inferred_version']})" in n_date
 
     n_ver = render._fmt_basis_note(

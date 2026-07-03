@@ -425,7 +425,9 @@ def _fmt_basis_note(row: FieldRow) -> str:
     if b is None:
         return ""
     if b.basis_type == "date_inferred_version":
-        core = f"inferred from publication date {b.paper_date}: {b.tool} {b.inferred_version}"
+        core = (
+            f"{b.tool} {b.inferred_version} — latest release on or before paper date {b.paper_date}"
+        )
     elif b.basis_type == "version_default":
         core = f"{b.tool} {b.version} (version stated/confirmed)"
     elif b.basis_type == "prior_publication":
