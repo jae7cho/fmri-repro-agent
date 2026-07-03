@@ -66,6 +66,22 @@ def test_mode_with_wrong_or_no_value_does_not_resolve():
     assert _conv("mode", None).status == "no_match"
 
 
+def test_poldrack_mode_1000_token_resolves_scoped():
+    """Poldrack 2015: the LLM emits the abbreviated canonical token 'mode_1000'
+    (drops the 'global_' prefix). The value-context-scoped 'mode_1000@1000' alias
+    resolves it, WITHOUT reopening the Marek false-fires."""
+    # positive: the emitted token + value 1000 -> global_mode_1000
+    assert _conv("mode_1000", 1000).resolved == "global_mode_1000"
+    # @1000 scoping: wrong / absent value context must NOT resolve via this alias
+    assert _conv("mode_1000", 10000).status != "resolved"
+    assert _conv("mode_1000", None).status != "resolved"
+    # Marek-safety (adversarial, with the new alias present): the underscored token is
+    # not a substring of the false-fire phrases, so "default mode ... " + value 1000
+    # still does NOT resolve -- the regression the bare 'mode@1000' caused stays closed.
+    assert _conv("A default mode of brain function", 1000).status != "resolved"
+    assert _conv("the median study sample size is about 25", 1000).status != "resolved"
+
+
 def test_median_value_context_disambiguates():
     """Value-context flips median between global_median_1000 (1000) and
     fsl_median_10000 (10000) — but only via convention-bearing phrasing. Bare

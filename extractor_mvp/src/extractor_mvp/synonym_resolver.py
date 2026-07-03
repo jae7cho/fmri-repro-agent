@@ -154,6 +154,12 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
         "global_mode_1000",
         "mode value@1000",
         "mode scaling@1000",
+        # Poldrack 2015: the LLM abbreviates the canonical to the token "mode_1000"
+        # (drops the "global_" prefix). Value-context-scoped so it fires ONLY with
+        # intensity_value==1000. Marek-safe: the underscored token "mode_1000" is not a
+        # substring of the false-fire phrases ("default mode", "median sample size"), so
+        # this reopens nothing the bare "mode@1000" did.
+        "mode_1000@1000",
         # Dropped bare "mode@1000" (false-fires on "default mode" / "mode of covariation"
         # — Marek probe). Direct phrases below still carry the convention unambiguously.
         "mode value of 1000",
