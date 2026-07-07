@@ -23,13 +23,13 @@ jobs:
   lint-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           path: fmri-repro-agent
       # Sibling path dependency: uv.sources maps fmri-defaults-kb to
       # ../fmri-defaults-kb, so it must be checked out next to the main repo for
       # `uv sync --frozen` to resolve the editable path in CI.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
@@ -57,13 +57,13 @@ jobs:
   extractor-mvp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           path: fmri-repro-agent
       # extractor_mvp depends on fmri-repro-agent (path=..) which depends on
       # fmri-defaults-kb (path=../../fmri-defaults-kb); check out the sibling so
       # the editable path chain resolves.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
