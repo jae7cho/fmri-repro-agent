@@ -176,6 +176,13 @@ def _is_sentinel(value: Any) -> bool:
     }
 
 
+def _is_conditional(value: Any) -> bool:
+    """A conditional_default: ``{conditional_on, rules: [{when, value, ...}]}``.
+    Each rule's ``value`` is what the Configurator emits, so vocab membership is
+    checked per-rule (the wrapper dict itself is never a vocab string)."""
+    return isinstance(value, dict) and "conditional_on" in value
+
+
 # --- tests -------------------------------------------------------------------
 
 
@@ -193,6 +200,24 @@ def test_kb_controlled_vocab_subset_of_spec() -> None:
             container, allowed = entry
             value = payload.get("value") if isinstance(payload, dict) else None
             if value is None or _is_sentinel(value):
+                continue
+            if _is_conditional(value):
+                # Validate the produced value of every rule; a "scalar" field yields one
+                # value per rule, a "list" field a list per rule.
+                for rule in value.get("rules", []):
+                    rule_value = rule.get("value")
+                    produced = (
+                        rule_value
+                        if container == "list" and isinstance(rule_value, list)
+                        else [rule_value]
+                    )
+                    for v in produced:
+                        seen += 1
+                        if v not in allowed:
+                            failures.append(
+                                f"{yaml_path.name}:{pid}@{version}:{dotted_key} "
+                                f"rule value {v!r} not in spec Literal {list(allowed)!r}"
+                            )
                 continue
             if container == "scalar":
                 seen += 1
