@@ -34,7 +34,7 @@ jobs:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
           ref: ${{ env.KB_REF }}
-      - uses: astral-sh/setup-uv@v8.1.0
+      - uses: astral-sh/setup-uv@v8.3.2
         with:
           enable-cache: true
           cache-dependency-glob: fmri-repro-agent/uv.lock
@@ -68,7 +68,7 @@ jobs:
           repository: jae7cho/fmri-defaults-kb
           path: fmri-defaults-kb
           ref: ${{ env.KB_REF }}
-      - uses: astral-sh/setup-uv@v8.1.0
+      - uses: astral-sh/setup-uv@v8.3.2
         with:
           enable-cache: true
           cache-dependency-glob: fmri-repro-agent/extractor_mvp/uv.lock
