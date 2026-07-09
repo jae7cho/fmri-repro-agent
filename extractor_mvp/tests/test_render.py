@@ -36,7 +36,7 @@ from fmri_repro.spec.provenance import (
     VersionDefaultBasis,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
-from fmri_repro.spec.v0_1_0 import StudySpec
+from fmri_repro.spec.v0_3_0 import StudySpec  # current root; examples/spec.json is a 0.3.0 doc
 
 from extractor_mvp import render
 
@@ -126,7 +126,7 @@ def _synthetic_preprocessing() -> Preprocessing:
     )
     # base_pipeline: pipeline identity INFERRED; its version DEFERRED (different states).
     version_field = _deferred_left("version", "fMRIPrep docs")
-    base_pipeline = ProvenancedField(
+    base_pipeline: ProvenancedField[PipelineRef] = ProvenancedField(
         field_id="base_pipeline",
         extraction=MissingFromPaper(searched_terms=["pipeline"], sections_searched=["Methods"]),
         inference=InferredDefault(

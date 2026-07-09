@@ -1,13 +1,18 @@
-"""Versioned root for ReplicationSpec v0.1.0.
+"""Shared spec CORE + the v0.1.0 version constant.
 
-The spec is SemVer'd, with **one module per minor version** (this is the v0.1.0
-module; a future v0.2.0 will live in a sibling ``v0_2_0.py`` and import the
-same version-stable core types from :mod:`fmri_repro.spec.provenance`).
+Despite the filename, this is no longer a versioned *root*: it houses the version-stable
+assembly imported unchanged by every later version — :class:`RunMeta`,
+:class:`ReplicationSpec`, :class:`StudyAnalysis`, and the modality-typed acquisition arms —
+plus ``SCHEMA_VERSION = "0.1.0"``. The historical ``v0_1_0.StudySpec`` root has been
+**demoted**: there is no 0.1.0 root class to misuse.
 
-Between-version migrations are intended to be expressed as RFC 6902 JSON Patch
-documents. **No migration engine is implemented in this chat** — that is
-deferred to a later milestone, along with ``python-jsonpatch`` / ``bsmschema``
-integration.
+Versioning model (as of 0.3.0): the minor-version modules share the one mutating
+:mod:`fmri_repro.spec.preprocessing`, so ``schema_version`` is a **write-time label**, not
+a promise any module can parse older data. The sole live root is
+:class:`fmri_repro.spec.v0_3_0.StudySpec`. Read archived artifacts of any version through
+:func:`fmri_repro.spec.migrations.parse_any_version` (migrate-then-parse). The migration
+floor is 0.2.0 — the 0.1.0→0.2.0 hop is a semantic restructuring and is not auto-migrated;
+a genuine v0.1.0 specimen is retained frozen under ``examples/frozen/``.
 
 Acquisition is split into modality-typed arms — :class:`FunctionalAcquisition`,
 :class:`AnatomicalAcquisition`, :class:`FieldmapAcquisition` — sharing the
@@ -745,10 +750,14 @@ class ReplicationSpec(BaseModel):
 
 
 # ---------------------------------------------------------------------------
-# Study-level root — one paper → one or more per-dataset ReplicationSpecs
+# Version constant. This module is the shared spec CORE (RunMeta, ReplicationSpec,
+# StudyAnalysis, the acquisition arms — imported unchanged by every later version) PLUS the
+# 0.1.0 version label. There is deliberately no ``v0_1_0.StudySpec`` root: the version
+# modules share the one mutating :mod:`fmri_repro.spec.preprocessing`, so a 0.1.0 root could
+# only pin a version string over today's (0.3.0) nested models — a document lying about
+# itself. The sole live root is :class:`fmri_repro.spec.v0_3_0.StudySpec`. Read archived
+# v0.1.0 artifacts via :func:`fmri_repro.spec.migrations.parse_any_version` (migrate-then-
+# parse); the 0.1.0 hop is below the migration floor, so a genuine v0.1.0 specimen is
+# retained frozen under ``examples/frozen/`` rather than auto-migrated.
 # ---------------------------------------------------------------------------
-class StudySpec(BaseModel):
-    schema_version: Literal["0.1.0"] = "0.1.0"
-    run: RunMeta
-    specs: list[ReplicationSpec] = Field(min_length=1)
-    study_analysis: StudyAnalysis | None = None
+SCHEMA_VERSION = "0.1.0"

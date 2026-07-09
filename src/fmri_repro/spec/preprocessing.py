@@ -1,6 +1,6 @@
 """Preprocessing group for ReplicationSpec v0.1.0.
 
-The 16-kind ordered preprocessing chain that replaces the
+The 19-kind ordered preprocessing chain that replaces the
 ``Preprocessing`` stub in :mod:`fmri_repro.spec.v0_1_0`. Field-level spec is
 authoritatively defined in ``docs/spec/preprocessing_catalog_v0.1.0.md``;
 this module mirrors the acquisition-arm patterns one-for-one:
@@ -168,6 +168,36 @@ DISTORTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
         source="derived",
     ),
     "method": FieldMeta(
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+}
+
+
+# Anatomical-target steps (v0.3.0): brain_extraction + segmentation, admitted per the
+# catalog (both COBIDAS D.3 mandatory) because functional steps consume their outputs.
+BRAIN_EXTRACTION_FIELD_META: dict[str, FieldMeta] = {
+    "method": FieldMeta(  # TOOL
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "manual_edits": FieldMeta(  # canonical
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+}
+
+
+SEGMENTATION_FIELD_META: dict[str, FieldMeta] = {
+    "method": FieldMeta(  # TOOL
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "tissue_classes": FieldMeta(  # canonical
         justification_axis="both",
         inference_applicable=False,
         source="derived",
@@ -356,6 +386,16 @@ NUISANCE_REGRESSION_FIELD_META: dict[str, FieldMeta] = {
         source="derived",
     ),
     "detrend": FieldMeta(
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "method": FieldMeta(  # TOOL (v0.3.0): closes the one substantive step with no tool field
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "filtering_integrated": FieldMeta(  # canonical (v0.3.0)
         justification_axis="both",
         inference_applicable=False,
         source="derived",
@@ -651,6 +691,53 @@ class DistortionCorrection(BaseModel):
         return self
 
 
+# 4c. BrainExtraction — anatomical-target (v0.3.0); COBIDAS D.3 mandatory. Feeds
+# coregistration (skull-stripped T1). `parameters` deliberately omitted: no canonical
+# cross-tool param (BET's -f has no BET/3dSkullStrip/recon-all/SynthStrip analogue).
+BrainExtractionMethod = Literal[
+    "bet", "afni_3dskullstrip", "freesurfer_recon_all", "ants", "synthstrip", "other"
+]
+
+
+class BrainExtraction(BaseModel):
+    kind: Literal["brain_extraction"] = "brain_extraction"
+    method: ProvenancedField[BrainExtractionMethod]  # TOOL
+    manual_edits: ProvenancedField[bool]  # canonical
+
+    cobidas_row: ClassVar[str] = "brain_extraction"
+    STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
+    ARM_REGISTRY: ClassVar[dict[str, FieldMeta]] = BRAIN_EXTRACTION_FIELD_META
+
+    @model_validator(mode="after")
+    def _check_invariants(self) -> Self:
+        _validate_step_invariants(self, BRAIN_EXTRACTION_FIELD_META)
+        return self
+
+
+# 4d. Segmentation — anatomical-target (v0.3.0); COBIDAS D.3 mandatory. Produces the WM/CSF
+# masks that NuisanceRegression.tissue_regressors and CompCor consume. `csf` here is the CSF
+# tissue class, deliberately distinct from TissueRegressor.ventricles (a narrower mask).
+SegmentationMethod = Literal[
+    "fsl_fast", "spm_segment", "freesurfer_recon_all", "ants_atropos", "other"
+]
+TissueClass = Literal["gray_matter", "white_matter", "csf"]
+
+
+class Segmentation(BaseModel):
+    kind: Literal["segmentation"] = "segmentation"
+    method: ProvenancedField[SegmentationMethod]  # TOOL
+    tissue_classes: ProvenancedField[list[TissueClass]]  # canonical
+
+    cobidas_row: ClassVar[str] = "segmentation"
+    STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
+    ARM_REGISTRY: ClassVar[dict[str, FieldMeta]] = SEGMENTATION_FIELD_META
+
+    @model_validator(mode="after")
+    def _check_invariants(self) -> Self:
+        _validate_step_invariants(self, SEGMENTATION_FIELD_META)
+        return self
+
+
 # 5. Coregistration — COBIDAS function↔structure intra-subject coregistration
 CoregistrationTransform = Literal["rigid", "affine", "nonlinear"]
 CoregistrationMethod = Literal["flirt_bbr", "flirt", "spm_coreg", "bbregister", "ants", "other"]
@@ -705,7 +792,11 @@ TargetSpace = Literal[
     "native_volume",
     "other",
 ]
-SpatialNormalizationMethod = Literal["fnirt", "ants_syn", "spm_normalise", "dartel", "other"]
+# "ants" (v0.3.0): plain tool member, mirroring CoregistrationMethod/MotionCorrectionMethod.
+# Lets "non-rigid registration using ANTs" record method=ants without asserting SyN.
+SpatialNormalizationMethod = Literal[
+    "fnirt", "ants", "ants_syn", "spm_normalise", "dartel", "other"
+]
 WarpType = Literal["rigid", "affine", "nonlinear"]
 SpatialNormalizationInterpolation = Literal["linear", "spline", "sinc", "other"]
 
@@ -808,6 +899,18 @@ MotionExpansion = Literal["none", "6param", "friston24", "volterra"]
 TissueRegressor = Literal["whole_brain", "gray_matter", "white_matter", "ventricles"]
 PhysioRegressor = Literal["retroicor", "rvt", "none"]
 Detrend = Literal["linear", "quadratic", "none"]
+# v0.3.0: the tool discriminator this step previously lacked. "custom" = an author-written /
+# in-house implementation (information); "other" = an unlisted named tool. Kept distinct.
+NuisanceRegressionMethod = Literal[
+    "afni_3dtproject",
+    "afni_3dbandpass",
+    "afni_3ddeconvolve",
+    "fsl_regfilt",
+    "spm",
+    "nilearn",
+    "custom",
+    "other",
+]
 
 
 class NuisanceRegression(BaseModel):
@@ -817,6 +920,15 @@ class NuisanceRegression(BaseModel):
     physio_regressors: ProvenancedField[PhysioRegressor]
     physio_n_regressors: ProvenancedField[int]
     detrend: ProvenancedField[Detrend]
+    method: ProvenancedField[NuisanceRegressionMethod]  # TOOL (v0.3.0)
+    filtering_integrated: ProvenancedField[bool]
+    """Whether temporal bandpass filtering was applied SIMULTANEOUSLY within the same
+    regression model (True; one step, e.g. AFNI 3dTproject) versus as a SEPARATE sequential
+    operation (False; multi-step). Canonical / tool-independent: a paper may describe
+    simultaneous regression+filtering without naming 3dTproject, or name 3dTproject alongside
+    a separate bandpass. Grounding: Hallquist, Hwang & Luna (2013, NeuroImage 82:208-225) --
+    sequential bandpass-then-regression reintroduces nuisance variance. Band edges stay on
+    ``temporal_filtering``; only the integration fact lives here (no cross-step validator)."""
 
     cobidas_row: ClassVar[str] = "artifact_structured_noise_removal"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -1047,6 +1159,8 @@ _check_step_bijection(NonsteadystateRemoval, NONSTEADYSTATE_REMOVAL_FIELD_META)
 _check_step_bijection(SliceTimeCorrection, SLICE_TIME_CORRECTION_FIELD_META)
 _check_step_bijection(MotionCorrection, MOTION_CORRECTION_FIELD_META)
 _check_step_bijection(DistortionCorrection, DISTORTION_CORRECTION_FIELD_META)
+_check_step_bijection(BrainExtraction, BRAIN_EXTRACTION_FIELD_META)
+_check_step_bijection(Segmentation, SEGMENTATION_FIELD_META)
 _check_step_bijection(Coregistration, COREGISTRATION_FIELD_META)
 _check_step_bijection(IntensityCorrection, INTENSITY_CORRECTION_FIELD_META)
 _check_step_bijection(SpatialNormalization, SPATIAL_NORMALIZATION_FIELD_META)
@@ -1070,6 +1184,8 @@ PreprocStep = Annotated[
     | SliceTimeCorrection
     | MotionCorrection
     | DistortionCorrection
+    | BrainExtraction
+    | Segmentation
     | Coregistration
     | IntensityCorrection
     | SpatialNormalization
@@ -1088,11 +1204,37 @@ PreprocStep = Annotated[
 
 
 # ---------------------------------------------------------------------------
-# Preprocessing model
+# Preprocessing model + version stamp
 # ---------------------------------------------------------------------------
+
+# The current model version. Preprocessing is the independently-parseable root the emitter
+# ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
+# wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
+# ``schema_version`` is asserted equal to this by the current versioned root.
+SCHEMA_VERSION = "0.3.0"
+
+
+class MigrationInfo(BaseModel):
+    """Present ONLY on a Preprocessing that was forward-migrated from an older schema.
+
+    Self-describing per the same principle as ``INFERRED_DEFAULT`` carrying its basis: a
+    third party can tell the document was migrated, from what, and by which migrator."""
+
+    migrated_from: str  # immediate source schema version of the migration hop
+    migrator_version: str  # identifier of the migrator that produced this document
+
+
 class Preprocessing(BaseModel):
     """One ordered preprocessing pipeline applied to one or more functional
     acquisitions in the same :class:`ReplicationSpec`.
+
+    Version stamp (v0.3.0+): ``schema_version`` records which model this document
+    conforms to; ``written_under`` records the schema version the *extractor* targeted.
+    They are equal for a natively-written document and diverge only after migration
+    (then ``migration`` is populated). ``written_under_inferred`` is True when a migrator
+    could not read the source version from the document and inferred it from stamp-absence
+    — provenance about the provenance, so an inferred source version never masquerades as
+    an observed one.
 
     Validation:
       * Per-kind uniqueness on ``steps`` (one step per ``kind``); sibling
@@ -1105,9 +1247,31 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
+    schema_version: Literal["0.3.0"] = "0.3.0"
+    written_under: str | None = None  # None on input -> normalized to schema_version below
+    written_under_inferred: bool = False
+    migration: MigrationInfo | None = None
     applies_to: list[AcquisitionRef] = Field(min_length=1)
     base_pipeline: ProvenancedField[PipelineRef] | NotApplicable
     steps: list[PreprocStep] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _default_written_under(self) -> Self:
+        # A natively-written document omits written_under; it equals schema_version.
+        if self.written_under is None:
+            self.written_under = self.schema_version
+        return self
+
+    @model_validator(mode="after")
+    def _migration_coherence(self) -> Self:
+        # If migrated, written_under must differ from schema_version (that IS a migration);
+        # a native document (written_under == schema_version) carries no migration record.
+        if self.migration is not None and self.written_under == self.schema_version:
+            raise ValueError(
+                "Preprocessing.migration set but written_under == schema_version "
+                "(a native document, not a migrated one)."
+            )
+        return self
 
     @model_validator(mode="after")
     def _check_step_uniqueness(self) -> Self:

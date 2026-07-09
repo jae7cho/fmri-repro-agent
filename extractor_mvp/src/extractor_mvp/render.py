@@ -6,7 +6,10 @@ unit here is exactly one ``Preprocessing``):
 - :func:`flatten` — ``Preprocessing -> list[FieldRow]``. The single source of
   truth. Walks ``base_pipeline`` (incl. the nested ``PipelineRef.version``) then
   ``steps`` in list order (list position *is* pipeline order — never reordered).
-- :func:`to_json` — ``preprocessing.model_dump_json(indent=2)`` (round-trippable).
+- :func:`to_json` — ``preprocessing.model_dump_json(indent=2)``. Carries the version
+  stamp (``schema_version``); round-trips via ``model_validate_json`` for a document of
+  the CURRENT schema. A document written under an older schema must be read through
+  ``fmri_repro.spec.migrations.parse_any_version`` (migrate-then-parse), not this path.
 - :func:`to_text` — deterministic, no-LLM human report with per-state counts.
 - :func:`to_bullets` — condensed markdown, one line per field.
 
@@ -254,7 +257,11 @@ def flatten(preprocessing: Preprocessing) -> list[FieldRow]:
 
 
 def to_json(preprocessing: Preprocessing) -> str:
-    """Canonical JSON serialization (round-trips via ``model_validate_json``)."""
+    """Canonical JSON serialization; carries the ``schema_version`` stamp.
+
+    Round-trips via ``model_validate_json`` for a CURRENT-schema document. Read
+    older-schema artifacts through ``fmri_repro.spec.migrations.parse_any_version``.
+    """
     return str(preprocessing.model_dump_json(indent=2))
 
 
@@ -388,6 +395,7 @@ _REASON_BUCKET: dict[str, str] = {
     "value_not_in_literal": "unmappable",
     "not_targeted_by_mvp": "not_covered",  # mirrors batch.py _IGNORE_REASON
     "extraction_quote_unresolved": "not_covered",
+    "field_not_in_schema_version": "not_covered",  # field absent when the source doc was written
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -400,6 +408,10 @@ _REASON_LINE: dict[str, str] = {
     ),
     "not_targeted_by_mvp": "not assessed by current extractor",
     "extraction_quote_unresolved": "value present in source but span unresolved (extractor limitation)",
+    "field_not_in_schema_version": (
+        "field did not exist in the schema version this document was written under "
+        "(added by a later version; forward-migrated)"
+    ),
 }
 
 #: Completeness-header gap buckets: (bucket key, display label), fixed order, non-zero only.

@@ -29,10 +29,12 @@ if TYPE_CHECKING:
     from extractor_mvp.citation_resolver import CitationResolver
 
 from fmri_repro.spec.preprocessing import (
+    BrainExtraction,
     IntensityNormalization,
     IntensityNormalizationConvention,
     PipelineRef,
     Preprocessing,
+    Segmentation,
     SpatialNormalization,
     SurfaceProjection,
     SurfaceRegistration,
@@ -651,6 +653,18 @@ def _assemble(
     """
     # field_id MUST be the bare step attribute name (step invariant).
     untargeted = "not_targeted_by_mvp"
+    # Anatomical-target steps (v0.3.0), schema-present but not targeted by the MVP. Placed
+    # before spatial normalization per pipeline order (COBIDAS §4.3) — canonically they sit
+    # just before coregistration, which _assemble does not yet build, so spatial is the
+    # earliest present consumer of their outputs.
+    brain_extraction = BrainExtraction(
+        method=_missing_pf("method", str, untargeted),
+        manual_edits=_missing_pf("manual_edits", bool, untargeted),
+    )
+    segmentation = Segmentation(
+        method=_missing_pf("method", str, untargeted),
+        tissue_classes=_missing_pf("tissue_classes", list, untargeted),
+    )
     spatial = SpatialNormalization(
         target_space=pf["target_space"],
         resolution_mm=pf["resolution_mm"],
@@ -685,7 +699,14 @@ def _assemble(
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
-        steps=[spatial, surface, intensity, temporal_standardization],
+        steps=[
+            brain_extraction,
+            segmentation,
+            spatial,
+            surface,
+            intensity,
+            temporal_standardization,
+        ],
     )
 
 

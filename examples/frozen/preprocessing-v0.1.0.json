@@ -1,0 +1,60 @@
+{
+  "_comment": "FROZEN v0.1.0 SPECIMEN — a genuine pre-migration Preprocessing artifact, kept as a museum piece. It is DELIBERATELY not parseable by current code: it lacks the version stamp, lacks NuisanceRegression.method / filtering_integrated (added in 0.3.0), and carries voxel_temporal_zscore as an intensity_normalization convention value (moved out of that enum in 0.2.0). fmri_repro.spec.migrations.parse_any_version() refuses it below the 0.2.0 floor. See README.md.",
+  "applies_to": [
+    { "suffix": "bold", "entities": { "task": "rest" } }
+  ],
+  "base_pipeline": { "kind": "not_applicable" },
+  "steps": [
+    {
+      "kind": "intensity_normalization",
+      "scope": {
+        "field_id": "scope",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      },
+      "convention": {
+        "field_id": "convention",
+        "extraction": {
+          "status": "EXTRACTED",
+          "value": "voxel_temporal_zscore",
+          "spans": [{ "start": 0, "end": 8, "text": "z-scored", "section": "Methods" }],
+          "confidence": 0.9
+        },
+        "inference": { "status": "NOT_APPLICABLE" }
+      },
+      "value": {
+        "field_id": "value",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      }
+    },
+    {
+      "kind": "nuisance_regression",
+      "motion_expansion": {
+        "field_id": "motion_expansion",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      },
+      "tissue_regressors": {
+        "field_id": "tissue_regressors",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      },
+      "physio_regressors": {
+        "field_id": "physio_regressors",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      },
+      "physio_n_regressors": {
+        "field_id": "physio_n_regressors",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      },
+      "detrend": {
+        "field_id": "detrend",
+        "extraction": { "status": "MISSING_FROM_PAPER", "searched_terms": [], "sections_searched": ["Methods"] },
+        "inference": { "status": "LEFT_MISSING", "reason": "not_stated_in_text" }
+      }
+    }
+  ]
+}

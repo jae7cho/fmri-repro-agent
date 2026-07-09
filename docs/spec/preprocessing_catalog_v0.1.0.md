@@ -93,7 +93,7 @@ Pipeline Configurator may fill (basis in parens); all others are extracted-or-mi
 ### 7. `spatial_normalization` (intersubject, VOLUME)
 - **Prov:** D.3 *Intersubject registration* (mandatory) — volume path only (surface split out → step 8).
 - **Canonical:** `target_space: Literal["MNI152NLin6Asym","MNI152NLin2009cAsym","Talairach","native_volume","other"]`, `resolution_mm`
-- **Method:** `fnirt` / `ants_syn` / `spm_normalise` / `dartel` / `other`; `warp: Literal["rigid","affine","nonlinear"]` (+ transform type), `interpolation`, `regularization`
+- **Method:** `fnirt` / `ants` / `ants_syn` / `spm_normalise` / `dartel` / `other`; `warp: Literal["rigid","affine","nonlinear"]` (+ transform type), `interpolation`, `regularization`. *(v0.3.0: plain `ants` added — lets "non-rigid registration using ANTs" record the tool without asserting SyN; mirrors coregistration / motion_correction.)*
 - **Infer:** interpolation (field_convention). `target_space` / `resolution_mm` are
   version_default-only candidates — `inference_applicable=False` this round; flip when the
   KB lands and Configurator can defensibly pull base-pipeline defaults.
@@ -120,6 +120,8 @@ Pipeline Configurator may fill (basis in parens); all others are extracted-or-mi
   - tissue: subset of {whole_brain(=GSR), gray_matter, white_matter, ventricles}; definition (seed / segmentation / aCompCor); signal (mean / first SV)
   - physio: `Literal["retroicor","rvt","none"]` + n regressors
   - detrend: `Literal["linear","quadratic","none"]`
+  - **Method (v0.3.0):** `method: Literal["afni_3dtproject","afni_3dbandpass","afni_3ddeconvolve","fsl_regfilt","spm","nilearn","custom","other"]` — the tool discriminator this step previously lacked (`method` per schema-wide convention; `custom` = an author-written/in-house implementation, distinct from `other` = an unlisted named tool).
+  - **Canonical (v0.3.0):** `filtering_integrated: bool` — True when temporal bandpass was applied *simultaneously within the same regression model* (one step, e.g. AFNI `3dTproject`) vs False = bandpass and regression as *separate sequential* operations. Tool-independent (a paper may describe simultaneous regression+filtering without naming `3dTproject`, or name it alongside a separate bandpass). Grounding: Hallquist, Hwang & Luna (2013, *NeuroImage* 82:208–225) — sequential bandpass-then-regression reintroduces nuisance variance. Band edges stay on `temporal_filtering`; only the integration fact lives here (no cross-step validator this round).
 - **Infer:** none by default — motion expansion order is high-variance and prior-leaky; leave MISSING
   unless base pipeline supplies it (version_default). (Anti confirmation-bias: Extractor never infers these.)
 
@@ -158,9 +160,28 @@ Pipeline Configurator may fill (basis in parens); all others are extracted-or-mi
 - **Method:** kernel type (Gaussian); approach (fixed kernel / iterate-to-FWHM, e.g. AFNI 3dBlurToFWHM)
 - **Infer:** kernel type (field_convention); fwhm_mm + space → extracted (key params).
 
-### Anatomical-target (admit only if a functional pipeline depends on them)
-- `brain_extraction` — D.3 (mandatory): method (BET / recon-all / …), parameters, manual edits.
-- `segmentation` — D.3 (mandatory): tissue classes (GM/WM/CSF), method.
+### Anatomical-target (admit only if a functional pipeline depends on them) — **ADMITTED v0.3.0**
+Both passed the admission test: brain extraction feeds `coregistration` / `spatial_normalization`
+(skull-stripped T1); segmentation produces the WM/CSF masks that `nuisance_regression.tissue_regressors`
+and `compcor` consume. List position places them just before `coregistration` (COBIDAS §4.3 order),
+brain_extraction then segmentation. No KB defaults (`inference_applicable=False` on every field).
+
+#### 4a. `brain_extraction` — **ADMITTED v0.3.0**
+- **Prov:** D.3 *Brain extraction* (mandatory).
+- **Canonical:** `manual_edits: bool`
+- **Method:** `method: Literal["bet","afni_3dskullstrip","freesurfer_recon_all","ants","synthstrip","other"]`
+- **Infer:** none (`inference_applicable=False`).
+- **Deferral:** a `parameters` field is deliberately omitted — no canonical parameter is shared across
+  BET / 3dSkullStrip / recon-all / SynthStrip (BET's `-f` has no cross-tool analogue), and free text
+  would be unqueryable. Admit later only if a genuine cross-tool canonical param is identified.
+
+#### 4b. `segmentation` — **ADMITTED v0.3.0**
+- **Prov:** D.3 *Segmentation* (mandatory).
+- **Canonical:** `tissue_classes: list[Literal["gray_matter","white_matter","csf"]]` — `csf` is the CSF
+  tissue class, deliberately distinct from `nuisance_regression`'s `TissueRegressor.ventricles` (a
+  narrower regressor mask).
+- **Method:** `method: Literal["fsl_fast","spm_segment","freesurfer_recon_all","ants_atropos","other"]`
+- **Infer:** none (`inference_applicable=False`).
 
 ---
 

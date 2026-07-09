@@ -38,6 +38,7 @@ from fmri_defaults_kb.io import find_kb_root
 from pydantic import BaseModel
 
 from fmri_repro.spec.preprocessing import (
+    BrainExtraction,
     CompCor,
     Coregistration,
     Despike,
@@ -50,6 +51,7 @@ from fmri_repro.spec.preprocessing import (
     NuisanceRegression,
     PreprocStep,
     Scrub,
+    Segmentation,
     SliceTimeCorrection,
     SpatialNormalization,
     SpatialSmoothing,
@@ -68,6 +70,8 @@ _STEP_CLASSES: tuple[type[BaseModel], ...] = (
     SliceTimeCorrection,
     MotionCorrection,
     DistortionCorrection,
+    BrainExtraction,
+    Segmentation,
     Coregistration,
     IntensityCorrection,
     SpatialNormalization,

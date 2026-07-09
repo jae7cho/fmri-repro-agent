@@ -86,7 +86,7 @@ from fmri_repro.spec.provenance import (
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from fmri_repro.spec.v0_1_0 import ReplicationSpec
-from fmri_repro.spec.v0_2_0 import StudySpec as CurrentStudySpec
+from fmri_repro.spec.v0_3_0 import StudySpec as CurrentStudySpec
 from tests.spec.test_acquisition import (
     _anatomical_payload,
     _fieldmap_payload,
@@ -258,6 +258,8 @@ def _nuisance_regression(motion_expansion: str = "friston24") -> NuisanceRegress
         physio_regressors=_pf_missing("physio_regressors", str),
         physio_n_regressors=_pf_missing("physio_n_regressors", int),
         detrend=_pf_extracted("detrend", "linear", str),
+        method=_pf_missing("method", str),
+        filtering_integrated=_pf_missing("filtering_integrated", bool),
     )
 
 
@@ -1208,6 +1210,8 @@ def test_preprocstep_union_in_json_schema_export() -> None:
         "SliceTimeCorrection",
         "MotionCorrection",
         "DistortionCorrection",
+        "BrainExtraction",
+        "Segmentation",
         "Coregistration",
         "IntensityCorrection",
         "SpatialNormalization",
@@ -1458,6 +1462,8 @@ def test_schema_export_contains_all_preprocessing_kinds(
         "SliceTimeCorrection",
         "MotionCorrection",
         "DistortionCorrection",
+        "BrainExtraction",
+        "Segmentation",
         "Coregistration",
         "IntensityCorrection",
         "SpatialNormalization",
@@ -1488,6 +1494,134 @@ def test_empty_preprocessing_with_functional_rejected() -> None:
     with pytest.raises(ValidationError) as excinfo:
         ReplicationSpec.model_validate(payload)
     assert "preprocessing is empty" in str(excinfo.value)
+
+
+# ---------------------------------------------------------------------------
+# v0.3.0: anatomical-target steps + tool/method separation
+# ---------------------------------------------------------------------------
+
+
+def _brain_extraction(method: str = "bet") -> pp_mod.BrainExtraction:
+    return pp_mod.BrainExtraction(
+        method=_pf_extracted("method", method, str),
+        manual_edits=_pf_missing("manual_edits", bool),
+    )
+
+
+def _segmentation() -> pp_mod.Segmentation:
+    return pp_mod.Segmentation(
+        method=_pf_extracted("method", "fsl_fast", str),
+        tissue_classes=_pf_extracted(
+            "tissue_classes", ["gray_matter", "white_matter", "csf"], list
+        ),
+    )
+
+
+def test_v0_3_0_ants_added_to_spatial_normalization_method() -> None:
+    # Additive: the new tool member validates, and every prior value still does.
+    for m in ("ants", "fnirt", "ants_syn", "spm_normalise", "dartel", "other"):
+        pf = ProvenancedField[pp_mod.SpatialNormalizationMethod](
+            field_id="method",
+            extraction=Extracted[pp_mod.SpatialNormalizationMethod](
+                value=m, spans=[_span(m)], confidence=0.9
+            ),
+            inference=NotApplicable(),
+        )
+        assert pf.extraction.value == m
+
+
+def test_v0_3_0_nuisance_regression_method_and_filtering_integrated_roundtrip() -> None:
+    for integrated in (True, False):
+        nr = pp_mod.NuisanceRegression(
+            motion_expansion=_pf_missing("motion_expansion", str),
+            tissue_regressors=_pf_missing("tissue_regressors", list),
+            physio_regressors=_pf_missing("physio_regressors", str),
+            physio_n_regressors=_pf_missing("physio_n_regressors", int),
+            detrend=_pf_missing("detrend", str),
+            method=_pf_extracted("method", "afni_3dtproject", str),
+            filtering_integrated=_pf_extracted("filtering_integrated", integrated, bool),
+        )
+        back = pp_mod.NuisanceRegression.model_validate_json(nr.model_dump_json())
+        assert back.method.extraction.value == "afni_3dtproject"
+        assert back.filtering_integrated.extraction.value is integrated
+
+
+def test_v0_3_0_both_new_kinds_roundtrip_through_union() -> None:
+    adapter: TypeAdapter[PreprocStep] = TypeAdapter(PreprocStep)
+    for step in (_brain_extraction(), _segmentation()):
+        again = adapter.validate_json(adapter.dump_json(step))
+        assert type(again) is type(step)
+        assert again == step
+
+
+def test_v0_3_0_anatomical_steps_accepted_before_coregistration() -> None:
+    pp = Preprocessing(
+        applies_to=[_bold_ref()],
+        base_pipeline=NotApplicable(),
+        steps=[_brain_extraction(), _segmentation()],
+    )
+    assert [s.kind for s in pp.steps] == ["brain_extraction", "segmentation"]
+
+
+def test_v0_3_0_duplicate_brain_extraction_rejected() -> None:
+    with pytest.raises(ValidationError) as excinfo:
+        Preprocessing(
+            applies_to=[_bold_ref()],
+            base_pipeline=NotApplicable(),
+            steps=[_brain_extraction(), _brain_extraction()],
+        )
+    assert "duplicate preprocessing step kind" in str(excinfo.value)
+    assert "brain_extraction" in str(excinfo.value)
+
+
+def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
+    # BrainExtraction: manual_edits carries a wrong field_id -> validator raises.
+    with pytest.raises(ValidationError, match="field_id mismatch"):
+        pp_mod.BrainExtraction(
+            method=_pf_extracted("method", "bet", str),
+            manual_edits=_pf_missing("WRONG", bool),
+        )
+    # Segmentation: tissue_classes carries a wrong field_id -> validator raises.
+    with pytest.raises(ValidationError, match="field_id mismatch"):
+        pp_mod.Segmentation(
+            method=_pf_extracted("method", "fsl_fast", str),
+            tissue_classes=_pf_missing("WRONG", list),
+        )
+
+
+def test_v0_3_0_version_and_frozen_predecessors() -> None:
+    # Predecessors are demoted to version constants; only v0.3.0 has a live StudySpec root.
+    from fmri_repro.spec import v0_1_0, v0_2_0
+
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.3.0"
+    assert v0_1_0.SCHEMA_VERSION == "0.1.0"
+    assert v0_2_0.SCHEMA_VERSION == "0.2.0"
+
+
+def test_v0_3_0_native_preprocessing_stamp() -> None:
+    prep = Preprocessing(
+        applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
+    )
+    # A natively-written document: schema_version == written_under, no migration record.
+    assert prep.schema_version == "0.3.0"
+    assert prep.written_under == "0.3.0"
+    assert prep.written_under_inferred is False
+    assert prep.migration is None
+    # written_under survives a round-trip (normalized from None on input).
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.3.0"
+
+
+def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
+    # A migration record on a document whose written_under == schema_version is incoherent
+    # (that is a native document, not a migrated one) -> rejected.
+    with pytest.raises(ValidationError, match="written_under == schema_version"):
+        Preprocessing(
+            written_under="0.3.0",
+            migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
+            applies_to=[_bold_ref()],
+            base_pipeline=NotApplicable(),
+            steps=[_brain_extraction()],
+        )
 
 
 # Silence ruff: keep the unused import alive (it's a tested module).
