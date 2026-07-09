@@ -26,7 +26,7 @@ from typing import Literal, Self
 
 from pydantic import BaseModel, Field, model_validator
 
-from fmri_repro.spec.v0_1_0 import ReplicationSpec, RunMeta, StudyAnalysis
+from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):

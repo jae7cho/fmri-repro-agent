@@ -21,6 +21,28 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+from fmri_repro.spec.core import (
+    AcquisitionEntities,
+    AcquisitionRef,
+    AnatomicalAcquisition,
+    AxisDirection,
+    BrainCoverage,
+    DatasetRef,
+    FieldmapAcquisition,
+    FirstLevelModel,
+    FunctionalAcquisition,
+    GroupLevelModel,
+    ImagingType,
+    MRAcquisitionType,
+    PaperRef,
+    ParallelTechnique,
+    PulseSequenceType,
+    ReplicationSpec,
+    RunMeta,
+    SliceOrderPattern,
+    SliceOrientation,
+    Thresholding,
+)
 from fmri_repro.spec.preprocessing import (
     NuisanceRegression,
     PipelineRef,
@@ -41,29 +63,7 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
     Span,
 )
-from fmri_repro.spec.v0_1_0 import (
-    AcquisitionEntities,
-    AcquisitionRef,
-    AnatomicalAcquisition,
-    AxisDirection,
-    BrainCoverage,
-    DatasetRef,
-    FieldmapAcquisition,
-    FirstLevelModel,
-    FunctionalAcquisition,
-    GroupLevelModel,
-    ImagingType,
-    MRAcquisitionType,
-    PaperRef,
-    ParallelTechnique,
-    PulseSequenceType,
-    ReplicationSpec,
-    RunMeta,
-    SliceOrderPattern,
-    SliceOrientation,
-    StudySpec,
-    Thresholding,
-)
+from fmri_repro.spec.v0_3_0 import StudySpec  # current root; scripts emit 0.3.0 documents
 
 _FIXED_RUN_ID = "00000000000000000000000000000002"
 _FIXED_CREATED_AT = datetime(2026, 5, 21, 0, 0, 0, tzinfo=UTC)

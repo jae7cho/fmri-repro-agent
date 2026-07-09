@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fmri_repro.spec.v0_1_0 import (
+from fmri_repro.spec.core import (
     AnatomicalAcquisition,
     FieldmapAcquisition,
     FunctionalAcquisition,

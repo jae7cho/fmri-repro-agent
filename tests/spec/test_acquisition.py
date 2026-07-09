@@ -21,8 +21,8 @@ from typing import Any
 import pytest
 from pydantic import TypeAdapter, ValidationError
 
-from fmri_repro.spec import v0_1_0
-from fmri_repro.spec.v0_1_0 import (
+from fmri_repro.spec import core
+from fmri_repro.spec.core import (
     ANATOMICAL_FIELD_META,
     COMMON_FIELD_META,
     FIELDMAP_FIELD_META,
@@ -245,31 +245,31 @@ def test_anatomical_echo_time_accepts_scalar_rejects_list() -> None:
 def test_functional_bijection_raises_on_missing_entry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delitem(v0_1_0.FUNCTIONAL_FIELD_META, "shimming")
+    monkeypatch.delitem(core.FUNCTIONAL_FIELD_META, "shimming")
     with pytest.raises(RuntimeError, match="registry/field mismatch"):
-        _check_arm_bijection(FunctionalAcquisition, v0_1_0.FUNCTIONAL_FIELD_META)
+        _check_arm_bijection(FunctionalAcquisition, core.FUNCTIONAL_FIELD_META)
 
 
 def test_anatomical_bijection_raises_on_missing_entry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delitem(v0_1_0.ANATOMICAL_FIELD_META, "echo_time_ms")
+    monkeypatch.delitem(core.ANATOMICAL_FIELD_META, "echo_time_ms")
     with pytest.raises(RuntimeError, match="registry/field mismatch"):
-        _check_arm_bijection(AnatomicalAcquisition, v0_1_0.ANATOMICAL_FIELD_META)
+        _check_arm_bijection(AnatomicalAcquisition, core.ANATOMICAL_FIELD_META)
 
 
 def test_fieldmap_bijection_raises_on_missing_entry(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delitem(v0_1_0.FIELDMAP_FIELD_META, "total_readout_time_s")
+    monkeypatch.delitem(core.FIELDMAP_FIELD_META, "total_readout_time_s")
     with pytest.raises(RuntimeError, match="registry/field mismatch"):
-        _check_arm_bijection(FieldmapAcquisition, v0_1_0.FIELDMAP_FIELD_META)
+        _check_arm_bijection(FieldmapAcquisition, core.FIELDMAP_FIELD_META)
 
 
 def test_all_arms_bijective_on_unmodified_state() -> None:
-    _check_arm_bijection(FunctionalAcquisition, v0_1_0.FUNCTIONAL_FIELD_META)
-    _check_arm_bijection(AnatomicalAcquisition, v0_1_0.ANATOMICAL_FIELD_META)
-    _check_arm_bijection(FieldmapAcquisition, v0_1_0.FIELDMAP_FIELD_META)
+    _check_arm_bijection(FunctionalAcquisition, core.FUNCTIONAL_FIELD_META)
+    _check_arm_bijection(AnatomicalAcquisition, core.ANATOMICAL_FIELD_META)
+    _check_arm_bijection(FieldmapAcquisition, core.FIELDMAP_FIELD_META)
 
 
 # ---------------------------------------------------------------------------

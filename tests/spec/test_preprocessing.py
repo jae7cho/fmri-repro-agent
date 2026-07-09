@@ -30,6 +30,7 @@ import pytest
 from pydantic import BaseModel, TypeAdapter, ValidationError
 
 from fmri_repro.spec import preprocessing as pp_mod
+from fmri_repro.spec.core import ReplicationSpec
 from fmri_repro.spec.preprocessing import (
     COMPCOR_FIELD_META,
     COREGISTRATION_FIELD_META,
@@ -85,7 +86,6 @@ from fmri_repro.spec.provenance import (
     VersionDefaultBasis,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
-from fmri_repro.spec.v0_1_0 import ReplicationSpec
 from fmri_repro.spec.v0_3_0 import StudySpec as CurrentStudySpec
 from tests.spec.test_acquisition import (
     _anatomical_payload,

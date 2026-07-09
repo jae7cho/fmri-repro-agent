@@ -17,7 +17,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from fmri_repro.spec.v0_1_0 import FunctionalAcquisition
+from fmri_repro.spec.core import FunctionalAcquisition
 from fmri_repro.spec.v0_3_0 import StudySpec as CurrentStudySpec
 
 REPO_ROOT = Path(__file__).resolve().parents[2]

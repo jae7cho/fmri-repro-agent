@@ -24,6 +24,28 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from pathlib import Path
 
+from fmri_repro.spec.core import (
+    AcquisitionEntities,
+    AcquisitionRef,
+    AnatomicalAcquisition,
+    AxisDirection,
+    BrainCoverage,
+    DatasetRef,
+    FieldmapAcquisition,
+    FirstLevelModel,
+    FunctionalAcquisition,
+    GroupLevelModel,
+    ImagingType,
+    MRAcquisitionType,
+    PaperRef,
+    ParallelTechnique,
+    PulseSequenceType,
+    ReplicationSpec,
+    RunMeta,
+    SliceOrderPattern,
+    SliceOrientation,
+    Thresholding,
+)
 from fmri_repro.spec.preprocessing import (
     Despike,
     MotionCorrection,
@@ -48,29 +70,7 @@ from fmri_repro.spec.provenance import (
     Span,
     VersionDefaultBasis,
 )
-from fmri_repro.spec.v0_1_0 import (
-    AcquisitionEntities,
-    AcquisitionRef,
-    AnatomicalAcquisition,
-    AxisDirection,
-    BrainCoverage,
-    DatasetRef,
-    FieldmapAcquisition,
-    FirstLevelModel,
-    FunctionalAcquisition,
-    GroupLevelModel,
-    ImagingType,
-    MRAcquisitionType,
-    PaperRef,
-    ParallelTechnique,
-    PulseSequenceType,
-    ReplicationSpec,
-    RunMeta,
-    SliceOrderPattern,
-    SliceOrientation,
-    StudySpec,
-    Thresholding,
-)
+from fmri_repro.spec.v0_3_0 import StudySpec  # current root; scripts emit 0.3.0 documents
 
 # Pinned so successive runs produce byte-identical output.
 _FIXED_RUN_ID = "00000000000000000000000000000001"
