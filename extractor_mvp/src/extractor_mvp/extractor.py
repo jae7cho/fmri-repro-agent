@@ -32,6 +32,7 @@ from fmri_repro.spec.preprocessing import (
     BrainExtraction,
     IntensityNormalization,
     IntensityNormalizationConvention,
+    NuisanceRegression,
     PipelineRef,
     Preprocessing,
     Segmentation,
@@ -680,6 +681,19 @@ def _assemble(
         vol2surf_sampling=_missing_pf("vol2surf_sampling", str, untargeted),
         cifti=_missing_pf("cifti", str, untargeted),
     )
+    # NuisanceRegression (COBIDAS-mandatory) is emitted as a decision point even though the
+    # MVP targets none of its fields: a silently absent step tells the replicator nothing,
+    # whereas an all-unassessed step surfaces that a high-variance choice exists here. Placed
+    # after surface_projection, before intensity_normalization (catalog order 8 -> 9c).
+    nuisance_regression = NuisanceRegression(
+        motion_expansion=_missing_pf("motion_expansion", str, untargeted),
+        tissue_regressors=_missing_pf("tissue_regressors", list, untargeted),
+        physio_regressors=_missing_pf("physio_regressors", str, untargeted),
+        physio_n_regressors=_missing_pf("physio_n_regressors", int, untargeted),
+        detrend=_missing_pf("detrend", str, untargeted),
+        method=_missing_pf("method", str, untargeted),
+        filtering_integrated=_missing_pf("filtering_integrated", bool, untargeted),
+    )
     intensity = IntensityNormalization(
         convention=pf["intensity_convention"],
         value=pf["intensity_value"],
@@ -704,6 +718,7 @@ def _assemble(
             segmentation,
             spatial,
             surface,
+            nuisance_regression,
             intensity,
             temporal_standardization,
         ],

@@ -31,10 +31,12 @@ def test_assemble_includes_anatomical_steps_before_spatial():
     assert kinds[:3] == ["brain_extraction", "segmentation", "spatial_normalization"]
 
 
-def test_assemble_anatomical_fields_are_untargeted():
+def test_assemble_new_steps_fields_are_untargeted():
     prep = _assembled()
     by_kind = {s.kind: s for s in prep.steps}
-    for kind in ("brain_extraction", "segmentation"):
+    # brain_extraction + segmentation (v0.3.0 anatomical) and nuisance_regression (emitted as
+    # a COBIDAS-mandatory decision point) all present with every field untargeted.
+    for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
         step = by_kind[kind]
         for name in type(step).model_fields:
             if name == "kind":
@@ -44,11 +46,12 @@ def test_assemble_anatomical_fields_are_untargeted():
             assert field.inference.reason == "not_targeted_by_mvp"
 
 
-def test_protocol_renders_anatomical_steps_generically():
+def test_protocol_renders_new_steps_generically():
     # No emitter change: to_protocol walks steps generically, so the new steps render
     # with their cobidas_row group tags and the "not assessed by current extractor" line.
     out = to_protocol(_assembled())
-    assert "brain_extraction" in out
-    assert "segmentation" in out
-    # 8 pre-existing untargeted + 4 new anatomical (brain_extraction 2, segmentation 2) = 12.
-    assert out.count("not assessed by current extractor") == 12
+    for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
+        assert kind in out
+    # 8 pre-existing untargeted + 4 anatomical (brain_extraction 2, segmentation 2)
+    # + 7 nuisance_regression = 19.
+    assert out.count("not assessed by current extractor") == 19
