@@ -686,6 +686,22 @@ def test_protocol_deterministic():
     assert render.to_protocol(prep, source="x") == render.to_protocol(prep, source="x")
 
 
+# ---------------------------------------------------------------------------
+# COBIDAS D.3 coverage section
+# ---------------------------------------------------------------------------
+def test_to_protocol_includes_cobidas_section() -> None:
+    out = render.to_protocol(_synthetic_preprocessing())
+    assert "## COBIDAS D.3 coverage (preprocessing)" in out
+    assert "Mandatory rows: 14" in out
+    assert "Assessed by AESPA:" in out
+    assert "Not assessed by AESPA:" in out
+
+
+def test_cobidas_coverage_deterministic() -> None:
+    prep = _synthetic_preprocessing()
+    assert render.to_cobidas_coverage(prep) == render.to_cobidas_coverage(prep)
+
+
 def test_to_protocol_methods_suspicious_warning() -> None:
     from extractor_mvp.methods_finder import MethodsSlice
 
@@ -737,6 +753,8 @@ def test_protocol_faithful_chen_fixture():
         "Completeness: 5 specified in source · 3 not reported in source · "
         "1 reported but unmappable to controlled vocabulary · 8 not covered by extractor"
     ) in out
+    # Field-level callouts use "not assessed by current extractor"; the COBIDAS section uses
+    # distinct row-level wording, so the plain global count is exactly the 8 per-field callouts.
     assert out.count("not assessed by current extractor") == 8  # coverage gap, not absence
     assert out.count("map manually") == 1  # value_not_in_literal
     # multi-step pipeline order preserved
@@ -746,3 +764,34 @@ def test_protocol_faithful_chen_fixture():
         < out.index("### 3. intensity_normalization")
         < out.index("### 4. temporal_standardization")
     )
+
+
+@pytest.mark.skipif(not _CHEN_JSON.exists(), reason="gitignored batch output absent (e.g. CI)")
+def test_cobidas_coverage_chen_fixture() -> None:
+    from extractor_mvp.cobidas import assess_coverage
+
+    prep = Preprocessing.model_validate(json.loads(_CHEN_JSON.read_text())["preprocessing"])
+    rows = render.flatten(prep)
+    vr = next((r for r in rows if r.path == "base_pipeline.version"), None)
+    cov = assess_coverage(rows, vr.extraction_status if vr else None)
+
+    # Exactly two D.3 rows are addressed by chen: intersubject registration (target_surface /
+    # surface_registration EXTRACTED) and intensity normalization (EXTRACTED but NON-mandatory).
+    addressed = {rc.row.row_id for rc in cov if rc.addressed}
+    assert addressed == {"intersubject_registration", "intensity_normalization"}
+    inten = next(rc for rc in cov if rc.row.row_id == "intensity_normalization")
+    assert inten.addressed and not inten.row.mandatory
+    # Software (unconditional) is unaddressed -> the one true COBIDAS violation.
+    assert next(rc for rc in cov if rc.row.row_id == "software").addressed is False
+
+    out = render.to_cobidas_coverage(prep)
+    # Partitioned summary — the denominator is what AESPA can assess, not a raw / 16.
+    assert "Mandatory rows: 14" in out
+    assert "Assessed by AESPA: 2  →  addressed 1 · not reported 1" in out
+    assert "Software — unconditional violation" in out
+    assert "Not assessed by AESPA: 12" in out
+    assert "Non-mandatory rows: 2 (1 addressed)" in out
+    assert "Software: version and revision number NOT REPORTED" in out
+    assert "Connectome Computation System (CCS)" in out  # pipeline named in the violation
+    # divergence step (temporal_standardization) is beyond COBIDAS, never in the denominator
+    assert "### Beyond COBIDAS (AESPA extensions)" in out

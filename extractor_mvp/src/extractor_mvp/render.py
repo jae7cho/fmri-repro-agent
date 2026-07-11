@@ -52,6 +52,11 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
 )
 
+from extractor_mvp.cobidas import (
+    DIVERGENCE_KINDS,
+    RowCoverage,
+    assess_coverage,
+)
 from extractor_mvp.methods_finder import MethodsSlice
 
 # Display-state tokens. ``BASE_NOT_APPLICABLE`` is the from-scratch base_pipeline
@@ -580,4 +585,123 @@ def to_protocol(
             lines.extend(f"    {note}" for note in _protocol_note_lines(r))
         lines.append("")
 
+    # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
+    lines.append(to_cobidas_coverage(preprocessing).rstrip())
+
     return "\n".join(lines).rstrip() + "\n"
+
+
+def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
+    """A COBIDAS D.3 (preprocessing) coverage section over ``flatten()``.
+
+    Deterministic, pure, no LLM/IO. Grounds the ``not covered by extractor`` figure in the
+    standard: a D.3 row is ADDRESSED iff the paper reports (EXTRACTED / DEFERRED_TO_CITATION)
+    a value on any mapped step kind — extraction arm only, so an AESPA-inferred value never
+    counts as a report. Non-compliance is claimed ONLY for the one unconditional row
+    (Software: version + revision number); every other unaddressed mandatory row is an
+    honest "not reported whether performed", since D.3 requires reporting only if the step
+    was performed and presence cannot be read from text.
+    """
+    rows = flatten(preprocessing)
+    version_row = next((r for r in rows if r.path == "base_pipeline.version"), None)
+    coverage = assess_coverage(rows, version_row.extraction_status if version_row else None)
+    by_id = {rc.row.row_id: rc for rc in coverage}
+
+    lines: list[str] = ["## COBIDAS D.3 coverage (preprocessing)", ""]
+
+    # Partition, do NOT aggregate: an "addressed / 16" fraction is dominated by tool coverage
+    # (the extractor targets fields on only a few rows), not by the paper's compliance. Report
+    # what AESPA can assess separately from what it can't, and keep mandatory / non-mandatory
+    # numerators apart. The denominator that means anything is rows-AESPA-assesses.
+    mandatory = [rc for rc in coverage if rc.row.mandatory]
+    mand_assessed = [rc for rc in mandatory if rc.covered_by_extractor]
+    mand_addressed = [rc for rc in mand_assessed if rc.addressed]
+    mand_not_reported = [rc for rc in mand_assessed if not rc.addressed]
+    mand_not_assessed = [rc for rc in mandatory if not rc.covered_by_extractor]
+    non_mandatory = [rc for rc in coverage if not rc.row.mandatory]
+    non_mand_addressed = [rc for rc in non_mandatory if rc.addressed]
+    divergence_present = [s.kind for s in preprocessing.steps if s.kind in DIVERGENCE_KINDS]
+
+    violation = (
+        " (incl. Software — unconditional violation)"
+        if any(rc.row.row_id == "software" for rc in mand_not_reported)
+        else ""
+    )
+    lines.append(f"Mandatory rows: {len(mandatory)}")
+    lines.append(
+        f"  Assessed by AESPA: {len(mand_assessed)}  →  "
+        f"addressed {len(mand_addressed)} · not reported {len(mand_not_reported)}{violation}"
+    )
+    lines.append(f"  Not assessed by AESPA: {len(mand_not_assessed)}")
+    lines.append(
+        f"Non-mandatory rows: {len(non_mandatory)} ({len(non_mand_addressed)} addressed)  ·  "
+        f"Beyond COBIDAS: {len(divergence_present)} steps"
+    )
+    lines.append(
+        "  (The 'not assessed' count is a TOOL gap — the extractor targets fields on only a "
+        "few rows — not a statement about the paper. Silence on the rest is not measurable "
+        "from text. The one unconditional, citable COBIDAS claim here is the Software row.)"
+    )
+    lines.append("")
+
+    def _tag(rc: RowCoverage) -> str:
+        # Distinct wording from the field-level "not assessed by current extractor" callout:
+        # this is the ROW-level statement (no field on any mapping kind is targeted).
+        return "" if rc.covered_by_extractor else "  (no fields assessed by current extractor)"
+
+    # 1. Unconditional violation: only the Software row can appear here.
+    software = by_id["software"]
+    if not software.addressed:
+        name = _base_pipeline_name(preprocessing)
+        named = f"Pipeline named: {name}. " if name else ""
+        if version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":
+            ver = "Version inferred by AESPA, not reported by the paper."
+        else:
+            ver = "No version reported by the paper."
+        lines.append("### Not reported (mandatory, unconditional)")
+        lines.append(
+            "- Software: version and revision number NOT REPORTED — COBIDAS D.3 requires "
+            f"this for each software used. ({named}{ver})"
+        )
+        lines.append("")
+
+    # 2. Conditional mandatory rows, unaddressed: honest gaps, not violations.
+    conditional = [
+        rc for rc in coverage if rc.row.mandatory and not rc.row.unconditional and not rc.addressed
+    ]
+    if conditional:
+        lines.append("### Not reported whether performed (mandatory if performed)")
+        for rc in conditional:
+            lines.append(f"- {rc.row.d3_aspect}{_tag(rc)}")
+        lines.append(
+            "  (Silence is not a COBIDAS violation for these rows; the standard requires "
+            "reporting only if the step was performed. Presence cannot be determined from "
+            "the text.)"
+        )
+        lines.append("")
+
+    # 3. Non-mandatory rows, unaddressed.
+    optional = [rc for rc in coverage if not rc.row.mandatory and not rc.addressed]
+    if optional:
+        lines.append("### Optional per COBIDAS")
+        for rc in optional:
+            lines.append(f"- {rc.row.d3_aspect} (N){_tag(rc)}")
+        lines.append("")
+
+    # 4. AESPA extensions with no D.3 row (never in the denominator).
+    if divergence_present:
+        lines.append("### Beyond COBIDAS (AESPA extensions)")
+        for kind in divergence_present:
+            lines.append(f"- {kind}")
+        lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _base_pipeline_name(preprocessing: Preprocessing) -> str | None:
+    """The base pipeline's name if one is resolved (paper-named or inferred), else None."""
+    base = preprocessing.base_pipeline
+    if isinstance(base, NotApplicable):
+        return None
+    pref = _resolved_pipeline_ref(base)
+    return pref.name if pref is not None else None

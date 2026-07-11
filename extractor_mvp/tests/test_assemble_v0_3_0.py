@@ -31,6 +31,20 @@ def test_assemble_includes_anatomical_steps_before_spatial():
     assert kinds[:3] == ["brain_extraction", "segmentation", "spatial_normalization"]
 
 
+def test_assemble_step_list_unchanged():
+    # The COBIDAS coverage work is emitter-side only: _assemble still emits exactly these
+    # 7 kinds in this order. If this changes, the coverage denominator reasoning is affected.
+    assert [s.kind for s in _assembled().steps] == [
+        "brain_extraction",
+        "segmentation",
+        "spatial_normalization",
+        "surface_projection",
+        "nuisance_regression",
+        "intensity_normalization",
+        "temporal_standardization",
+    ]
+
+
 def test_assemble_new_steps_fields_are_untargeted():
     prep = _assembled()
     by_kind = {s.kind: s for s in prep.steps}
@@ -52,6 +66,8 @@ def test_protocol_renders_new_steps_generically():
     out = to_protocol(_assembled())
     for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
         assert kind in out
+    # Field-level callouts use "not assessed by current extractor"; the COBIDAS section uses
+    # distinct row-level wording ("no fields assessed ..."), so a plain global count is exact.
     # 8 pre-existing untargeted + 4 anatomical (brain_extraction 2, segmentation 2)
     # + 7 nuisance_regression = 19.
     assert out.count("not assessed by current extractor") == 19
