@@ -52,6 +52,8 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
 )
 
+from extractor_mvp.methods_finder import MethodsSlice
+
 # Display-state tokens. ``BASE_NOT_APPLICABLE`` is the from-scratch base_pipeline
 # sentinel (one row, no version recursion); the rest mirror the five raw states.
 EXTRACTED = "EXTRACTED"
@@ -495,7 +497,12 @@ def _protocol_note_lines(row: FieldRow) -> list[str]:
     return []
 
 
-def to_protocol(preprocessing: Preprocessing, source: str | None = None) -> str:
+def to_protocol(
+    preprocessing: Preprocessing,
+    source: str | None = None,
+    *,
+    methods_slice: MethodsSlice | None = None,
+) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
     Deterministic, no-LLM. Renders the base pipeline (name + a version sub-line), a
@@ -503,11 +510,29 @@ def to_protocol(preprocessing: Preprocessing, source: str | None = None) -> str:
     counted over the full ``flatten()`` tally), then each preprocessing step in
     pipeline (list) order with its COBIDAS tag. Holes become explicit "REQUIRED — you
     must specify" callouts; inferred values are marked and annotated with their basis.
+
+    When ``methods_slice`` is supplied and flagged ``suspicious``, a single warning line
+    is rendered under the title: a spec extracted from a whole-document fallback or a
+    bloated slice has different provenance semantics and must say so on its face.
     """
     rows = flatten(preprocessing)
     lines: list[str] = []
     lines.append(f"# Replication Protocol — {source}" if source else "# Replication Protocol")
     lines.append("")
+
+    if methods_slice is not None and methods_slice.suspicious:
+        if methods_slice.found_via == "fallback_full_text":
+            lines.append(
+                "> ⚠ Methods section not identified — extracted from the FULL document; "
+                "spans may resolve against Introduction / Discussion / References."
+            )
+        else:
+            lines.append(
+                "> ⚠ Methods slice may include Results / Discussion "
+                f"(slice/full = {methods_slice.slice_ratio:.0%}, ended at "
+                f"{methods_slice.ended_at!r})."
+            )
+        lines.append("")
 
     # --- Base pipeline (header line + optional version sub-line) ---
     base_rows = [r for r in rows if r.group == "base_pipeline"]

@@ -686,6 +686,38 @@ def test_protocol_deterministic():
     assert render.to_protocol(prep, source="x") == render.to_protocol(prep, source="x")
 
 
+def test_to_protocol_methods_suspicious_warning() -> None:
+    from extractor_mvp.methods_finder import MethodsSlice
+
+    prep = _synthetic_preprocessing()
+    # no methods_slice -> no warning
+    assert "⚠" not in render.to_protocol(prep)
+    # whole-document fallback -> the strong warning
+    fallback = MethodsSlice(
+        text="x",
+        start_offset=0,
+        found_via="fallback_full_text",
+        matched_header=None,
+        end_offset=1,
+        slice_ratio=1.0,
+        ended_at="end_of_text",
+        suspicious=True,
+    )
+    assert "Methods section not identified" in render.to_protocol(prep, methods_slice=fallback)
+    # bloated header slice -> the softer warning
+    bloated = MethodsSlice(
+        text="x",
+        start_offset=0,
+        found_via="header_match",
+        matched_header="Methods",
+        end_offset=1,
+        slice_ratio=0.7,
+        ended_at="References",
+        suspicious=True,
+    )
+    assert "Methods slice may include Results" in render.to_protocol(prep, methods_slice=bloated)
+
+
 _CHEN_JSON = (
     _REPO_ROOT / "extractor_mvp" / "results" / "batch_v6_full" / "papers" / "chen_2015.json"
 )
