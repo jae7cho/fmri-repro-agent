@@ -103,3 +103,24 @@ def test_run_batch_pdf_parse_failure(monkeypatch, tmp_path: Path):
     assert results[0].status == "pdf_parse_failed"
     assert results[0].parser is None
     assert results[0].extraction_json is None
+
+
+def test_run_batch_skips_and_records_excluded(monkeypatch, tmp_path: Path):
+    _patch(monkeypatch)
+    config = BatchConfig(
+        model="m",
+        output_dir=tmp_path / "out",
+        papers=[
+            PdfPaper(paper_id="p1", path=tmp_path / "p1.pdf"),
+            PdfPaper(paper_id="cabral_2017", path=tmp_path / "cabral_2017.pdf"),
+        ],
+    )
+    results = batch.run_batch(config)
+    # excluded paper is skipped BEFORE extraction: no result, no json emitted
+    assert {r.paper_id for r in results} == {"p1"}
+    assert not (config.output_dir / "papers" / "cabral_2017.json").exists()
+    # summary states the denominator on its face + records the exclusion + rationale
+    summary = (config.output_dir / "summary.md").read_text()
+    assert "Corpus: 2 PDFs present · 1 excluded · N = 1" in summary
+    assert "## Excluded papers" in summary
+    assert "cabral_2017" in summary and "Review / modelling paper" in summary

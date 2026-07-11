@@ -26,6 +26,7 @@ from typing import TYPE_CHECKING, Any
 
 from extractor_mvp.batch_config import BatchConfig, load_batch_config
 from extractor_mvp.batch_utils import build_citation_resolver
+from extractor_mvp.corpus import EXCLUDED_PAPERS, is_excluded
 from extractor_mvp.extractor import ResolutionRecord, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
@@ -262,8 +263,16 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
     papers_dir.mkdir(parents=True, exist_ok=True)
     citation_resolver = build_citation_resolver(config)
     results: list[PaperResult] = []
+    total_present = len(config.papers)
+    excluded_present: list[str] = []
 
     for paper in config.papers:
+        # Excluded papers are skipped BEFORE extraction (saves LLM calls) but recorded, never
+        # silently dropped — see extractor_mvp.corpus.EXCLUDED_PAPERS.
+        if is_excluded(paper.paper_id):
+            excluded_present.append(paper.paper_id)
+            print(f"  SKIP {paper.paper_id}: excluded from corpus statistics")
+            continue
         result = _process_paper(paper.paper_id, paper.path, config.model, citation_resolver)
         results.append(result)
         if result.extraction_json is not None:
@@ -296,8 +305,8 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
             print(f"  ok   {paper.paper_id}: {result.n_extracted} extracted{suffix}")
 
     _write_summary_csv(config.output_dir / "summary.csv", results)
-    _write_summary_md(config.output_dir / "summary.md", results)
-    _print_rollup(results, config.output_dir)
+    _write_summary_md(config.output_dir / "summary.md", results, excluded_present, total_present)
+    _print_rollup(results, config.output_dir, excluded_present, total_present)
     return results
 
 
@@ -309,17 +318,29 @@ def _write_summary_csv(path: Path, results: list[PaperResult]) -> None:
             w.writerow({k: getattr(r, k) for k in SUMMARY_COLUMNS})
 
 
-def _write_summary_md(path: Path, results: list[PaperResult]) -> None:
-    rows = sorted(results, key=lambda r: (r.status, r.paper_id))
+def _write_summary_md(
+    path: Path, results: list[PaperResult], excluded: list[str], total_present: int
+) -> None:
+    n_analysed = total_present - len(excluded)
+    lines = [
+        f"Corpus: {total_present} PDFs present · {len(excluded)} excluded · N = {n_analysed}",
+        "",
+    ]
     header = "| " + " | ".join(SUMMARY_COLUMNS) + " |"
     sep = "| " + " | ".join("---" for _ in SUMMARY_COLUMNS) + " |"
-    lines = [header, sep]
-    for r in rows:
+    lines += [header, sep]
+    for r in sorted(results, key=lambda r: (r.status, r.paper_id)):
         lines.append("| " + " | ".join(str(getattr(r, k)) for k in SUMMARY_COLUMNS) + " |")
+    if excluded:
+        lines += ["", "## Excluded papers", ""]
+        for pid in excluded:
+            lines.append(f"- **{pid}** — {EXCLUDED_PAPERS[pid]}")
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
-def _print_rollup(results: list[PaperResult], output_dir: Path) -> None:
+def _print_rollup(
+    results: list[PaperResult], output_dir: Path, excluded: list[str], total_present: int
+) -> None:
     ok = [r for r in results if r.status in ("success", "methods_not_found")]
     failed = [r for r in results if r.status in ("pdf_parse_failed", "extraction_failed")]
     x = sum(r.n_extracted for r in ok)
@@ -327,6 +348,10 @@ def _print_rollup(results: list[PaperResult], output_dir: Path) -> None:
     y = sum(r.n_missing_not_stated for r in ok)
     z = sum(r.n_missing_quote_unresolved for r in ok)
     w = sum(r.n_value_not_in_literal for r in ok)
+    print(
+        f"Corpus: {total_present} PDFs present · {len(excluded)} excluded · "
+        f"N = {total_present - len(excluded)}."
+    )
     print(
         f"Processed {len(results)} papers ({len(ok)} successful, {len(failed)} failed). "
         f"Across successes: {x} fields extracted with spans, {d} deferred-to-citation, "
