@@ -51,3 +51,32 @@ The lever for base_pipeline recall is the extractor's prompt/model, not the pars
 oconnor and weber are the clean experimental targets: deterministic 0/15 on explicit C-PAC usage,
 so a prompt change scores against a fixed baseline. Any such experiment must be scored over K runs
 (derosa/viduarre flip), or a nondeterministic gain will masquerade as signal.
+
+---
+
+## CORRECTION (2026-07-13)
+
+The conclusion above — "STAGE-1 (pypdf) = 0; the frontend is not the bottleneck; the binding
+constraint is stage-3 extraction" — is **wrong for the C-PAC papers (oconnor, weber)**, and by
+extension the "prompt/model is the lever" consequence does not hold for them.
+
+**What overturned it.** A later investigation captured the RAW model output (not the
+post-processed four-state) and compared raw vs final. The model extracts C-PAC on **every** draw
+(oconnor/weber `base_pipeline_name` EXTRACTED 20/20; derosa FSL 20/20). The final `MISSING_FROM_PAPER`
+is introduced **downstream in post-processing**: the model emits a clean `verbatim_quote`, but
+`resolve_quote()` cannot ground it against the pypdf-mangled source (oconnor's C-PAC appears as
+`C-P A C` with run-together words and injected `[ 1]` markers), so `_build_base_pipeline` hard-drops
+a correct EXTRACTED to MISSING.
+
+**Why the original analysis missed it.** The classifier matched a *second, clean* C-PAC mention (the
+"Software and availability" line) and declared the slice clean → "STAGE-3." But the model quotes the
+*methods-body* mention, which is pypdf-mangled. So the loss is **span-resolution + stage-1 (pypdf
+corruption)**, not stage-3 extraction.
+
+**Corrected understanding.** For the C-PAC papers, base_pipeline recall is bottlenecked by span
+resolution over corrupted source, not by the model or a prompt. Evidence and mechanism:
+[adjudication-order-generalization.md](adjudication-order-generalization.md) (raw-vs-final) and
+[span-resolution-hard-drop.md](span-resolution-hard-drop.md) (the corpus-wide blast radius). The
+"STAGE-1 = 0" figure held only because the classifier tested a different mention than the one the
+model quoted. The stage-3 reading remains correct for the referent-binding case (chen temporal), a
+genuine model-side error.
