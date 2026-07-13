@@ -510,7 +510,12 @@ def _process_field(
         )
 
     resolution = resolve_quote(fe.verbatim_quote, text)
-    if resolution.span is None:
+    # v0.4.0-PENDING: a tolerant-tier RECOVERED span (span_resolver tier 5) is NOT yet promoted.
+    # Consuming it honestly requires the Extracted.span_recovered flag (a schema bump) so a
+    # normalization-recovered extraction is never silently indistinguishable from a clean one.
+    # Until that lands, a recovered match is treated as unresolved -> output is byte-identical to
+    # pre-tier-5 behavior (the 8 corrupted-source keeps stay a documented false-MISSING lower bound).
+    if resolution.span is None or resolution.recovered:
         return (
             _missing_pf(field_id, t, f"extraction_quote_unresolved:{resolution.failure_reason}"),
             ExtractionDiagnostic(
@@ -616,7 +621,12 @@ def _build_base_pipeline(
 
     # Case A/B: pipeline NAME is extracted and its quote resolves -> base_pipeline EXTRACTED.
     if name_result.status == "extracted" and name_result.value and name_result.verbatim_quote:
-        name_span = resolve_quote(name_result.verbatim_quote, text).span
+        name_res = resolve_quote(name_result.verbatim_quote, text)
+        # v0.4.0-PENDING (see _process_field): a tolerant-tier RECOVERED span is not promoted yet
+        # (needs the span_recovered flag + the attribution-guard that routes citation-shaped
+        # quotes to DeferredToCitation). Treating recovered as unresolved keeps output identical
+        # to HEAD and, crucially, avoids fabricating viduarre = HCP MPP once tier 5 un-masks it.
+        name_span = name_res.span if not name_res.recovered else None
         if name_span is not None:
             pipeline = PipelineRef(name=name_result.value, version=version_pf)
             field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](

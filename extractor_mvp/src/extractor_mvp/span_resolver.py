@@ -5,10 +5,24 @@ two whitespace heuristics (PDF text extraction commonly inserts line breaks
 mid-sentence, and splits measurement tokens like ``3mm`` -> ``3m m``), there is
 no fuzzy / edit-distance / partial matching — those would introduce silent
 mis-attributions and defeat the point of grounding.
+
+Tier 5 (corrupted-source tolerant, added v0.4.0) recovers a model quote that the model
+silently repaired from mangled pypdf text, using three GENERAL pypdf mangles only —
+whitespace-DELETION, injected citation markers, line-break hyphenation — still substring-only
+(never fuzzy), in original coordinates, re-verified to fail closed, and it fires ONLY after every
+exact/near tier failed (so it can never move a currently-resolving span). A tier-5 match sets
+``SpanResolution.recovered=True`` so the caller can mark the extraction honestly.
+
+NOT handled by tier 5: the font-specific multiplication-sign (U+00D7) -> ``/C2`` glyph mangle seen
+in a few papers (agtzidis/gordon/poldrack/wheaton). ``/C<digit>`` are font glyph codes that map to
+DIFFERENT glyphs across papers, so treating ``/C2`` as that glyph globally risks a WRONG match --
+which would violate the never-fuzzy invariant. It is deliberately excluded; those dimension-quote
+drops stay unrecovered rather than risk a mis-attribution.
 """
 
 from __future__ import annotations
 
+import re
 import unicodedata
 from dataclasses import dataclass
 
@@ -146,6 +160,7 @@ def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
 class SpanResolution:
     span: Span | None  # None if the quote couldn't be located
     failure_reason: str | None  # "quote_not_found" | "quote_ambiguous" | None on success
+    recovered: bool = False  # True iff located ONLY by the corrupted-source tolerant tier (5)
 
 
 def _make_span(text: str, start: int, end: int) -> Span:
@@ -175,6 +190,34 @@ def _collapse_with_map(s: str) -> tuple[str, list[int]]:
             index_map.append(i)
             i += 1
     return "".join(out), index_map
+
+
+_MARKER_RE = re.compile(r"\[\s*\d+(?:[-–]\d+)?\s*\]")
+
+
+def _delete_with_map(s: str) -> tuple[str, list[int]]:
+    """Delete whitespace, hyphens, and injected citation markers; keep an offset map into ``s``.
+
+    Composes ON TOP of the Unicode-normalized text (tier 3's ``normalize_with_offset_map``), so
+    ligatures (``ﬁ``->``fi``), curly quotes, and split measurement units are already folded before
+    this runs — tier 5 only has to absorb the three GENERAL pypdf mangles: whitespace-DELETION
+    (run-together words / shattered ``C-P A C``), all hyphens (line-break AND compound, since pypdf
+    drops both unreliably), and injected markers ``[ 62]``. Returns ``(deleted, index_map)`` with
+    ``index_map[i]`` = the offset in ``s`` of deleted-string char ``i`` (+ trailing sentinel). NOT
+    handled: the font-specific multiplication-sign->/C2 glyph mangle (see module note)."""
+    skip = bytearray(len(s))
+    for m in _MARKER_RE.finditer(s):
+        for i in range(m.start(), m.end()):
+            skip[i] = 1
+    out: list[str] = []
+    idx: list[int] = []
+    for i, c in enumerate(s):
+        if skip[i] or c.isspace() or c == "-":
+            continue
+        out.append(c)
+        idx.append(i)
+    idx.append(len(s))  # sentinel so a match ending at the last char can map its end
+    return "".join(out), idx
 
 
 def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
@@ -257,6 +300,38 @@ def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
             return SpanResolution(None, "quote_not_found")
         return SpanResolution(_make_span(text, orig_start, orig_end), None)
     if wc_count > 1:
+        return SpanResolution(None, "quote_ambiguous")
+
+    # 5. Corrupted-source tolerant tier (LAST — reached only after every exact/near tier above
+    #    failed, so a currently-resolving quote can NEVER enter here; this is what makes the
+    #    corpus-wide arm-(ii) span-stability guarantee hold by construction). Handles the three
+    #    GENERAL pypdf mangles observed across the corpus: whitespace-DELETION (run-together
+    #    words / shattered "C-P A C"), injected citation markers ("[ 62]"), and line-break
+    #    hyphenation ("us-\ning"). Substring-only after normalization -> never fuzzy/edit-distance;
+    #    the recovered span is in ORIGINAL coordinates and is re-verified to fail closed. The
+    #    font-specific "× -> /C2" glyph mangle is DELIBERATELY NOT handled (see module note).
+    #    Composes with tiers 3-4: delete-normalize the ALREADY-Unicode-normalized text (n_text),
+    #    then map agg-index -> n_text-index (a_map) -> original offset (t_off).
+    agg_text, a_map = _delete_with_map(n_text.lower())
+    agg_quote, _ = _delete_with_map(n_quote.lower())
+    if not agg_quote:
+        return SpanResolution(None, "quote_not_found")
+    ac = agg_text.count(agg_quote)
+    if ac == 1:
+        a_start = agg_text.index(agg_quote)
+        n_start = a_map[a_start]
+        n_end = a_map[a_start + len(agg_quote) - 1] + 1
+        orig_start, orig_end = t_off[n_start], t_off[n_end]
+        if orig_end <= orig_start:
+            return SpanResolution(None, "quote_not_found")
+        # fail-closed re-verification: the recovered ORIGINAL slice, re-normalized the same way,
+        # must equal the matched needle exactly (guards any offset-mapping error from producing a
+        # wrong span). Only then is the recovery trustworthy.
+        reslice_n, _ = normalize_with_offset_map(text[orig_start:orig_end])
+        if _delete_with_map(reslice_n.lower())[0] != agg_quote:
+            return SpanResolution(None, "quote_not_found")
+        return SpanResolution(_make_span(text, orig_start, orig_end), None, recovered=True)
+    if ac > 1:
         return SpanResolution(None, "quote_ambiguous")
 
     return SpanResolution(None, "quote_not_found")
