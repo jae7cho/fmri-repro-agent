@@ -1,8 +1,8 @@
 """Tests for the current StudySpec root + example round-trip + schema export.
 
-The committed example (``examples/spec.json``) is a CURRENT (0.3.0) document and is
+The committed example (``examples/spec.json``) is a CURRENT (0.4.0) document and is
 validated with the current root. A coherent v0.1.0 document is no longer constructible
-(nested ``Preprocessing.schema_version`` is ``Literal["0.3.0"]``), so version pinning is
+(nested ``Preprocessing.schema_version`` is ``Literal["0.4.0"]``), so version pinning is
 asserted as a constant on each root, not by building a document; the genuine v0.1.0
 artifact lives frozen under ``examples/frozen/``.
 """
@@ -18,7 +18,7 @@ import pytest
 from pydantic import ValidationError
 
 from fmri_repro.spec.core import FunctionalAcquisition
-from fmri_repro.spec.v0_3_0 import StudySpec as CurrentStudySpec
+from fmri_repro.spec.v0_4_0 import StudySpec as CurrentStudySpec
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXAMPLE_PATH = REPO_ROOT / "examples" / "spec.json"
@@ -43,7 +43,7 @@ def test_each_root_pins_its_schema_version_constant() -> None:
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
     assert not hasattr(v0_2_0, "StudySpec")  # demoted: the footgun root is gone
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.3.0"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.4.0"
 
 
 def test_current_root_rejects_wrong_schema_version() -> None:
@@ -126,28 +126,28 @@ def test_example_carries_site_on_at_least_one_spec() -> None:
 
 
 # ---------------------------------------------------------------------------
-# v0.3.0 StudySpec cross-validator: pinned schema_version == nested Preprocessing stamp
+# StudySpec cross-validator: pinned schema_version == nested Preprocessing stamp
 # ---------------------------------------------------------------------------
 def test_current_studyspec_accepts_matching_nested_stamp() -> None:
-    # The example carries the v0.3.0 preprocessing fields; labeling it 0.3.0 and validating
+    # The example carries the current preprocessing fields; labeling it 0.4.0 and validating
     # under the current root passes the cross-validator (top version == nested stamp, both
-    # defaulting to 0.3.0).
+    # defaulting to 0.4.0).
     payload = _example_payload()
-    payload["schema_version"] = "0.3.0"
+    payload["schema_version"] = "0.4.0"
     study = CurrentStudySpec.model_validate(payload)
-    assert study.schema_version == "0.3.0"
+    assert study.schema_version == "0.4.0"
     for spec in study.specs:
         for prep in spec.preprocessing:
-            assert prep.schema_version == "0.3.0"
+            assert prep.schema_version == "0.4.0"
 
 
 def test_current_studyspec_rejects_mismatched_nested_stamp() -> None:
     # A nested Preprocessing stamp that disagrees with the current version is rejected. Today
-    # the first line of defense is Preprocessing.schema_version being a Literal["0.3.0"] (so a
+    # the first line of defense is Preprocessing.schema_version being a Literal["0.4.0"] (so a
     # "0.2.0" stamp fails at the field), with the StudySpec cross-validator as the backstop for
     # a future bump that desyncs the two Literals.
     payload = _example_payload()
-    payload["schema_version"] = "0.3.0"
+    payload["schema_version"] = "0.4.0"
     prep0 = payload["specs"][0]["preprocessing"][0]  # type: ignore[index]
     prep0["schema_version"] = "0.2.0"
     with pytest.raises(ValidationError, match="schema_version"):
@@ -182,10 +182,10 @@ def test_export_schema_writes_expected_file(
     for field in ("schema_version", "run", "specs", "study_analysis"):
         assert field in props, f"missing top-level field {field!r}"
 
-    # schema_version is pinned to "0.3.0" (Literal exports as const or enum).
+    # schema_version is pinned to "0.4.0" (Literal exports as const or enum).
     # Concrete literal (NOT derived) so an accidental future bump fails this test.
     sv = props["schema_version"]
-    assert sv.get("const") == "0.3.0" or sv.get("enum") == ["0.3.0"]
+    assert sv.get("const") == "0.4.0" or sv.get("enum") == ["0.4.0"]
 
     # $defs should contain ReplicationSpec, DatasetRef, StudyAnalysis, all three
     # extraction arms, and all three inference arms.

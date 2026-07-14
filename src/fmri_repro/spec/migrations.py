@@ -29,7 +29,6 @@ from fmri_repro.spec.preprocessing import SCHEMA_VERSION, Preprocessing
 from fmri_repro.spec.provenance import LeftMissing, MissingFromPaper, ProvenancedField
 
 MIGRATION_FLOOR = "0.2.0"
-_MIGRATOR_ID = "spec.migrations/0.2.0->0.3.0/v1"
 # Invalid as an intensity-normalization convention value from 0.2.0 on; its presence there
 # is the structural signature of a pre-0.2.0 (0.1.0) document.
 _PRE_FLOOR_MARKER = "voxel_temporal_zscore"
@@ -100,10 +99,15 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
         if isinstance(step, dict) and step.get("kind") == "nuisance_regression":
             for fid in _ADDED_IN_0_3_0:
                 step.setdefault(fid, _missing_field(fid))
+    # 0.3.0 -> 0.4.0: adds only the optional-default Extracted.span_recovered field; no doc
+    # transform is needed (an absent flag validates to False) — the hop is a pure re-stamp.
     out["schema_version"] = SCHEMA_VERSION
     out["written_under"] = source
     out["written_under_inferred"] = inferred
-    out["migration"] = {"migrated_from": source, "migrator_version": _MIGRATOR_ID}
+    out["migration"] = {
+        "migrated_from": source,
+        "migrator_version": f"spec.migrations/{source}->{SCHEMA_VERSION}/v1",
+    }
     return out
 
 

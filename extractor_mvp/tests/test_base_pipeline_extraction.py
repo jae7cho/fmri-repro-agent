@@ -123,6 +123,70 @@ def test_case_missing_name_missing_ref():
     assert deferral is None
 
 
+# --- 6c: value-support guard (Option A), base_pipeline only --------------------
+# The guard fires ONLY on tier-5 RECOVERED name spans; each synthetic case below mangles the
+# source so the model-quote fails an exact match but recovers, forcing the guard to run.
+def test_parse_attribution_ref_viduarre_and_non_attribution():
+    from extractor_mvp.extractor import _parse_attribution_ref
+
+    # viduarre-shaped: method handed to a Title-Case author, no pipeline named.
+    assert (
+        _parse_attribution_ref(
+            "Spatial preprocessing was applied using the procedure described by Glasser et al."
+        )
+        == "Glasser et al."
+    )
+    # A quote that names a tool (not a bare citation attribution) -> None, not a fabricated ref.
+    assert _parse_attribution_ref("We used fMRIPrep version 20.2.3 for preprocessing.") is None
+
+
+def test_guard_recovered_value_stated_is_extracted_and_marked():
+    # value STATED in the (whitespace-mangled) quote -> honest EXTRACTED + span_recovered=True.
+    quote = "processed with fMRIPrep here"
+    text = "we then processedwithfMRIPrephere and moved on."
+    field, deferral = _build_base_pipeline(
+        _extracted("fMRIPrep", quote), FieldExtractionResult(status="missing"), text
+    )
+    assert not isinstance(field, MissingFromPaper)
+    assert field.extraction.status == "EXTRACTED"
+    assert field.extraction.value.name == "fMRIPrep"
+    assert field.extraction.span_recovered is True  # tolerant-tier provenance is marked
+    assert deferral is None
+
+
+def test_guard_recovered_viduarre_reclassified_as_deferral():
+    # viduarre: value INFERRED (not in quote), quote is a bare citation attribution that recovers
+    # via tier 5 -> reclassified to DEFERRED_TO_CITATION, NOT a fabricated EXTRACTED.
+    quote = "preprocessing was applied using the procedure described by Glasser et al."
+    text = "In methods, preprocessingwasappliedusingtheproceduredescribedbyGlasseretal. and so on."
+    field, deferral = _build_base_pipeline(
+        _extracted("HCP minimal preprocessing pipeline", quote),
+        FieldExtractionResult(status="missing"),
+        text,
+    )
+    assert not isinstance(field, MissingFromPaper)
+    assert field.extraction.status == "DEFERRED_TO_CITATION"
+    assert field.extraction.deferrals[0].ref == "Glasser et al."
+    assert field.inference.reason == "citation_shaped_name_value_unsupported"
+    # crucially NOT extracted: the inferred pipeline name was never promoted to a value
+    assert field.extraction.status != "EXTRACTED"
+    assert deferral is None  # no separate ref field -> no DeferralRecord
+
+
+def test_guard_recovered_unsupported_unparseable_falls_to_bare_missing():
+    # Third guard sub-case: recovered span, value NOT in the quote, AND the quote is not a bare
+    # citation attribution (nothing to defer to) -> fall through to bare MissingFromPaper. Never
+    # a fabricated EXTRACTED, and no invented DeferralRecord.
+    value = "SPM12"
+    quote = "the data were collected on a Siemens Trio scanner"
+    text = "acquisition: thedatawerecollectedonaSiemensTrioscanner at the center."
+    field, deferral = _build_base_pipeline(
+        _extracted(value, quote), FieldExtractionResult(status="missing"), text
+    )
+    assert isinstance(field, MissingFromPaper)  # not EXTRACTED, not DEFERRED_TO_CITATION
+    assert deferral is None
+
+
 # --- 6d: live Cho 2021 full PDF Layer-1 probe ----------------------------------
 MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-6")
 CHO_PDF = Path("/Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf")

@@ -6,7 +6,7 @@ v0.2.0's one change vs 0.1.0 was moving per-voxel temporal z-scoring out of
 
 There is deliberately no ``v0_2_0.StudySpec``. The minor-version modules share the one
 mutating :mod:`fmri_repro.spec.preprocessing`, so an old root could only ever pin a version
-string while carrying today's (0.3.0) nested models — a document lying about itself. Read
+string while carrying today's (0.4.0) nested models — a document lying about itself. Read
 archived v0.2.0 artifacts through :func:`fmri_repro.spec.migrations.parse_any_version`
 (migrate-then-parse); a genuine older specimen is retained under ``examples/frozen/``.
 """

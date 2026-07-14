@@ -1,6 +1,6 @@
 """Export the current StudySpec JSON Schema to ``schema/``.
 
-Imports the latest versioned root (``v0_3_0``) and derives the output filename
+Imports the latest versioned root (``v0_4_0``) and derives the output filename
 from the model's ``schema_version``, so a future minor bump needs only an import
 change here — not a hardcoded-filename edit.
 """
@@ -10,7 +10,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from fmri_repro.spec.v0_3_0 import StudySpec
+from fmri_repro.spec.v0_4_0 import StudySpec
 
 
 def main() -> Path:

@@ -4,6 +4,46 @@
 keep/reject partition (8 keep / 2 reject). This records what was built, what is deliberately held,
 and why the honest completion is a v0.4.0 release — not a rushed end-of-session schema edit.
 
+> ## CORRECTION OF RECORD — v0.4.0 landed (guard is value-support, Option A)
+>
+> The sections below (written during Phase 1) planned the anti-fabrication guard as a **KB-alias
+> check**: "no KB pipeline alias appears in the quote (build aliases from `fmri_defaults_kb` as the
+> extractor already does)." **That was wrong on two counts, and v0.4.0 does NOT implement it that way.**
+>
+> 1. **The dependency does not exist.** The extractor builds no pipeline-name alias list and does not
+>    import `fmri_defaults_kb`; the registry exposes only `recognize(name)`, with no public alias
+>    enumerator. There was no "alias list the code already builds" to check against.
+> 2. **It would break the independence firewall.** Threading a KB alias list into the paper-only
+>    extractor couples extraction to the KB — the exact coupling the firewall forbids.
+>
+> **What shipped instead — the value-support guard (Option A):** before promoting a **recovered**
+> base_pipeline name to `EXTRACTED`, the guard asks whether the model's OWN value is tolerantly present
+> in its OWN quote (`quote_supports_value`, reusing the tier-3+tier-5 normalization). Firewall-clean:
+> it compares the model against itself and introduces **no KB dependency** at extraction time.
+>
+> - **(1) Value-support, not quote-presence.** viduarre — quote present but value INFERRED from a
+>   citation ("procedure described by Glasser et al.") — is unsupported and stays out of `EXTRACTED`;
+>   "followed fMRIPrep (Esteban 2019)" is supported (value in quote) and stays `EXTRACTED`.
+> - **(2) base_pipeline-scoped.** The guard fires only in `_build_base_pipeline` and only on tier-5
+>   recovered spans. Step-field recoveries in `_process_field` are marked `span_recovered=True` but NOT
+>   value-guarded (value-mislocalization was diagnosed only at `base_pipeline`; derosa's
+>   `temporal_standardization` is a referent-binding problem handled by the temporal firewall, and so
+>   resurfaces as an honest `EXTRACTED + span_recovered`, marked-not-clean).
+> - **(3) Honest false-negative.** Value-support is precision-preserving at the extraction boundary, so
+>   an acronym-vs-fullname mismatch where the model emits the expansion but the quote carries only the
+>   acronym (or vice-versa, and the `Full Name (ACRONYM)` first-use form is absent) lands in MISSING
+>   rather than a guessed EXTRACTED. Surface-form reconciliation is an inference-layer / KB concern by
+>   design — the extraction stage does not reach for the KB to rescue it.
+>
+> **viduarre's deferral is COBIDAS §4.3-legitimate.** Deferring to a peer-reviewed pipeline citation is
+> permitted; what is actually missing is the *version* and any separate post-minimal denoising step.
+> HCP-minimal (Glasser 2013) excludes denoising, so "HCP MPP" and any ICA-FIX are two independent
+> decisions / citations — which is precisely why the extractor must record the **deferral** (pointing
+> at Glasser) rather than expand the name into a fabricated `base_pipeline` value.
+>
+> Everywhere below that says "attribution-guard … checked against the KB alias list" or frames v0.4.0
+> as "held/inert", read: **value-support guard, landed in v0.4.0.**
+
 ## What shipped (live but INERT — production output byte-identical to HEAD)
 
 `span_resolver.py` gains **tier 5**, a corrupted-source tolerant match that fires ONLY after every
@@ -51,13 +91,14 @@ extraction without a schema change. This is the gate.
   **fabricated from a citation** ("described by Glasser et al."). So tier-5-consumption, the
   `span_recovered` flag, and the attribution-guard ship **together or not at all**. There is no
   "free standalone guard" — the guard only matters once tier 5 un-masks the case.
-- **The attribution-guard** (verified constructible): before promoting a base_pipeline **name** to
-  `Extracted`, if its quote is a bare attribution (`described by | following | as (described )in |
-  procedure of … [Author]`) **and no pipeline name is present in the quote** (checked against the KB
-  alias list — so "followed fMRIPrep (Esteban 2019)" is NOT swallowed), construct
-  `DeferredToCitation` instead. Reuses the existing frozen state; the ref parses lexically from the
-  quote; the span comes from tier 5. viduarre → `DeferredToCitation(Glasser et al.)`, which is the
-  correct four-state answer the model should have produced.
+- **The value-support guard** (Option A — SUPERSEDES the KB-alias framing in this bullet; see the
+  CORRECTION OF RECORD above): before promoting a **recovered** base_pipeline **name** to `Extracted`,
+  if the model's own value is NOT tolerantly present in its own quote (`quote_supports_value`) AND the
+  quote is a bare attribution (`described by | following | as (described )in | procedure of …
+  [Author]`), construct `DeferredToCitation` instead. Firewall-clean (no KB at extraction); "followed
+  fMRIPrep (Esteban 2019)" is value-supported so it stays EXTRACTED. Reuses the existing frozen state;
+  the ref parses lexically from the quote; the span comes from tier 5. viduarre →
+  `DeferredToCitation(Glasser et al.)`, the correct four-state answer the model should have produced.
 - **#4 (derosa referent-binding)** resurfaces as a recovered EXTRACTED once tier 5 is consumed; it is
   handled at its own layer by the [temporal firewall](temporal-firewall-fix.md), not here.
 
@@ -84,14 +125,17 @@ extractor_mvp/src/extractor_mvp/extractor.py` locates them exactly.
    consume a `recovered` span instead of treating it as unresolved, and construct
    `Extracted(..., span_recovered=res.recovered)` so a normalization-recovered extraction is never
    indistinguishable from a clean one.
-3. **Attribution-guard** (in `_build_base_pipeline`, before promoting a base_pipeline NAME to
-   `Extracted`): if the name's `verbatim_quote` matches the bare-attribution shape
-   (`described by | following | as (described )in | procedure of ... [Author]`) AND no KB pipeline
-   alias appears in the quote (build aliases from `fmri_defaults_kb` as the extractor already does),
-   construct `DeferredToCitation` instead — ref parsed lexically from the quote, span from tier 5.
-   Discriminator: "followed fMRIPrep (Esteban 2019)" has a name -> stays EXTRACTED; viduarre's
-   "described by Glasser et al." has none -> `DeferredToCitation`. This is the anti-fabrication gate;
-   without it, step 2 promotes viduarre to a fabricated `base_pipeline = HCP MPP`.
+3. **Value-support guard** (Option A, in `_build_base_pipeline`, before promoting a **recovered**
+   base_pipeline NAME to `Extracted`): if the model's own value is NOT tolerantly present in its own
+   `verbatim_quote` (`quote_supports_value`, reusing the tier-3+tier-5 normalization — firewall-clean,
+   NO KB) and the quote matches the bare-attribution shape (`described by | following | as (described
+   )in | procedure of ... [Author]`), construct `DeferredToCitation` instead — ref parsed lexically
+   from the quote, span from tier 5. Discriminator: "followed fMRIPrep (Esteban 2019)" is
+   value-supported -> stays EXTRACTED; viduarre's value "HCP minimal preprocessing pipeline" is absent
+   from "described by Glasser et al." -> `DeferredToCitation`. This is the anti-fabrication gate;
+   without it, step 2 promotes viduarre to a fabricated `base_pipeline = HCP MPP`. (The original brief
+   named a KB-alias check here; that list does not exist and would break the firewall — see the
+   CORRECTION OF RECORD at the top.)
 4. **Three-arm regression (the gate, corpus-wide).**
    (i) RECOVERY: the Phase-1 corrupted-source drops resolve; PRINT each recovered span's source text
        so a human sees it contains the mention (auditable, not asserted).

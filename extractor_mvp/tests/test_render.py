@@ -36,7 +36,7 @@ from fmri_repro.spec.provenance import (
     VersionDefaultBasis,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
-from fmri_repro.spec.v0_3_0 import StudySpec  # current root; examples/spec.json is a 0.3.0 doc
+from fmri_repro.spec.v0_4_0 import StudySpec  # current root; examples/spec.json is a 0.4.0 doc
 
 from extractor_mvp import render
 

@@ -379,3 +379,31 @@ def resolve_quote(quote: str, text: str) -> SpanResolution:
         if retry.failure_reason is None:
             return retry
     return primary
+
+
+# --- Value-support check (v0.4.0 base_pipeline guard) ------------------------
+# Used by the extractor to test whether a model's OWN value is actually present in its OWN
+# quote — firewall-clean (no KB), so it does not couple the paper-only extractor to the KB.
+
+
+def _first_use_variants(name: str) -> list[str]:
+    """Split a 'Full Name (ACRONYM)' first-use form into {whole, pre-paren, parenthetical}.
+    Pure lexical (no KB) — content-agnostic, so it does not couple the extractor to the KB."""
+    variants = [name]
+    m = re.match(r"^(.*\S)\s*\(([^()]+)\)\s*$", name)
+    if m:
+        variants.append(m.group(1))
+        variants.append(m.group(2))
+    return [v for v in variants if v.strip()]
+
+
+def quote_supports_value(value: str, quote: str) -> bool:
+    """True iff ``value`` (or any first-use variant) is tolerantly present in ``quote``.
+    Reuses the tier-3+tier-5 normalization (NFKD + delete whitespace/hyphens/markers) so surface
+    mangling/spacing never causes a spurious 'unsupported'. Substring-only — never fuzzy."""
+
+    def _agg(s: str) -> str:
+        return _delete_with_map(normalize_with_offset_map(s.lower())[0])[0]
+
+    q = _agg(quote)
+    return any((v := _agg(variant)) and v in q for variant in _first_use_variants(value))

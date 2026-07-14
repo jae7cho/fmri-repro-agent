@@ -1,15 +1,20 @@
 """Tier-5 (corrupted-source tolerant) resolution tests — synthetic, offline.
 
-Tier 5 is live in ``resolve_quote`` but its recoveries are NOT yet consumed by the builders
-(v0.4.0-pending: promoting a recovered span honestly needs the ``Extracted.span_recovered`` flag).
-These tests pin the resolver behavior directly, including the two safety arms:
-  - arm (ii): an EXACT match is never touched by tier 5 (recovered stays False, span unchanged).
+Tier 5 recoveries are now CONSUMED by the builders (v0.4.0): a recovered span is kept and
+marked ``Extracted.span_recovered=True`` (base_pipeline additionally runs the value-support
+guard — see test_base_pipeline_extraction.py). These tests pin the resolver behavior directly,
+including the two safety arms:
+  - arm (ii): an EXACT/clean match is never touched by tier 5 (recovered stays False, span
+    unchanged) — this is what guarantees no clean extraction moved when tier 5 was added.
   - arm (iii): a genuinely-absent quote still fails (the hallucination guard holds after tier 5).
+Also pins ``quote_supports_value`` (the firewall-clean base_pipeline value-support helper).
 """
 
 from __future__ import annotations
 
-from extractor_mvp.span_resolver import resolve_quote
+import pytest
+
+from extractor_mvp.span_resolver import quote_supports_value, resolve_quote
 
 
 def test_exact_match_not_recovered() -> None:
@@ -19,6 +24,55 @@ def test_exact_match_not_recovered() -> None:
     assert r.span is not None
     assert r.recovered is False
     assert r.span.text == "processed with fMRIPrep version 20.2.3"
+
+
+# arm (ii), property form: a fixed fixture of clean-resolving (quote, text) pairs — NO live LLM
+# run — each must resolve with recovered is False and a stable, identical (start, end, text) on
+# repeat. Arm-(ii) holds by construction (tier 5 is appended AFTER tiers 1-4 and is unreachable
+# once one matches), so any of these moving would be a real regression, not fixture drift.
+_CLEAN_PAIRS = [
+    ("processed with fMRIPrep version 20.2.3", "we then processed with fMRIPrep version 20.2.3."),
+    ("the HCP minimal preprocessing pipeline", "using the HCP minimal preprocessing pipeline here"),
+    ("registered to fsaverage", "surfaces were registered to fsaverage for analysis"),
+    ("C-PAC (v1.8)", "ran with C-PAC (v1.8) on the cluster"),
+]
+
+
+@pytest.mark.parametrize("quote,text", _CLEAN_PAIRS)
+def test_clean_resolutions_never_recovered_and_stable(quote: str, text: str) -> None:
+    first = resolve_quote(quote, text)
+    assert first.span is not None
+    assert first.recovered is False
+    assert first.span.text == quote  # exact tier-1 match: span covers the quote verbatim
+    second = resolve_quote(quote, text)  # determinism: identical (start, end, text) on repeat
+    assert second.span is not None
+    assert (second.span.start, second.span.end, second.span.text) == (
+        first.span.start,
+        first.span.end,
+        first.span.text,
+    )
+
+
+def test_quote_supports_value_present_and_absent() -> None:
+    """arm (iii) helper: value-support is substring-after-normalization, never fuzzy."""
+    # Value stated in the quote -> supported.
+    assert quote_supports_value("fMRIPrep", "the data followed fMRIPrep (Esteban 2019)") is True
+    # Acronym present via the 'Full Name (ACRONYM)' first-use form -> supported.
+    assert (
+        quote_supports_value(
+            "C-PAC",
+            "the Configurable Pipeline for the Analysis of Connectomes (C-PAC) was used",
+        )
+        is True
+    )
+    # viduarre: value INFERRED from a citation, not stated in the quote -> unsupported.
+    assert (
+        quote_supports_value(
+            "HCP minimal preprocessing pipeline",
+            "Spatial preprocessing was applied using the procedure described by Glasser et al.",
+        )
+        is False
+    )
 
 
 def test_whitespace_deletion_recovers() -> None:

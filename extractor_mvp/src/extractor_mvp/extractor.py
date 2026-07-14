@@ -17,6 +17,7 @@ for the MVP (Position-A "no step" semantics; post-abstract).
 
 from __future__ import annotations
 
+import re
 import typing
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
@@ -58,7 +59,7 @@ from pydantic import BaseModel, Field
 
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.span_resolver import resolve_quote
+from extractor_mvp.span_resolver import quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
 
 
@@ -413,10 +414,14 @@ def _missing_pf(field_id: str, t: Any, reason: str) -> ProvenancedField:
     )
 
 
-def _extracted_pf(field_id: str, t: Any, value: Any, span: Any) -> ProvenancedField:
+def _extracted_pf(
+    field_id: str, t: Any, value: Any, span: Any, span_recovered: bool = False
+) -> ProvenancedField:
     return ProvenancedField[t](
         field_id=field_id,
-        extraction=Extracted[t](value=value, spans=[span], confidence=_CONFIDENCE),
+        extraction=Extracted[t](
+            value=value, spans=[span], confidence=_CONFIDENCE, span_recovered=span_recovered
+        ),
         inference=NotApplicable(),
     )
 
@@ -510,12 +515,11 @@ def _process_field(
         )
 
     resolution = resolve_quote(fe.verbatim_quote, text)
-    # v0.4.0-PENDING: a tolerant-tier RECOVERED span (span_resolver tier 5) is NOT yet promoted.
-    # Consuming it honestly requires the Extracted.span_recovered flag (a schema bump) so a
-    # normalization-recovered extraction is never silently indistinguishable from a clean one.
-    # Until that lands, a recovered match is treated as unresolved -> output is byte-identical to
-    # pre-tier-5 behavior (the 8 corrupted-source keeps stay a documented false-MISSING lower bound).
-    if resolution.span is None or resolution.recovered:
+    # A tolerant-tier RECOVERED span (span_resolver tier 5) is now KEPT and marked
+    # span_recovered=True — honest because the marker distinguishes it from a clean match.
+    # Step fields are marked-only in this release (no value-support guard here; that guard is
+    # base_pipeline-scoped — see _build_base_pipeline). Only a genuine not-found span drops.
+    if resolution.span is None:
         return (
             _missing_pf(field_id, t, f"extraction_quote_unresolved:{resolution.failure_reason}"),
             ExtractionDiagnostic(
@@ -527,7 +531,11 @@ def _process_field(
             None,
         )
 
-    return _extracted_pf(field_id, t, value, resolution.span), None, None
+    return (
+        _extracted_pf(field_id, t, value, resolution.span, span_recovered=resolution.recovered),
+        None,
+        None,
+    )
 
 
 def _process_deferred(
@@ -564,6 +572,33 @@ def _process_deferred(
         deferral_sentence=fe.deferral_sentence,
     )
     return _deferred_pf(field_id, t, deferral, fe), None, record
+
+
+_ATTRIBUTION_TRIGGERS = re.compile(
+    r"(?:described|outlined|detailed|reported)\s+(?:by|in)"
+    r"|following\b|as\s+(?:described\s+)?in\b"
+    r"|procedures?\s+(?:of|in|described\s+(?:by|in))",
+    re.IGNORECASE,
+)
+_AUTHOR = re.compile(
+    # Curly apostrophe kept verbatim to match typographic author names (e.g. O'Connor).
+    r"[A-Z][A-Za-z'’\-]+(?:\s+et\s+al\.?)?(?:\s+(?:and|&)\s+[A-Z][A-Za-z'’\-]+)?"  # noqa: RUF001
+    r"(?:\s*,?\s*\(?\s*\d{4}[a-z]?\s*\)?)?"
+)
+
+
+def _parse_attribution_ref(quote: str) -> str | None:
+    """If ``quote`` is a bare citation-attribution (hands the method to a Title-Case author,
+    naming no pipeline), return the author/citation token; else None. Deliberately narrow
+    (viduarre-class); returns None — not a fabricated ref — when it cannot cleanly parse an
+    author."""
+    m = _ATTRIBUTION_TRIGGERS.search(quote)
+    if m is None:
+        return None
+    am = _AUTHOR.match(quote[m.end() :].lstrip())
+    if am is None:
+        return None
+    return am.group(0).strip().rstrip(",") or None
 
 
 def _build_base_pipeline(
@@ -619,24 +654,56 @@ def _build_base_pipeline(
                 inference=LeftMissing(reason="deferred_to_citation"),
             )
 
-    # Case A/B: pipeline NAME is extracted and its quote resolves -> base_pipeline EXTRACTED.
+    # Case A/B: pipeline NAME is extracted and its quote resolves -> base_pipeline EXTRACTED,
+    # guarded (Option A, value-support). A tier-5 recovery can un-mask a case where the model
+    # INFERRED the pipeline name from a citation rather than reading it (viduarre: value "HCP
+    # minimal preprocessing pipeline", quote "…procedure described by Glasser et al." — the name
+    # is nowhere in the quote). Promoting that to EXTRACTED would fabricate a name. The guard
+    # fires ONLY on recovered spans; clean (tier 1-4) matches are untouched, so no clean span
+    # ever moves. The guard compares the model's OWN value against its OWN quote — firewall-clean
+    # (no KB at extraction). Scope: base_pipeline only (value-mislocalization was observed here;
+    # step-field recoveries in _process_field are marked span_recovered but NOT value-guarded).
     if name_result.status == "extracted" and name_result.value and name_result.verbatim_quote:
         name_res = resolve_quote(name_result.verbatim_quote, text)
-        # v0.4.0-PENDING (see _process_field): a tolerant-tier RECOVERED span is not promoted yet
-        # (needs the span_recovered flag + the attribution-guard that routes citation-shaped
-        # quotes to DeferredToCitation). Treating recovered as unresolved keeps output identical
-        # to HEAD and, crucially, avoids fabricating viduarre = HCP MPP once tier 5 un-masks it.
-        name_span = name_res.span if not name_res.recovered else None
-        if name_span is not None:
-            pipeline = PipelineRef(name=name_result.value, version=version_pf)
-            field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](
-                field_id=bp_id,
-                extraction=Extracted[PipelineRef](
-                    value=pipeline, spans=[name_span], confidence=_CONFIDENCE
-                ),
-                inference=NotApplicable(),
-            )
-            return field, ref_record  # ref deferral (if any) handed to Fork B
+        if name_res.span is not None:
+            recovered = name_res.recovered
+            if (not recovered) or quote_supports_value(
+                name_result.value, name_result.verbatim_quote
+            ):
+                # Clean match, OR recovered with the value actually stated in the quote -> honest
+                # EXTRACTED (span_recovered marks the tolerant-tier provenance).
+                pipeline = PipelineRef(name=name_result.value, version=version_pf)
+                field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](
+                    field_id=bp_id,
+                    extraction=Extracted[PipelineRef](
+                        value=pipeline,
+                        spans=[name_res.span],
+                        confidence=_CONFIDENCE,
+                        span_recovered=recovered,
+                    ),
+                    inference=NotApplicable(),
+                )
+                return field, ref_record  # ref deferral (if any) handed to Fork B
+            # Recovered BUT value unsupported -> value-mislocalization. If the quote is a bare
+            # citation attribution, reclassify as a deferral (the honest four-state answer); else
+            # fall through to bare MISSING — never a fabricated EXTRACTED. A distinct LeftMissing
+            # reason keeps this guard reclassification greppable vs a model-declared deferral.
+            parsed_ref = _parse_attribution_ref(name_result.verbatim_quote)
+            if parsed_ref is not None:
+                guard_field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](
+                    field_id=bp_id,
+                    extraction=DeferredToCitation(
+                        deferrals=[
+                            Deferral(ref=parsed_ref, span=name_res.span, target_kind="paper")
+                        ],
+                        searched_terms=name_result.searched_terms,
+                        sections_searched=name_result.sections_searched,
+                    ),
+                    inference=LeftMissing(reason="citation_shaped_name_value_unsupported"),
+                )
+                return guard_field, ref_record
+        # name_res.span is None (genuine not-found), or unsupported-and-unparseable: fall through
+        # to the existing Case C (deferred ref) / Case D (bare MissingFromPaper) below.
 
     # Case C: name not (validly) extracted but ref deferred & resolved -> pipeline DEFERRED.
     if deferred_pipeline_field is not None:

@@ -86,7 +86,7 @@ from fmri_repro.spec.provenance import (
     VersionDefaultBasis,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
-from fmri_repro.spec.v0_3_0 import StudySpec as CurrentStudySpec
+from fmri_repro.spec.v0_4_0 import StudySpec as CurrentStudySpec
 from tests.spec.test_acquisition import (
     _anatomical_payload,
     _fieldmap_payload,
@@ -1590,10 +1590,10 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; only v0.3.0 has a live StudySpec root.
+    # Predecessors are demoted to version constants; only v0.4.0 has a live StudySpec root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.3.0"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.4.0"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1603,12 +1603,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.3.0"
-    assert prep.written_under == "0.3.0"
+    assert prep.schema_version == "0.4.0"
+    assert prep.written_under == "0.4.0"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.3.0"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.4.0"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1616,7 +1616,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.3.0",
+            written_under="0.4.0",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),

@@ -12,7 +12,7 @@ from fmri_repro.spec.core import (
     FieldmapAcquisition,
     FunctionalAcquisition,
 )
-from fmri_repro.spec.v0_3_0 import StudySpec  # current root; the fixture is a 0.3.0 document
+from fmri_repro.spec.v0_4_0 import StudySpec  # current root; the fixture is a 0.4.0 document
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_PATH = REPO_ROOT / "examples" / "hcp_glasser_fieldmaps.json"

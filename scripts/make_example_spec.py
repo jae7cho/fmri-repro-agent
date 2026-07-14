@@ -70,7 +70,7 @@ from fmri_repro.spec.provenance import (
     Span,
     VersionDefaultBasis,
 )
-from fmri_repro.spec.v0_3_0 import StudySpec  # current root; scripts emit 0.3.0 documents
+from fmri_repro.spec.v0_4_0 import StudySpec  # current root; scripts emit 0.4.0 documents
 
 # Pinned so successive runs produce byte-identical output.
 _FIXED_RUN_ID = "00000000000000000000000000000001"

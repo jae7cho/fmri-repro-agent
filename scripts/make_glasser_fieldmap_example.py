@@ -63,7 +63,7 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
     Span,
 )
-from fmri_repro.spec.v0_3_0 import StudySpec  # current root; scripts emit 0.3.0 documents
+from fmri_repro.spec.v0_4_0 import StudySpec  # current root; scripts emit 0.4.0 documents
 
 _FIXED_RUN_ID = "00000000000000000000000000000002"
 _FIXED_CREATED_AT = datetime(2026, 5, 21, 0, 0, 0, tzinfo=UTC)

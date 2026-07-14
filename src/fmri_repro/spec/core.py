@@ -3,8 +3,8 @@
 The assembly imported unchanged by every versioned root — :class:`RunMeta`,
 :class:`ReplicationSpec`, :class:`StudyAnalysis`, and the modality-typed acquisition arms.
 It carries no ``schema_version``: version pinning lives on the roots (only
-:class:`fmri_repro.spec.v0_3_0.StudySpec` today), and ``fmri_repro.spec.v0_1_0`` /
-``v0_2_0`` are now bare version constants. (This module was extracted from ``v0_1_0.py``,
+:class:`fmri_repro.spec.v0_4_0.StudySpec` today), and ``fmri_repro.spec.v0_1_0`` /
+``v0_2_0`` / ``v0_3_0`` are now bare version constants. (This module was extracted from ``v0_1_0.py``,
 which historically doubled as the v0.1.0 root and the shared core.)
 
 Acquisition is split into modality-typed arms — :class:`FunctionalAcquisition`,

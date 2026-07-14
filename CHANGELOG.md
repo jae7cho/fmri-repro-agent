@@ -15,6 +15,12 @@ Nothing has been tagged yet, so all entries live under `[Unreleased]`.
 
 ### Changed
 
+- **(v0.4.0, schema-version)** `Preprocessing.schema_version` bumped `0.3.0 → 0.4.0`
+  (full version ceremony): new live root `spec/v0_4_0.py`, `spec/v0_3_0.py` demoted
+  to a bare `SCHEMA_VERSION` constant, and a `0.3.0 → 0.4.0` migration hop that is a
+  pure re-stamp (the sole delta is an optional-default field, so no document transform
+  runs). Migrator id is now generic (`spec.migrations/{source}->{current}/v1`).
+  Non-breaking: a 0.3.0 document parses unchanged.
 - **(breaking, schema-vocab)** `IntensityNormalizationConvention`: renamed
   member `fsl_mode_10000` → `fsl_median_10000`. The old name was a misnomer —
   there is no FSL "mode-based 10000" convention; the real per-volume
@@ -24,6 +30,19 @@ Nothing has been tagged yet, so all entries live under `[Unreleased]`.
 
 ### Added
 
+- **(v0.4.0)** `Extracted.span_recovered: bool = False` (in the version-stable
+  `provenance.py`) — marks an extraction whose char-offset span was located ONLY by
+  the corrupted-source tolerant tier (span_resolver tier 5), never a clean exact/near
+  match. Optional-with-default, so older documents parse unchanged.
+- **(v0.4.0)** Tolerant-recovery consumption: `_process_field` and `_build_base_pipeline`
+  now KEEP a tier-5 recovered span (previously treated as unresolved and dropped) and
+  mark it `span_recovered=True`, recovering correct extractions from pypdf-mangled source
+  without laundering them as clean matches.
+- **(v0.4.0)** Value-support guard (Option A) on `base_pipeline` in `_build_base_pipeline`:
+  before promoting a *recovered* pipeline name to `EXTRACTED`, it checks the model's own
+  value is tolerantly present in its own quote (`quote_supports_value`; firewall-clean, no
+  KB at extraction). A recovered-but-unsupported citation-shaped quote (e.g. "…described by
+  Glasser et al.") is reclassified to `DeferredToCitation` instead of fabricating a name.
 - `IntensityNormalizationConvention` extended with three new members verified
   against published practice (surfaced by the SfN batch extraction run; additive
   — no existing values invalidated):

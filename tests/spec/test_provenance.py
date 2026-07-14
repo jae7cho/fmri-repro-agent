@@ -199,6 +199,29 @@ def test_unknown_basis_discriminator_rejected() -> None:
 
 
 # ---------------------------------------------------------------------------
+# 10b. Extracted.span_recovered: defaults False, explicit True round-trips (v0.4.0)
+# ---------------------------------------------------------------------------
+def test_extracted_span_recovered_default_and_round_trip() -> None:
+    # Optional-with-default: an Extracted built without the flag reads False, so a v0.3.0
+    # document (which never carried the field) parses unchanged.
+    default = Extracted[float](value=2.0, spans=[_span()], confidence=0.9)
+    assert default.span_recovered is False
+
+    # An explicit True survives a JSON round-trip inside a ProvenancedField.
+    pf = ProvenancedField[float](
+        field_id="acquisition.tr",
+        extraction=Extracted[float](
+            value=2.0, spans=[_span()], confidence=0.9, span_recovered=True
+        ),
+        inference=NotApplicable(),
+    )
+    restored = ProvenancedField[float].model_validate_json(pf.model_dump_json())
+    assert restored == pf
+    assert restored.extraction.status == "EXTRACTED"
+    assert restored.extraction.span_recovered is True
+
+
+# ---------------------------------------------------------------------------
 # 11. JSON Schema export for ProvenancedField[float|str|bool]
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize("payload_type", [float, str, bool])
