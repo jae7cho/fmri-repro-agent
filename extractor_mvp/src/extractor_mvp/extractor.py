@@ -236,6 +236,18 @@ temporal_standardization_method: Whether the PREPROCESSED BOLD SIGNAL ITSELF was
 temporally standardized per voxel (each voxel's time series transformed to zero mean and
 unit variance across time, i.e. z-scored over time) as a preprocessing step before
 analysis. Canonical values: voxel_temporal_zscore, other.
+  DECISION RULE (apply BEFORE choosing status): identify the SUBJECT of any "normalized" /
+  "standardized" / "z-scored" / "0 mean and 1 variance" / "unit variance" operation. This
+  field is "extracted" ONLY when that subject is the voxelwise or vertexwise BOLD TIME SERIES
+  itself. If the subject is a measure DERIVED from the signal -- a connectivity estimate
+  (FC, SFC, ReHo, seed-connectivity), a correlation/connectivity matrix, a gradient,
+  ICA/PCA components, nuisance regressors, classifier features, QC metrics, or a statistical
+  map -- the field is "missing", no matter the wording used. When in doubt about the subject,
+  choose "missing".
+  NEAR-MISS that is MISSING (do NOT extract): "this surface-based SFC was estimated using the
+  same preprocessed rfMRI data as ReHo but normalized (0 mean and 1 variance)" -> missing,
+  because the SUBJECT normalized is the SFC connectivity map (a derived metric), not the BOLD
+  time series.
   extracted: "for each voxel, the signal was temporally normalized by subtracting its
     mean and dividing by its temporal standard deviation" -> value=voxel_temporal_zscore
   extracted: "the BOLD time series were z-scored" -> value=voxel_temporal_zscore
