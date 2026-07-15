@@ -77,7 +77,7 @@ def _span(text: str, start: int) -> Span:
 
 def _missing(field_id: str, t: type) -> ProvenancedField:
     """MISSING + LEFT_MISSING shorthand. Caller-supplied ``t`` is the element type."""
-    return ProvenancedField[t](  # type: ignore[valid-type]
+    return ProvenancedField[t](
         field_id=field_id,
         extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
         inference=LeftMissing(reason="not reported in paper"),
@@ -633,6 +633,8 @@ def _hcp_preprocessing() -> Preprocessing:
                     ),
                     inference=NotApplicable(),
                 ),
+                method=_missing("method", str),
+                filtering_integrated=_missing("filtering_integrated", bool),
             ),
             TemporalFiltering(
                 effective_band_hz=ProvenancedField[tuple[float | None, float | None]](

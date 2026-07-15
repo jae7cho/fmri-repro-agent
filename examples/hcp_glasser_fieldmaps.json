@@ -153,11 +153,12 @@
                 {
                   "start": 130,
                   "end": 147,
-                  "text": "T1w flip angle 8\u00b0",
+                  "text": "T1w flip angle 8°",
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -180,7 +181,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.97
+              "confidence": 0.97,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -234,7 +236,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -399,7 +402,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.97
+              "confidence": 0.97,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -525,7 +529,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.96
+              "confidence": 0.96,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -544,7 +549,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.96
+              "confidence": 0.96,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -563,7 +569,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.94
+              "confidence": 0.94,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -593,7 +600,7 @@
                   "span": {
                     "start": 380,
                     "end": 404,
-                    "text": "BOLD TR \u2014 see Smith 2013",
+                    "text": "BOLD TR — see Smith 2013",
                     "section": "Methods"
                   },
                   "target_kind": "paper"
@@ -603,7 +610,7 @@
                   "span": {
                     "start": 380,
                     "end": 406,
-                    "text": "BOLD TR \u2014 see Ugurbil 2013",
+                    "text": "BOLD TR — see Ugurbil 2013",
                     "section": "Methods"
                   },
                   "target_kind": "paper"
@@ -653,7 +660,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.96
+              "confidence": 0.96,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -689,7 +697,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -712,7 +721,7 @@
                   "span": {
                     "start": 400,
                     "end": 424,
-                    "text": "BOLD TE \u2014 see Smith 2013",
+                    "text": "BOLD TE — see Smith 2013",
                     "section": "Methods"
                   },
                   "target_kind": "paper"
@@ -722,7 +731,7 @@
                   "span": {
                     "start": 400,
                     "end": 426,
-                    "text": "BOLD TE \u2014 see Ugurbil 2013",
+                    "text": "BOLD TE — see Ugurbil 2013",
                     "section": "Methods"
                   },
                   "target_kind": "paper"
@@ -964,7 +973,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.93
+              "confidence": 0.93,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -997,7 +1007,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.94
+              "confidence": 0.94,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1260,7 +1271,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.96
+              "confidence": 0.96,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1296,7 +1308,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1322,7 +1335,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.93
+              "confidence": 0.93,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1341,7 +1355,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.94
+              "confidence": 0.94,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1545,7 +1560,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1821,7 +1837,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2097,7 +2114,8 @@
                   "section": "Methods"
                 }
               ],
-              "confidence": 0.95
+              "confidence": 0.95,
+              "span_recovered": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2218,6 +2236,10 @@
       ],
       "preprocessing": [
         {
+          "schema_version": "0.4.0",
+          "written_under": "0.4.0",
+          "written_under_inferred": false,
+          "migration": null,
           "applies_to": [
             {
               "suffix": "bold",
@@ -2323,7 +2345,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.95
+                  "confidence": 0.95,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2368,7 +2391,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.95
+                  "confidence": 0.95,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2387,7 +2411,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.9
+                  "confidence": 0.9,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2409,7 +2434,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.9
+                  "confidence": 0.9,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2431,7 +2457,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.9
+                  "confidence": 0.9,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2478,7 +2505,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.9
+                  "confidence": 0.9,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2495,7 +2523,7 @@
                 },
                 "inference": {
                   "status": "LEFT_MISSING",
-                  "reason": "not reported"
+                  "reason": "not reported in paper"
                 }
               },
               "filtering_integrated": {
@@ -2509,7 +2537,7 @@
                 },
                 "inference": {
                   "status": "LEFT_MISSING",
-                  "reason": "not reported"
+                  "reason": "not reported in paper"
                 }
               }
             },
@@ -2531,7 +2559,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.95
+                  "confidence": 0.95,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2550,7 +2579,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.92
+                  "confidence": 0.92,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2569,7 +2599,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.95
+                  "confidence": 0.95,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2588,7 +2619,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.95
+                  "confidence": 0.95,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2666,7 +2698,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.92
+                  "confidence": 0.92,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2685,7 +2718,8 @@
                       "section": "Methods"
                     }
                   ],
-                  "confidence": 0.92
+                  "confidence": 0.92,
+                  "span_recovered": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2720,8 +2754,7 @@
                 }
               }
             }
-          ],
-          "schema_version": "0.4.0"
+          ]
         }
       ],
       "first_level": {},
