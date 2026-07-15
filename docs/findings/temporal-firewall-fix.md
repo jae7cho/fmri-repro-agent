@@ -119,10 +119,12 @@ derosa `None` 10/10 in BOTH arms. **No bleed.**
     pre-v0.4.0 RUN 3 and this session (the hashes recorded in this doc are the durable artifact a
     reader re-derives; the per-draw raw dumps are local/gitignored). chen's slice was
     `--expect-hash`-asserted `1a6d8afbec64e926` in both arms. And `EXTRACTION_PROMPT` is byte-identical
-    between the RUN-3-era base commit `9eed38b` and HEAD (the string literal was AST-extracted from
-    both revisions and compared) — so with the same verbatim patch applied to both fixed arms, the
-    ENTIRE prompt is held constant. Same bytes, same prompt, same pinned model → session drift, nothing
-    else.
+    between the RUN-3-era base commit `9eed38b` and this session's pre-patch base `c75eccf` (the string
+    literal was AST-extracted from both revisions and compared). The reference is pinned to the fixed
+    commit `c75eccf`, NOT a moving `HEAD` — the patch landed in `b396772`, so `9eed38b == HEAD` is now
+    false by construction; `9eed38b == c75eccf` is the durable assertion. So with the same verbatim
+    patch applied to both fixed arms, the ENTIRE prompt is held constant. Same bytes, same prompt, same
+    pinned model → session drift, nothing else.
   - **v0.4.0 span-recovery is a no-op here.** viduarre is `span_recovered` 0/10 in BOTH arms (as is
     chen, 0/20), so the baseline cannot be an artifact of v0.4.0's span-recovery change — that layer
     never fires on these cells. (derosa is the contrast: `span_recovered` 9–10/10, genuinely
