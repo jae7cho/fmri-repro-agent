@@ -75,6 +75,68 @@ def test_quote_supports_value_present_and_absent() -> None:
     )
 
 
+def test_quote_supports_value_short_name_substring_hole() -> None:
+    """Regression: a short value must NOT be reported 'supported' by matching inside a longer word.
+
+    Before the token-boundary fix, ``ANTs`` matched ``Av-ANTS``/``particip-ANTS`` and ``FIX`` matched
+    ``FIX-ation`` under whitespace-deleted substring, so a citation-only quote defeated the
+    value-support guard by the author's own name -> fabricated EXTRACTED. This is the viduarre
+    failure mode with a short pipeline name.
+    """
+    assert (
+        quote_supports_value("ANTs", "normalization followed the method of Avants et al.") is False
+    )
+    assert quote_supports_value("ANTs", "after preprocessing, participants were scanned") is False
+    assert quote_supports_value("FIX", "a fixation cross was presented at screen center") is False
+    # But real token presence (incl. surface mangling that splits the token) still supports:
+    assert quote_supports_value("ANTs", "registered with ANTs (Avants 2011)") is True
+    assert quote_supports_value("fMRIPrep", "processed with fMRI Prep then analyzed") is True
+
+
+# Blast-radius guard: quote_supports_value is called ONLY on tier-5-recovered base_pipeline spans,
+# so its entire production population is v0.4.0's recovered base_pipeline keeps. These are the real
+# (value, quote) pairs recorded across the dumps (HARD_DROP_AUDIT.jsonl for liu/oconnor/weber/
+# viduarre; generalize_ab.jsonl for derosa — see the doc on the run disagreement). The token-boundary
+# fix must not flip any keep True->False (that would silently regress a v0.4.0 EXTRACTED to a deferral).
+_RECOVERED_BASE_PIPELINE = [
+    (
+        "FCP analysis scripts",
+        "FCP analysis scripts (version 1.1-beta) were used to pre-process",
+        True,
+    ),
+    (
+        "Configurable Pipeline for the Analysis of Connectomes (C-PAC)",
+        "Nipype-based [62] Configurable Pipeline for the Analysis of Connectomes [1] "
+        "(C-PAC version 0.4.0 [63]).",
+        True,
+    ),
+    (
+        "C-PAC",
+        "based on the configurable pipeline for the analysis of connectomes (C-PAC) (https://x) [83]",
+        True,
+    ),
+    # derosa: the most exposed keep (parenthetical value -> 3 variants incl. dotted "version 5.0.10";
+    # drop cause is the URL-adjacent "( http" spacing mangle). Matches via the "FSL suite" variant.
+    (
+        "FSL suite (version 5.0.10)",
+        "carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk), "
+        "including motion correction via ICA-AROMA",
+        True,
+    ),
+    # viduarre: value INFERRED from a citation -> intended DEFERRAL, not a keep (must stay False).
+    ("HCP minimal preprocessing pipeline", "the procedure described by Glasser et al. 40.", False),
+]
+
+
+@pytest.mark.parametrize("value,quote,expected", _RECOVERED_BASE_PIPELINE)
+def test_recovered_base_pipeline_keeps_unregressed(value: str, quote: str, expected: bool) -> None:
+    # KNOWN LIMITATION (documented in docs/findings/value-support-guard-substring-hole.md): a citation
+    # marker interleaved INSIDE an acronym ("C-P [1] A C") would now flip True->False vs the old
+    # marker-deleting matcher. It does not occur in the recorded population, and it errs toward
+    # deferral (safe: a recall loss, never a fabrication). These recorded keeps are unaffected.
+    assert quote_supports_value(value, quote) is expected
+
+
 def test_whitespace_deletion_recovers() -> None:
     """Run-together words (pypdf dropped inter-word spaces) recover, flagged."""
     text = "preprocessing usingtheconfigurablepipeline for connectomes was applied."

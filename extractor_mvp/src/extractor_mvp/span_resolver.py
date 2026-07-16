@@ -398,12 +398,34 @@ def _first_use_variants(name: str) -> list[str]:
 
 
 def quote_supports_value(value: str, quote: str) -> bool:
-    """True iff ``value`` (or any first-use variant) is tolerantly present in ``quote``.
-    Reuses the tier-3+tier-5 normalization (NFKD + delete whitespace/hyphens/markers) so surface
-    mangling/spacing never causes a spurious 'unsupported'. Substring-only — never fuzzy."""
+    """True iff ``value`` (or a first-use variant) appears in ``quote`` as a run of WHOLE tokens.
 
-    def _agg(s: str) -> str:
-        return _delete_with_map(normalize_with_offset_map(s.lower())[0])[0]
+    NFKD+lowercase normalization so surface mangling/spacing never causes a spurious 'unsupported';
+    hyphen/space mangling that splits a name across adjacent tokens (``C-PAC`` ~ ``c pac``) is
+    tolerated by allowing a contiguous token concatenation. Crucially the match is on TOKEN
+    boundaries, NOT raw substring: a short value never matches inside a longer word -- ``ANTs`` is
+    not supported by ``Avants``/``particip-ANTS``, ``FIX`` not by ``fixation`` -- which would
+    otherwise let the value-support guard report a citation-only quote as 'supported' and emit a
+    fabricated EXTRACTED (the guard's whole purpose). Never fuzzy.
+    """
+    q_tokens = re.findall(r"[a-z0-9]+", normalize_with_offset_map(quote.lower())[0])
 
-    q = _agg(quote)
-    return any((v := _agg(variant)) and v in q for variant in _first_use_variants(value))
+    def _core(s: str) -> str:
+        return "".join(re.findall(r"[a-z0-9]+", normalize_with_offset_map(s.lower())[0]))
+
+    def _spans_whole_tokens(core: str) -> bool:
+        # core == a contiguous concatenation of >=1 whole quote tokens (start at each token, grow
+        # until the accumulation matches or overshoots core's length).
+        for i in range(len(q_tokens)):
+            acc = ""
+            for j in range(i, len(q_tokens)):
+                acc += q_tokens[j]
+                if len(acc) > len(core):
+                    break
+                if acc == core:
+                    return True
+        return False
+
+    return any(
+        (c := _core(variant)) and _spans_whole_tokens(c) for variant in _first_use_variants(value)
+    )
