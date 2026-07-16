@@ -11,8 +11,9 @@ committed. This doc records a *validated candidate fix* with its exact patch, fo
 > HEAD after v0.4.0**, because v0.4.0 changed the exact layer that produced the numbers in *The
 > three measurements* below: a tier-5-recovered span used to drop to MISSING and is now KEPT as
 > `EXTRACTED`+`span_recovered`. The original three-measurement numbers are therefore **pre-v0.4.0
-> and now historical** — see *Post-v0.4.0 re-baseline* for the current single-session A/B. Baseline
-> is non-stationary across sessions; treat every rate here as a point estimate, not a constant.
+> and now historical** — see *Post-v0.4.0 re-baseline* for the current single-session A/B. Treat every
+> rate here as a point estimate, not a constant; note that arm 2 shows the baseline variance is NOT
+> distinguishable from sampling noise at K=20 (no demonstrated drift) — see *Arm 2* and *Caveats*.
 
 ## Verdict: YES — convert chen, no true-positive regression
 
@@ -110,6 +111,11 @@ derosa `None` 10/10 in BOTH arms. **No bleed.**
   temporally normalized by subtracting its mean and then dividing by its temporal standard deviation
   (SD)."* No regression. (STOP condition clear.)
 - **viduarre (ICA-component FP): the false positive NEVER FIRED this session — 0/10 in the BASELINE.**
+  **[REVISITED by arm 2 (2026-07-16): it fired 1/10 in the baseline. The claim below that this is
+  "the strongest single non-stationarity data point" does NOT survive: across 4/10 (pre-v0.4.0) →
+  0/10 (arm-1) → 1/10 (arm-2), no pairwise difference is significant (Fisher p ≥ 0.087). This is a
+  low-rate ICA-component OVERRIDE (~0–4/10), not drift; arm-1's 0/10 was a draw from a low-rate
+  distribution, not a disappearance. See Arm 2.]**
   This is NOT the fix correcting viduarre (0/10 in both arms because the precondition was already
   absent). The pre-v0.4.0 doc's claim that the fix "additionally corrects part of a second false
   positive (viduarre, ICA components)" (measured 4/10 surviving) **must not carry forward from this
@@ -175,6 +181,69 @@ derosa `None` 10/10 in BOTH arms. **No bleed.**
   boundary): closing them needs its own near-miss, which would be a new untested prompt change bundled
   with a validated one. Each earns its own A/B.
 
+## Arm 2 — second-session replication (2026-07-16, 17:06–17:28 ET)
+
+Arm-1 was a single session. This tests whether the conversion REPLICATES. **Independence criterion
+(stated, not pretended principled):** the drift mechanism is unknown — provider-side serving changes,
+routing, or sampling. "Session" is a PROXY for calendar-time variation, not a controlled variable. So
+arm 2 ran on a DIFFERENT calendar day (2026-07-16 vs arm-1's 2026-07-14), fresh process, model pinned
+`bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0` temp 0. Date, wall-clock (17:06–17:28 ET), and
+pin are recorded here and in the run tags (`ARM2_baseline` / `ARM2_fixed`, appended to
+`results/chen_fix_ab.jsonl`) so a later analysis can look for structure we cannot see yet.
+
+**Controls held (only the session varied):** all four `--expect-hash` guards passed → slices
+byte-identical to arm-1 (chen `1a6d8afbec64e926`, liu `ee061645c158000b`, viduarre `9809990c45a78488`,
+derosa `a08a71f9548c3bb0`). `extractor.py` differs from arm-1 only by the 12-line DECISION RULE
+(verified `c75eccf` vs HEAD); the baseline arm ran on `c75eccf`'s pre-patch prompt via a clean
+file checkout, the fixed arm on HEAD. Harness: `chen_fix_ab.py` (RAW capture).
+
+| paper | K | arm-1 base→fixed | arm-2 base→fixed | intensity (both arms) |
+|---|---|---|---|---|
+| chen_2015 | 20 | 17/20 → **0/20** | 14/20 → **0/20** | `fsl_grand_mean_10000` 20/20 |
+| liu_2013 | 10 | 10/10 → 10/10 | 10/10 → 10/10 | None |
+| viduarre_2017 | 10 | 0/10 → 0/10 | **1/10 → 1/10** | None |
+| derosa_2025 | 10 | 9/10 → 10/10 | 8/10 → 10/10 | None |
+
+### Reading (point estimates — never rates)
+
+- **chen fixed arm REPLICATES: 0/20 again → 0/40 EXTRACTED across two sessions** (independent draws,
+  identical slice + prompt, sessions apart). The conversion is no longer a single session. Not a rate:
+  two point estimates that agree. **The fixed-arm rate's 95% CI upper bound is 8.8%** (0/40,
+  Clopper-Pearson two-sided; one-sided 7.2%). Against a ~75% baseline, that separation is enormous and
+  needs no drift story at all — it is the result.
+- **chen baseline = 14/20 (70%) — this is sampling noise at K=20, NOT drift.** The three
+  hash-asserted baseline points (14/20, 17/20, 14/20) pool to **75%** and are homogeneous:
+  **χ²=1.60, df=2, p=0.45** — indistinguishable from a single constant rate. Even all five historical
+  points (67/100/70/85/70) fail to reject homogeneity (**χ²=9.06, df=4, p=0.060**). The apparent
+  "drift" rests on the two points that PREDATE `--expect-hash` (67% = 10/15, 100% = 20/20 — slice
+  identity never established): the 100% is a genuine outlier against a 70% run (Fisher **p=0.020**),
+  but from a run with no hash assertion — the exact confound we assert hashes against. **Supportable
+  claim: baseline ≈ 75%; at K=20 session-to-session variation is not distinguishable from binomial
+  sampling noise.**
+- **liu preserved 10/10 in both arms; intensity_convention stable in every cell.** Both pre-declared
+  STOP gates clear in arm 2 as well.
+- **viduarre — arm-1's "strongest non-stationarity" headline does NOT survive.** Arm-1 read the 0/10
+  baseline as "the FP never fired." Arm-2 baseline is **1/10**, and NO pairwise comparison across the
+  three cells is significant: 4/10 (pre-v0.4.0 fixed) vs 0/10 (arm-1) Fisher **p=0.087**; 4/10 vs 1/10
+  **p=0.30**; 0/10 vs 1/10 **p=1.00**. (A 3-way χ²=6.24/p=0.044 is unreliable — expected counts 1.67 <
+  5.) So this is a **low-rate ICA-component OVERRIDE (~0–4/10), not drift**: arm-1's 0/10 was a draw
+  from a low-rate distribution, not a disappearance. The fix does not suppress it (1/10 → 1/10),
+  consistent with an override failure (the rule names ICA/PCA components; the model extracts anyway).
+- **derosa 8/10 → 10/10** — replicates the coverage failure; the SFC-shaped fix does not reach the
+  activation-pattern shape.
+
+### Honest bounds (arm 2)
+
+Two sessions is two draws, not a rate. chen's 0/40 fixed-arm is a strong replication of the
+conversion — the correct statement is "replicated across two sessions, n=40 draws, 0 EXTRACTED," not
+"the fix converts chen to 0%." The baseline's five points do NOT demonstrate drift: on the three
+hash-controlled points they are homogeneous (p=0.45), and even all five fail to reject a constant rate
+(p=0.060) — the correct summary is **baseline ≈ 75%, variance not distinguishable from binomial
+sampling noise at K=20** (a third session adds a point, not a rate, and would not by itself settle
+drift-vs-noise). What is demonstrated is the SEPARATION: fixed-arm ≤ 8.8% (95%) against a ~75%
+baseline. viduarre and derosa remain the two derived-subject shapes the patch does not fully close
+(a low-rate override and a coverage gap respectively; see the [subject-validator](subject-validator.md)).
+
 ## The exact patch (applied and staged; not committed)
 
 Inserted into the `temporal_standardization_method` stanza of `EXTRACTION_PROMPT` in
@@ -197,16 +266,22 @@ Inserted into the `temporal_standardization_method` stanza of `EXTRACTION_PROMPT
 
 ## Caveats (travel with the result)
 
-- **One session.** Run 1's 70% is today's rate; the field's baseline drifts across sessions
-  (67% / 100% / 70% over three sittings — see [variance](variance.md) and
-  [chen-temporal-flip](chen-temporal-flip.md)). Run 2's 0/20 is a strong signal, but "0%" is a
-  single-session point estimate; re-score across sessions before treating the conversion as a
-  constant.
+- **Baseline variance is not distinguishable from sampling noise at K=20 — NOT demonstrated drift.**
+  Five chen-baseline points exist: 67% (10/15), 100% (20/20), 70% (14/20), 85% (17/20), 70% (14/20).
+  The first two **predate `--expect-hash`**, so their slice identity was never controlled. The three
+  hash-asserted points pool to **75%** and are homogeneous (**χ²=1.60, df=2, p=0.45**); all five
+  together still fail to reject a constant rate (**χ²=9.06, df=4, p=0.060**). The "drift" impression
+  rests on the two uncontrolled points (the 100% is a Fisher **p=0.020** outlier vs a 70% run, but
+  from an unhashed slice — the confound `--expect-hash` exists to kill). Supportable claim:
+  **baseline ≈ 75%; session-to-session variation is indistinguishable from binomial noise at this K.**
+  The demonstrated result is the SEPARATION: the fixed arm is 0/40, 95% CI upper bound **8.8%** — re-
+  score more sessions before calling the conversion a fixed rate, but ≤8.8% vs ~75% is already large.
+  (See [variance](variance.md), [chen-temporal-flip](chen-temporal-flip.md) for the two pre-hash runs.)
 - **The fix is SFC-shaped.** chen (SFC) → fully closed (0/20). The near-miss example is SFC-specific.
-  Pre-v0.4.0 this partially closed viduarre (ICA components, 4/10 residual); in the post-v0.4.0
-  session viduarre's FP did not manifest at all (0/10 both arms), so no closure was measurable there.
-  A complete firewall may need the subject-first treatment generalized, or a post-hoc validator that
-  checks the cited sentence's subject.
+  Pre-v0.4.0 viduarre (ICA components) was 4/10 under the fix; post-v0.4.0 it is a **low-rate override**
+  (0/10 arm-1, 1/10 arm-2) — no pairwise difference is significant (Fisher p ≥ 0.087), so this is
+  low-rate noise, not a closure or a drift. A complete firewall may need the subject-first treatment
+  generalized, or a post-hoc validator that checks the cited sentence's subject.
 - **derosa_2025 is an unclosed residual of the same family (KNOWN LIMITATION).** Post-v0.4.0 it is a
   live `EXTRACTED`+`span_recovered` population (10/10 fixed) on *"Activation patterns were standardized
   prior to further analysis…"* — a signal-DERIVED subject the rule names in class but the model does
