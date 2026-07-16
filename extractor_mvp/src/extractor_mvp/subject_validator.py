@@ -49,8 +49,8 @@ _PROMPT_TAXONOMY: tuple[str, ...] = (
     "correlation matrix",
     "connectivity matrix",
     "gradient",
-    "ICA",
-    "PCA",
+    "ICA components",  # verbatim from the DECISION RULE ("ICA/PCA components"); the bare acronym
+    "PCA components",  # "ICA" was a spec deviation that collided with anatom-ICA-l / cort-ICA-l etc.
     "nuisance regressor",
     "classifier feature",
     "QC metric",

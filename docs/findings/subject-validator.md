@@ -93,10 +93,55 @@ deterministic-vs-LLM. One extension (derosa) is not a trend. But every addition 
 extension, enumeration is the wrong instrument and the build plan's LLM Tier 2 — which can
 generalize over "is this referent derived?" without a list — is indicated.
 
+## Consumption gate — deterministic corpus sweep (0 model calls): NOT WIRED (escalation criterion met)
+
+The consumption question ("what could the validator flag?") is deterministic and exhaustively
+enumerable — unlike a model sweep ("what does the model quote?"), which is nondeterministic and
+underpowered (K=3 misses a viduarre-class 17% rate 58% of the time; batch_v7's K=1 missing viduarre
+is the proof). So instead of spending calls, every normalization-verb sentence (validator's own
+`_NORM_VERB`) was enumerated across all 20 corpus methods slices (4 A/B slice hashes asserted) and
+run through `derived_subject_term()` — the COMPLETE input space consumption could ever fire on.
+
+**Marginal value (STEP 1, replay of arm-1+arm-2 dumps):** against the SHIPPED prompt, consumption
+would convert to MISSING: chen **0** (already 0/40 — zero marginal value), liu **0/30** (unaffected),
+viduarre **5** via the independent `prompt` list, derosa **20** via the FIT `extension` list. Report
+separately; never pool. derosa's is fit-by-construction, not generalization.
+
+**Soundness gate — passes after a compliance fix (not a falsification).** The sweep initially produced
+one non-genuine flag: liu's *spatial*-normalization sentence "…the high-resolution **anatomical**…
+images…then **normalized** to…MNI…" flagged `ICA`, because the taxonomy term was the **bare acronym
+`"ICA"`** — a deviation from the DECISION RULE's verbatim `"ICA/PCA components"` — which matched the
+substring inside "anatom‑**ica**‑l". Correcting the term to the verbatim `"ICA components"`
+(compliance, not tuning; `"ICA components"` normalizes to `icacomponents` and cannot match
+`anatomical`) removes the false flag while keeping viduarre's genuine `ICA components` catch. All four
+remaining flags are then genuine derived referents (chen SFC, derosa activation + gradient, viduarre
+ICA components); liu 0/50; no true positive converts to MISSING. So the soundness gate PASSES — the
+collision was an **implementation bug, recorded not as a falsification** (a corrected matcher does not
+reproduce it).
+
+> The SAME substring-collision bug class defeats the SHIPPED v0.4.0 value-support guard
+> (`quote_supports_value`): `q("ANTs", "…described by Avants et al.") → True` (`ants ⊂ avants`), the
+> viduarre fabrication path re-opened by the author's own name. That is a production bug with its own
+> fix — see [value-support-guard-substring-hole](value-support-guard-substring-hole.md). Lesson, both
+> places: **substring matching on whitespace-deleted text is unsafe for short names; match on token
+> boundaries.**
+
+**Why it still stays INERT — the pre-declared escalation criterion is MET.** Registered ahead of the
+sweep: "if the corpus sweep surfaces a second unnamed shape, that is datapoint two, and two from
+twenty papers is a trend worth acting on." It did: derosa **activation patterns** (extension datapoint
+one) and liu **CAPs** (co-activation patterns, "…normalized…to generate Z-statistic maps") — a genuine
+derived product the taxonomy names nowhere, UNFLAGGED (coverage FN). **Two unnamed derived shapes from
+twenty papers.** A derived-product denylist is unbounded; the extension rate is high enough that
+enumeration will not keep up. The verdict rests here — clean, conceptual, and independent of the
+matcher bug: the deterministic route is **coverage-incomplete**, and **LLM Tier 2** (resolve "is this
+referent derived?" from meaning, no list, no positional heuristic) is indicated. Consumption is NOT
+wired; the validator stays inert.
+
 ## Not done here (deliberately)
 
 - **Not wired.** No import in the four-state path; production is byte-identical to HEAD. Consumption
-  is a separate decision that needs this measured precision first.
+  is a separate decision that needs this measured precision first — and the corpus gate (above) failed,
+  so it stays inert pending LLM Tier 2.
 - **The prompt is not changed.** Adding "activation pattern" to `EXTRACTION_PROMPT` would be a
   separate prompt change needing its own A/B against the hashed slice; bundling it into this inert
   build would confound both. The extension list is code, measured inert — no prompt A/B needed.
