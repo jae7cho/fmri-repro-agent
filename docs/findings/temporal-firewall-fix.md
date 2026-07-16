@@ -148,6 +148,13 @@ derosa `None` 10/10 in BOTH arms. **No bleed.**
   derived-subject shape it misses (viduarre-ICA was the first, in the doc's own session), an independent
   confirmation of the doc's own prediction that "the near-miss example is SFC-specific." The 9→10 is one
   draw at K=10 — read it as **no effect**, not the fix worsening derosa.
+  Note the two misses are DIFFERENT CLASSES, which "the fix is SFC-shaped" hides: viduarre is an
+  OVERRIDE failure — the DECISION RULE explicitly names "ICA/PCA components" and the model extracted
+  anyway. derosa is a COVERAGE failure — "activation patterns" is named nowhere in the rule, so there
+  was nothing to override. Only one of the two was ever covered. This distinction is what the
+  deterministic [subject-validator](subject-validator.md) measures as separate enforcement vs coverage
+  lists, and it is why a derived-product denylist is unbounded (derosa is the first not-named shape,
+  from a corpus of twenty).
 
 ### Honest bounds
 
