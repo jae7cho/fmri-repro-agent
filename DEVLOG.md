@@ -43,7 +43,7 @@ autonomously 22:55-23:20 and are recorded under 2026-07-15.
 
 ## 2026-07-15
 
-Hours: 19:21:26 - 21:08 ET
+Hours: 19:21:26 - 21:55 ET
 
 Temporal firewall for `temporal_standardization_method`. Adopted the validated subject-first
 DECISION RULE + SFC near-miss as a prompt-only change (moved to the top of the field's stanza,
@@ -57,3 +57,12 @@ point (viduarre fixed-arm 4/10 pre-v0.4.0 -> 0/10 this session, byte-identical s
 only the session varying). Marked the finding doc's pre-v0.4.0 numbers historical and added the
 re-baseline. Committed as b396772; a follow-up (19872d6) pinned a prompt-identity control to a
 fixed commit (c75eccf) rather than a moving HEAD.
+
+Then built the deterministic subject validator (`subject_validator.py`), SHIPPED INERT — a post-hoc
+check that flags the derived-product SUBJECT of a normalization verb, targeting the two
+derived-subject shapes the prompt patch cannot reach. Two separately-measured lists: an enforcement
+list lifted verbatim from the prompt's DECISION RULE, and a declared extension list (fit to derosa's
+"activation patterns"). Measured on arm-1's recorded draws, no new model calls: liu 0/30 flagged
+(true positive preserved), chen 31/31 and viduarre 4/4 via the enforcement list, derosa 19/19 via the
+extension list. Not wired into the four-state (production byte-identical to HEAD); consumption is a
+separate decision. Committed as 977c7fb.
