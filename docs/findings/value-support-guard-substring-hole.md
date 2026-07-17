@@ -6,6 +6,14 @@ tier-5-recovered `base_pipeline_name` span AND a short value — which is why th
 it and the suites were green. Found as a side effect of the subject-validator corpus sweep (same bug
 class as the validator's bare-`ICA` collision).
 
+**The anecdote worth keeping (recorded while fresh, 2026-07-16).** A safety gate built for an INERT
+component — the subject validator, which was measured and deliberately never wired — surfaced a live
+fabrication hole in SHIPPED code it was not looking at: the v0.4.0 value-support guard, **defeated by
+an author's own surname** (`ANTs ⊂ Avants`). The deterministic input-space enumeration that made the
+validator's own limits cheap to falsify was the same instrument that found the production bug. One
+generalizable lesson — *substring matching over whitespace-deleted text is unsafe for short names* —
+now with two independent instances (the validator's bare-`ICA` collision and this guard).
+
 ## What it is
 
 `quote_supports_value(value, quote)` is the firewall-clean check that gates the v0.4.0 base_pipeline
