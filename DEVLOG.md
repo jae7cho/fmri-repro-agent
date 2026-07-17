@@ -66,3 +66,33 @@ list lifted verbatim from the prompt's DECISION RULE, and a declared extension l
 (true positive preserved), chen 31/31 and viduarre 4/4 via the enforcement list, derosa 19/19 via the
 extension list. Not wired into the four-state (production byte-identical to HEAD); consumption is a
 separate decision. Committed as 977c7fb.
+
+---
+
+## 2026-07-16
+
+Hours: 17:04 - 21:38 ET
+
+Arm 2 (second-session A/B) of the temporal firewall: chen fixed arm replicated 0/20 -> 0/40 across
+two sessions (95% CI upper bound 8.8%). RETRACTED the doc's "baseline drift" claim after a homogeneity
+test — the three hash-asserted baseline points (14/17/14 of 20) pool to ~75% and are homogeneous
+(chi2=1.60, p=0.45); variance is not separable from sampling noise at K=20. Demoted viduarre's
+"0/10 never fired" headline to a low-rate override. Committed as e73be02.
+
+Prompted by the subject-validator corpus sweep, found and fixed a SHIPPED v0.4.0 fabrication hole: the
+value-support guard `quote_supports_value` used whitespace-deleted substring matching, so a short
+pipeline value matched inside a longer word — `q("ANTs", "...described by Avants et al.")` = True, the
+viduarre fabrication path re-opened by the author's own surname. Fixed to token-boundary matching;
+verified no regression across all 5 recorded recovered-keep base_pipelines. Committed as 3cb396e.
+Subject-validator consumption gate stays INERT: the pre-declared escalation criterion (a 2nd unnamed
+derived shape, liu CAPs) was met, so LLM Tier 2 is indicated; the substring collision was recorded as
+an implementation finding, not a falsification (5ae4040; anecdote in 9e94112).
+
+Started the base_pipeline ground-truth harness (STEP 0, report-only, NO labels — an LLM must not label
+truth for an LLM extractor). Surfaced base-pipeline reporting shapes across all 20 corpus papers, then
+diagnosed a VERIFIED false absence: wheaton_2004 plainly states "Data were analyzed using SPM99" in the
+methods slice, which the LLM-filtered shapes report had called absent — though the extractor itself DID
+extract SPM99 (adjudication-order-generalization.md's model claim survives). Re-derived the evidence
+base deterministically by grep: >=20 tool-token sentences were missing from the prior screen, and 2 of
+3 "no-preprocessing" excluded papers (braun_2015, liu_2005) were false absences. No commits from the
+ground-truth work (report-only); artifact in gitignored results/.
