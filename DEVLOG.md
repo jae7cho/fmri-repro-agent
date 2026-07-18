@@ -96,3 +96,34 @@ extract SPM99 (adjudication-order-generalization.md's model claim survives). Re-
 base deterministically by grep: >=20 tool-token sentences were missing from the prior screen, and 2 of
 3 "no-preprocessing" excluded papers (braun_2015, liu_2005) were false absences. No commits from the
 ground-truth work (report-only); artifact in gitignored results/.
+
+---
+
+## 2026-07-17
+
+Hours: 17:27 - 21:44 ET
+
+Report-only diagnostic sitting — deterministic sweeps, zero model calls, NO code/doc commits;
+artifacts in gitignored results/. (No commits to bracket against the hours.)
+
+Investigated the citable "0/19 corpus papers report a pipeline version" claim. It is NOT in the repo
+(only per-paper render strings). `cobidas.assess_coverage` computes coverage from the EXTRACTION status
+of `base_pipeline.version` — what AESPA extracted, not what papers say. AESPA extracted 0 versions
+across all 20 papers, yet the text plainly reports them: oconnor "C-PAC version 0.4.0", derosa "FSL
+suite (version 5.0.10)", liu_2013 "FCP analysis scripts (version 1.1-beta)" (all three with
+base_pipeline itself MISSING in the batch), plus the SPM-fusion papers (SPM99/8/12). So the claim
+inverts from a fact about the literature into a fact about the extractor — false as stated. Report
+only, no patch (the remedy is a decision).
+
+Continued the deterministic re-derivation of ground-truth protocol rules from corpus text (the STEP-0
+LLM shapes report has a verified, unbounded false-absence surface):
+- SI check: no corpus PDF contains supplementary BODY text — every SI heading is a pointer. braun_2015
+  and viduarre_2017 are 6-page PNAS main articles with SI online (viduarre explicitly cites its own
+  "SI Methods") — a FOURTH partition class, corpus-construction failure (incomplete artifact), distinct
+  from extraction and slicing.
+- D1 deferral census: 7 papers pair a preprocessing verb with a deferral marker/citation in-slice (not
+  the assumed four).
+- D9 (ciric): printed the full XCP-Engine methods paragraphs verbatim (a paper about 14 evaluated
+  pipelines — scope ruling left to the labeler).
+- D12 (HCP token): re-derived every occurrence across the corpus; surfaced a 4th context (weber's
+  "HCP Workbench" software command) beyond the prior screen's three roles.
