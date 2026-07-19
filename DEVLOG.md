@@ -127,3 +127,68 @@ LLM shapes report has a verified, unbounded false-absence surface):
   pipelines — scope ruling left to the labeler).
 - D12 (HCP token): re-derived every occurrence across the corpus; surfaced a 4th context (weber's
   "HCP Workbench" software command) beyond the prior screen's three roles.
+
+---
+
+## 2026-07-18
+
+Hours: 08:24 - 19:48 ET
+
+Finalized and pre-registered the `base_pipeline` ground-truth protocol
+(`docs/ground-truth-protocol.md`). STEP-1 verified the two open rulings against the papers' verbatim
+text (pypdf via the repo loader, zero model calls): D9 — ciric_2017's "BOLD time series processing"
+section opens "processed using the XCP Engine (Ciric et al., In Preparation)" with FUGUE/MCFLIRT/
+boundary-based-registration/Butterworth as common elements *within* the engine and the 14 models as
+confound-regression strategies (nuisance field, not base pipelines) -> REPORTED, XCP Engine; D12 —
+viduarre_2017 defers "the technique of Smith et al." + "the procedure described by Glasser et al.",
+HCP is dataset-use only, FIX/FSL is a denoising step (Griffanti) -> DEFERRED_TO_CITATION, {Smith,
+Glasser}. Both confirmed, so applied four edits: the D9 and D12 rulings (replacing the <<OPEN>>
+blocks), a multi-target-deferral subsection in value-matching (all targets verbatim in value, resolved
+name in notes never value, ANY-target set-membership scoring), and a consortium-data spec-
+expressiveness backlog line.
+
+Then recorded the rater scope BEFORE any label exists: v1 is single-rater, author-labeled (Jae Wook
+Cho) — stated as a limitation up front (labels not independent of the system under evaluation; v1
+metrics indicative, not an independent benchmark), the eight non-blind author-adjudicated papers named
+(wheaton/agtzidis/ciric/viduarre/derosa/braun/mueller/cole), a second/panel rater + inter-rater kappa
+deferred and conditional on publication. Filled labeler + start date; left the second-rater slot
+blank. The protocol was NOT committed until this point, so it stays v1 (completing the draft, not
+amending a pre-registered doc).
+
+Committed the protocol ALONE as 9eff653 and pushed. The Tier-A/Tier-B matcher (`base_pipeline_match.py`
++ test, previously staged) was deliberately unstaged and held back as untracked — it lands as its own
+commit later, after its two known bugs (C-PAC/CPAC tokenize-before-join; greedy boundary-blind
+version-strip) are fixed against real label/prediction pairs. Only the protocol needs to be
+permanent-before-labeling; the matcher explicitly does not. Labeling begins next.
+
+---
+
+## 2026-07-18 (evening)
+
+Hours: 20:13 - 22:05 ET
+
+Two protocol amendments, the label corrections they enabled, and the labels into version control.
+First, v1.1 (`34aa9cb`): `pipeline_specificity` became a list parallel and positionally aligned to
+`value` for REPORTED rows (singletons are one-element lists; blank for DEFERRED/NOT_REPORTED) — driven
+by multi-tool-plus-custom papers (liu_2005, mueller, cole, ciric) a singular field would flatten.
+Replaced the lost 21-line citation-index backlog stub with the full regenerated write-up (`500ae38`;
+DOIs are `<verify>` placeholders, flagged unverified-from-memory; the deferral-reproducibility section
+survives as one of nine).
+
+Then v1.2 (`e0eb09d`) after solo labeling surfaced three status mislabels (vanderwal, power, tang):
+added a Status decision rule (status tracks whether a tool is NAMED — independent of detail level,
+version, or parameter-deferral) and sharpened D11 with the "names tool + defers steps -> REPORTED"
+shape. With v1.2 committed, applied six confirmed label corrections to the workbook (backed up to
+_v1.1 first, then verified only 9 cells changed): vanderwal DEFERRED->REPORTED (misclick), power
+REPORTED->NOT_REPORTED (first NOT_REPORTED row — names no tool), tang DEFERRED->REPORTED with
+DPABI/SPM12 named + steps deferred to ref 28, liu_2005 value filled to match its 2-element specificity,
+cole specificity made a 2-element list, ciric "XCP Enginer" typo fixed. Post-edit structural check
+clean corpus-wide (every REPORTED row len(value)==len(specificity)).
+
+Finally brought the answer key under version control (`3b34b80`): the 19 labels had existed only as a
+lone xlsx in Downloads. Created ground_truth/ with the human-editable workbook, a pre-v1.2 provenance
+snapshot, a README, and a canonical CSV DERIVED from the xlsx (self-describing: labeler +
+protocol_version per row). Verified the CSV faithful to the xlsx row-by-row across all 19 rows before
+committing — a scored CSV that didn't match the labeled xlsx would silently corrupt every downstream
+number. The matcher remains untracked (its two known bugs unfixed); it lands separately. Labeling of
+the base_pipeline field is complete under v1.2.
