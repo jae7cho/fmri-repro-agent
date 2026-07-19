@@ -1,0 +1,299 @@
+paper_id,status,value,specificity,supporting_quote,notes,labeler,protocol_version
+chen_2015 (EXAMPLE),REPORTED,CCS,named_pipeline,The Connectome Computation System (CCS) ... The primary CCS pipeline consists of both anatomical and functional processing.,Names an end-to-end pipeline. (Example row — do not edit.),Jae Wook Cho,v1.2
+viduarre_2017 (EXAMPLE),DEFERRED_TO_CITATION,Smith et al.; Glasser et al.,,The preprocessing pipeline followed the technique of Smith et al. ... Spatial preprocessing was applied using the procedure described by Glasser et al.,"Defers to citations; value is the authors verbatim, NOT 'HCP pipeline'. Specificity blank for deferrals. (Example row — do not edit.)",Jae Wook Cho,v1.2
+agtzidis_2020,REPORTED,SPM12,toolbox_only,"The fMRI data analysis was performed with SPM12 using Matlab 9.2."" The trap we worked through: agtzidis also says ""we initially followed a standard preprocessing pipeline (Poldrack et al., 2011)","Poldrack et al., 2011 is a textbook",Jae Wook Cho,v1.2
+braun_2015,DEFERRED_TO_CITATION,"47. Cao H, et al. (2014) Test-retest reliability of fMRI-based graph theoretical properties
+during working memory, emotion processing, and resting state. Neuroimage
+84:888–900.
+48. Plichta MM, et al. (2012) Test-retest reliability of evoked BOLD signals from a cog-
+nitive-emotive fMRI test battery. Neuroimage 60(3):1746–1758.
+49. Leonardi N, Van De Ville D (2015) On spurious and real fluctuations of dynamic
+functional connectivity during rest. Neuroimage 104:430–436. 3. Bassett DS, et al. (2011) Dynamic reconfiguration of human brain networks during
+learning. Proc Natl Acad Sci USA 108(18):7641–7646.",,"Data were preprocessed according to standard protocols as previously described in refs. 47 and 48. After preprocessing, the mean time series in 5-mm spheres around coordinates defined by ref. 36 were extracted. For reasons of brain coverage, six additional coordinates were added based on metaanalytical studies. After applying a sliding time window with the length of 15 volumes and no gap between windows as suggested by Leonardi et al. (49), we used the
+Morlet wavelet transform to estimate the functional connectivity between each pair of brain regions in the frequency interval 0.08–0.15 Hz, as described pre-viously (3). ",,Jae Wook Cho,v1.2
+chen_2015,REPORTED,CCS,named_pipeline,"The Connectome Computation System (CCS: https://github.com/zuoxinian/CCS) was devel-
+oped to provide a multimodal image analysis platform for the discovery science of human
+brain function by integrating three main MRI data processing packages [48–50] with our
+MATLAB implementations of various computational modules for image quality control, sur-
+face-based rfMRI metrics, data mining algorithms, reliability and reproducibility assessments
+and visualization. The primary CCS pipeline consists of both anatomical and functional pro-
+cessing, which are documented in the CCS paper in details [51]. Here, we only provide an over-
+all description of these steps.
+The CCS anatomical pipeline first removed noise from individual MR T1 images by adopting
+a spatially adaptive non-local means filter [52, 53]. For each participant, regarding that the focus
+of the present analysis is changes of rfMRI metrics, we aligned and averaged the ten de-noised T1
+images to produce a robust, high-resolution anatomical image with high contrast between gray
+matter (GM) and white matter (WM) for generation of an individual cortical surface model as
+anatomical reference. Using this image, the skull was then stripped and manually edited for a bet-
+ter brain extraction, and the 3D extracted brain volume was segmented into different tissues such
+as cerebrospinal fluid (CSF), WM, GM and further parcellation of the GM tissue. With such
+information, individual pial (GM/CSF boundary) and white (GM/WM boundary) surfaces were
+reconstructed and spatially normalized to match a group-level standard template surface in the
+Montreal Neurological Institute (MNI) space via a sphere registration [49, 54, 55].
+The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds),
+removed and interpolated temporal spikes (see instructions in [56, 57] regarding in-scanner
+head motion), corrected acquisition timing among image slices and head motion among image
+volumes and normalized the 4D global mean intensity to 10,000. White surfaces were then
+employed by a boundary-based registration (BBR) algorithm to match spatial correspondences
+between individual functional images to anatomical images [58]. To further eliminate the effect
+of head motion and physiological noises during the rfMRI scanning session, we regressed out
+the estimated Friston’s 24-parameter motion curves [37] and nuisance signals measured as
+WM and CSF mean time series [59] from individual rfMRI time series. Linear and quadratic
+trends were also regressed out from the rfMRI data by multiple linear regressions. Finally, the
+data were projected onto the fsaverage surface grid (average inter-vertex distance = 1 mm) and
+down-sampled to the fsaverge5 surface grid (average inter-vertex distance = 4 mm) for subse-
+quent rfMRI computation.",,Jae Wook Cho,v1.2
+ciric_2017,REPORTED,XCP Engine,named_pipeline,"Task-free functional images were processed using the XCP Engine (Ciric et al., In
+Preparation), which was configured to support the 14 pipelines evaluated in this study (see
+Figure 1). Each pipeline was based on de-noising strategies previously described in the
+neuroimaging literature. A number of preprocessing procedures were included across all de-
+noising pipelines. Common elements of preprocessing included (1) correction for distortions
+induced by magnetic field inhomogeneities using FSL's FUGUE utility, (2) removal of the 4
+initial volumes of each acquisition, (3) realignment of all volumes to a selected reference
+volume using MCFLIRT (Jenkinson et al., 2002), (4) demeaning and removal of any linear
+or quadratic trends, (5) co-registration of functional data to the high-resolution structural
+image using boundary-based registration (Greve and Fischl, 2009), and (6) temporal filtering
+using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz. We did not
+apply slice timing correction during preprocessing, as recent data suggest that the
+interpolation that occurs may artificially reduce motion estimates (Power et al., under
+review). These preliminary processing stages were then followed by the confound regression
+procedures described below. In order to prevent frequency-dependent mismatch during
+confound regression (Hallquist et al., 2013), all regressors were band-pass filtered to retain
+the same frequency range as the data. As in our prior work (Satterthwaite et al., 2012, 2013),
+the primary summary metric of subject motion used was the mean relative RMS (root-mean-
+squared) displacement calculated during time series realignment using MCFLIRT.",,Jae Wook Cho,v1.2
+cole_2013,REPORTED,AFNI; FreeSurfer,toolbox_only; toolbox_only,"Preprocessing was performed using AFNI48 and Freesurfer49. Preprocessing consisted of
+standard functional connectivity preprocessing (typically performed with resting-state data),
+with several modifications given that analyses were performed here on task-state data. Like
+standard functional connectivity preprocessing23, we performed slice timing correction,
+motion correction, normalization to a Talairach template, removal of nuisance time series
+(motion, ventricle, and white matter signals, along with their derivatives) using linear
+regression, restriction of data to a gray matter mask (dilated by one voxel), and spatial
+smoothing within the gray matter mask (6 mm full width at half maximum). Unlike standard
+resting-state functional connectivity preprocessing, whole brain signal was not included as a
+nuisance covariate (given current controversy over this procedure50), and a low-pass
+temporal filter was not applied (given the likely presence of task signals at higher
+frequencies than the relatively slow resting-state fluctuations). Freesurfer was used to
+identify ventricle, white matter, and gray matter anatomical structures for each participant.",,Jae Wook Cho,v1.2
+derosa_2025,REPORTED,FSL,toolbox_only,"The univariate analyses were minimally examined and reported by
+Kim et al. (2020) (Supplementary Fig. 1) and are expanded upon in the
+present report. Standard fMRI preprocessing procedures were carried
+out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk),
+including motion correction via ICA-AROMA (version 0.3 beta), high-
+pass filtering (100 s), and BET brain extraction. Registration of EPI
+images into subject- and standard-spaces was executed using FLIRT
+(version 6.0). Individual subject EPI images were registered to that
+subject’s MPRAGE structural image via linear Boundary-Based Registration
+and then registered to the MNI-152 template via 12 degrees of
+freedom linear transformation. The resulting EPI images were smoothed
+using an 8 mm full-width half-maximum Gaussian smoothing kernel.
+FEAT (version 6.00) was used to model effects during the 6 TRs (2760
+ms) during which the manipulation of the item was occurring, with
+fixation blocks at the beginning and end of each run serving as a baseline.
+The TRs during the presentation time of the stimulus and the TRs
+during the inter-trial interval fixations both served as EVs of no interest.",,Jae Wook Cho,v1.2
+gordon_2014,REPORTED,SPM8,toolbox_only,"Using SPM8 (Wellcome Department of Cognitive Neurol-
+ogy, London, UK) implemented in MATLAB (Version 7.10
+Mathworks, Inc., Sherborn, MA), images were corrected for
+translational and rotational motion by realigning to the first
+image of each scanning run (Rest1, N-back, and Rest2).
+Across all runs, all subjects demonstrated less than 2.0 mm
+of translational motion from the first image in any one direc-
+tion (max translation¼ 1.25 mm) and less than 1.0 of rota-
+tion from the first image around any one axis (max rotation
+¼ .54 ). Root mean squared (RMS) motion was further calcu-
+lated as a summary measure of motion for each subject in
+each run. RMS motion was 0.076 0.23 in the Rest1 run,
+0.085 0.39 in the Nback run, and 0.083 0.31 in the Rest2
+run, and paired t-tests indicated that it did not differ
+between runs (all pairwise ts < 1.8, all ps > 0.05). Further
+analyses indicated that the reported results were not caused
+by effects of motion (see Supporting Information).
+Images were then slice-time corrected, normalized to an
+EPI template, and smoothed using a Gaussian kernel with
+full-width at half-maximum (FWHM) of 8 mm. Finally, a
+band-pass filter was applied to the data to restrict signal variation to frequencies between 0.01 Hz and 0.1 Hz, corre-
+sponding to the frequency range established in the literature
+for fluctuations in resting state data [Biswal et al., 1995].",,Jae Wook Cho,v1.2
+liu_2005,REPORTED,BrainVoyager; custom software,toolbox_only; in_house,"fMRI Data Analysis Imaging data were analyzed using BrainVoyager (Brain Innovation,
+Maastricht, the Netherlands) and custom software written in Mat- lab. Each participant’s high-resolution anatomic volume was trans- formed into Talairach space (Talairach and Tournoux, 1988), after which an automated segmentation procedure was applied to ob- tain a surface reconstruction of the white-gray matter boundary. The surface was further inflated to reveal the sulci/gyri pattern. All analyses were performed on this inflated representation of the cor-
+tical sheet. Preprocessing of functional data included slice time
+correction, motion correction, linear trend removal, and temporal
+high-pass filtering (three cycles per scan) to remove slow drifts in
+the fMRI signal. Given the block design, no slice time correction
+was applied to data from the localizer scan. The 2D functional data
+were then aligned with the high-resolution anatomic volume and
+transformed into 3D data in the Talairach space with 3 × 3 × 3 mm resolution. Images were not spatially smoothed.",,Jae Wook Cho,v1.2
+liu_2013,REPORTED,FCP ,named_pipeline,"PRE-PROCESSING OF RESTING-STATE fMRI SIGNALS
+FCP analysis scripts (version 1.1-beta, available at http://www.
+nitrc.org/frs/shownotes.php?release_id=938) (Biswal et al.,
+2010), which employs AFNI (Cox, 1996) and FSL (http://www.
+fmrib.ox.ac.uk/fsl/) (Smith et al., 2004) software packages, were
+used to pre-process the fMRI signals (with minor modifications,
+described below). The typical pre-processing steps for the analysis
+of resting state data were applied, including image coregistration
+to correct for head motion, spatial smoothing with a Gaussian
+kernel (FWHM= 4 mm), temporal filtering with a band-pass
+filter (0.005–0.1 Hz), and the removal of linear and quadratic
+temporal trends. Additionally, the time series of ROIs in the
+white matter and cerebrospinal fluid (CSF), 6 affine motion
+parameters, as well as the brain-averaged (global) signal, were
+used as nuisance variables to be regressed out from the data.
+Given that global signal regression (GSR) may introduce artificial
+anti-correlation between regions (Fox et al., 2009; Murphy et al.,
+2009; Saad et al., 2012) our analysis was also performed without
+the GSR step (Figure S1).
+The fMRI data was first co-registered to the high-resolution
+anatomical (T1-weighted) images acquired from the same sub-
+ject and then normalized to the 152-brain Montreal Neurological Institute (MNI) normalized space. Here, as departure from
+the original FCP scripts, the registration between the func-
+tional and anatomical images was implemented using the
+“align_epi_anat.py” program (Saad et al., 2009) in AFNI, which
+was found to provide a better registration in the superior-inferior
+direction. The pre-processed fMRI data were then resampled at
+the 3 × 3 × 3 mm3 resolution of the MNI normalized brain space.
+Finally, for each voxel, the fMRI signal was temporally normal-
+ized by subtracting its mean and then dividing by its temporal
+standard deviation (SD).","""Here, as departure from
+the original FCP scripts, the registration between the func-
+tional and anatomical images was implemented using the
+“align_epi_anat.py” program (Saad et al., 2009) in AFNI, which
+was found to provide a better registration in the superior-inferior
+direction."" - pipeline (FCP) but with deviation",Jae Wook Cho,v1.2
+mueller_2021,REPORTED,SPM12,toolbox_only,"Initial preprocessing was performed using the Statistical Parametric Mapping 12 software
+(SPM12, Wellcome Trust Centre for Neuroimaging, London) in MATLAB. Functional data were
+realigned and unwarped to correct for head motion and the mean motion-corrected image
+was coregistered to the high-resolution anatomical image. All scans were then registered to
+a subject-specific anatomical template created using Advanced Normalization Tools (ANTs)
+multivariate template construction. A 5-mm full-width at half-maximum (FWHM) isotropic
+Gaussian kernel was subsequently applied to smooth the functional data. Further prepara-
+tion for resting-state functional connectivity was implemented using in-house MATLAB scripts.
+Global signal scaling (median= 1,000) was applied to account for fluctuations in signal in-
+tensity across space and time, and voxelwise time series were linearly detrended. Residual
+BOLD signal from each voxel was extracted after removing the effects of head motion and
+five physiological noise components (cerebrospinal fluid + white matter signal). Motion was
+modeled using a Volterra expansion of translational/rotational motion parameters, accounting
+for autoregressive and nonlinear effects of head motion on the BOLD signal. All nuisance
+regressors were detrended to match the BOLD time series.",,Jae Wook Cho,v1.2
+oconnor_2017,REPORTED,C-PAC,named_pipeline,"FollowingresamplingofthefMRIdatatoRPIorientation,im-
+age preprocessing in C-PAC consisted of the following steps: 1)
+motion correction, 2) boundary-based registration [65], 3) nui-
+sance variable regression (1st and 2nd order polynomial, 24-
+regressor model of motion [66], mean WM mask signal, mean
+CSF mask signal). We then extracted representative time series
+for each ROI in the CC200 atlas [67] (by averaging within-ROI
+voxel time series).Allpossible pairwisecorrelations were calcu-
+lated amongst ROI time series to generate a ROI-to-ROI connec-
+tivity matrix for each scan in each session for each subject. To
+facilitateeaseofpresentationandinterpretationofourfindings,
+the connections were sorted by intrinsic connectivity network
+membership, as defined by Yeo et al. [68].",,Jae Wook Cho,v1.2
+poldrack_2015,DEFERRED_TO_CITATION,"45. Power, J. D. et al. Methods to detect, characterize, and remove motion artifact
+in resting state fMRI. Neuroimage 84, 320–341 (2014).",,"fMRI preprocessing. All fMRI data were preprocessed according to a pipeline
+developed at Washington University, St Louis45. Data were realigned to correct for
+head motion and normalized to a mode of 1,000 (one multiplicative constant
+applied to all voxels and all frames). Each session was registered to a single session
+that had previously been registered to the mean T1-weighted structural image and
+an atlas. The session-to-atlas transform was inverted and applied to the mean field
+map so that the distortion correction could be applied in each session’s space. The
+undistorted data were then re-registered to the atlas space. The transforms for head
+motion correction and affine registration to atlas space were combined with the
+field-map-based distortion correction to resample the data from the original
+session space to the undistorted 3-mm isotropic atlas space in a single step using
+FSL’s applywarp tool46
+.
+Because field maps were not available for all sessions, a mean field map was
+generated from 34 available field maps (after exclusion of four poor-quality field
+maps based on visual inspection). Magnitude images were registered to each other,
+and transforms were resolved (by reconstructing the n 1 transforms between all
+images using the n*(n 1)/2 computed transform pairs47) and applied to generate
+a mean magnitude image. The mean magnitude image was registered to an atlas
+representative template, and transforms from magnitude image to atlas space were
+computed for each session by combining the session-to-mean and mean-to-atlas
+transforms. Phase images were then transformed using the composed transforms modified to eliminate intensity scaling (which was relevant only for the magnitude
+images), and a mean phase image in atlas space was computed.
+Artefacts were reduced using frame censoring, regression (excluding censored
+frames) and spectral filtering45. Frames with framewise displacement 40.25 mm
+were censored, as well as uncensored segments of data lasting fewer than five
+contiguous volumes (frames kept: 97.1±3.7%). Nuisance regressors included
+whole brain, white matter and ventricular signals and their derivatives, in addition
+to 24 movement regressors derived by Volterra expression48. Interpolation over
+censored frames was computed by least-squares spectral estimation, so that
+continous data could be bandpass filtered (0.009ofo0.08 Hz).","Additional surface processing: Surface processing of the BOLD data proceeded through the following steps.
+First, the BOLD volumes are sampled to the subject’s individual native mid-
+thickness surface (generated as the average of the white and pial surfaces) using the
+ribbon-constrained sampling procedure available in Connectome Workbench
+(version 0.7).",Jae Wook Cho,v1.2
+power_2014,NOT_REPORTED,,,"For fMRI pre-processing, functional images underwent (i) slice-time correction, i.e., sinc
+interpolation to temporally align each slice to the start of each volume, (ii) rigid body
+realignment to correct for head movement within and across runs, and (iii) within-run
+intensity normalization, that is, scaling the intensity across all voxels and all magnetization
+steady-state volumes to achieve a mode value of 1000. In all Figures, BOLD data are
+presented in a mode 1000 scale (10 units = 1% BOLD). Atlas transformation of the
+functional data was computed for each individual via the T2-weighted and MP-RAGE scans.
+Each run was then resampled in atlas space on an isotropic 3 mm grid combining
+realignment and atlas transformation in a single interpolation (Shulman et al., 2010).",Preprocessing steps reported but no tools or software mentioned,Jae Wook Cho,v1.2
+tang_2025,REPORTED,DPABI; SPM12,toolbox_only; toolbox_only,"The rs-fMRI data were analyzed using the DPABI and SPM12 toolboxes based on MATLAB, with the
+preprocessing steps following those described in our previous studies28. It includes: (1) removing the first 10
+volumes to ensure that the subjects adapt to the scanning environment and stabilization of MRI signals; (2) slice
+timing: selecting a standard slice collected at a certain time point and using the Sinc interpolation algorithm
+to align other slices to match the collection time of the standard slice; (3) head motion correction, removing
+subjects with head motion displacement > 3 mm, rotation > 3°, or mean framewise displacement (FD) > 0.5; (4)
+spatial normalization, registering individual rs-fMRI images to individual 3D-T1WI images, then normalizing
+to MNI standard space and resampling to 3 × 3 × 3 mm3 voxels; (5) linear detrending; (6) detrending covariates,
+including 24 head motion parameters and white matter and cerebrospinal fluid signals; (7) bandpass filtering
+(0.01–0.10 Hz); (8) the brain regions with statistical differences in CVR among the three groups were used
+as ROI to extract the average time process from the pre-processed rs-fMRI data; (9) calculating the Pearson
+correlation coefficients between the average time course of each ROI and all other voxels in the brain to obtain a
+correlation map; (10) transforming the correlation map into a z-score map using Fisher’s r-to-z transformation.
+(Fig. S2B)",Preprocessed with DPABI and SPM12 according to citation (28). Steps provided Names DPABI+SPM12 (REPORTED for name); step parameters deferred to ref 28 (D11).,Jae Wook Cho,v1.2
+vanderwal_2016,REPORTED,C-PAC,named_pipeline,"Data processing. Standard data preprocessing was performed using the Con-
+figurable Pipeline for Analysis of Connectomes (C-PAC) including motion re-
+alignment and transformation into Montreal Neurological Institute (MNI) space
+using Advanced Normalization Tools (Avants et al., 2008). Nuisance signal re-
+gression removed linear and quadratic trends, motion estimates, and COMP-
+COR with 5 principal components (Behzadi et al., 2007), and was followed by
+temporal filtering (0.008-0.1Hz). Motion was evaluated using framewise dis-
+placement (FD) which quantifies head motion between each volume of func-
+tional data (Power et al., 2012). Following Finn et al., data were not spatially
+smoothed prior to averaging within our cluster-based regions of interest (ROIs).
+Number of volumes per condition was 172.",,Jae Wook Cho,v1.2
+weber_2024,REPORTED,C-PAC,named_pipeline,"c) Resting-state fMRI processing. The rs-fMRI data
+were processed as described previously [49] based on
+the configurable pipeline for the analysis of connectomes
+(C-PAC) (https://fcp-indi.github.io/) [83], including slice-
+time and head motion correction, skull stripping and
+intensity normalization. Data were corrected for head motion, as well as white matter and cerebrospinal fluid
+signals using CompCor [84], followed by band-pass fil-
+tering (0.01–0.1 Hz). Both T1w and rs-fMRI data were
+linearly co-registered and mapped to MNI152 space.
+Functional imaging data were mapped to correspond-
+ing mid-thickness surfaces. We resampled data to the
+Conte69 surface template [79] via Workbench [78] with
+10,242 surface points (vertices) per hemisphere. Due
+to the ongoing debate about global signal regression
+(GSR) [85], we did not apply GSR, but conducted addi-
+tional control analyses using data that underwent GSR.
+We smoothed timeseries using a 5 mm full-width-at-
+half-maximum Gaussian kernel and computed intra-
+hemispheric functional connectivity (FC) as the Pearson
+correlation between all pairs of vertices within each
+hemisphere. FC matrices were Fisher r-to-z-transformed,
+to render correlation coefficients more normally dis-
+tributed. Subjects with a mean framewise displacement
+(FD) > 0.3 mm in rs-fMRI (two SD from the mean across
+all subjects) were excluded (n
+=
+9). Data were harmo-
+nized for site effects while preserving effects of age and
+ASD diagnosis using ComBat [86], which minimizes site-
+specific scaling factors by estimating their additive and
+multiplicative influence in a linear model, using empirical
+Bayes to predict site parameters more accurately [87, 88].","""As described previously…"" but also lists C-PAC and all steps.",Jae Wook Cho,v1.2
+wheaton_2004,REPORTED,SPM99,toolbox_only,"Data were analyzed using SPM99. Following motion correc-
+tion and slice timing adjustment, each subject’s EPI data were
+spatially normalized to the SPM MNI template and smoothed with
+a 7-mm full width at half maximum (FWHM) isometric Gaussian
+kernel. The fMRI time series were band-pass filtered using a high
+pass of 1/144 Hz and a low pass cut-off corresponding to
+frequencies above the hemodynamic response function.",,Jae Wook Cho,v1.2
