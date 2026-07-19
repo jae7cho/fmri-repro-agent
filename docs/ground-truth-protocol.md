@@ -1,4 +1,4 @@
-# Ground-truth protocol — `base_pipeline` (v1)
+# Ground-truth protocol — `base_pipeline` (v1.1)
 
 **Status: PRE-REGISTERED.** This document is committed to git **before any label is written**, and
 the labels are committed before any scoring run. The signed commit order is the pre-registration: it
@@ -12,7 +12,7 @@ own label (see D5). This protocol covers exactly one field of the ReplicationSpe
 **Corpus:** 20 PDFs in `tested_lit/sfn_batch`. Analysed denominator is **19** (see D10).
 
 **Labeler:** author (single-rater — Jae Wook Cho) · **Date started:** 07/18/2026 ·
-**Protocol version:** v1
+**Protocol version:** v1.1
 
 ---
 
@@ -267,8 +267,8 @@ rater — an alias table grown to fit papers after scoring makes the hallucinati
 
 **Report:** Tier-A rate, Tier-B rate, and the **delta** (which decomposes apparent error into
 surface/version variance [A→B] vs genuine wrong-pipeline [survives B]). Report the
-`pipeline_specificity` distribution as a **standalone COBIDAS-facing count**, folded into neither
-rate.
+`pipeline_specificity` distribution (counted **per tool**, across the parallel lists) as a
+**standalone COBIDAS-facing count**, folded into neither rate.
 
 > **Known matcher issues (to fix against real label/prediction pairs when the harness is built — do
 > not tune in isolation now):** (1) `C-PAC` vs `CPAC` must match, which requires normalizing to a
@@ -281,12 +281,24 @@ rate.
 
 ## `pipeline_specificity` — reproducibility-relevance as data (carries the D2 caveat)
 
-A separate labeled field, one of `{named_pipeline | toolbox_only | in_house}`, recording how much the
-named base_pipeline constrains what was actually run. It does **not** affect any match score. Example
-mapping: C-PAC/CCS/fMRIPrep/XCP Engine → `named_pipeline`; SPM99/FSL/AFNI → `toolbox_only`; author
-scripts → `in_house`. This converts the D2 reproducibility caveat into a citable COBIDAS finding —
-*"N/19 papers name only a toolbox, which does not determine the preprocessing performed"* — pairing
-with the version finding.
+A separate labeled field recording how much each named base_pipeline constrains what was actually run.
+It does **not** affect any match score.
+
+For **`REPORTED`** rows, `pipeline_specificity` is a **list parallel and positionally aligned to
+`value`**: `value[i]` carries `specificity[i]`, same length and same order, each drawn from
+`{named_pipeline | toolbox_only | in_house}`. A single-tool value is a **one-element list** (`value =
+[C-PAC]` → `[named_pipeline]`); a multi-tool value pairs each tool with its own specificity (`value =
+[BrainVoyager, custom software]` → `[toolbox_only, in_house]`). The ordering constraint is
+**binding**: the two lists must be the same length and order for `REPORTED` rows, so a downstream
+reader or matcher can attach each specificity to its tool. For **`DEFERRED_TO_CITATION`** and
+**`NOT_REPORTED`**, `pipeline_specificity` is **blank** — deferrals list citations in `value`, not
+tools, and there is nothing to classify. Multi-tool-plus-custom is common in this corpus (liu_2005,
+mueller, cole, ciric); a singular field would force flattening real structure into one label.
+
+Example mapping: C-PAC/CCS/fMRIPrep/XCP Engine → `named_pipeline`; SPM99/FSL/AFNI → `toolbox_only`;
+author scripts → `in_house`. This converts the D2 reproducibility caveat into a citable COBIDAS
+finding — *"N/19 papers name only a toolbox, which does not determine the preprocessing performed"* —
+pairing with the version finding.
 
 ---
 
@@ -301,7 +313,9 @@ with the version finding.
    is itself a recorded `corpus_completeness` state, not a gap to fill).
 3. For every `REPORTED`/`DEFERRED`, record a **verbatim** supporting quote. The validator asserts the
    quote is present in the paper text; a quote that will not verbatim-match is a labeling error.
-4. Fill **three** fields per paper: `status`, `value` (list), `pipeline_specificity`.
+4. Fill **three** fields per paper: `status`, `value` (list), and `pipeline_specificity` (for
+   `REPORTED`, a list parallel and positionally aligned to `value`; blank for `DEFERRED`/
+   `NOT_REPORTED`).
 5. `UNCLEAR` is not a label. If a case is not covered here, the protocol is **incomplete**: amend,
    bump the version, re-commit, **then** label that paper. Never bend a rule to fit a case after
    seeing it.
@@ -355,3 +369,14 @@ constant and must not be published as a literature finding.
 a dataset's pipeline **plus** local denoising steps (viduarre: HCP MPP via Glasser + ICA-FIX via
 Griffanti) is a composition neither `base_pipeline` nor a single step field represents cleanly.
 Spec-expressiveness item; recorded, not actioned.
+
+---
+
+## Changelog
+
+- **v1.1 (2026-07-18):** `pipeline_specificity` is a list parallel to `value` for `REPORTED` rows
+  (positionally aligned); singletons are one-element lists; blank for `DEFERRED`/`NOT_REPORTED`.
+  Reason: multi-tool + custom-software papers require per-tool specificity. (No labels existed at
+  amendment time; amended before active labeling.)
+- **v1 (2026-07-18):** initial pre-registration — the twelve decisions, Tier-A/Tier-B value-matching,
+  single-rater author-labeled scope (commit `9eff653`).
