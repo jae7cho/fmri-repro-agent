@@ -1,4 +1,4 @@
-# Ground-truth protocol — `base_pipeline` (v1.1)
+# Ground-truth protocol — `base_pipeline` (v1.2)
 
 **Status: PRE-REGISTERED.** This document is committed to git **before any label is written**, and
 the labels are committed before any scoring run. The signed commit order is the pre-registration: it
@@ -12,7 +12,7 @@ own label (see D5). This protocol covers exactly one field of the ReplicationSpe
 **Corpus:** 20 PDFs in `tested_lit/sfn_batch`. Analysed denominator is **19** (see D10).
 
 **Labeler:** author (single-rater — Jae Wook Cho) · **Date started:** 07/18/2026 ·
-**Protocol version:** v1.1
+**Protocol version:** v1.2
 
 ---
 
@@ -50,6 +50,22 @@ says, verified deterministically, not against any filtered or model-produced sum
 
 The four states are exclusive **only within a single field** (D11): a paper may be `REPORTED` for
 `base_pipeline` and `DEFERRED_TO_CITATION` for a step-level field simultaneously.
+
+### Status decision rule (read before labeling)
+
+**`status` answers exactly one question: does the paper NAME a tool or pipeline that performed the
+preprocessing?**
+
+- **Names one → `REPORTED`.** This holds even if the paper **also** cites another work for the step
+  details (the citation governs the parameter fields, not the `base_pipeline` status — see D11), and
+  even if what is named is vague (*"FSL"*, *"SPM"*) — vagueness is a `pipeline_specificity` matter,
+  not a status matter.
+- **Names none, but points to another work for its preprocessing → `DEFERRED_TO_CITATION`.**
+- **Names none and points nowhere → `NOT_REPORTED`.** This holds even if the preprocessing **steps**
+  are described in full procedural detail — describing steps is not naming a tool.
+
+Detail level, version presence, and whether parameters are deferred are **separate axes**
+(`pipeline_specificity`; the version field; the step fields). **None of them changes `status`.**
 
 ---
 
@@ -205,6 +221,12 @@ explicit steps). **Analysed denominator = 19.** (The compromised screen had repo
 base pipeline (`base_pipeline` = `REPORTED`) and defer its step parameters (step fields =
 `DEFERRED_TO_CITATION`) at once. Cases: chen (names CCS + defers step details to [51]); derosa (names
 FSL + defers procedures to absent SI — see D6).
+
+A paper that **names a tool while deferring its parameters to a citation is `REPORTED` for
+`base_pipeline`** (the name is stated) and `DEFERRED` for the parameter fields. This *"names tool +
+defers steps"* shape is common in the corpus — tang_2025 (names DPABI/SPM12, defers steps to ref 28),
+derosa_2025 (names FSL, defers procedures to SI), chen_2015 (names CCS, defers details to [51]). Do
+**not** let the parameter-deferral demote the `base_pipeline` status to `DEFERRED`.
 
 ### D12 — "HCP" token disambiguation (labeler instruction)
 The token "HCP" / "Human Connectome Project" appears in multiple roles and only one bears on
@@ -374,6 +396,10 @@ Spec-expressiveness item; recorded, not actioned.
 
 ## Changelog
 
+- **v1.2 (2026-07-18):** clarified `status` tracks whether a tool is **named**, independent of detail
+  level or parameter-deferral; a paper naming a tool while deferring parameters is `REPORTED` (D11
+  sharpened). Reason: solo labeling surfaced three status mislabels (vanderwal, power, tang) driven by
+  conflating naming with detail/deferral. Rows corrected to this rule are relabeled under v1.2.
 - **v1.1 (2026-07-18):** `pipeline_specificity` is a list parallel to `value` for `REPORTED` rows
   (positionally aligned); singletons are one-element lists; blank for `DEFERRED`/`NOT_REPORTED`.
   Reason: multi-tool + custom-software papers require per-tool specificity. (No labels existed at
