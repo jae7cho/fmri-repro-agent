@@ -192,3 +192,43 @@ protocol_version per row). Verified the CSV faithful to the xlsx row-by-row acro
 committing — a scored CSV that didn't match the labeled xlsx would silently corrupt every downstream
 number. The matcher remains untracked (its two known bugs unfixed); it lands separately. Labeling of
 the base_pipeline field is complete under v1.2.
+
+---
+
+## 2026-07-20
+
+Hours: 18:48 - 20:06 ET
+
+Established the post-v0.4.0 base_pipeline prediction set for scoring, diagnosed a fabrication, and
+hardened the ground-truth artifact. No post-v0.4.0 full-corpus batch existed (all batches <= Jul 10;
+v0.4.0 span-recovery = 2560bb1, Jul 13), and batch_v7_full showed oconnor/derosa base_pipeline MISSING
+— the pre-v0.4.0 signature. So ran base_pipeline extraction on the 18 distinct labeled paper_ids at
+HEAD, model pinned to v7's sonnet-4-5 (delta = code-only), K=3 (user-confirmed) into a gitignored
+results/batch_v040_labelset/ with a manifest. 4 papers span-recovered (derosa, liu_2013, oconnor,
+weber) — all MISSING in v7, EXTRACTED now, exactly why v7 was stale. Alignment preview (not scored): 14
+aligned, 4 flagged — cole/liu_2005 pred-MISSING vs label-REPORTED (extraction vs slicing),
+poldrack/viduarre pred-EXTRACTED vs label-DEFERRED. K=3 earned its keep: viduarre flipped 2 EXTRACTED /
+1 DEFERRED. (Process lesson: mis-killed a healthy first run — per-paper print()s were block-buffered to
+the log and output landed in a doubled path from a relative output_dir; re-ran clean watching written
+files, not the log.)
+
+Diagnosed the viduarre fabrication ("HCP minimal preprocessing pipeline", absent from the paper, on
+2/3 draws). The v0.4.0 value-support guard is real and its matching is sound (quote_supports_value
+returns False on the pair; whole-token, not substring), but extractor.py:682 gates it
+`(not recovered) or quote_supports_value(...)` — so it fires ONLY on tolerant-recovery spans; a clean
+span match bypasses it. The model attached the real Glasser deferral sentence as the span for a
+fabricated name; on the 2 draws where that quote clean-matched, the guard never ran. Classification:
+(a) guard not wired into the clean-span path — NOT the substring hole. The guard is inconsistent, not
+the model (draw 3 the model also emitted the fabrication; the guard caught it because that draw's span
+was recovered). Report-only; fix is a separate scoped task (run the guard on every extracted value).
+
+Protocol v1.3 (named-by-provenance rule): a pipeline referred to only by institution/lab + citation
+("a pipeline developed at Washington University, St Louis [45]", poldrack_2015) names no invocable tool
+-> DEFERRED_TO_CITATION, not REPORTED; recorded the provenance-phrase-as-name extractor-error class
+(distinct from fabrication). poldrack's label already conformed. Then Option B for label-set
+versioning: dropped the per-row protocol_version CSV column (unreproducible from the xlsx, which has no
+version column, so it silently reverted on re-derive), moved the version to a set-level statement in
+README, and wrote a committable deriver (derive_labels_csv.py) that reads the version from README and
+emits no version column. Verified the invariant: re-derive is byte-identical and loses no label data
+vs the committed CSV (all 19 rows, 7 shared columns) — the ground-truth CSV is now faithfully
+reproducible from its xlsx source. v1.3 + Option B staged; matcher still untracked.
