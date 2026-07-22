@@ -1,4 +1,4 @@
-# Ground-truth protocol — `base_pipeline` (v1.2)
+# Ground-truth protocol — `base_pipeline` (v1.3)
 
 **Status: PRE-REGISTERED.** This document is committed to git **before any label is written**, and
 the labels are committed before any scoring run. The signed commit order is the pre-registration: it
@@ -12,7 +12,7 @@ own label (see D5). This protocol covers exactly one field of the ReplicationSpe
 **Corpus:** 20 PDFs in `tested_lit/sfn_batch`. Analysed denominator is **19** (see D10).
 
 **Labeler:** author (single-rater — Jae Wook Cho) · **Date started:** 07/18/2026 ·
-**Protocol version:** v1.2
+**Protocol version:** v1.3
 
 ---
 
@@ -66,6 +66,19 @@ preprocessing?**
 
 Detail level, version presence, and whether parameters are deferred are **separate axes**
 (`pipeline_specificity`; the version field; the step fields). **None of them changes `status`.**
+
+**Named-by-provenance (institution/lab) is NOT a named tool.** A pipeline referred to only by *where*
+it was developed — *"a pipeline developed at [institution]"*, *"the [lab]/[site] pipeline"* — together
+with a citation, is `DEFERRED_TO_CITATION`, not `REPORTED`: it names no invocable tool and points
+elsewhere for the specification. Case: poldrack_2015 — *"a pipeline developed at Washington University,
+St Louis [45]"* (ref 45 = Power 2014). Contrast: a proper tool/pipeline name (C-PAC, SPM12, XCP Engine)
+is `REPORTED` even without a version (D2). If a paper **both** names an invocable tool **and** refers to
+a provenance pipeline, the invocable tool governs `base_pipeline` status (name wins over provenance).
+
+> **Extractor-error class this defines (for the scoring writeup):** an extractor emitting the provenance
+> phrase (*"Washington University pipeline"*) as a `base_pipeline` **name** is a distinct error from
+> fabrication (viduarre): the phrase **is** in the text, but it is a deferral marker, not a name — a
+> deferral-recognition failure, not an invented value.
 
 ---
 
@@ -396,6 +409,10 @@ Spec-expressiveness item; recorded, not actioned.
 
 ## Changelog
 
+- **v1.3 (2026-07-20):** named-by-provenance pipelines (institution/lab + citation, no proper tool
+  name) are `DEFERRED_TO_CITATION`, not `REPORTED` (poldrack_2015). Reason: adjudicating a real
+  prediction surfaced the boundary; label already conformed, rule added for reproducibility. Also
+  records the "provenance-phrase-as-name" extractor-error class (distinct from fabrication).
 - **v1.2 (2026-07-18):** clarified `status` tracks whether a tool is **named**, independent of detail
   level or parameter-deferral; a paper naming a tool while deferring parameters is `REPORTED` (D11
   sharpened). Reason: solo labeling surfaced three status mislabels (vanderwal, power, tang) driven by
