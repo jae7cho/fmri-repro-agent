@@ -124,8 +124,10 @@ def test_case_missing_name_missing_ref():
 
 
 # --- 6c: value-support guard (Option A), base_pipeline only --------------------
-# The guard fires ONLY on tier-5 RECOVERED name spans; each synthetic case below mangles the
-# source so the model-quote fails an exact match but recovers, forcing the guard to run.
+# The guard runs on EVERY extracted base_pipeline (clean OR recovered): a span match proves the
+# QUOTE is real text, not that the VALUE is in it. Recovered cases below mangle the source so the
+# quote recovers via tier 5; clean cases give an exact-match source (recovered=False). Both force
+# the value check.
 def test_parse_attribution_ref_viduarre_and_non_attribution():
     from extractor_mvp.extractor import _parse_attribution_ref
 
@@ -184,6 +186,44 @@ def test_guard_recovered_unsupported_unparseable_falls_to_bare_missing():
         _extracted(value, quote), FieldExtractionResult(status="missing"), text
     )
     assert isinstance(field, MissingFromPaper)  # not EXTRACTED, not DEFERRED_TO_CITATION
+    assert deferral is None
+
+
+def test_guard_clean_span_unsupported_reclassified_as_deferral():
+    # THE FIX (guard-scope): on a CLEAN span too — value NOT in the quote, quote a bare citation
+    # attribution — the value-support guard reclassifies to DEFERRED_TO_CITATION instead of promoting
+    # the inferred name to a fabricated EXTRACTED. Before the fix a clean span short-circuited the
+    # guard (`(not recovered) or ...`) and this fabrication passed on 2/3 viduarre draws.
+    quote = "Spatial preprocessing was applied using the procedure described by Glasser et al."
+    text = (
+        "In methods, " + quote + " We then computed connectivity."
+    )  # clean exact -> recovered False
+    field, deferral = _build_base_pipeline(
+        _extracted("HCP minimal preprocessing pipeline", quote),
+        FieldExtractionResult(status="missing"),
+        text,
+    )
+    assert field.extraction.status == "DEFERRED_TO_CITATION"
+    assert field.extraction.deferrals[0].ref == "Glasser et al."
+    assert field.inference.reason == "citation_shaped_name_value_unsupported"
+    assert deferral is None
+
+
+def test_guard_clean_span_value_stated_stays_extracted():
+    # No false demotion: a CLEAN span whose value IS in its quote stays EXTRACTED with
+    # span_recovered=False. The unconditional guard must not demote correct clean extractions —
+    # verified across the whole label set (agtzidis SPM12, chen CCS, ...); this pins the invariant.
+    quote = "The fMRI data analysis was performed with SPM12 using Matlab."
+    text = "Methods. " + quote + " Results follow."
+    field, deferral = _build_base_pipeline(
+        _extracted("SPM12", quote), FieldExtractionResult(status="missing"), text
+    )
+    assert not isinstance(field, MissingFromPaper)
+    assert field.extraction.status == "EXTRACTED"
+    assert field.extraction.value.name == "SPM12"
+    assert (
+        field.extraction.span_recovered is False
+    )  # clean tier, and no longer skipped by the guard
     assert deferral is None
 
 

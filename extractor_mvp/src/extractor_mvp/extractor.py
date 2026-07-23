@@ -667,23 +667,24 @@ def _build_base_pipeline(
             )
 
     # Case A/B: pipeline NAME is extracted and its quote resolves -> base_pipeline EXTRACTED,
-    # guarded (Option A, value-support). A tier-5 recovery can un-mask a case where the model
-    # INFERRED the pipeline name from a citation rather than reading it (viduarre: value "HCP
-    # minimal preprocessing pipeline", quote "…procedure described by Glasser et al." — the name
-    # is nowhere in the quote). Promoting that to EXTRACTED would fabricate a name. The guard
-    # fires ONLY on recovered spans; clean (tier 1-4) matches are untouched, so no clean span
-    # ever moves. The guard compares the model's OWN value against its OWN quote — firewall-clean
-    # (no KB at extraction). Scope: base_pipeline only (value-mislocalization was observed here;
-    # step-field recoveries in _process_field are marked span_recovered but NOT value-guarded).
+    # guarded (Option A, value-support). The model can INFER a pipeline name from a citation rather
+    # than read it (viduarre: value "HCP minimal preprocessing pipeline", quote "…procedure described
+    # by Glasser et al." — the name is nowhere in the quote), and it does so on CLEAN spans too: the
+    # quote it cites is real paper text, it just does not contain the value. So the value-support
+    # check runs UNCONDITIONALLY on every extracted base_pipeline — clean or recovered — because a
+    # clean span match only proves the QUOTE is real, not that the VALUE is in it. Promoting an
+    # unsupported value to EXTRACTED would fabricate a name. The guard compares the model's OWN value
+    # against its OWN quote — firewall-clean (no KB at extraction). Blast radius verified on the label
+    # set: every correct clean-span extraction has its value in its quote, so none is demoted; the two
+    # that flip (viduarre, poldrack) were wrong EXTRACTEDs that reclassify to their correct DEFERRED.
+    # Scope: base_pipeline only (step-field recoveries stay span_recovered-only, not value-guarded).
     if name_result.status == "extracted" and name_result.value and name_result.verbatim_quote:
         name_res = resolve_quote(name_result.verbatim_quote, text)
         if name_res.span is not None:
             recovered = name_res.recovered
-            if (not recovered) or quote_supports_value(
-                name_result.value, name_result.verbatim_quote
-            ):
-                # Clean match, OR recovered with the value actually stated in the quote -> honest
-                # EXTRACTED (span_recovered marks the tolerant-tier provenance).
+            if quote_supports_value(name_result.value, name_result.verbatim_quote):
+                # Value actually stated in the quote -> honest EXTRACTED (span_recovered still marks
+                # a tolerant-tier provenance when the span itself was recovered).
                 pipeline = PipelineRef(name=name_result.value, version=version_pf)
                 field: ProvenancedField[PipelineRef] = ProvenancedField[PipelineRef](
                     field_id=bp_id,
