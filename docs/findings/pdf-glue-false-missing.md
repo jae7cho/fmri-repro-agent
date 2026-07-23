@@ -53,6 +53,27 @@ EXTRACTION failure. Of the two non-viduarre base_pipeline errors, liu_2005 is up
 but **cole is a real model miss** — the set has two genuine model errors (cole miss, viduarre
 fabrication), not one.
 
+## But PDF corruption DID cause a false MISSING — liu_2005 (two-column interleaving)
+
+The "PDF corruption causes false MISSINGs" thesis is not dead — it just was not cole's glue. liu_2005
+is the demonstrated case, via a different and worse mechanism. Its methods have no detectable header
+(`methods_not_found` → full-text fallback), and in the two-column layout pypdf **interleaves the
+methods column with the reference list**: *"Imaging data were analyzed using BrainVoyager (…) and
+custom software written in Mat-[lab]"* is shredded by injected reference entries (*"…Cameron, E.L.,
+Tai, J.C., and Carrasco, M. (2002)…"*), splitting "Matlab" across them. On that interleaved full text
+the model returns MISSING 3/3 (the frozen result). Hand it a **clean, de-interleaved** methods slice
+and it recovers **BrainVoyager 3/3** (K=3, 2026-07-23). So liu_2005's MISSING **was** input-corruption
+— the "slicing failure" attribution holds, mechanism now named and demonstrated. (liu is **both**: on
+the clean slice it recovers only `BrainVoyager`, 1 of its 2 labeled elements — "custom software" is
+dropped — so it also joins the multi-tool-incomplete set. The MISSING was corruption; the
+incompleteness is a separate fact.)
+
+The contrast is the finding: same session, two multi-tool MISSINGs, **opposite verdicts under test** —
+cole's glue was NOT causal (model won't extract even clean), liu's interleaving WAS (clean recovers).
+"Corruption caused the MISSING" is a per-mechanism, per-paper claim to be **tested**, never inferred
+from the mere presence of corruption. (See [`multitool-underextraction-d4-recall.md`](multitool-underextraction-d4-recall.md)
+for the model-side multi-tool pattern the two share.)
+
 ## Why a deglue pass must NOT ship (blast radius, measured)
 
 A naive `word+digits → word digits` split touches **541 occurrences / 263 distinct tokens** corpus-wide;

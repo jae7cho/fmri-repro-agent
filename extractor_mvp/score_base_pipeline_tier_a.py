@@ -221,13 +221,15 @@ def main() -> int:
     print(f"  CONTESTED ({len(contested)}): {list(contested)}")
     print(f"  scored-error count: {len(errors)} clear + {len(contested)} contested")
     print(
-        "\n  CAUSE ATTRIBUTION (in-rate vs separately-reported — do not blur them). Within the N=17\n"
-        "  rate there is ONE genuine model error (cole_2013), plus liu_2005 (SLICING, upstream-input:\n"
-        "  MISSING correct given a bad slice) and poldrack (CONTESTED). cole is genuine: BOTH deglue\n"
-        "  variants (AFNI48->'AFNI 48' and AFNI48->'AFNI', K=3 each, 2026-07-23) still returned MISSING\n"
-        "  3/3 — the model does not extract bare 'AFNI and Freesurfer' even fully clean, refuting the\n"
-        "  PDF-glue hypothesis. viduarre is a SECOND genuine model error (fabrication) but sits OUTSIDE\n"
-        "  the rate by design (reported separately)."
+        "\n  CAUSE ATTRIBUTION (in-rate vs separately-reported — do not blur them; both in-rate misses\n"
+        "  TESTED, 2026-07-23). Within the N=17 rate: ONE genuine MODEL error (cole_2013) + liu_2005\n"
+        "  (INPUT-CORRUPTION, upstream) + poldrack (CONTESTED). cole: both deglue variants (AFNI48->\n"
+        "  'AFNI 48' and ->'AFNI', K=3) still MISSING 3/3 — the model won't extract bare 'AFNI and\n"
+        "  Freesurfer' even fully clean (a D2 multi-tool under-extraction). liu_2005: the full-text\n"
+        "  fallback INTERLEAVED the BrainVoyager sentence with the reference list (two-column pypdf);\n"
+        "  a clean de-interleaved slice recovers BrainVoyager 3/3, so its MISSING was corruption, NOT\n"
+        "  cole's class — the two in-rate misses are DISTINCT causes, not one. viduarre is a SECOND\n"
+        "  genuine model error (fabrication), OUTSIDE the rate by design (reported separately)."
     )
     print(f"\n  {_POLDRACK_NOTE}")
 
