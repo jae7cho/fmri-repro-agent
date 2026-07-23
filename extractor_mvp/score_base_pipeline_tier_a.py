@@ -163,10 +163,11 @@ def main() -> int:
                 if methods[pid] & {"fallback_full_text", "methods_not_found", ""}:
                     cls = "SLICING failure (methods_not_found -> full-text fallback)"
                 elif pid == "cole_2013":
-                    # source text reads 'AFNI48'/'Freesurfer49' (tool fused to citation superscript);
-                    # the model correctly does not recognize 'AFNI48' as 'AFNI' -> honest MISSING on
-                    # corrupted input, NOT a model reasoning failure. See docs/findings/pdf-glue-*.
-                    cls = "INPUT-CORRUPTION failure (pypdf tool-citation glue)"
+                    # A deglue causal test (AFNI48 -> "AFNI 48", K=3, 2026-07-23) still returned
+                    # MISSING 3/3: with a CLEAN AFNI token the model still does not extract the bare
+                    # "AFNI and Freesurfer" construction, so this is a genuine EXTRACTION failure, NOT
+                    # the pypdf glue first hypothesized. See docs/findings/pdf-glue-false-missing.md.
+                    cls = "EXTRACTION failure (bare 'AFNI and Freesurfer'; deglue test refutes glue cause)"
                 else:
                     cls = "EXTRACTION failure"
                 errors[pid] = cls
@@ -208,6 +209,11 @@ def main() -> int:
     print(
         f"  A->B delta (full match): +{(db - da) * 100:.1f} pts ({tier_b_full - tier_a_full} papers)"
     )
+    print(
+        "\n  COVERAGE: N=17 blind of 19 analysable corpus papers. binder_1999 is UNLABELED (a status-\n"
+        "  rule boundary: does its '(SPMs)' name SPM?); chen_2015's counted row inherits its label from\n"
+        "  the example row (non-independent, but CCS is unambiguous). See ground_truth/README.md."
+    )
 
     print("\n=== ERROR DECOMPOSITION (not a lump) ===")
     print(f"  Tier-B recovered (surface variant, same pipeline): {tier_b_recovered}")
@@ -215,10 +221,13 @@ def main() -> int:
     print(f"  CONTESTED ({len(contested)}): {list(contested)}")
     print(f"  scored-error count: {len(errors)} clear + {len(contested)} contested")
     print(
-        "\n  CAUSE ATTRIBUTION: of the 2 non-viduarre errors, NEITHER is a model reasoning failure —\n"
-        "  liu_2005 = SLICING failure (methods_not_found), cole_2013 = PDF-GLUE failure (AFNI48). Both\n"
-        "  are upstream-input failures where the model's MISSING was correct GIVEN ITS INPUT. The only\n"
-        "  genuine model reasoning error in the set is viduarre's fabrication (reported separately)."
+        "\n  CAUSE ATTRIBUTION (in-rate vs separately-reported — do not blur them). Within the N=17\n"
+        "  rate there is ONE genuine model error (cole_2013), plus liu_2005 (SLICING, upstream-input:\n"
+        "  MISSING correct given a bad slice) and poldrack (CONTESTED). cole is genuine: BOTH deglue\n"
+        "  variants (AFNI48->'AFNI 48' and AFNI48->'AFNI', K=3 each, 2026-07-23) still returned MISSING\n"
+        "  3/3 — the model does not extract bare 'AFNI and Freesurfer' even fully clean, refuting the\n"
+        "  PDF-glue hypothesis. viduarre is a SECOND genuine model error (fabrication) but sits OUTSIDE\n"
+        "  the rate by design (reported separately)."
     )
     print(f"\n  {_POLDRACK_NOTE}")
 

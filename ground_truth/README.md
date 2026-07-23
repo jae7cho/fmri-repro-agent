@@ -28,6 +28,22 @@ source = the xlsx.
   state, so the label history (the six v1.2 corrections to vanderwal/power/tang/liu_2005/cole/ciric)
   is inspectable. Not for scoring.
 
+## Coverage & denominator (name the omissions)
+
+The corpus is **19 analysable papers** (20 minus cabral_2017). The label set covers **18** distinct
+paper_ids; the blind Tier-A/B rate is **N=17**. Two coverage facts a cited number must state on its
+face — "82.4% on 17 of 19 corpus papers" wants its omissions named, not discovered:
+
+- **binder_1999 is in the corpus but has NO ground-truth label** (it is not in the protocol's paper
+  list; `stage_partition.py:51` maps it). It is not an easy one: `stage-partition.md:66` flags that
+  binder's **"(SPMs)"** (plural) sits exactly on a status-rule boundary — does "(SPMs)" *name* SPM
+  when a trailing-letter rule forbids matching `SPM`? That is a v1.2/v1.3 status-rule question and
+  should be labeled before the number is cited.
+- **chen_2015 appears twice in the workbook** — as the pre-filled *example* row and as its own
+  labeled row. The blind N=17 counts **chen's own row**, whose label was inherited from the example
+  above it (so it is **not independent**). chen → CCS is unambiguous, so it does not move the number,
+  but the denominator note records which chen row counted and that its label is non-independent.
+
 ## Caveat (standing)
 
 These labels are **single-rater** and produced by the developer of the system under evaluation, so
