@@ -232,3 +232,55 @@ README, and wrote a committable deriver (derive_labels_csv.py) that reads the ve
 emits no version column. Verified the invariant: re-derive is byte-identical and loses no label data
 vs the committed CSV (all 19 rows, 7 shared columns) — the ground-truth CSV is now faithfully
 reproducible from its xlsx source. v1.3 + Option B staged; matcher still untracked.
+
+---
+
+## 2026-07-22
+
+Hours: 19:15 - 20:42 ET
+
+Committed v1.3 + Option B (e19007c) and the 2026-07-20 DEVLOG entry (de4ddb1), then scored the first
+base_pipeline number end-to-end. Fixed the matcher's real latent bug (greedy version-strip ate
+digit-led tool names: `normalize("3dvolreg")==""`) with a boundary-aware regex; blast-radius gate
+showed zero corpus impact; the C-PAC/CPAC concern was already handled by the whole-token join (verified,
+not "fixed"). Froze the post-v0.4.0 prediction set (predictions_v040_frozen.csv, provenance header,
+per-paper 3 draws + majority + span_recovered + methods_found) because the gitignored batch is
+non-reproducible (non-stationary) — the scorer now reads the frozen file and is byte-identical
+frozen-vs-batch. Committed the minimal pre-registered Tier-B alias table (FCP, motivated by liu_2013;
+KB recognize() covers chen/oconnor/vanderwal) BEFORE scoring Tier B.
+
+Tier-A (N=17 blind, examples excluded as non-blind, viduarre reported separately): status agreement
+14/17 (82.4%), Tier-A full 10/17 (58.8%), Tier-B full 14/17 (82.4%); A->B delta +23.5pts recovered
+ONLY the 4 surface-variant same-pipeline pairs, absorbed zero errors. Error decomposition (not a lump):
+cole = INPUT-CORRUPTION (pypdf glue AFNI48, re-adjudicated from "extraction failure"), liu_2005 =
+SLICING (methods_not_found), poldrack = CONTESTED (bracketed-citation deferral needs citation-reading),
+power = correct honest absence. Of the 2 non-viduarre errors, NEITHER is a model reasoning failure —
+both are upstream-input failures. viduarre (separate) fabricates "HCP minimal preprocessing pipeline"
+2/3 draws.
+
+Then the guard-scope fix. Diagnosed extractor.py:682 `(not recovered) or quote_supports_value(...)` —
+the guard runs ONLY on recovered spans, so a clean-span fabrication (viduarre's Glasser-deferral quote
+clean-matches) bypasses it. C1 blast-radius gate: the model's raw verbatim_quote is NOT persisted for
+base_pipeline (only the resolved span), BUT resolve_quote tiers 1-4 are never-fuzzy and
+quote_supports_value is normalization-invariant, so the resolved span.text is a PROVABLY-equivalent
+proxy for the gate on clean spans. Gate PASSES: every correct clean-span extraction has its value in
+its quote (none demoted); the only two that flip (viduarre, poldrack) were wrong EXTRACTEDs. Applied
+the fix (guard unconditional), added clean-span guard tests, and replayed on the frozen data: viduarre
+-> DEFERRED 3/3 (fabrication caught), poldrack -> MISSING (bracketed citation unparseable by the
+attribution matcher, so honest MISSING not DEFERRED — the fabricated name is gone but the deferral
+still unrecognized). Blind rates unchanged (poldrack was and stays a status-disagreement); the fix's
+value is eliminating the fabrication class, not moving the blind number. No correct extraction demoted.
+Also recorded the PDF-glue false-MISSING finding as a backlog note. All staged, not committed: matcher +
+test (commit 1), frozen + alias + scorer (commit 2), guard fix + tests + backlog (commit 3).
+
+---
+
+## 2026-07-23
+
+Hours: 17:07 - (in progress) ET
+
+Finished the guard-scope task from 2026-07-22: added the two clean-span guard regression tests
+(clean-span unsupported -> DEFERRED; clean-span supported -> stays EXTRACTED, span_recovered=False),
+wrote the PDF-glue backlog note, and staged Parts A/B/C in their three commit groups. Guard fix
+verified: base_pipeline extraction tests 12 passed, ruff + mypy clean. Nothing committed (author
+commits off-hours).
