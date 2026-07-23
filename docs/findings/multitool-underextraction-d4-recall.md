@@ -42,8 +42,30 @@ is anomalous even within those two**: dropping *both* tools from "using AFNI and
 stranger than dropping one of two. Note cole's next sentence scopes FreeSurfer to anatomy (*"Freesurfer
 was used to identify ventricle, white matter, and gray matter"*), so D7 would exclude FreeSurfer from
 the *functional* base_pipeline — but that makes extracting **nothing** stranger still, since AFNI (the
-functional tool) remains and should extract. cole is a specific anomaly to probe, not proof of a broad
-law.
+functional tool) remains and should extract.
+
+## Probe: the "X and Y" coordination is causal for cole (tested, 2026-07-23)
+
+Held cole's **real** full methods slice constant and varied only the sentence (K=3 each):
+
+| sentence (rest of the 18.7k-char slice identical) | result |
+|---|---|
+| *"Preprocessing was performed using AFNI **and Freesurfer**."* | **MISSING 3/3** |
+| *"Preprocessing was performed using AFNI."* (FreeSurfer dropped) | **EXTRACTED "AFNI" 3/3** |
+
+Dropping the coordination recovers AFNI. So cole's MISSING is caused by the **"X and Y" coordination
+in full-slice context** — and the qualifier is load-bearing: coordination is **necessary but not
+sufficient**. A *short* slice + the same "AFNI and Freesurfer" sentence extracts it (as a mangled
+single string), so coordination alone does not suppress; it suppresses **in the full-slice condition**.
+State it that way, or a short-passage reproduction will "fail" and the finding will look wrong.
+Prompt-fixable regardless.
+
+**Hypothesis (recorded, not concluded):** in the short slice the model emitted `"AFNI and Freesurfer"`
+as **one** name. So the failure may be *"tries to make the coordination a single value, can't validate
+it, returns MISSING"* rather than *"doesn't see the tools."* Testable; deferred.
+
+(Design note: a first probe run shortened the slice *and* changed the sentence — a slice-length
+confound; holding the real slice constant isolated the coordination and gave the clean result above.)
 
 ## D4 hides it (the protocol point)
 
@@ -66,8 +88,9 @@ elicit *all* tools of an "X and Y" conjunction), not a reason to revisit D2. The
 
 1. Recall-sensitive companion metric for multi-tool base_pipeline rows (report alongside the D4
    precision-only match).
-2. **Mechanism probe (minimal, real text, no synthetic generalization):** vary cole's own sentence one
-   way — *"…using AFNI and Freesurfer."* (known 0/2) vs *"…using AFNI."* (singleton). If the singleton
-   extracts and the coordination does not, the "X and Y" construction is causal and the fix is
-   prompt-side; if the singleton also misses, the sentence has another problem and multi-tool is the
-   wrong frame for cole. ~6 calls (K=3 × 2). Add tang's variant only if cole's result is ambiguous.
+2. ~~Mechanism probe~~ **DONE (2026-07-23): the "X and Y" coordination is causal for cole** — singleton
+   "AFNI" extracts 3/3, coordination "AFNI and Freesurfer" MISSING 3/3, real slice held constant. Next:
+   the prompt fix — elicit every tool in a coordinated "X and Y" preprocessing mention (and ensure a
+   coordination doesn't suppress extraction entirely). tang's "DPABI and SPM12" is **not** a separate
+   mechanism test now — it earns its calls as the prompt-fix **before/after validation** ("does the fix
+   recover tang's DPABI and cole's AFNI?"), where the outcome moves a decision.
