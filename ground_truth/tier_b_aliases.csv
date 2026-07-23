@@ -1,0 +1,3 @@
+canonical_id,surface_form,motivating_paper,note
+fcp,FCP,liu_2013,label surface form; FCP is not a KB pipeline so recognize() returns None
+fcp,FCP analysis scripts,liu_2013,extractor's emitted form (majority of 3); needs alias to match label "FCP"

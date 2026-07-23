@@ -1,0 +1,28 @@
+# FROZEN base_pipeline prediction set — durable snapshot of a NON-reproducible run
+# (base_pipeline is non-stationary; re-running the batch gives different draws). This
+# file is the record the first Tier-A/Tier-B number was computed against.
+# source_commit: 70eed84 (70eed84720ba06d17279d325bd38ec187cade1ae)
+# model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+# v040_span_recovery_commit: 2560bb1
+# K: 3   batch_run_started_et: 2026-07-20 18:55 EDT
+# corpus: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch
+# built_from: extractor_mvp/results/batch_v040_labelset (gitignored)
+paper_id,draw1_status,draw2_status,draw3_status,draw1_value,draw2_value,draw3_value,maj_status,maj_value,span_recovered,methods_found_via
+agtzidis_2020,EXTRACTED,EXTRACTED,EXTRACTED,SPM12,SPM12,SPM12,EXTRACTED,SPM12,False,header_match
+braun_2015,DEFERRED_TO_CITATION,DEFERRED_TO_CITATION,DEFERRED_TO_CITATION,,,,DEFERRED_TO_CITATION,,False,header_match
+chen_2015,EXTRACTED,EXTRACTED,EXTRACTED,Connectome Computation System,Connectome Computation System,Connectome Computation System,EXTRACTED,Connectome Computation System,False,header_match
+ciric_2017,EXTRACTED,EXTRACTED,EXTRACTED,XCP Engine,XCP Engine,XCP Engine,EXTRACTED,XCP Engine,False,header_match
+cole_2013,MISSING_FROM_PAPER,MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,,MISSING_FROM_PAPER,,False,header_match
+derosa_2025,EXTRACTED,EXTRACTED,EXTRACTED,FSL suite,FSL suite,FSL suite,EXTRACTED,FSL suite,True,header_match
+gordon_2014,EXTRACTED,EXTRACTED,EXTRACTED,SPM8,SPM8,SPM8,EXTRACTED,SPM8,False,header_match
+liu_2005,MISSING_FROM_PAPER,MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,,MISSING_FROM_PAPER,,False,fallback_full_text
+liu_2013,EXTRACTED,EXTRACTED,EXTRACTED,FCP analysis scripts,FCP analysis scripts,FCP analysis scripts,EXTRACTED,FCP analysis scripts,True,header_match
+mueller_2021,EXTRACTED,EXTRACTED,EXTRACTED,SPM12,Statistical Parametric Mapping 12 software (SPM12),SPM12,EXTRACTED,SPM12,False,header_match
+oconnor_2017,EXTRACTED,EXTRACTED,EXTRACTED,Configurable Pipeline for the Analysis of Connectomes (C-PAC),Configurable Pipeline for the Analysis of Connectomes (C-PAC),Configurable Pipeline for the Analysis of Connectomes (C-PAC),EXTRACTED,Configurable Pipeline for the Analysis of Connectomes (C-PAC),True,header_match
+poldrack_2015,EXTRACTED,EXTRACTED,EXTRACTED,Washington University pipeline,Washington University pipeline,Washington University pipeline,EXTRACTED,Washington University pipeline,False,header_match
+power_2014,MISSING_FROM_PAPER,MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,,MISSING_FROM_PAPER,,False,header_match
+tang_2025,EXTRACTED,EXTRACTED,EXTRACTED,SPM12,SPM12,SPM12,EXTRACTED,SPM12,False,header_match
+vanderwal_2016,EXTRACTED,EXTRACTED,EXTRACTED,Configurable Pipeline for Analysis of Connectomes (C-PAC),Configurable Pipeline for Analysis of Connectomes (C-PAC),Configurable Pipeline for Analysis of Connectomes (C-PAC),EXTRACTED,Configurable Pipeline for Analysis of Connectomes (C-PAC),False,header_match
+viduarre_2017,EXTRACTED,EXTRACTED,DEFERRED_TO_CITATION,HCP minimal preprocessing pipeline,HCP minimal preprocessing pipeline,,EXTRACTED,HCP minimal preprocessing pipeline,False,header_match
+weber_2024,EXTRACTED,EXTRACTED,EXTRACTED,C-PAC,C-PAC,C-PAC,EXTRACTED,C-PAC,True,header_match
+wheaton_2004,EXTRACTED,EXTRACTED,EXTRACTED,SPM99,SPM99,SPM99,EXTRACTED,SPM99,False,header_match
