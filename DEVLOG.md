@@ -277,10 +277,37 @@ test (commit 1), frozen + alias + scorer (commit 2), guard fix + tests + backlog
 
 ## 2026-07-23
 
-Hours: 17:07 - (in progress) ET
+Hours: 17:07 - 22:38 ET
 
-Finished the guard-scope task from 2026-07-22: added the two clean-span guard regression tests
-(clean-span unsupported -> DEFERRED; clean-span supported -> stays EXTRACTED, span_recovered=False),
-wrote the PDF-glue backlog note, and staged Parts A/B/C in their three commit groups. Guard fix
-verified: base_pipeline extraction tests 12 passed, ruff + mypy clean. Nothing committed (author
-commits off-hours).
+Finished the guard-scope task from 2026-07-22 (clean-span guard regression tests, PDF-glue backlog
+note) and committed + pushed the whole base_pipeline first-number arc: matcher fix (45618e1), frozen
+predictions + Tier-A/B scorer + FCP alias (b329345), value-support guard scope fix (efbe14a), DEVLOG
+(3c3c261), a cole/coverage correction (a79c089) — pushed de4ddb1..a79c089.
+
+Then a long deterministic + causal-test sitting that overturned two inferences of my own. (1)
+Quantified pypdf tool-citation glue: incidence is rare (only cole AFNI48/Freesurfer49; all 7 SPM+digit
+hits are real versions, discriminated), and measured the deglue blast radius (541 word+digit tokens,
+~0.2% naive precision — versions/templates/atlases/genes would be corrupted; do not ship). (2) Deglue
+CAUSAL test refuted my own Part B "cole = PDF-glue" reclassification: both variants (AFNI48->'AFNI 48'
+and ->'AFNI', K=3) still MISSING 3/3 — cole is a genuine extraction failure, not corrupted input.
+Corrected the scorer + findings doc + README accordingly, and named two denominator omissions
+(binder_1999 unlabeled; chen's counted row non-independent).
+
+(3) Tested liu_2005 the same way: its full-text fallback interleaved the BrainVoyager sentence with
+the reference list (two-column pypdf); a clean de-interleaved slice recovers BrainVoyager 3/3, so its
+MISSING WAS input-corruption (attribution held) — distinct from cole. (4) Surfaced a multi-tool
+under-extraction pattern (single-tool 11/11; multi-tool <= 1 of N) and the D4 recall-blindness that
+hides it (set-membership is precision-only), in a new findings doc (d981c38); layered honestly — liu
+is both (corruption + 1-of-2), and the dropped elements differ (cole 2 named tools, tang 1, liu a
+descriptor). (5) Coordination probe (95de4ce): holding cole's real slice constant, singleton 'AFNI'
+extracts 3/3 while 'AFNI and Freesurfer' MISSES 3/3 -> the "X and Y" coordination is causal IN
+FULL-SLICE CONTEXT (short slice extracts it mangled; qualifier load-bearing). Prompt-fixable. Caught
+and fixed my own confounded first probe (changed slice length + sentence).
+
+Closed with the next target scoped, not started: the base_pipeline.version false claim —
+extractor.py:636 hardcodes version to MissingFromPaper (prompt never asks), render.py:607 ->
+cobidas.py:156 surfaces it as COBIDAS coverage, reading as a literature finding ("papers don't report
+versions") though 7/19 papers do (oconnor 0.4.0, derosa 5.0.10, liu_2013 1.1-beta, 4 fused-SPM).
+Presented fix options A (stop the misrepresentation, minimal) vs B (build version extraction, gated);
+awaiting scope. The through-line of the day: four inferences tested, two refuted (cole-glue, and my
+own confounded probe) — the record working as intended.
