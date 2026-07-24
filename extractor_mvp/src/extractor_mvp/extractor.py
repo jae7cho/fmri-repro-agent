@@ -97,6 +97,9 @@ class PreprocessingExtraction(BaseModel):
     base_pipeline_ref: FieldExtractionResult = Field(
         default_factory=lambda: FieldExtractionResult(status="missing")
     )  # deferred to "Glasser et al. 2013", or extracted attribution
+    base_pipeline_version: FieldExtractionResult = Field(
+        default_factory=lambda: FieldExtractionResult(status="missing")
+    )  # a SEPARATELY-stated version ("0.4.0", "5.0.10", "1.1-beta"); fused "SPM12" is name-only (Q1)
     # Build 2: per-voxel temporal z-scoring of the BOLD SIGNAL itself (Liu/Cho).
     # Defaulted to status="missing" so pre-existing fixtures still construct.
     temporal_standardization_method: FieldExtractionResult = Field(
@@ -124,6 +127,18 @@ base_pipeline_name: The name of the base preprocessing pipeline the paper used.
   status="extracted": pipeline is named anywhere in the methods text.
     value = the pipeline name as written; verbatim_quote = the sentence naming it.
   status="missing": no base pipeline is named.
+
+base_pipeline_version: The version of the base pipeline, ONLY if the paper writes a
+  SEPARATE version string for the pipeline it named.
+  Examples: "C-PAC version 0.4.0" -> value "0.4.0"; "FSL suite (version 5.0.10)" -> "5.0.10";
+            "FCP analysis scripts (version 1.1-beta)" -> "1.1-beta".
+  status="extracted": the paper states a separate version string for the named pipeline.
+    value = the version string as written; verbatim_quote = the exact sentence stating it.
+  status="missing": no separate version string is stated. This INCLUDES a version FUSED into the
+    tool name ("SPM12", "SPM8", "SPM99") -- that is a NAME, not a separately stated version
+    (base_pipeline_name already carries "SPM12"), so base_pipeline_version is missing.
+  PAPER-ONLY: do NOT infer a version from the tool's release history, the publication date, or what
+    version was "current" -- only what the paper literally writes.
 
 base_pipeline_ref: The citation the paper gives for the base pipeline.
   status="deferred": the paper says preprocessing DETAILS are in another publication.
@@ -613,31 +628,75 @@ def _parse_attribution_ref(quote: str) -> str | None:
     return am.group(0).strip().rstrip(",") or None
 
 
+def _build_version_pf(
+    version_result: FieldExtractionResult | None, text: str
+) -> ProvenancedField[str]:
+    """Q1 — the PAPER-STATED base_pipeline version (extraction arm only; paper-only, firewall-clean).
+
+    EXTRACTED iff the paper wrote a SEPARATE version string AND that value is supported by its own
+    quote (``quote_supports_value`` — the SAME guard the name uses, so an INFERRED version — "0.4.0
+    was current then" — cannot pass as EXTRACTED; that is Q2's job with a basis). Otherwise
+    MissingFromPaper. The inference arm stays ``LeftMissing(version_deferred_to_kb)`` so Q2
+    (``infer_base_pipeline_version``) still fires downstream — and Q2 bails on an EXTRACTED extraction
+    arm, so the two never cross. A version only *attaches* when a name is extracted (it rides inside
+    ``PipelineRef``); this helper's result is discarded on the missing-name branches below. ``None``
+    (no version field supplied, e.g. legacy fixtures) is treated as MISSING.
+    """
+    if (
+        version_result is not None
+        and version_result.status == "extracted"
+        and version_result.value
+        and version_result.verbatim_quote
+    ):
+        vres = resolve_quote(version_result.verbatim_quote, text)
+        if vres.span is not None and quote_supports_value(
+            version_result.value, version_result.verbatim_quote
+        ):
+            # EXTRACTED value is certain -> inference NOT_APPLICABLE (the ProvenancedField invariant;
+            # same as the extracted name). Q2 (infer_base_pipeline_version) bails on an EXTRACTED
+            # extraction arm regardless, so Q1 and Q2 still never cross.
+            return ProvenancedField[str](
+                field_id="base_pipeline.version",
+                extraction=Extracted[str](
+                    value=version_result.value,
+                    spans=[vres.span],
+                    confidence=_CONFIDENCE,
+                    span_recovered=vres.recovered,
+                ),
+                inference=NotApplicable(),
+            )
+    return ProvenancedField[str](
+        field_id="base_pipeline.version",
+        extraction=MissingFromPaper(searched_terms=[], sections_searched=[]),
+        inference=LeftMissing(reason="version_deferred_to_kb"),
+    )
+
+
 def _build_base_pipeline(
     name_result: FieldExtractionResult,
     ref_result: FieldExtractionResult,
     text: str,
+    version_result: FieldExtractionResult | None = None,
 ) -> tuple[ProvenancedField[PipelineRef] | MissingFromPaper, DeferralRecord | None]:
-    """Assemble Preprocessing.base_pipeline from the two Layer-1 extraction results.
+    """Assemble Preprocessing.base_pipeline from the three Layer-1 extraction results.
 
     Returns ``(field_or_bare_missing, optional DeferralRecord)`` — the record can't
     ride the field's return type, so it's a second tuple element (cf. _process_field).
+    ``version_result`` is Q1: a paper-STATED version rides inside ``PipelineRef`` when a name is
+    extracted (see :func:`_build_version_pf`); it is discarded on the missing-name branches.
 
     Four cases:
-      (extracted name, extracted ref)  -> Extracted(PipelineRef(name=name))
-                                          ref is attribution only; version LEFT_MISSING
+      (extracted name, extracted ref)  -> Extracted(PipelineRef(name=name, version=Q1 or MISSING))
+                                          ref is attribution only
       (extracted name, deferred ref)   -> Extracted(PipelineRef(name=name)) +
                                           DeferralRecord for Fork B on the ref
       (missing name,   deferred ref)   -> DeferredToCitation on the pipeline itself
       (missing name,   missing/extracted ref) -> MissingFromPaper (bare)
     """
     bp_id = "base_pipeline"
-    # version is never paper-stated here; deferred to the KB inference path.
-    version_pf: ProvenancedField[str] = ProvenancedField[str](
-        field_id="base_pipeline.version",
-        extraction=MissingFromPaper(searched_terms=[], sections_searched=[]),
-        inference=LeftMissing(reason="version_deferred_to_kb"),
-    )
+    # Q1: a paper-STATED version becomes EXTRACTED here (paper-only, quote-guarded); else MISSING.
+    # The inference arm stays LeftMissing so Q2 (infer_base_pipeline_version) still fires downstream.
+    version_pf: ProvenancedField[str] = _build_version_pf(version_result, text)
 
     # Resolve a deferred ref once (with full narrowing so mypy is happy).
     ref_span = None
@@ -909,7 +968,10 @@ def _extract_from_prompt(
 
     # Layer 1: base preprocessing pipeline (name + optional citation/deferral).
     base_pipeline, bp_deferral = _build_base_pipeline(
-        extraction.base_pipeline_name, extraction.base_pipeline_ref, parsed_paper.text
+        extraction.base_pipeline_name,
+        extraction.base_pipeline_ref,
+        parsed_paper.text,
+        version_result=extraction.base_pipeline_version,
     )
     if bp_deferral is not None:
         deferrals.append(bp_deferral)

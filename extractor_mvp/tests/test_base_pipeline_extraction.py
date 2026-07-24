@@ -227,6 +227,73 @@ def test_guard_clean_span_value_stated_stays_extracted():
     assert deferral is None
 
 
+# --- 6c-version: Q1 paper-STATED base_pipeline version (Option 1: fused-SPM = name-only) ----------
+# A version rides inside PipelineRef, so read it at field.extraction.value.version.extraction.
+def _ver_status(field):
+    return field.extraction.value.version.extraction.status
+
+
+def _ver_value(field):
+    return getattr(field.extraction.value.version.extraction, "value", None)
+
+
+def test_version_separate_string_extracted():
+    # A SEPARATE version string, supported by its quote -> version EXTRACTED (value + span + guard).
+    for name, val, quote in [
+        ("C-PAC", "0.4.0", "Data were processed using C-PAC version 0.4.0 for all subjects."),
+        ("FSL suite", "5.0.10", "Preprocessing used the FSL suite (version 5.0.10)."),
+        ("FCP analysis scripts", "1.1-beta", "FCP analysis scripts (version 1.1-beta) were used."),
+    ]:
+        field, _ = _build_base_pipeline(
+            _extracted(name, quote),
+            FieldExtractionResult(status="missing"),
+            quote,
+            version_result=_extracted(val, quote),
+        )
+        assert _ver_status(field) == "EXTRACTED", (name, val)
+        assert _ver_value(field) == val
+        assert field.extraction.value.version.extraction.spans  # a resolved span
+        assert field.extraction.value.name == name  # name unaffected
+
+
+def test_version_fused_spm_is_name_only():
+    # Option 1: "SPM12" is a NAME; there is no SEPARATELY stated version, so the version field is
+    # MISSING while base_pipeline_name carries "SPM12". (The prompt directs the model to emit a
+    # missing version for fused forms; this pins the _build contract when it does.)
+    text = "Data were analyzed using SPM12."
+    field, _ = _build_base_pipeline(
+        _extracted("SPM12", text),
+        FieldExtractionResult(status="missing"),
+        text,
+        version_result=FieldExtractionResult(status="missing"),
+    )
+    assert field.extraction.value.name == "SPM12"  # fused version stays in the NAME
+    assert _ver_status(field) == "MISSING_FROM_PAPER"  # not decomposed into a separate version
+
+
+def test_version_unsupported_by_quote_not_extracted():
+    # Guard: a version value NOT present in its own quote (an INFERRED version) is NOT extracted --
+    # the same firewall-clean guard the name uses, preventing "0.4.0 was current then" laundering.
+    quote = "Data were processed using C-PAC for all subjects."  # no version stated
+    field, _ = _build_base_pipeline(
+        _extracted("C-PAC", quote),
+        FieldExtractionResult(status="missing"),
+        quote,
+        version_result=_extracted("0.4.0", quote),  # 0.4.0 is NOT in the quote
+    )
+    assert _ver_status(field) == "MISSING_FROM_PAPER"
+
+
+def test_version_none_supplied_is_missing():
+    # No version field (legacy fixtures / no separate string) -> MISSING; inference arm left for Q2.
+    quote = "Data were processed using C-PAC."
+    field, _ = _build_base_pipeline(
+        _extracted("C-PAC", quote), FieldExtractionResult(status="missing"), quote
+    )
+    assert _ver_status(field) == "MISSING_FROM_PAPER"
+    assert field.extraction.value.version.inference.status == "LEFT_MISSING"  # Q2 still fires
+
+
 # --- 6d: live Cho 2021 full PDF Layer-1 probe ----------------------------------
 MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-6")
 CHO_PDF = Path("/Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf")
