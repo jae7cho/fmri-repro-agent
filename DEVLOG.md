@@ -311,3 +311,35 @@ versions") though 7/19 papers do (oconnor 0.4.0, derosa 5.0.10, liu_2013 1.1-bet
 Presented fix options A (stop the misrepresentation, minimal) vs B (build version extraction, gated);
 awaiting scope. The through-line of the day: four inferences tested, two refuted (cole-glue, and my
 own confounded probe) — the record working as intended.
+
+---
+
+## 2026-07-24
+
+Hours: 17:46 - 22:43 ET
+
+Pushed the 2026-07-23 tail (a79c089..a91f5bd), zipped both repos' tracked source+docs for a Claude-chat
+context handoff (~/Downloads/neurorepro-context-2026-07-24.zip, 206 files, venvs/results/PDFs
+excluded), then built base_pipeline version extraction (Q1: paper-STATED versions) to option B, the
+real fix for the false "0/N papers report a version" claim.
+
+The bug: base_pipeline.version was hardcoded to MissingFromPaper (extractor.py ~636) and the prompt
+never asked, so cobidas.assess_coverage read the constant back out as a literature finding — false
+(oconnor 0.4.0, derosa 5.0.10, liu_2013 1.1-beta, plus fused-SPM). Verified all four design anchors at
+HEAD first, and confirmed infer_base_pipeline_version bails on an EXTRACTED extraction arm (so Q1/Q2
+never cross). Built Q1 paper-only, firewall-clean: new base_pipeline_version FieldExtractionResult +
+prompt stanza + _build_version_pf helper — EXTRACTED iff the paper states a SEPARATE version string AND
+quote_supports_value passes (the same guard the name uses, so an inferred "0.4.0 was current then"
+can't launder in as EXTRACTED); else MISSING. DECISION locked (Option 1): a version FUSED into the name
+("SPM12") is name-only, version MISSING — do not decompose. The ProvenancedField invariant caught a
+design slip (EXTRACTED requires inference=NOT_APPLICABLE, not LeftMissing — Q2 bails anyway).
+infer_base_pipeline_version / KB / cobidas.py all UNTOUCHED — cobidas just reads a real status now.
+
+Wired version as a trailing optional arg so the 9 existing name/ref tests were unchanged. 4 new tests
+(separate-version EXTRACTED for 0.4.0/5.0.10/1.1-beta; fused-SPM MISSING; version-not-in-quote guarded
+to MISSING; none -> MISSING); 270 passed, ruff/mypy clean. Stage-A inspection (K=1, NOT a scored rate —
+no version ground truth yet; caught + fixed my own type().__name__ accessor bug that first showed a
+false 0/18): oconnor 0.4.0, derosa 5.0.10, liu_2013 1.1-beta extracted; fused-SPM and no-version cases
+MISSING; assess_coverage version-addressed 3/18 (was 0) — the false "0/N" is gone. Committed 597e42e
+and pushed. Deferred: Stage B (seed base_pipeline_version ground truth, then score a rate) and the
+multi-tool "X and Y" prompt fix.
