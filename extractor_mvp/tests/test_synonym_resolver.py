@@ -37,6 +37,44 @@ def test_fsl_mni152_resolves_to_nlin6asym():
     assert r.resolved == "MNI152NLin6Asym" and r.status == "resolved"
 
 
+def test_fsl_mni152_file_form_resolves_to_nlin6asym():
+    # oconnor fix: a named FSL standard-template FILE resolves (FSL ships NLin6Asym; the file IS
+    # that template — established identity). Substring-matched, so the _brain.nii.gz suffix is fine.
+    for raw in (
+        "FSL's MNI152T1_2mm brain.nii.gz",
+        "the MNI152_T1_2mm template",
+        "MNI152T1_1mm",
+    ):
+        r = _ts(raw)
+        assert r.resolved == "MNI152NLin6Asym" and r.status == "resolved", raw
+
+
+def test_bare_mni152_still_underspecified_after_file_forms():
+    # GUARD: adding FSL FILE forms must NOT coerce bare "MNI"/"MNI152" (v2's forbidden substitution).
+    for raw in ("MNI", "MNI152", "MNI standard space"):
+        assert _ts(raw).status == "underspecified", raw
+
+
+def test_study_specific_resolves_from_construction_phrasing():
+    # v0.4.1: a CONSTRUCTED template resolves to study_specific (mueller's ANTs phrasing).
+    for raw in (
+        "subject-specific anatomical template created using ANTs multivariate template construction",
+        "a study-specific template",
+        "sample-specific template",
+        "cohort-specific template",
+    ):
+        r = _ts(raw)
+        assert r.resolved == "study_specific" and r.status == "resolved", raw
+
+
+def test_native_vs_study_specific_discriminator():
+    # The confusable pair: a NATIVE-space phrase -> native_volume; a CONSTRUCTED-template phrase ->
+    # study_specific. Keyed on "template" (constructed reference), not the bare word "subject-specific".
+    assert _ts("subject's native space").resolved == "native_volume"
+    assert _ts("kept in individual's native space").resolved == "native_volume"
+    assert _ts("subject-specific anatomical template").resolved == "study_specific"
+
+
 def test_fonov_2009c_resolves():
     assert _ts("the Fonov 2009c template").resolved == "MNI152NLin2009cAsym"
 

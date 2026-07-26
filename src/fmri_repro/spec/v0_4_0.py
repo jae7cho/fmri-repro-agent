@@ -1,4 +1,10 @@
-"""Versioned root for ReplicationSpec v0.4.0.
+"""Versioned root for the ReplicationSpec 0.4.x line (currently stamps 0.4.1).
+
+This is the single live root for the 0.4 line. Per the additive-patch convention (see
+:mod:`fmri_repro.spec.migrations`), a backward-compatible vocabulary bump is applied IN PLACE —
+the module keeps its name and its ``Literal`` is bumped to the current patch (0.4.0 -> 0.4.1 added
+the ``study_specific`` TargetSpace value), rather than forking a new ``v0_4_1.py``. Old data
+migrates forward via a pure re-stamp hop.
 
 Changes vs 0.3.0: purely additive at the provenance layer — the shared
 :class:`~fmri_repro.spec.provenance.Extracted` model gains an optional
@@ -31,7 +37,7 @@ from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):
-    schema_version: Literal["0.4.0"] = "0.4.0"
+    schema_version: Literal["0.4.1"] = "0.4.1"
     run: RunMeta
     specs: list[ReplicationSpec] = Field(min_length=1)
     study_analysis: StudyAnalysis | None = None
@@ -39,8 +45,8 @@ class StudySpec(BaseModel):
     @model_validator(mode="after")
     def _stamps_match_pinned_version(self) -> Self:
         """Every nested ``Preprocessing.schema_version`` must equal this root's pinned
-        version. Holds natively (nested stamps default to 0.4.0); a backstop for a future
-        bump that desyncs the outer/inner Literals (today the nested ``Literal["0.4.0"]`` is
+        version. Holds natively (nested stamps default to 0.4.1); a backstop for a future
+        bump that desyncs the outer/inner Literals (today the nested ``Literal["0.4.1"]`` is
         the first-line enforcement)."""
         for i, spec in enumerate(self.specs):
             for j, prep in enumerate(spec.preprocessing):

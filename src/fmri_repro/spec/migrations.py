@@ -17,6 +17,24 @@ introduced in 0.3.0). So a stampless document is either 0.1.0 or 0.2.0. If it ca
 structural pre-0.2.0 marker it is below the floor; otherwise it is ASSUMED 0.2.0 and that
 assumption is recorded as ``written_under_inferred=True`` — absence of a stamp is not
 evidence of a specific version, so the guess never masquerades as observed fact.
+
+Versioning convention (what makes vocabulary growth cheap):
+
+- **ADDITIVE change -> PATCH bump, in-place, pure re-stamp hop.** Adding an OPTIONAL field with
+  a default, or adding an allowed value to an existing enum. Every document valid under the prior
+  version stays valid under the new version *unchanged* (an old doc simply never carries the new
+  value). Bump ``SCHEMA_VERSION`` patch (e.g. 0.4.0 -> 0.4.1) in ``preprocessing.py`` and the
+  ``StudySpec`` Literal, and add a re-stamp migration hop (no doc transform). **No new
+  version-root file** — the version modules are write-time stamp-pinners over the one shared
+  mutating :mod:`preprocessing`, and old data migrates forward. The 0.3.0 -> 0.4.0 hop
+  (``span_recovered`` optional field) and the 0.4.0 -> 0.4.1 hop (``study_specific`` TargetSpace
+  value) are both this kind.
+- **STRUCTURAL change -> MINOR/MAJOR bump, real migration.** Renames/removes an enum value, adds
+  a REQUIRED field, changes a field type, or restructures the chain — anything that makes an
+  existing document invalid or changes its meaning. Needs a doc-transform hop (like 0.2.0 -> 0.3.0,
+  which added required ``NuisanceRegression`` fields) and may warrant a distinct root declaration.
+- **The test for "additive":** does every prior-version document remain valid, *unchanged*, under
+  the new version? Yes -> additive/patch (in-place). No -> structural.
 """
 
 from __future__ import annotations
@@ -101,6 +119,9 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
                 step.setdefault(fid, _missing_field(fid))
     # 0.3.0 -> 0.4.0: adds only the optional-default Extracted.span_recovered field; no doc
     # transform is needed (an absent flag validates to False) — the hop is a pure re-stamp.
+    # 0.4.0 -> 0.4.1: adds only the additive TargetSpace value "study_specific"; no doc transform
+    # (a doc that never used it validates unchanged) — pure re-stamp. Both hops fall through to the
+    # single stamp write below; migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
     out["written_under"] = source
     out["written_under_inferred"] = inferred

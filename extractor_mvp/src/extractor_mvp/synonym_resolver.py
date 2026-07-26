@@ -39,6 +39,16 @@ TARGET_SPACE_SYNONYMS: dict[str, list[str]] = {
         "FSL MNI152",  # FSL ships NLin6Asym unambiguously
         "FSL's MNI152",
         "MNI152 (FSL)",
+        # FSL standard-template FILE forms — FSL ships NLin6Asym; the file IS that template
+        # (verified vs FSL docs + TemplateFlow + Lead-DBS). Safe identity, NOT silent substitution.
+        # Substring-matched, so "MNI152T1_2mm" covers "...MNI152T1_2mm_brain.nii.gz". Fires only when
+        # the model extracts the file form as the value; a bare "MNI" value stays family-specified.
+        "MNI152_T1_2mm",
+        "MNI152T1_2mm",
+        "MNI152_T1_1mm",
+        "MNI152T1_1mm",
+        "MNI152_T1_2mm_brain",
+        "MNI152T1_2mm_brain",
     ],
     "MNI152NLin2009cAsym": [
         "MNI152NLin2009cAsym",
@@ -54,6 +64,19 @@ TARGET_SPACE_SYNONYMS: dict[str, list[str]] = {
         "individual's native space",
         "subject's native space",
         "subject's own space",
+    ],
+    # study_specific (v0.4.1): a template CONSTRUCTED for the study. Key on CONSTRUCTION, not the
+    # bare word "subject-specific" (native-space-ambiguous) — every form here carries "template"
+    # (a constructed reference) or explicit construction phrasing, the discriminator vs native_volume.
+    "study_specific": [
+        "study-specific template",
+        "study specific template",
+        "sample-specific template",
+        "cohort-specific template",
+        "custom template",
+        "subject-specific anatomical template",  # mueller (ANTs-constructed)
+        "subject-specific template",
+        "multivariate template construction",  # ANTs template-construction phrasing
     ],
 }
 # Explicitly NOT mapped — broader than any member (the 7/20 v1 cases v2 coerced).

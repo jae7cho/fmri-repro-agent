@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.4.0",
+  "schema_version": "0.4.1",
   "run": {
     "run_id": "00000000000000000000000000000001",
     "created_at": "2026-05-20T00:00:00Z",
@@ -1358,8 +1358,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.4.0",
-          "written_under": "0.4.0",
+          "schema_version": "0.4.1",
+          "written_under": "0.4.1",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -2601,8 +2601,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.4.0",
-          "written_under": "0.4.0",
+          "schema_version": "0.4.1",
+          "written_under": "0.4.1",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [

@@ -7,8 +7,10 @@ Usage (from extractor_mvp/):
     python generate_sfn_review.py --results-dir results/batch_sfn_v5 --output sfn_review_v5.xlsx
 
 Sheets:
-    1. Priority Review  — EXTRACTED + out-of-vocab + quote-unresolved rows
-    2. target_space     — All 20 papers x target_space (the 10/20 headline finding)
+    1. Priority Review  — EXTRACTED + family-specified + quote-unresolved rows
+    2. target_space     — All 20 papers x target_space (the specification-completeness DISTRIBUTION:
+                          Canonical / Family-specified / study_specific / native_volume / Absent —
+                          NOT a single "could not resolve" count)
     3. All Fields       — Complete record
     4. Glossary         — All step_kinds, fields, valid values, descriptions
 """
@@ -22,7 +24,7 @@ from openpyxl.styles import Alignment, Font, PatternFill
 
 COLOURS = {
     "Extracted ✓": "C6EFCE",
-    "Out-of-vocab ⚠": "FFEB9C",
+    "Family-specified": "FFEB9C",
     "Quote unresolved": "FFD7B5",
     "Deferred ↗": "DDEEFF",
     "Deferral unresolved": "FFD7B5",
@@ -174,8 +176,8 @@ GLOSSARY = [
     (
         "spatial_normalization",
         "target_space",
-        "MNI space variant. Out-of-vocab = paper said 'MNI'/'MNI152' without the NLin variant — this is the 10/20 headline finding.",
-        "MNI152NLin6Asym | MNI152NLin2009cAsym | Talairach | native_volume | other",
+        "MNI space variant. Family-specified = paper named the MNI family (often + resolution) but not the NLin variant — a completeness level, not a failure. study_specific = a constructed cohort/precision template (a specified choice). The finding is the DISTRIBUTION across states.",
+        "MNI152NLin6Asym | MNI152NLin2009cAsym | Talairach | native_volume | study_specific | other",
         "",
     ),
     (
@@ -347,9 +349,9 @@ STATUS_LEGEND = [
         "Pipeline found a value with a verified character span. Verify value + quote match the paper.",
     ),
     (
-        "Out-of-vocab ⚠",
+        "Family-specified",
         "FFEB9C",
-        "LLM extracted something but it didn't match any canonical Literal. pipeline_value shows the raw extracted value. This is the 10/20 finding.",
+        "Paper named the MNI family (e.g. 'MNI'/'MNI152', often + resolution) but not the machine-readable NLin variant. pipeline_value shows the raw extracted value. A completeness LEVEL, not a failure — adequate for typical cortical analysis, variant-ambiguous for subcortical/coordinate precision.",
     ),
     (
         "Quote unresolved",
@@ -384,7 +386,7 @@ def classify(extraction: dict, inference: dict) -> tuple[str, str, str]:
         return "Deferred ↗", "", ref
 
     reason_map = {
-        "value_not_in_literal": "Out-of-vocab ⚠",
+        "value_not_in_literal": "Family-specified",
         "extraction_quote_unresolved": "Quote unresolved",
         "deferral_quote_unresolved": "Deferral unresolved",
         "deferred_pending_citation_resolution": "Deferred (pending)",
@@ -516,7 +518,7 @@ def write_glossary_sheet(ws):
 
 
 def write_excel(df: pd.DataFrame, output: Path):
-    priority_mask = df["status"].isin(["Extracted ✓", "Out-of-vocab ⚠", "Quote unresolved"])
+    priority_mask = df["status"].isin(["Extracted ✓", "Family-specified", "Quote unresolved"])
     ts_mask = df["field"] == "target_space"
 
     with pd.ExcelWriter(output, engine="openpyxl") as writer:

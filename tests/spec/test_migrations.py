@@ -88,15 +88,16 @@ def test_migrate_fills_new_nuisance_fields_and_stamps():
 
 
 def test_migrate_current_doc_is_passthrough():
-    out = parse_any_version(migrate_to_current({"schema_version": "0.4.0", **_native_min()}))
-    assert out.schema_version == "0.4.0"
+    out = parse_any_version(migrate_to_current({"schema_version": "0.4.1", **_native_min()}))
+    assert out.schema_version == "0.4.1"
     assert out.migration is None  # a native/current doc is not marked migrated
 
 
-def test_migrate_0_3_0_to_0_4_0_restamps():
-    # 0.3.0 -> 0.4.0 added only the optional-default Extracted.span_recovered field, so the hop
-    # is a pure re-stamp: no doc transform, and the nuisance step's pre-existing 0.3.0 fields
-    # are left untouched (the setdefault backfill is a no-op when the keys are already present).
+def test_migrate_0_3_0_to_current_restamps():
+    # 0.3.0 migrates forward to the current stamp (0.4.1). The 0.3.0->0.4.0 (span_recovered) and
+    # 0.4.0->0.4.1 (study_specific) hops are both pure re-stamps: no doc transform, and the nuisance
+    # step's pre-existing 0.3.0 fields are left untouched (the setdefault backfill is a no-op when
+    # the keys are already present).
     nuisance = {
         "kind": "nuisance_regression",
         "method": _missing("method"),
@@ -117,16 +118,34 @@ def test_migrate_0_3_0_to_0_4_0_restamps():
     out = migrate_to_current(src)
 
     assert src == original  # read-only: input never mutated
-    assert out["schema_version"] == "0.4.0"
+    assert out["schema_version"] == "0.4.1"
     assert out["written_under"] == "0.3.0"  # a 0.3.0-stamped source is observed, not inferred
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.3.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.4.0/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.4.1/v1"
     # No nuisance-field mutation: the sentinel reason from _missing (not the migrator's
     # "field_not_in_schema_version") survives, proving the setdefault backfill did not fire.
     nuis = next(s for s in out["steps"] if s["kind"] == "nuisance_regression")
     assert nuis["method"]["inference"]["reason"] == "not_stated_in_text"
     assert nuis["filtering_integrated"]["inference"]["reason"] == "not_stated_in_text"
+
+
+def test_migrate_0_4_0_to_0_4_1_restamps():
+    # The additive hop: 0.4.0 -> 0.4.1 adds only the TargetSpace value "study_specific". A 0.4.0
+    # document (which never used it) migrates forward by PURE RE-STAMP — no doc transform — and the
+    # migration is recorded (source observed, not inferred). This is the first patch bump under the
+    # additive-vocabulary convention.
+    src = {"schema_version": "0.4.0", **_native_min()}
+    original = copy.deepcopy(src)
+    out = migrate_to_current(src)
+    assert src == original  # read-only
+    assert out["schema_version"] == "0.4.1"
+    assert out["written_under"] == "0.4.0"
+    assert out["written_under_inferred"] is False
+    assert out["migration"]["migrated_from"] == "0.4.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.4.1/v1"
+    # parses cleanly under the current model
+    assert parse_any_version(src).schema_version == "0.4.1"
 
 
 def _native_min() -> dict[str, Any]:
@@ -149,7 +168,7 @@ def _native_min() -> dict[str, Any]:
 def test_parse_any_version_migrates_and_parses():
     prep = parse_any_version(_v020_doc_with_nuisance())
     assert isinstance(prep, Preprocessing)
-    assert prep.schema_version == "0.4.0"
+    assert prep.schema_version == "0.4.1"
     assert prep.written_under == "0.2.0" and prep.written_under_inferred is True
     assert prep.migration is not None and prep.migration.migrated_from == "0.2.0"
     nr = next(s for s in prep.steps if s.kind == "nuisance_regression")
