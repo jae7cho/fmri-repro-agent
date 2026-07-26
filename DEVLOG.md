@@ -343,3 +343,43 @@ false 0/18): oconnor 0.4.0, derosa 5.0.10, liu_2013 1.1-beta extracted; fused-SP
 MISSING; assess_coverage version-addressed 3/18 (was 0) — the false "0/N" is gone. Committed 597e42e
 and pushed. Deferred: Stage B (seed base_pipeline_version ground truth, then score a rate) and the
 multi-tool "X and Y" prompt fix.
+
+---
+
+## 2026-07-25
+
+Hours: 14:19 - 20:21 ET
+
+target_space, end to end: audited the abstract's number, reproduced it at K=3, then fixed the real
+issues under it. First a read-only audit of the SfN "13 of 20 (65%) could not be resolved to a
+canonical specification": it lives ONLY in untracked sfn_review_v5/v6.xlsx (generate_sfn_review reading
+gitignored batch_sfn_v5), the generator docstring says a stale "10/20", it is EXTRACTOR-OUTPUT-ONLY
+(no target_space ground truth; review columns empty), from a murky-provenance ~June run, with the
+target_space silent-drop bug (span-resolution-hard-drop.md, Phase-2 unfixed) able to move it. Then a
+K=3 re-run surfaced the 13 verbatim sentences and bucketed them — mostly bare "MNI" (anachronism/era-
+standard), 2 genuinely vague ("atlas space"), and oconnor naming a specific FSL file the value
+flattened to "MNI".
+
+Built the fix as one coherent change (design B): FORMALIZED the versioning convention (additive vocab =
+patch bump IN PLACE, pure re-stamp hop, no new root file; structural = minor/major with a doc-
+transform), added study_specific to TargetSpace as the first patch (0.4.0->0.4.1), fixed the FSL-file
+resolver (oconnor), and REFRAMED the reporting middle state "Out-of-vocab" -> "Family-specified" (a
+completeness level, not a failure) with the distribution as the headline (replacing the contradictory
+10/13). Verified the B premise at HEAD; corrected the design's wrong assertion list (test_methods_finder
+had no 0.4.0; real files were 3 test modules + the per-version schema export). Regenerated the two
+examples + a new study_spec-0.4.1.schema.json (0.4.0 frozen); added a 0.4.0->0.4.1 migration test + 4
+resolver tests. Main 234, extractor_mvp 274, ruff+mypy green, zero regressions. Post-change K=3: 5-way
+distribution Canonical 2 / Family-specified 12 / study_specific 1 / native 0 / Absent 5 (stable, 0
+flips); mueller flipped absent->study_specific (fix works); oconnor stayed family-specified (model
+extracts bare "MNI"; resolver fix correct but inert — the file is only in the quote).
+
+Committed the change (08e3795 schema-only from a pre-commit stash quirk, then 9f9677e completing it —
+no force-push) and pushed. Then a read-only inspection of the oconnor question: is specificity-
+flattening systematic? Deterministic value-vs-quote AND value-vs-full-text diff across 20 papers ->
+FLATTENED = 1/20, oconnor only. The other family-specified papers are genuinely bare "MNI"/"atlas
+space"; every other specificity signal adjudicated to a non-target_space context (fsaverage5/Conte69 =
+surface field, a results .nii.gz, an activation description, an ANTs reference title). No cross-field
+flattening (base_pipeline versions now route to base_pipeline_version; resolution_mm atomic). Wrote
+docs/findings/extraction-specificity-flattening.md (staged, not committed). Recommendation: label FIRST
+— oconnor is a one-off to label as canonical (scoring surfaces one clean extraction error), not a
+systematic flattening needing a prompt fix. Next: seed target_space 3-state ground truth (Stage B).
