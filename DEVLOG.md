@@ -383,3 +383,43 @@ flattening (base_pipeline versions now route to base_pipeline_version; resolutio
 docs/findings/extraction-specificity-flattening.md (staged, not committed). Recommendation: label FIRST
 — oconnor is a one-off to label as canonical (scoring surfaces one clean extraction error), not a
 systematic flattening needing a prompt fix. Next: seed target_space 3-state ground truth (Stage B).
+
+---
+
+## 2026-07-27
+
+Hours: 19:21 - 21:12 ET
+
+target_space ground truth, pre-registered end to end. First closed out the specificity-flattening
+finding: committed docs/findings/extraction-specificity-flattening.md (31b02b1, pushed) — oconnor is a
+1/20 one-off (verified value-vs-quote AND value-vs-full-text), so ground truth labels around it rather
+than a prompt fix. Then the load-bearing STEP-0 check gating dual-axis reporting: is target_surface
+genuinely EXTRACTED or schema-only? Direct grep + a 6-agent adversarial workflow both confirmed
+EXTRACTED — all four legs wired (spec ProvenancedField preprocessing.py:844; required no-default
+FieldExtractionResult extractor.py:86; prompt stanza 221-228; build-path _FIELD_SPECS->loop->_assemble,
+no hard-coded default). K=3 cached inspection: poldrack->fsLR_32k, chen->fsaverage5 fire cleanly;
+weber's "Conte69" flattens to MISSING via value_not_in_literal (raw preserved in diagnostics). Placed
+the protocol (docs/ground-truth-protocol-target_space.md), updated CALL 1's verify note + CALL 4's
+DEPENDENCY with the confirmed extraction fact, and built the blank labeling workbook
+(ground_truth/target_space_labels_v1.xlsx) — 3 tabs mirroring base_pipeline, dropdown + 2 worked
+examples (oconnor->canonical, mueller->study_specific), 18 blank corpus rows; staged, not committed.
+
+Then ratified both open calls to v1.1 and pre-registered. Verified the load-bearing facts FIRST with a
+4-agent workflow (never launder a ratification's premises into a committed pre-reg): poldrack's CIFTI
+subcortical/cerebellar units come from the individual's FreeSurfer segmentation, not an atlas
+parcellation (CALL 4 warrant HOLDS — honest caveat kept in text: the BOLD IS resampled into the unnamed
+atlas grid as a registration substrate, so deferred not native_volume); poldrack's pipeline is
+provenance-deferred ("a pipeline developed at Washington University, St Louis45"), matching base_pipeline
+v1.3's named-by-provenance DEFERRED, so `absent` here would contradict a committed protocol on the same
+paper; and — correcting the ratification's own framing — Conte69 IS the fs_LR space the enum already has
+(fsLR_32k/164k), so weber's flattening is a SYNONYM-resolver gap, NOT an enum gap and NOT oconnor-class.
+CALL 4 ratified in the NARROW form (per-axis completeness; exemption only under the conjunction
+[volumetric target unnamed in-paper AND volumetric analysis units individually-defined]; chen/weber name
+MNI -> no credit-by-substitution; headline = two distributions + a joint statement, papers in both).
+CALL 5 resolved Option A: added `deferred` as the sixth state; poldrack volumetric SUPERSEDED
+absent->deferred (explicit, not a silent edit). Updated the workbook to a 6-state dropdown. A 2-agent
+adversarial pre-commit review came back clean (all 7 cautions satisfied — no overclaim/contradiction/
+leak; workbook still blank, only the 2 examples). Committed the pre-registration 65e7d91 and pushed.
+Deferred (logged in the protocol's Carry-forward, not acted on): the Conte69 synonym-resolver fix (a
+cheap additive alias, possibly an fsLR_10k value) — label around it, let the score surface it. Next:
+label the 18 papers blind, then derive + score.
