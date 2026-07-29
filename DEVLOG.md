@@ -423,3 +423,17 @@ leak; workbook still blank, only the 2 examples). Committed the pre-registration
 Deferred (logged in the protocol's Carry-forward, not acted on): the Conte69 synonym-resolver fix (a
 cheap additive alias, possibly an fsLR_10k value) — label around it, let the score surface it. Next:
 label the 18 papers blind, then derive + score.
+
+---
+
+## 2026-07-28
+
+Hours: 18:40 - 21:33 ET
+
+Mostly manual labeling. Author worked the first pass of target_space ground truth against the
+pre-registered v1.1 protocol — blind, full-text, one of the six states per paper for the 18-paper corpus
+— in a first-pass workbook (ground_truth/target_space_labels_v1_firstpass.xlsx). Housekeeping only on
+the code side: committed + pushed the 2026-07-27 DEVLOG entry (a8df866). First-pass labels are still in
+progress and uncommitted (the committed blank instrument target_space_labels_v1.xlsx is untouched as the
+pre-registration). Next: finish/QC the pass, then commit the ground truth as a distinct act (labels
+committed before any scoring run, per the protocol), and derive + score.
