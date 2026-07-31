@@ -83,11 +83,18 @@ The finding is the decomposition, not the rate:
   weber, wheaton) + cole (Talairach) + power (absent) + braun (deferred, K=3-unstable).
 - **study_specific missed (2):** ciric, mueller — constructed template not captured (MISSING, no raw). New
   model-side class (the enum HAS study_specific; the detector didn't fire on an explicit construction phrase).
-- **deferral miss (2):** poldrack, viduarre — model reported no `status="deferred"`. **VERIFIED not the
-  base_pipeline `_parse_attribution_ref` [45] bug**: target_space deferral is model-driven (`_process_deferred`
-  consumes the model's `status="deferred"`; no attribution parser in this path). poldrack's output was
-  `status=extracted, value="3-mm isotropic atlas space"` (value_not_in_literal) — it reported the atlas
-  gesture instead of deferring. A cross-field reuse was hypothesized and did not hold; both are model-side.
+  The two `deferred`-labelled misses are **two distinct mechanisms wearing one label** (checked
+  deterministically, K=3-stable), so they are counted separately:
+- **extract-over-defer (1):** poldrack — `status=extracted, value="3-mm isotropic atlas space"`
+  (value_not_in_literal): the model grabbed an inadequate noun phrase instead of deferring. **VERIFIED not
+  the base_pipeline `_parse_attribution_ref` [45] bug** — target_space deferral is model-driven
+  (`_process_deferred` consumes the model's `status="deferred"`; no attribution parser in this path); the
+  hypothesized cross-field reuse did not hold. (poldrack does the same extract-over-defer in base_pipeline
+  — "Washington University pipeline" — so it is a two-field, single-paper observation to WATCH, not yet a
+  generalizable class.)
+- **deferral not recognized (1):** viduarre — `status=MISSING`, `failure_reason=None`, raw=None, no
+  fabrication (unlike its base_pipeline behaviour): a silent miss on the "technique of Smith et al."
+  form. Distinct from poldrack (which grabbed a phrase); they do NOT share a mechanism.
 - **cross-axis leak (1):** chen — surface template's MNI frame grabbed as a volumetric family target. New.
 - **family miss (1):** liu_2005 — Talairach **not captured at all** (`failure_reason=None`, raw=None); cole's
   Talairach WAS caught. **HYPOTHESIS (untested here): input-corruption** — liu_2005's two-column layout

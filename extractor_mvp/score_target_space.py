@@ -66,7 +66,10 @@ def error_class(label: str, pred: str, fr: str, raw: str) -> str:
     if label == "study_specific" and pred == "absent":
         return "study_specific missed (constructed template not captured)"
     if label == "deferred" and pred == "absent":
-        return "deferral miss (provenance/technique-of form)"
+        # two mechanisms wearing one label — split by whether the model grabbed a noun phrase
+        if (raw or "").strip():
+            return "extract-over-defer (grabbed an inadequate noun phrase instead of deferring)"
+        return "deferral not recognized (silent miss; technique-of form)"
     if label == "canonical" and pred == "family_specified":
         return "specificity flattening (resolvable file grabbed as bare MNI)"
     if label == "native_volume" and pred == "family_specified":
