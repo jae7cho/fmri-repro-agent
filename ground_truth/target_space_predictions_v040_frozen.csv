@@ -1,0 +1,25 @@
+# Frozen target_space extractor predictions — batch_v040_labelset, K=3, draws 1/2/3.
+# Frozen (committed) because results/ is gitignored and the batch is non-stationary; this is the
+# durable record the score is computed against. Source commit of the batch: 70eed84 (K=3, sonnet-4-5).
+# status = K=3 MAJORITY. status_k3 records each draw so instability is visible. raw_diagnostic = the
+# value_not_in_literal raw_value the extractor GRABBED then discarded (empty when nothing was grabbed).
+# binder_1999 is ABSENT from this batch (added as the 19th label AFTER the batch) — it has no prediction.
+paper_id,extractor_status,extractor_value,raw_diagnostic,status_k3,stable
+agtzidis_2020,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+braun_2015,DEFERRED_TO_CITATION,,,DEFERRED/MISSING/DEFERRED,no
+chen_2015,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+ciric_2017,MISSING_FROM_PAPER,,,MISSING/MISSING/MISSING,yes
+cole_2013,EXTRACTED,Talairach,,EXTRACTED/EXTRACTED/EXTRACTED,yes
+derosa_2025,MISSING_FROM_PAPER,,MNI-152,MISSING/MISSING/MISSING,yes
+gordon_2014,MISSING_FROM_PAPER,,EPI template,MISSING/MISSING/MISSING,yes
+liu_2005,MISSING_FROM_PAPER,,,MISSING/MISSING/MISSING,yes
+liu_2013,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+mueller_2021,MISSING_FROM_PAPER,,,MISSING/MISSING/MISSING,yes
+oconnor_2017,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+poldrack_2015,MISSING_FROM_PAPER,,3-mm isotropic atlas space,MISSING/MISSING/MISSING,yes
+power_2014,MISSING_FROM_PAPER,,atlas space,MISSING/MISSING/MISSING,yes
+tang_2025,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+vanderwal_2016,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes
+viduarre_2017,MISSING_FROM_PAPER,,,MISSING/MISSING/MISSING,yes
+weber_2024,MISSING_FROM_PAPER,,MNI152,MISSING/MISSING/MISSING,yes
+wheaton_2004,MISSING_FROM_PAPER,,MNI,MISSING/MISSING/MISSING,yes

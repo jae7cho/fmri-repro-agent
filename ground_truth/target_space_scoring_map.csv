@@ -1,0 +1,9 @@
+extractor_status,extractor_value,label_state,rationale
+EXTRACTED,MNI152NLin6Asym,canonical,resolved variant identifier
+EXTRACTED,MNI152NLin2009cAsym,canonical,resolved variant identifier
+EXTRACTED,Talairach,family_specified,"Talairach is a coordinate SYSTEM realized by many digital templates -> names the family not a resolvable variant (protocol v1.2 CALL 2 / changelog item 6). THIS ROW is the one that matters: resolved-to-Talairach maps to family_specified, NOT canonical."
+EXTRACTED,native_volume,native_volume,direct
+EXTRACTED,study_specific,study_specific,direct
+EXTRACTED,other,family_specified,"named a target the enum cannot canonicalise -> family-level (catch-all; UNUSED on this corpus)"
+DEFERRED_TO_CITATION,,deferred,direct — mirrors base_pipeline's DEFERRED_TO_CITATION status family
+MISSING_FROM_PAPER,,absent,"the extractor's honest 'nothing reconstructable' (mirrors base_pipeline MISSING -> NOT_REPORTED). NB: MISSING is a LOSSY bucket — it conflates genuine-absent (power) with family/study/deferral flattening; the sub-case is recoverable ONLY from raw_diagnostic in the frozen predictions, which is diagnostic and does NOT change the mapping (mapping the emitted status, not the discarded raw value, is the non-tunable choice)."

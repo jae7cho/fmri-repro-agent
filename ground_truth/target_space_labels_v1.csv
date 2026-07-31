@@ -1,0 +1,74 @@
+paper_id,target_space_state,value,supporting_quote,notes,labeler
+agtzidis_2020,family_specified,MNI,"coregistering them to the anatomical T1 scan, normalizing
+them to the MNI template,","Note for surface - results in surface but not analyses: ""Results
+The presented functional group results of this section were mapped to
+the three-dimensional cortical template of the“Population-Average,
+Landmark- and Surface-based” Atlas (PALS) (Van Essen, 2005) with the
+metric-enclosing-voxel algorithm in Caret (version 5.65) (Van Essen
+et al., 2001). When needed, the provided coordinates are reported in the
+Montreal Neurological Institute (MNI) coordinate system.""",Jae Wook Cho
+braun_2015,deferred,,"Data
+were preprocessed according to standard protocols as previously described in
+refs. 47 and 48. After preprocessing, the mean time series in 5-mm spheres
+around coordinates defined by ref. 36 were extracted.",,Jae Wook Cho
+chen_2015,native_volume,,"With such information, individual pial (GM/CSF boundary) and white (GM/WM boundary) surfaces were reconstructed and spatially normalized to match a group-level standard template surface in the Montreal Neurological Institute (MNI) space via a sphere registration [49, 54, 55]. The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds), removed and interpolated temporal spikes (see instructions in [56, 57] regarding in-scanner head motion), corrected acquisition timing among image slices and head motion among image volumes and normalized the 4D global mean intensity to 10,000. White surfaces were then employed by a boundary-based registration (BBR) algorithm to match spatial correspondences between individual functional images to anatomical images [58]. To further eliminate the effect of head motion and physiological noises during the rfMRI scanning session, we regressed out the estimated Friston’s 24-parameter motion curves [37] and nuisance signals measured as WM and CSF mean time series [59] from individual rfMRI time series. Linear and quadratic trends were also regressed out from the rfMRI data by multiple linear regressions. Finally, the data were projected onto the fsaverage surface grid (average inter-vertex distance = 1 mm) and
+down-sampled to the fsaverge5 surface grid (average inter-vertex distance = 4 mm) for subse-quent rfMRI computation. Participant-level rfMRI Metrics Derivation
+The overall analytic strategy is presented in Fig 1. The above CCS pipeline preprocessed all individual rfMRI images (Fig 1A) and projected individual rfMRI time series onto a uniform cortical surface grid (fsaverge5) based upon the brain tissue classification (Fig 1B and 1C). As a proof of concept, an individual-level functional connectome can be modeled as a graph or net-
+work with vertices as nodes and pair-nodes dependency as edges (Fig 1D).","Volumetric target not stated in either stream. Anatomical normalization is surface-based only (""via a sphere registration""); the functional stream terminates at the fsaverage5 surface after BBR to subject anatomy. The MNI reference is the surface template's coordinate frame → target_surface per CALL 1, not target_space. Per CALL 7(b): timeseries exits to the surface axis with no volumetric template → native_volume.",Jae Wook Cho
+ciric_2017,study_specific,subsample ANTs study-specific template,"A study-specific template was generated from a sample of 120 PNC subjects balanced across sex, race, and age bins using the build Template Parallel procedure in ANTs (Avants et al., 2011a). Study-specific tissue priors were created using a multi-atlas segmentation procedure (Wang et al., 2014). Next, each subject's high-resolution structural image was processed using the ANTs Cortical Thickness Pipeline (Tustison et al., 2014). Following
+bias field correction (Tustison et al., 2010), each structural image was diffeomorphically registered to the study-specific PNC template using the top-performing SyN deformation (Klein et al., 2009). Study-specific tissue priors were used to guide brain extraction and segmentation of the subject's structural image (Avants et al., 2011b).","target reached by composition (func→struct BBR; struct→PNC template SyN), no single stated func→template.",Jae Wook Cho
+cole_2013,family_specified,Talairach,normalization to a Talairach template,,Jae Wook Cho
+derosa_2025,family_specified,MNI-152 template,"Individual subject EPI images were registered to that
+subject’s MPRAGE structural image via linear Boundary-Based Registration
+and then registered to the MNI-152 template via 12 degrees of
+freedom linear transformation.",,Jae Wook Cho
+gordon_2014,family_specified,epi template,"Images were then slice-time corrected, normalized to an
+EPI template, and smoothed using a Gaussian kernel with
+full-width at half-maximum (FWHM) of 8 mm.","gordon named ""an EPI template"" (a tool-shipped template artifact) -> family_specified per the broadened CALL 3 definition. CAVEAT: the referent (SPM's stock EPI template) and the stereotactic space it occupies are BOTH unverified -- same open lineage question as wheaton's ""SPM MNI template"" under CALL 2. Do not assert SPM-EPI-is-MNI; the paper does not state it.",Jae Wook Cho
+liu_2005,family_specified,Talairach,"Each participant’s high-resolution anatomic volume was trans- formed into Talairach space (Talairach and Tournoux, 1988), after which an automated segmentation procedure was applied to ob- tain a surface reconstruction of the white-gray matter boundary. The surface was further inflated to reveal the sulci/gyri pattern. All analyses were performed on this inflated representation of the cor-
+tical sheet. Preprocessing of functional data included slice time
+correction, motion correction, linear trend removal, and temporal
+high-pass filtering (three cycles per scan) to remove slow drifts in
+the fMRI signal. Given the block design, no slice time correction
+was applied to data from the localizer scan. The 2D functional data
+were then aligned with the high-resolution anatomic volume and
+transformed into 3D data in the Talairach space ",,Jae Wook Cho
+liu_2013,family_specified,152-brain Montreal Neurological Institute (MNI),"The fMRI data was first co-registered to the high-resolution
+anatomical (T1-weighted) images acquired from the same sub-
+ject and then normalized to the 152-brain Montreal Neurological Institute (MNI) normalized space. Here, as departure from
+the original FCP scripts, the registration between the func-
+tional and anatomical images was implemented using the
+“align_epi_anat.py” program (Saad et al., 2009) in AFNI, which
+was found to provide a better registration in the superior-inferior
+direction. The pre-processed fMRI data were then resampled at
+the 3 × 3 × 3 mm3 resolution of the MNI normalized brain space.",,Jae Wook Cho
+mueller_2021,study_specific,subject-specific anatomical template (ANTs multivariate template construction),"All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (ANTs)
+multivariate template construction.",,Jae Wook Cho
+oconnor_2017,canonical,FSL's MNI152T1_2mm_brain.nii.gz,"A non-rigid registration between MPRAGE images and a 2-mm MNI brain-only template (FSL's MNI152T1_2mm_brain.nii.gz, [59]) was calculated using ANTs [60].",Names a SPECIFIC resolvable FSL template FILE -> canonical (FSL ships MNI152NLin6Asym; verified vs FSL docs / TemplateFlow / Lead-DBS). NB: the extractor flattens this to 'MNI' (family_specified) — the one extraction miss on this corpus (see docs/findings/extraction-specificity-flattening.md). Label what the PAPER stated. (Example row — do not edit.),Jae Wook Cho
+poldrack_2015,deferred,atlas,"fMRI preprocessing. All fMRI data were preprocessed according to a pipeline developed at Washington University, St Louis45. Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied to all voxels and all frames). Each session was registered to a single session that had previously been registered to the mean T1-weighted structural image and
+an atlas. The session-to-atlas transform was inverted and applied to the mean field map so that the distortion correction could be applied in each session’s space. The undistorted data were then re-registered to the atlas space. The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based distortion correction to resample the data from the original session space to the undistorted 3-mm isotropic atlas space in a single step using FSL’s applywarp tool46.",,Jae Wook Cho
+power_2014,absent,atlas,"Atlas transformation of the functional data was computed for each individual via the T2-weighted and MP-RAGE scans. Each run was then resampled in atlas space on an isotropic 3 mm grid combining realignment and atlas transformation in a single interpolation (Shulman et al., 2010).",,Jae Wook Cho
+tang_2025,family_specified,MNI standard space,then normalizing to MNI standard space and resampling to 3 × 3 × 3 mm3 voxels;,,Jae Wook Cho
+vanderwal_2016,family_specified,Montreal Neurological Institute (MNI) space,"Data processing. Standard data preprocessing was performed using the Con-
+figurable Pipeline for Analysis of Connectomes (C-PAC) including motion re-
+alignment and transformation into Montreal Neurological Institute (MNI) space using Advanced Normalization Tools (Avants et al., 2008).",,Jae Wook Cho
+viduarre_2017,deferred,,"Data and Preprocessing. We used resting-state fMRI data from Ν= 820 subjects from the HCP, which provides the required ethics and consent needed for study and dissemination, such that no further institutional review board (IRB) approval is required. These are all subjects with complete resting fMRI data from the
+900-subject public data release, all healthy adults (aged 22–35 y, 453 females) scanned on a 3-T Siemens connectome-Skyra. For each subject, four 15-min runs of fMRI time series data with a temporal resolution of 0.73 s and a spatial res-olution of 2-mm isotropic were available. The preprocessing pipeline followed the technique of Smith et al. (18, 39), and thus will be described only briefly here. Spatial preprocessing was applied using the procedure described by Glasser et al. 40. ",,Jae Wook Cho
+weber_2024,family_specified,MNI152 space,"Both T1w and rs-fMRI data were
+linearly co-registered and mapped to MNI152 space.
+Functional imaging data were mapped to correspond-
+ing mid-thickness surfaces. We resampled data to the
+Conte69 surface template [79] via Workbench [78] with
+10,242 surface points (vertices) per hemisphere.",,Jae Wook Cho
+wheaton_2004,family_specified,SPM MNI template,"Data were analyzed using SPM99. Following motion correc-
+tion and slice timing adjustment, each subject’s EPI data were
+spatially normalized to the SPM MNI template and smoothed with
+a 7-mm full width at half maximum (FWHM) isometric Gaussian
+kernel.","Additional analyses in native space: ""For each subject, motion-corrected, slice timing adjusted EPI data that were not spatially normalized were aligned to their high-resolution T1 SPGR anatomical images and smoothed with a 4 4 7 mm FWHM Gaussian kernel.""",Jae Wook Cho
+binder_1999,native_volume,,"All EPI images were spatially coregistered using an itera-
+tive procedure that minimizes variance in voxel intensity
+differences between images (Cox, 1996b).","Individual anatomical (SPGR) scans and SPMs were
+then projected into the standard stereotaxic space of
+Talairach and Tournoux (1988), using the MCW-AFNI
+software package (Cox, 1996a). - statmaps transformed to talairach space
+native (within-subject coregistration only) — volumetric target state, moved here from Value per the recording convention (Value column = verbatim target term only).",Jae Wook Cho
