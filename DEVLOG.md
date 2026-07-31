@@ -437,3 +437,70 @@ the code side: committed + pushed the 2026-07-27 DEVLOG entry (a8df866). First-p
 progress and uncommitted (the committed blank instrument target_space_labels_v1.xlsx is untouched as the
 pre-registration). Next: finish/QC the pass, then commit the ground truth as a distinct act (labels
 committed before any scoring run, per the protocol), and derive + score.
+
+---
+
+## 2026-07-29
+
+Hours: 17:04 - 21:31 ET
+
+Protocol v1.2 (CALL 6/7) + finalized the 19-paper ground truth — authored, adversarially verified,
+staged, NOT committed (held for review). Ratified CALL 6 (a composed transform chain stated end-to-end
+and terminating in a named template specifies that template — ciric → study_specific) and CALL 7
+(target_space = terminal volumetric state of the functional TIMESERIES: (a) normalizing derived
+statistical maps doesn't set it, binder → native_volume; (b) a timeseries exiting to the surface axis
+with no volumetric target is native_volume, chen). STEP-0 verify caught that the pasted CALL 6/7 text was
+NOT in the file (protocol still v1.1) — halted per the pre-reg discipline, then authored v1.2: title +
+changelog bump, chen SUPERSEDED family_specified → native_volume (its only MNI is the surface frame via
+sphere registration), binder added as the 19th paper, family_specified broadened to match CALL 3's "a
+template was named" rule (covers gordon's "an EPI template", wheaton's "SPM MNI template"; absent stays
+"named no template").
+
+Two adversarial-read rounds (parallel Explore agents + synthesis) hardened it. Round 1: the native_volume
+criterion admitted poldrack (its unnamed atlas grid IS an identifiable terminal state → added "AND is
+native / reaches no volumetric template" at every locus); binder mis-filed 7(b)→7(a); the recording
+convention's "stated absence" re-imported the requirement CALL 7(b) relaxes (harmonized to "stated OR
+evident from the enumerated pipeline"); weber/chen asymmetry made explicit (weber named MNI152
+volumetrically → family_specified; chen's MNI is the surface frame → native_volume). Round 2 caught the
+load-bearing one: the broadened family_specified could pull power out of `absent` (the sole absent the
+reframe rests on). First fix (artifact-vs-space) was still leaky — pinned power by enumeration, not
+principle — so reframed to the NAMED-vs-UNNAMED test: power resampled into SOME (unnamed) atlas grid, an
+artifact exists, but named no template → absent; poldrack's atlas is equally unnamed but
+citation-attributed → deferred; gordon named a specific template (modality "EPI", referent UNVERIFIED) →
+family_specified. Also fixed a Value-column vs labeling-step-4 contradiction for deferred papers (Value =
+verbatim term or blank per the convention — poldrack "atlas", braun/viduarre blank; cited work goes in
+the quote/Notes) and softened gordon's over-asserted referent.
+
+Workbook finalized (Excel closed first): B1 moved binder's Value annotation to Notes (Value column =
+verbatim target term only, so the future CSV has one meaning per column); added gordon's
+unverified-lineage caveat; regenerated Start-here/Glossary to v1.2 while preserving the Labels sheet —
+proved by a cell-diff showing EXACTLY the 3 authorized edits and by asserting the dropdown (B4:B22) +
+frozen panes survived the openpyxl round-trip (openpyxl silently drops those). Renamed firstpass →
+canonical target_space_labels_v1.xlsx (git renders blank→filled). Final labels: family_specified 10 /
+deferred 3 / native_volume 2 / study_specific 2 / canonical 1 / absent 1 = 19. Both files modified +
+UNCOMMITTED — the final-read fixes are applied but not yet re-verified; the two-commit pre-registration
+(protocol first, then labels, per base_pipeline discipline) is held for author review next session.
+
+---
+
+## 2026-07-31
+
+Hours: 17:00 - 17:16 ET
+
+Pre-registration committed. Ran the terminal DERIVABILITY check on v1.2 — a blind test (one agent per
+paper, protocol + recorded quote only, no conversation, no full paper): can each of the 19 labels be
+derived from the document alone? Designed with a hard stopping criterion (fix only a rule that
+contradicts a label or another rule; wording nits commit as-is) so the review loop terminates rather than
+generating endless plausible findings. 18/19 derived cleanly and matched the workbook. One defect:
+liu_2005 — its quote "transformed into Talairach space (Talairach and Tournoux, 1988)", with the
+functional timeseries reaching Talairach, literally satisfies the v1.1 canonical clause "OR Talairach
+with its atlas", so a blind rater is COMPELLED to canonical, contradicting the family_specified label.
+Fixed the PROTOCOL (never the label): Talairach reclassified canonical → family_specified (it is a
+coordinate system realized by many digital templates — AFNI TT_N27, the 1988 atlas, SPM's — so citing it
+names the family, not a resolvable variant); struck the canonical clause; added the Talairach identifier
+to family_specified + a CALL 2 bullet + changelog item 6. cole (cites no atlas — "a Talairach template")
+correctly stayed a nit. Committed the pre-registration in order — protocol first (305bcb6), then labels
+(bc28f12) — and pushed (73a17ea..bc28f12). Final distribution: family_specified 10 / deferred 3 /
+native_volume 2 / study_specific 2 / canonical 1 / absent 1 = 19. Three adversarial-read rounds plus this
+derivability check converged; the timestamped commit order is the pre-registration. Next: derive the
+scored CSV + build a target_space scorer (none exists yet), then score extractor output against the key.
