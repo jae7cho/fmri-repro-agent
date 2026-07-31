@@ -1,13 +1,18 @@
 """Score target_space predictions against the committed v1.2 ground-truth labels. REPORT-ONLY.
 
-Applies the PRE-REGISTERED mapping (ground_truth/target_space_scoring_map.csv, committed before this
-script ran, so it cannot be tuned to a number) to the FROZEN predictions
+Applies the PRE-REGISTERED mapping (ground_truth/target_space_scoring_map.csv) to the FROZEN predictions
 (ground_truth/target_space_predictions_v040_frozen.csv) and compares to the labels CSV. Emits the
-error-class DECOMPOSITION, not an aggregate rate — the decomposition is the finding (see
-ground_truth/target_space_README.md).
+error-class DECOMPOSITION, not an aggregate rate (see ground_truth/target_space_README.md).
 
-Denominator: 19 labels. binder_1999 has no prediction (added post-batch) -> EXCLUDED. oconnor/mueller
-are non-blind (shown as worked examples) -> counted but flagged; blind N=17.
+The mapping keys on failure_reason, NOT status alone. A MISSING_FROM_PAPER with
+value_not_in_literal:underspecified[MNI] means the extractor GRABBED a bare MNI-family term it could not
+resolve to a variant -> family_specified (the analogue of the Talairach row; mirrors
+generate_sfn_review's value_not_in_literal -> Family-specified). Scoring the status alone (map v1) was
+lossy and produced a spurious 9-paper "enum-gap" class; that MISSING status is itself a false-missing
+spec defect, scored on the diagnostic here and documented in docs/findings/target_space-false-missing.md.
+
+Denominator: 19 labels. binder_1999 has no prediction (post-batch) -> EXCLUDED. oconnor/mueller are
+non-blind (shown as worked examples) -> counted but flagged; the rate is quoted over the BLIND set.
 
 Run:  uv run python extractor_mvp/score_target_space.py
 """
@@ -15,6 +20,7 @@ Run:  uv run python extractor_mvp/score_target_space.py
 from __future__ import annotations
 
 import csv
+from collections import Counter
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
@@ -24,41 +30,47 @@ PREDS = GT / "target_space_predictions_v040_frozen.csv"
 MAP = GT / "target_space_scoring_map.csv"
 
 NON_BLIND = {"oconnor_2017", "mueller_2021"}  # shown as worked-example rows
+GESTURES = (
+    "atlas",
+    "standard space",
+)  # bare space gestures (protocol CALL 3 -> absent, not a template)
 
 
-def load_map() -> tuple[dict[str, str], dict[str, str]]:
-    """(status,value) -> label_state for EXTRACTED; status -> label_state for DEFERRED/MISSING."""
-    by_value: dict[str, str] = {}
-    by_status: dict[str, str] = {}
+def load_extracted_map() -> dict[str, str]:
+    """EXTRACTED value -> label_state, from the committed map CSV."""
+    out: dict[str, str] = {}
     for r in csv.DictReader(MAP.open()):
-        st, val, lab = r["extractor_status"], r["extractor_value"], r["label_state"]
-        if st == "EXTRACTED":
-            by_value[val] = lab
-        else:
-            by_status[st] = lab
-    return by_value, by_status
+        if r["extractor_status"] == "EXTRACTED" and r["extractor_value"]:
+            out[r["extractor_value"]] = r["label_state"]
+    return out
 
 
-def apply_map(status: str, value: str, by_value: dict[str, str], by_status: dict[str, str]) -> str:
+def apply_map(status: str, value: str, fr: str, raw: str, extracted: dict[str, str]) -> str:
+    """The committed map, keyed on (status, failure_reason, raw_diagnostic)."""
     if status == "EXTRACTED":
-        return by_value.get(value, "family_specified")  # 'other'/unknown -> family (per map)
-    return by_status[status]
+        return extracted.get(value, "family_specified")  # 'other'/unknown -> family
+    if status == "DEFERRED_TO_CITATION":
+        return "deferred"
+    # MISSING_FROM_PAPER — use the diagnostic, not the flattened status
+    fr = fr or ""
+    if "underspecified[MNI]" in fr:
+        return "family_specified"  # extractor grabbed a bare MNI-family term
+    if "no_match" in fr:  # grabbed something; apply named-vs-unnamed to the raw value
+        return "absent" if any(g in (raw or "").lower() for g in GESTURES) else "family_specified"
+    return "absent"  # nothing captured -> honest 'nothing reconstructable'
 
 
-def error_class(label: str, pred: str, raw: str) -> str:
-    """Name the error class for a mismatch (per the README taxonomy)."""
-    raw_l = (raw or "").lower()
-    fam_term = any(t in raw_l for t in ("mni", "epi template"))
+def error_class(label: str, pred: str, fr: str, raw: str) -> str:
     if label == "family_specified" and pred == "absent":
-        return "family_flattening (enum gap: no bare-family slot)"
+        return "family miss (target not captured at all)"  # e.g. liu_2005 Talairach
     if label == "study_specific" and pred == "absent":
-        return "study_specific missed (detector didn't fire)"
+        return "study_specific missed (constructed template not captured)"
     if label == "deferred" and pred == "absent":
         return "deferral miss (provenance/technique-of form)"
-    if label == "canonical" and pred == "absent":
-        return "specificity flattening (resolvable file -> bare term)"
-    if label == "native_volume" and pred == "absent":
-        return "cross-axis leak (surface frame grabbed)" if fam_term else "native missed"
+    if label == "canonical" and pred == "family_specified":
+        return "specificity flattening (resolvable file grabbed as bare MNI)"
+    if label == "native_volume" and pred == "family_specified":
+        return "cross-axis leak (surface template's MNI frame grabbed as volumetric)"
     return f"other mismatch ({label} vs {pred})"
 
 
@@ -68,11 +80,12 @@ def main() -> int:
         r["paper_id"]: r
         for r in csv.DictReader(ln for ln in PREDS.open() if not ln.startswith("#"))
     }
-    by_value, by_status = load_map()
+    extracted = load_extracted_map()
 
     correct: list[str] = []
     errors: list[str] = []
     no_pred: list[str] = []
+    cls_counts: Counter[str] = Counter()
     rows = []
     for pid in sorted(labels):
         label = labels[pid]
@@ -80,44 +93,50 @@ def main() -> int:
             no_pred.append(pid)
             continue
         p = preds[pid]
-        pred = apply_map(p["extractor_status"], p["extractor_value"], by_value, by_status)
+        pred = apply_map(
+            p["extractor_status"],
+            p["extractor_value"],
+            p["failure_reason"],
+            p["raw_diagnostic"],
+            extracted,
+        )
         ok = pred == label
         (correct if ok else errors).append(pid)
-        cls = "correct" if ok else error_class(label, pred, p["raw_diagnostic"])
-        blind = "" if pid not in NON_BLIND else " [non-blind]"
-        unstable = "" if p["stable"] == "yes" else " [K=3 UNSTABLE]"
+        cls = (
+            "correct" if ok else error_class(label, pred, p["failure_reason"], p["raw_diagnostic"])
+        )
+        if not ok:
+            cls_counts[cls] += 1
+        tag = " [non-blind]" if pid in NON_BLIND else ""
+        tag += "" if p["stable"] == "yes" else " [K=3 UNSTABLE]"
         rows.append(
-            f"  {pid:16s} label={label:16s} pred={p['extractor_status']:20s}"
-            f"-> {pred:16s} {'OK ' if ok else 'ERR'} {cls}{blind}{unstable}"
+            f"  {pid:16s} label={label:16s} -> pred={pred:16s} {'OK ' if ok else 'ERR'} {cls}{tag}"
         )
 
-    print("=== target_space score (report-only; mapping + predictions both pre-committed) ===\n")
+    print("=== target_space score (report-only; map v2 + frozen predictions both committed) ===\n")
     print("\n".join(rows))
+
     scored = len(correct) + len(errors)
+    blind = [p for p in correct + errors if p not in NON_BLIND]
+    blind_err = [p for p in errors if p not in NON_BLIND]
     print(
-        f"\nScored (have a prediction): {scored}    Correct: {len(correct)}    Error: {len(errors)}"
+        f"\nScored (have a prediction): {scored}   Correct: {len(correct)}   Error: {len(errors)}"
+    )
+    print(
+        f"BLIND set (excl. oconnor/mueller): {len(blind_err)} error of {len(blind)}  "
+        f"[= {len(blind) - len(blind_err)}/{len(blind)} correct]"
     )
     print(f"No prediction (excluded): {sorted(no_pred)}")
 
     print("\n=== error-class decomposition (the finding, not the rate) ===")
-    from collections import Counter
-
-    cls_counts: Counter[str] = Counter()
-    for pid in errors:
-        p = preds[pid]
-        pred = apply_map(p["extractor_status"], p["extractor_value"], by_value, by_status)
-        cls_counts[error_class(labels[pid], pred, p["raw_diagnostic"])] += 1
     for cls, n in cls_counts.most_common():
         print(f"  {n:2d}  {cls}")
 
-    print("\n=== denominators ===")
     print(
-        f"  labels: {len(labels)}   scored: {scored}   blind: {scored - len(NON_BLIND & set(preds))}"
-        f"   (binder excluded: no prediction)"
-    )
-    print(
-        "  NB: this is a decomposition of capability + accuracy classes, not an external benchmark;"
-        " single-rater, developer-produced (see README caveat)."
+        "\n  NB: decomposition of capability + accuracy classes, not an external benchmark;"
+        " single-rater, developer-produced (see README caveat). The MISSING-status false-missing on"
+        " the 9 value_not_in_literal papers is a spec defect scored on the diagnostic here"
+        " (docs/findings/target_space-false-missing.md)."
     )
     return 0
 

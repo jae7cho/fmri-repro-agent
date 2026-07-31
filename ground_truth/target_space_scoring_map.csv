@@ -1,9 +1,11 @@
-extractor_status,extractor_value,label_state,rationale
-EXTRACTED,MNI152NLin6Asym,canonical,resolved variant identifier
-EXTRACTED,MNI152NLin2009cAsym,canonical,resolved variant identifier
-EXTRACTED,Talairach,family_specified,"Talairach is a coordinate SYSTEM realized by many digital templates -> names the family not a resolvable variant (protocol v1.2 CALL 2 / changelog item 6). THIS ROW is the one that matters: resolved-to-Talairach maps to family_specified, NOT canonical."
-EXTRACTED,native_volume,native_volume,direct
-EXTRACTED,study_specific,study_specific,direct
-EXTRACTED,other,family_specified,"named a target the enum cannot canonicalise -> family-level (catch-all; UNUSED on this corpus)"
-DEFERRED_TO_CITATION,,deferred,direct — mirrors base_pipeline's DEFERRED_TO_CITATION status family
-MISSING_FROM_PAPER,,absent,"the extractor's honest 'nothing reconstructable' (mirrors base_pipeline MISSING -> NOT_REPORTED). NB: MISSING is a LOSSY bucket — it conflates genuine-absent (power) with family/study/deferral flattening; the sub-case is recoverable ONLY from raw_diagnostic in the frozen predictions, which is diagnostic and does NOT change the mapping (mapping the emitted status, not the discarded raw value, is the non-tunable choice)."
+extractor_status,failure_reason,extractor_value,label_state,rationale
+EXTRACTED,,MNI152NLin6Asym,canonical,resolved variant identifier
+EXTRACTED,,MNI152NLin2009cAsym,canonical,resolved variant identifier
+EXTRACTED,,Talairach,family_specified,"Talairach is a coordinate SYSTEM realized by many digital templates -> names the family not a resolvable variant (protocol v1.2 CALL 2 / changelog item 6)."
+EXTRACTED,,native_volume,native_volume,direct
+EXTRACTED,,study_specific,study_specific,direct
+EXTRACTED,,other,family_specified,"named a target the enum cannot canonicalise -> family-level (catch-all; UNUSED on this corpus)"
+DEFERRED_TO_CITATION,,,deferred,direct — mirrors base_pipeline's DEFERRED_TO_CITATION status family
+MISSING_FROM_PAPER,value_not_in_literal:underspecified[MNI],,family_specified,"CORRECTED (v2, author-identified after v1): status is MISSING but the extractor GRABBED a bare MNI-family term (raw_diagnostic) it couldn't resolve to a variant — 'said MNI, no variant' = family_specified. This is the analogue of the Talairach row and mirrors generate_sfn_review's value_not_in_literal->Family-specified. v1 of this map omitted this row and scored these 9 papers as absent (lossy). The MISSING status itself is a false-missing spec defect, scored on the DIAGNOSTIC here and documented separately (docs/findings/target_space-false-missing.md)."
+MISSING_FROM_PAPER,value_not_in_literal:no_match,,"named-vs-unnamed test on raw_diagnostic","the extractor grabbed raw_diagnostic but matched no known form; apply protocol CALL 3 named-vs-unnamed to the raw value: a NAMED template (gordon 'EPI template') -> family_specified; a bare atlas/standard-space GESTURE (poldrack '...atlas space', power 'atlas space') -> absent."
+MISSING_FROM_PAPER,,,absent,"genuine MISSING — the extractor captured NOTHING (no raw_diagnostic): the honest 'nothing reconstructable' (ciric, liu_2005, mueller, viduarre). Mirrors base_pipeline MISSING -> NOT_REPORTED."
