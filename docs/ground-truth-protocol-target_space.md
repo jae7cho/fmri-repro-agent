@@ -1,9 +1,33 @@
-# Ground-truth protocol — `spatial_normalization.target_space` (v1.1 — all 5 calls ratified; CALL 4 dual-axis + CALL 5 `deferred` state resolved)
+# Ground-truth protocol — `spatial_normalization.target_space` (v1.2 — adds CALL 6 composed transform chains, CALL 7 terminal volumetric state of the functional timeseries, and the Value-column recording convention; CALL 2 wheaton remains open)
 
 **Status: PRE-REGISTERED.** Committed before any label is written; labels committed before any scoring
 run. The signed commit order is the pre-registration. Amendments get a new version + stated reason,
 never a silent edit. Single-rater, author-labeled (Jae Wook Cho) — a stated limitation; inter-rater
 reliability deferred and conditional, exactly as base_pipeline v1.
+
+**v1.2 amendments (2026-07-29) — stated reason, per the never-a-silent-edit rule.** Ratified against the
+full-text audit to keep composed-chain and surface-terminal papers from collapsing to `absent`:
+1. **CALL 6 RATIFIED** — a transform chain stated end-to-end in-paper and terminating in a named
+   template specifies that template (ciric → study_specific via a two-leg chain).
+2. **CALL 7 RATIFIED** — `target_space` is the terminal volumetric state of the functional TIMESERIES:
+   (a) normalizing derived statistical maps does not set it (binder → native_volume); (b) a timeseries
+   that exits to the surface axis with no stated volumetric target is native_volume volumetrically
+   (chen → native_volume).
+3. **Value-column recording convention added** — the verbatim target term when named, blank otherwise,
+   with Notes carrying the adjudication.
+4. **native_volume criterion reconciled (CALL 3 ↔ CALL 7)** — native_volume is satisfied by EITHER an
+   explicit native-space statement (CALL 3) OR an enumerated step sequence whose terminal volumetric
+   state is identifiable AND native (CALL 7(a) binder / (b) chen); an explicit statement is sufficient,
+   not necessary. (A merely-identifiable terminal state that is a volumetric target — e.g. poldrack's
+   unnamed atlas grid — is `deferred`, not native_volume.)
+5. **chen SUPERSEDED `family_specified` → `native_volume`** (not a silent edit) — per CALL 7(b) chen's
+   only MNI reference is the surface template's frame (sphere registration), leaving no volumetric
+   target; the v1.1 CALL 1 example and the Known-adjudications entry are corrected accordingly.
+6. **Talairach reclassified `canonical` → `family_specified`** (surfaced by the v1.2 derivability check —
+   liu_2005 was the trigger): the Talairach & Tournoux atlas is a coordinate system realized by many
+   digital templates, so a Talairach reference names the family, not a resolvable variant. Strikes the
+   v1.1 canonical "Talairach with its atlas" clause; cole and liu_2005 now derive cleanly to
+   family_specified.
 
 **v1.1 amendments (2026-07-27) — stated reason, per the never-a-silent-edit rule.** Three changes,
 each ratified against independently-verified full-text evidence (poldrack read in full; base_pipeline
@@ -59,20 +83,35 @@ Label the VOLUMETRIC target_space in exactly one state:
 - **`canonical`** — the paper named a specific, resolvable template: a variant identifier
   (MNI152NLin6Asym, MNI152NLin2009cAsym), OR a specific template FILE that resolves to one by
   established identity (oconnor: "FSL's MNI152T1_2mm_brain.nii.gz" → MNI152NLin6Asym; FSL ships
-  NLin6Asym — verified vs FSL docs + TemplateFlow + Lead-DBS), OR Talairach with its atlas.
-- **`family_specified`** — the paper named the MNI family (or a tool-generic MNI reference) WITHOUT a
-  resolvable variant: "MNI", "MNI152", "MNI standard space", "SPM's MNI template", "MNI-152 12-dof
-  linear". Real, era-standard specification; adequate for typical cortical/large-scale analysis
-  (nonlinear registration absorbs the variant difference — Dice separation across MNI152 variants
-  ≤~0.02, largest only in small subcortical/midline structures); under-specified only for
-  subcortical-precision/coordinate work. **Not a failure — a completeness tier.**
+  NLin6Asym — verified vs FSL docs + TemplateFlow + Lead-DBS). (Bare Talairach is NOT canonical — it is a
+  coordinate system realized by many digital templates, so it is `family_specified`; see CALL 2.)
+- **`family_specified`** — the paper named a TEMPLATE — a family term, a tool-generic reference, or a
+  tool-shipped template — WITHOUT a resolvable variant: "MNI", "MNI152", "MNI standard space", "SPM's
+  MNI template" (wheaton), "MNI-152 12-dof linear", "an EPI template" (gordon). This matches CALL 3's
+  rule (the boundary is whether a TEMPLATE was named) and is deliberately broader than "the MNI family":
+  gordon named no stereotactic space at all, only a tool-shipped template. **What matters is that the paper NAMED a specific template or family** —
+  picked out by a distinguishing identifier: an atlas family ("MNI"/"MNI152"), a modality ("an EPI
+  template" — gordon, plausibly SPM's shipped EPI template, referent UNVERIFIED per CALL 2), or a tool
+  ("SPM MNI template" — wheaton) — even if the exact variant/file is unresolvable. The bare GENERIC
+  category word for standard space — "atlas", "atlas space", "standard space" — names NO specific
+  template and is `absent`, NOT family_specified (power; see CALL 3). The test is named-vs-unnamed, not
+  whether some template file exists: power resampled into SOME atlas grid, but named no template. Real,
+  era-standard
+  specification; adequate for typical cortical/large-scale analysis (nonlinear registration absorbs the
+  variant difference — Dice separation across MNI152 variants ≤~0.02, largest only in small
+  subcortical/midline structures); under-specified only for subcortical-precision/coordinate work.
+  **Not a failure — a completeness tier**, though a heterogeneous one (see "What this produces").
 - **`study_specific`** — the paper normalized to a template CONSTRUCTED for this study
   (developmental/cohort/precision; mueller: "subject-specific anatomical template created using ANTs
   multivariate template construction"). A specified methodological choice, dataset-bound.
-- **`native_volume`** — no volumetric normalization; functional data kept in each subject's own
-  volumetric space (a deliberate choice, common in precision imaging). Distinct from study_specific
-  (which DOES normalize, to a constructed template) and from Absent (which reports nothing). NB: a
-  paper that resamples into an (even unnamed) common atlas grid is NOT native_volume — see CALL 4.
+- **`native_volume`** — the functional timeseries receives NO volumetric template. Two forms, both
+  count: it is explicitly kept in each subject's own volumetric space (CALL 3), OR its terminal
+  volumetric state is identifiable from an enumerated step sequence AND is native (reaches no volumetric
+  template) — e.g. it exits to the surface axis (chen, CALL 7(b)) or only derived statistical maps are
+  normalized (binder, CALL 7(a)). Distinct from
+  study_specific (which DOES normalize, to a constructed template) and from Absent (which reports
+  nothing). NB: a paper that resamples the timeseries into an (even unnamed) common atlas grid is NOT
+  native_volume — that is `deferred`/`absent` per the target — see CALL 4.
 - **`deferred`** — the paper names no volumetric target itself, but attributes its pipeline (and thus
   its normalization target) to a cited work or a named-by-provenance pipeline, so the target plausibly
   lives in that citation — **identity UNRESOLVED**. Distinct from `absent` (nothing reconstructable
@@ -87,14 +126,17 @@ Label the VOLUMETRIC target_space in exactly one state:
 
 ---
 
-## The three definitional calls (the audit surfaced these; they are the hard lines)
+## The definitional calls (the audit surfaced these; they are the hard lines)
 
 ### CALL 1 — target_space is VOLUMETRIC ONLY; surface targets are a separate field
 `fsaverage5`, `Conte69`, `fsLR`, and other SURFACE templates are NOT target_space values — they are a
 different normalization axis (`target_surface`). A paper can specify a volumetric target, a surface
 target, both, or neither, independently.
-- chen ("MNI space" volumetric + "fsaverage5" surface) → target_space = **family_specified** (on the
-  volumetric "MNI"); its fsaverage5 is scored in `target_surface`, NOT here.
+- chen (functional timeseries terminates on the "fsaverage5" surface; its only "MNI" reference is the
+  surface template's coordinate frame, reached via sphere registration) → target_space =
+  **native_volume** (v1.2, per CALL 7(b); this SUPERSEDES the v1.1 reading of chen as family_specified —
+  there is no volumetric target). The surface work (fsaverage5, and the MNI surface frame) is scored in
+  `target_surface`, NOT here.
 - weber ("MNI152 space" + "Conte69" surface) → target_space = **family_specified**; Conte69 → surface.
 - The audit CONFIRMED this: fsaverage5/Conte69 were flagged as "specificity signals" but adjudicated to
   the surface axis — labeling them as target_space would misrepresent a surface template as a
@@ -136,6 +178,11 @@ The boundary is resolvability to a specific variant/file, NOT how "official" the
     resolvable-to-an-enum-value.
   - derosa "MNI-152 template, 12-dof linear" → **family_specified**. Names the family + the transform
     d.o.f., but not a variant identifier or file.
+  - cole / liu_2005 "Talairach" (even citing "Talairach and Tournoux (1988)") → **family_specified**, NOT
+    canonical. Talairach is a coordinate SYSTEM realized by many digital templates (AFNI's TT_N27, the
+    original 1988 atlas, SPM's, …), so citing it names the family, not a resolvable digital variant.
+    (Supersedes the v1.1 canonical "Talairach with its atlas" clause — see changelog; liu_2005 was the
+    derivability-check trigger.)
 **Rule:** canonical requires a reference that resolves to ONE specific template (variant or file).
 A family term, or a tool-generic MNI reference, is family_specified. When unsure whether a reference
 resolves, it is family_specified (canonical is the stricter claim; do not over-credit).
@@ -143,7 +190,10 @@ resolves, it is family_specified (canonical is the stricter claim; do not over-c
 ### CALL 3 — family_specified / native_volume / absent / deferred: the low-specification boundary
 - Named the MNI family (bare) → **family_specified** (they told you the family).
 - No volumetric template, functional data explicitly kept in native/subject volumetric space →
-  **native_volume** (a stated choice — "no normalization" is itself specification).
+  **native_volume**. **CALL 7 broadens this:** an explicit native-space statement is SUFFICIENT but not
+  NECESSARY — native_volume is also satisfied when the terminal volumetric state of the functional
+  timeseries is identifiable from an enumerated step sequence AND is native (reaches no volumetric
+  template): binder (CALL 7(a)), chen (CALL 7(b)). See CALL 7.
 - No template named in-paper, but the pipeline (hence the target) attributed to a cited/provenance-named
   work → **deferred** (the target lives in the citation; identity unresolved — see CALL 5).
 - "atlas space" / "standard space" with NO template named and NO deferral, or silence → **absent**
@@ -154,18 +204,36 @@ resolves, it is family_specified (canonical is the stricter claim; do not over-c
   - poldrack ("affine registration to atlas space", atlas never named, pipeline deferred to a cited
     WashU pipeline) → **deferred**, not absent (v1.1; see CALL 4 / CALL 5).
 **Rule:** the boundary is whether a TEMPLATE (family or specific) was named, or DEFERRED to a citation.
-Family named → family_specified. No template but native space stated → native_volume. No template but
-pipeline attributed to a cited work → deferred. No template, no native statement, no deferral → absent.
-A resolution or d.o.f. without a template does NOT make it family_specified — target_space is about the
-SPACE, not the resolution.
+**Named template vs generic gesture (the family_specified / absent boundary):** family_specified
+requires the paper to NAME a specific template or family by a distinguishing identifier — an atlas family
+("MNI"/"MNI152"), a modality ("an EPI template" — gordon), a tool ("SPM MNI template" — wheaton), or a
+coordinate-system atlas cited without a resolvable digital variant ("Talairach" / "Talairach and Tournoux
+(1988)" — cole, liu_2005) —
+even if the exact variant/file is unresolvable or the referent unverified (CALL 2). `absent` is the bare
+GENERIC category word for standard space — "atlas", "atlas space" (power), "standard space" — which names
+no specific template. **The operative test is NAMED-vs-UNNAMED, not artifact-vs-no-artifact:** power
+resampled into SOME (unnamed) atlas grid — an artifact exists — but never NAMED which template →
+`absent`. Contrast poldrack: its atlas is equally unnamed, but the pipeline is citation-attributed →
+`deferred`, not absent (CALL 5). So among papers with an unnamed volumetric target: named a specific
+template → family_specified; unnamed + citation-attributed → deferred; unnamed + no deferral → absent.
+Do NOT credit the bare word "atlas" as a template name on any route (family-term, tool-generic, or
+tool-shipped).
+Family named → family_specified. No template but native space stated, OR the terminal volumetric state
+of the functional timeseries is identifiable from an enumerated step sequence AND that terminal state is
+native — the timeseries reaches no volumetric template (CALL 7; this EXCLUDES poldrack, whose
+identifiable terminal state is an unnamed atlas GRID, a volumetric target → deferred) → native_volume.
+No template but pipeline attributed to a cited work → deferred. No template, no native statement, no
+identifiable native terminal state, and no deferral → absent (silence). A resolution or d.o.f.
+without a template does NOT make it family_specified — target_space is about the SPACE, not the
+resolution.
 
 
 ### CALL 4 — DUAL-AXIS: report completeness PER AXIS; exempt a paper from an axis only where it demonstrably did not use that axis as its analysis target **[RATIFIED v1.1 — narrow form]**
 A surface-based pipeline normalizes to a SURFACE template, not a volumetric one. Judging such a paper on
 `target_space` alone can mark it `absent`/`deferred` and read as a reporting failure — when its actual
 analysis target was specified exhaustively on the surface axis. But the exemption MUST be narrow, or it
-degrades into "any surface specification excuses volumetric silence," which would wrongly excuse chen
-and weber (below).
+degrades into "any surface specification excuses volumetric silence," which would wrongly excuse a paper
+like weber that DID name a volumetric target (below).
 
 **The ratified rule.** Completeness is reported PER AXIS (`target_space` volumetric; `target_surface`
 surface). A paper is exempt from a volumetric reporting-gap ONLY under the CONJUNCTION:
@@ -200,9 +268,11 @@ units are individually defined, not because it "used a surface."
 
 **Reporting consequence (ratified).** The headline CANNOT be a single number over 20 papers. It is TWO
 distributions — a volumetric completeness distribution and a surface completeness distribution — PLUS a
-joint statement, and papers appear in BOTH. chen ("MNI" + fsaverage5) and weber ("MNI152" + Conte69) are
-`family_specified` on the volumetric distribution AND specified on the surface distribution; neither gets
-credit-by-substitution across axes. The DEPENDENCY (is `target_surface` extracted?) is RESOLVED —
+joint statement, and papers appear in BOTH. weber ("MNI152" volumetric + "Conte69" surface) is
+`family_specified` on the volumetric distribution AND specified on the surface distribution; it gets no
+credit-by-substitution across axes. (chen, by contrast, names NO volumetric target — its MNI is the
+surface template's frame — so it is `native_volume` volumetrically per CALL 7(b) while still appearing on
+the surface distribution.) The DEPENDENCY (is `target_surface` extracted?) is RESOLVED —
 verified at HEAD to be genuinely extracted (see CALL 1) — so both distributions are computable now.
 
 ### CALL 5 — `deferred` state **[RESOLVED v1.1 — Option A: added]**
@@ -225,6 +295,97 @@ the citation is the downstream citation-resolver's job, not a labeling state. `d
 PLAUSIBILITY (the target lives in the cited pipeline), not on a resolved atlas identity; do not assert
 MNI / Talairach / a specific WashU template for poldrack.
 
+### CALL 6 — a composed transform chain specifies its terminal template **[RATIFIED]**
+
+Most papers describe normalization in two legs — functional→anatomical coregistration, then
+anatomical→template normalization — rather than a single func→template sentence. If a composed chain
+did not count, a large fraction of the corpus would collapse to `absent`, and the distribution would
+measure description style rather than reporting completeness.
+
+**Rule:** a stated transform chain terminating in a named template specifies that template as
+`target_space`, provided **every leg is stated in-paper**. Composing explicitly-stated transforms is
+reading the paper; it is not inference from priors.
+
+**Worked case — ciric_2017 → `study_specific`.** Structural leg: "each structural image was
+diffeomorphically registered to the study-specific PNC template using the top-performing SyN
+deformation". Functional leg (BOLD section): "co-registration of functional data to the high-resolution
+structural image using boundary-based registration". No single func→template sentence exists; the chain
+is complete and terminates in a named template. Notes must record the composition.
+
+**Contrast — poldrack_2015 → `deferred`, not family_specified.** The chain is stated but the terminal
+target is never named ("an atlas", "the atlas space"). A complete chain to an unnamed target does not
+specify a target.
+
+**Boundary:** every leg must be in the text. If a leg rests on knowledge of the named pipeline's
+behavior rather than the paper's own statement, the chain is **not** stated, and the label follows what
+the text supports (`deferred` or `absent`). See the firewall note in CALL 7.
+
+### CALL 7 — `target_space` is the terminal volumetric state of the functional timeseries **[RATIFIED]**
+
+**Rule:** `target_space` records where the functional **timeseries** ends up volumetrically. Two
+corollaries follow.
+
+**(a) Normalization applied to derived statistical maps does not set `target_space`.**
+binder_1999 → `native_volume`. The sequence is: EPI images coregistered within subject ("All EPI images
+were spatially coregistered using an iterative procedure that minimizes variance in voxel intensity
+differences between images") → per-subject t-tests produce SPMs → "Individual anatomical (SPGR) scans
+and SPMs were **then** projected into the standard stereotaxic space of Talairach and Tournoux (1988)".
+Had step 1 reached a common space, step 3 would be redundant. The timeseries never leaves native space;
+Talairach is the group/results space and belongs in Notes. Consistent with base_pipeline **D8**
+(preprocessing, not analysis) — someone reconstructing binder's *preprocessing* normalizes nothing.
+
+**(b) A timeseries that exits to the surface axis with no stated volumetric target is
+`native_volume` volumetrically.** chen_2015 → `native_volume`. The functional stream is enumerated end
+to end — discard volumes, despike, slice-timing, motion, intensity scaling, BBR to the subject's own
+anatomy, nuisance regression, detrending — and "**Finally**, the data were projected onto the fsaverage
+surface grid ... down-sampled to the fsaverge5 surface grid." The anatomical stream's only normalization
+is surface-based: "pial and white surfaces were reconstructed and spatially normalized to match a
+group-level standard template surface in the Montreal Neurological Institute (MNI) space **via a sphere
+registration**". No volumetric template appears in either stream. The MNI reference is the surface
+template's coordinate frame → `target_surface` per CALL 1, not `target_space`.
+
+**weber contrast (a named volumetric target outranks a surface exit).** weber's timeseries ALSO
+terminates on a surface (Conte69), yet weber is `family_specified`, not native_volume — because weber
+separately mapped its functional data to a NAMED volumetric template ("mapped to MNI152 space"), a stated
+volumetric target (CALL 3's named-template test). chen names no such target — its only MNI is the surface
+template's coordinate frame via sphere registration. **Rule:** a named volumetric target the timeseries
+reaches makes it `family_specified`/`canonical` even if the data are later projected to a surface;
+CALL 7 native_volume applies only when the timeseries reaches NO volumetric template.
+
+**Interaction with CALL 6:** chen's chain *does* compose (func→anat via BBR; anat surfaces→template
+surface via sphere registration) but terminates on the **surface** axis. A chain credits only the axis
+it terminates on.
+
+**Distinguishing from `deferred`:** `native_volume` requires **positive evidence** — an enumerated step
+sequence whose terminal state is identifiable (binder, chen). A paper that describes no steps and defers
+wholesale is `deferred` (braun: "preprocessed according to standard protocols as previously described in
+refs. 47 and 48"; viduarre: "the procedure described by Glasser et al."). Silence about normalization is
+not evidence of native space.
+
+**Firewall note:** chen is the standing temptation to fill the volumetric target from knowledge of CCS.
+Whether CCS normalizes volumetrically by default belongs to the KB as `INFERRED_DEFAULT` with a
+code-verified basis — never as `EXTRACTED`, and never as a label.
+
+**Reconciliation with CALL 3 (v1.2).** CALL 7 does not contradict CALL 3 — it broadens its
+native_volume criterion. `native_volume` is satisfied by EITHER an explicit native-space statement
+(CALL 3) OR an enumerated step sequence whose terminal volumetric state is identifiable AND native — the
+timeseries reaches no volumetric template (CALL 7(a) binder / CALL 7(b) chen). An explicit statement is
+sufficient but not necessary. A merely-identifiable terminal state is NOT sufficient on its own:
+poldrack's terminal state is identifiable (an unnamed atlas grid) but IS a volumetric target →
+`deferred`, not native_volume. Silence with no identifiable native terminal state is `absent` (or
+`deferred`), never native_volume.
+
+### Recording convention — the Value column
+
+Value records the **verbatim target term** when the paper names one (power/poldrack: "atlas"), and is
+**blank** when it does not (braun, viduarre, binder, chen). Blank alone is ambiguous between "named
+nothing" and "named something belonging to another axis," so Notes must carry the adjudication — e.g.
+for chen: *volumetric target not stated; functional stream terminates at subject anatomical space via
+BBR; the MNI reference is the surface template's frame (sphere registration) → target_surface per
+CALL 1.* `native_volume` is evidenced by a positive quote (an enumerated pipeline whose terminal volumetric
+state is native) plus the absence of any volumetric-normalization step — whether stated explicitly or
+evident from an enumerated pipeline, since no paper writes "we did not normalize."
+
 ---
 
 ## Labeling procedure (mirrors base_pipeline)
@@ -237,29 +398,36 @@ MNI / Talairach / a specific WashU template for poldrack.
    or the sentence deferring the pipeline to a citation). For canonical, the quote must contain the
    specific variant/file. For absent, note the gesture ("atlas space") or that nothing was stated.
 4. Fill per paper: `target_space_state` (one of the six), `value` (the verbatim target as written —
-   "MNI", "FSL's MNI152T1_2mm_brain.nii.gz", "atlas space"; for deferred, the cited work/provenance),
+   "MNI", "FSL's MNI152T1_2mm_brain.nii.gz", "atlas" — or BLANK when the paper names no target, per the recording convention; for `deferred` the cited work/provenance goes in the supporting quote / Notes, NOT in `value` (poldrack `value`="atlas", braun/viduarre blank)),
    `supporting_quote`.
 5. If a paper doesn't fit the six states, the protocol is incomplete — amend, bump version, re-commit,
    THEN label it. Do not force it.
 
 ## Known adjudications (from the full-text audit — pre-recorded so labeling is consistent)
 
-canonical: oconnor (FSL file). study_specific: mueller (ANTs constructed template). family_specified:
-agtzidis, chen, derosa, liu_2013, tang, vanderwal, weber, wheaton, gordon (bare/family/tool-generic MNI
-or "EPI template"). absent (volumetric): power ("atlas space", no template named, no deferral).
-deferred (volumetric): poldrack — atlas never named in-paper, pipeline attributed by provenance to a
-cited WashU pipeline ("Washington University, St Louis⁴⁵"); v1.1 supersedes v1's `absent` (see CALL 5),
-consistent with base_pipeline's `DEFERRED`. Per CALL 4, poldrack's surface target is canonical (32k
-fs_LR) and it does NOT count as a volumetric reporting failure (its volumetric units are
-individually-defined). [The remaining papers labeled per their full text; braun/cabral/ciric/liu_2005/
-viduarre were the base_pipeline "missing/deferred" set — their target_space is labeled independently
-here, likely absent or deferred depending on what they state.]
+Final v1.2 adjudications for all 19 labelled papers (labelling now complete; this mirrors the committed
+workbook). canonical: oconnor (FSL file). study_specific: mueller (ANTs constructed template); ciric
+(study-specific PNC template reached via a stated two-leg chain — CALL 6). native_volume: chen —
+SUPERSEDES the v1.1 family_specified reading, its only MNI reference is the surface template's frame via
+sphere registration so no volumetric target remains (CALL 7(b)); binder — per-subject SPMs projected to
+Talairach while the timeseries stays native (CALL 7(a)). family_specified: agtzidis, cole, derosa,
+gordon, liu_2005, liu_2013, tang, vanderwal, weber, wheaton (a named template without a resolvable variant — bare/family/tool-generic MNI, wheaton's "SPM
+MNI template", or gordon's "an EPI template"; gordon's referent + space are UNVERIFIED, same open lineage
+as wheaton under CALL 2 — do NOT assert SPM-EPI-is-MNI). absent (volumetric): power ("atlas space", no template named, no deferral). deferred
+(volumetric): poldrack — atlas never named in-paper, pipeline attributed by provenance to a cited WashU
+pipeline ("Washington University, St Louis⁴⁵"); v1.1 supersedes v1's `absent` (see CALL 5), consistent
+with base_pipeline's `DEFERRED`; per CALL 4 its surface target is canonical (32k fs_LR) and it is not a
+volumetric reporting failure (volumetric units individually-defined). braun, viduarre — wholesale
+citation-deferral with no steps described (CALL 7, "distinguishing from `deferred`"). Distribution:
+family_specified 10 / deferred 3 / native_volume 2 / study_specific 2 / canonical 1 / absent 1 = 19.
+(cabral excluded per the denominator handling.)
 
 **Note the divergence oconnor creates:** oconnor's LABEL is canonical (the paper stated a resolvable
 file), but the EXTRACTOR emits "MNI" (family_specified) — a flattening. So oconnor will score as a
 single clean EXTRACTION ERROR (label canonical, extraction family_specified), NOT a reporting gap. This
-is the reporting-completeness-vs-extraction-accuracy divergence, isolated to one paper (verified
-1/20 against full text). Do not "fix" the label to match the extractor.
+is the reporting-completeness-vs-extraction-accuracy divergence, isolated to one paper (oconnor; verified
+1 of 20 in the full-text extraction audit, cabral included — the sole extraction error among the 19
+labelled papers). Do not "fix" the label to match the extractor.
 
 ## Carry-forward (logged in v1.1, NOT acted on)
 
@@ -292,7 +460,10 @@ author labels and to extractor output.
 NOT "65% underreported." Per CALL 4, the output is TWO scored distributions plus a joint statement, not
 one number: (1) a VOLUMETRIC six-state distribution — canonical, family_specified (adequate for typical
 cortical analysis, under-specified for subcortical precision — cited), study_specific, native_volume,
-deferred, absent — and (2) a SURFACE completeness distribution; papers appear in both. oconnor is a
+deferred, absent — and (2) a SURFACE completeness distribution; papers appear in both. The
+`family_specified` bucket is HETEROGENEOUS: most papers named an MNI-family term, but gordon named no
+stereotactic space at all (a tool-shipped "EPI template"), so the honest presentation phrasing is
+"named a template without a resolvable variant," NOT "named the MNI family." oconnor is a
 single extraction error (label canonical vs extractor family_specified), not a reporting gap; poldrack
 is volumetric `deferred` (not an absent reporting failure) with a canonical surface target. Defensible,
 reproducible, and it reframes the abstract's claim into an honest completeness finding that supports the
