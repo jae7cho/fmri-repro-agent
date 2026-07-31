@@ -53,5 +53,14 @@ is a symptom of that conflation. Two fixes:
 default. **Not acted on here** — the defect is documented and the scorer reads the diagnostic so the
 score is not corrupted; the fix is a deliberate design call for the author.
 
+**Leaning: (B), and the scorer's own failure is the evidence.** The v1 scoring map (committed `7bca618`)
+keyed on `status` and *could not express "named the family"* — it had to collapse those papers to
+`absent`. That is the SAME conflation the enum has: a representation that carries only "which space" has
+nowhere to put "how completely specified," so presence-without-a-variant becomes absence. The defect
+reproduced itself one layer up, in the scorer. Splitting which-space (`target_space`) from
+how-completely-specified (a `target_space_completeness` field) fixes both the spec's false-missing AND the
+class of confusion that produced the v1 map — the same structural honesty, applied once. (A) would leave
+the enum carrying both axes and would have to be *un-conflated* later anyway.
+
 Related: [`extraction-specificity-flattening.md`](extraction-specificity-flattening.md);
 `ground_truth/target_space_README.md` (the map correction + score).

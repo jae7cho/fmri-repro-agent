@@ -43,6 +43,15 @@ keys on `failure_reason`; the correction was author-identified and is justified 
 extractor's actual output (a factual criterion), not by the resulting number — both numbers are reported.
 The v1 map/number stand in git history as the record.
 
+**Why v2 is a correction, not a tune — the prediction came out WRONG in a checkable direction.** The
+collapse was predicted *before* the map was changed, with a mechanism (value_not_in_literal captures the
+family term) and a magnitude (**9** papers). The magnitude came out wrong: **8** collapsed. liu_2005
+deviated — its `failure_reason=None` (nothing captured) makes it a genuine miss, not a value_not_in_literal
+artifact — and the deviation was *investigated* (below), not absorbed. A post-hoc change that produced
+exactly the predicted nicer number would be weak evidence of honesty; one that deviates in a checkable
+direction, with the deviation run down, is strong evidence the map tracks the extractor's actual behavior
+rather than a target number.
+
 ## The real defect (this survives the correction)
 
 The extractor's SPEC records `extraction.status = MissingFromPaper` for 9 papers that **stated "MNI"**
@@ -72,12 +81,25 @@ The finding is the decomposition, not the rate:
 
 - **Correct (11):** the 8 bare-MNI-family papers (agtzidis, derosa, gordon, liu_2013, tang, vanderwal,
   weber, wheaton) + cole (Talairach) + power (absent) + braun (deferred, K=3-unstable).
-- **study_specific missed (2):** ciric, mueller — constructed template not captured (MISSING, no raw).
-- **deferral miss (2):** poldrack, viduarre.
-- **cross-axis leak (1):** chen — surface template's MNI frame grabbed as a volumetric family target.
-- **family miss (1):** liu_2005 — Talairach **not captured at all** (raw=None); cole's Talairach WAS caught,
-  so this is a genuine extraction inconsistency, not representation.
+- **study_specific missed (2):** ciric, mueller — constructed template not captured (MISSING, no raw). New
+  model-side class (the enum HAS study_specific; the detector didn't fire on an explicit construction phrase).
+- **deferral miss (2):** poldrack, viduarre — model reported no `status="deferred"`. **VERIFIED not the
+  base_pipeline `_parse_attribution_ref` [45] bug**: target_space deferral is model-driven (`_process_deferred`
+  consumes the model's `status="deferred"`; no attribution parser in this path). poldrack's output was
+  `status=extracted, value="3-mm isotropic atlas space"` (value_not_in_literal) — it reported the atlas
+  gesture instead of deferring. A cross-field reuse was hypothesized and did not hold; both are model-side.
+- **cross-axis leak (1):** chen — surface template's MNI frame grabbed as a volumetric family target. New.
+- **family miss (1):** liu_2005 — Talairach **not captured at all** (`failure_reason=None`, raw=None); cole's
+  Talairach WAS caught. **HYPOTHESIS (untested here): input-corruption** — liu_2005's two-column layout
+  interleaves methods with the reference list (demonstrated for base_pipeline, `pdf-glue-false-missing.md`);
+  the `failure_reason=None` signature fits "never saw an intact sentence." The confirming test is a
+  de-interleaved K=3 re-extraction. Per the cole cautionary (glue *looked* causal, tested → REFUTED), this is
+  **NOT reclassified without the run**, which needs bedrock API access unavailable in this environment.
 - **specificity flattening (1):** oconnor — resolvable FSL file grabbed as bare "MNI".
+
+**Pending runs (need bedrock API):** (a) liu_2005 de-interleave K=3 — does Talairach appear on a clean
+slice? If yes, it moves to demonstrated-input-corruption. (b) **binder** — no prediction (added post-batch);
+the remaining denominator gap. Neither runnable here.
 
 ## Caveat (standing)
 
