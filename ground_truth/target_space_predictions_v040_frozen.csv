@@ -11,23 +11,23 @@
 # Talairach 3/3, a results-space leak (grabbed from the SPM statmap-projection sentence; CALL 7(a)).
 # liu_2005's row below stays MISSING (the corrupted-PDF batch result); the de-interleave diagnostic run
 # recovers Talairach 3/3 on a clean slice -> demonstrated input-corruption (docs/findings/target_space-pending-runs.md).
-paper_id,extractor_status,extractor_value,failure_reason,raw_diagnostic,status_k3,stable
-agtzidis_2020,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-braun_2015,DEFERRED_TO_CITATION,,,,DEFERRED/MISSING/DEFERRED,no
-chen_2015,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-ciric_2017,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes
-cole_2013,EXTRACTED,Talairach,,,EXTRACTED/EXTRACTED/EXTRACTED,yes
-derosa_2025,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI-152,MISSING/MISSING/MISSING,yes
-gordon_2014,MISSING_FROM_PAPER,,value_not_in_literal:no_match,EPI template,MISSING/MISSING/MISSING,yes
-liu_2005,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes
-liu_2013,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-mueller_2021,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes
-oconnor_2017,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-poldrack_2015,MISSING_FROM_PAPER,,value_not_in_literal:no_match,3-mm isotropic atlas space,MISSING/MISSING/MISSING,yes
-power_2014,MISSING_FROM_PAPER,,value_not_in_literal:no_match,atlas space,MISSING/MISSING/MISSING,yes
-tang_2025,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-vanderwal_2016,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-viduarre_2017,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes
-weber_2024,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI152,MISSING/MISSING/MISSING,yes
-wheaton_2004,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
-binder_1999,EXTRACTED,Talairach,,,EXTRACTED/EXTRACTED/EXTRACTED,yes
+paper_id,extractor_status,extractor_value,failure_reason,raw_diagnostic,status_k3,stable,slice_suspicious
+agtzidis_2020,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+braun_2015,DEFERRED_TO_CITATION,,,,DEFERRED/MISSING/DEFERRED,no,False
+chen_2015,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+ciric_2017,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes,False
+cole_2013,EXTRACTED,Talairach,,,EXTRACTED/EXTRACTED/EXTRACTED,yes,False
+derosa_2025,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI-152,MISSING/MISSING/MISSING,yes,False
+gordon_2014,MISSING_FROM_PAPER,,value_not_in_literal:no_match,EPI template,MISSING/MISSING/MISSING,yes,False
+liu_2005,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes,True
+liu_2013,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+mueller_2021,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes,False
+oconnor_2017,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+poldrack_2015,MISSING_FROM_PAPER,,value_not_in_literal:no_match,3-mm isotropic atlas space,MISSING/MISSING/MISSING,yes,False
+power_2014,MISSING_FROM_PAPER,,value_not_in_literal:no_match,atlas space,MISSING/MISSING/MISSING,yes,False
+tang_2025,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+vanderwal_2016,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+viduarre_2017,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes,False
+weber_2024,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI152,MISSING/MISSING/MISSING,yes,False
+wheaton_2004,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes,False
+binder_1999,EXTRACTED,Talairach,,,EXTRACTED/EXTRACTED/EXTRACTED,yes,False

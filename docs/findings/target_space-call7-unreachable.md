@@ -66,6 +66,13 @@ forbidden to reach. Both chen and binder are now scored capability-limited (2 of
 pulled from the derived-map SPM sentence — so binder is capability-limited AND exhibits the leak; the
 native_volume it *should* carry stays unreachable regardless.
 
+**"Capability-limited" is a scoreability tag, NOT a "no defect" tag.** Both chen and binder are ACTIVE
+model errors (leaks); they are scoreless here only because the *label* is unreachable. The leak is
+corpus-independent — binder's results-space grab yields the WRONG SPACE on any paper whose results-space
+differs from its preprocessing space. So the scorer reports two denominators (all-blind and reachable-only)
+and marks the exclusion as post-hoc: if design (B) makes native_volume reachable, these two leaks start
+counting as accuracy errors with no new defect introduced. Do not let the unreachable bucket absorb them.
+
 Related: [`target_space-false-missing.md`](target_space-false-missing.md),
 [`value-support-guard-substring-hole.md`](value-support-guard-substring-hole.md),
 [`target_space-pending-runs.md`](target_space-pending-runs.md).

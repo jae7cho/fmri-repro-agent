@@ -19,8 +19,11 @@ at finalization). Set-level fact — lives here, not as a CSV column regeneratio
 - **`target_space_scoring_map.csv`** — the PRE-REGISTERED extractor → label mapping, keyed on
   `(status, failure_reason, raw_diagnostic)`. Committed before the scorer runs so it can't be tuned to a
   number. **v2** (see "Map correction" below): v1 keyed on status alone and was lossy.
-- **`target_space_predictions_v040_frozen.csv`** — frozen K=3 predictions incl. `failure_reason`, the
-  durable record the score is computed against (results/ is gitignored + non-stationary).
+- **`target_space_predictions_v040_frozen.csv`** — frozen K=3 predictions incl. `failure_reason` and
+  `slice_suspicious` (the extractor's OWN `methods_not_found` / fallback-slice flag). The scorer consumes
+  `slice_suspicious` to **auto-flag input-corruption-suspect rows** rather than hand-listing them — a signal
+  the system already computes, so it scales as more fields are scored (liu_2005 is the only flagged paper
+  here; its de-interleave run confirmed it). Turns a manual six-call adjudication into a computed flag.
 - Scorer: `extractor_mvp/score_target_space.py` (report-only).
 
 ## The two vocabularies (why a mapping table is needed)
@@ -76,17 +79,26 @@ forms → MISSING; braun itself is K=3-unstable. 1 of 3 deferred labels reachabl
 
 ## Score (report-only; map + predictions both committed)
 
-Over all **19** papers: **11 correct / 8 error**. Blind set: **11 of 17 correct** (6 error). The 8 errors
-partition four ways — the honest headline is this split, not a raw rate:
-**5 model-accuracy · 2 capability-limited · 1 demonstrated-input-corruption**.
-- **2 capability-limited** (chen, binder): CALL 7 `native_volume` is unreachable by construction (the
-  value-support guard forbids an absence-evidenced value; `target_space-call7-unreachable.md`) — a cited
-  accuracy number should not charge these.
-- **1 demonstrated-input-corruption** (liu_2005): a clean de-interleaved slice recovers Talairach 3/3
-  (BrainVoyager 3/3 validates the slice) vs MISSING 3/3 on the corrupted PDF — upstream slicing, not a model
-  error (`target_space-pending-runs.md`).
-So the **model-accuracy denominator is 5 errors**, on the papers the extractor could reach with clean input.
-The finding is the decomposition:
+Over all **19** papers: **11 correct / 8 error**. The 8 errors partition **three ways**, separating *is the
+model wrong?* from *was the label scoreable?* — not the same question:
+- **5 model errors on a REACHABLE label** (scoreable accuracy): ciric, mueller (study_specific missed);
+  poldrack (extract-over-defer); viduarre (deferral not recognized); oconnor (specificity flattening).
+- **2 model errors (LEAKS) on an UNREACHABLE label**: chen (cross-axis), binder (results-space). These are
+  **genuine defects**, scoreless *only* because CALL 7 `native_volume` can't be scored
+  (`target_space-call7-unreachable.md`) — NOT passive. binder's leak yields the WRONG SPACE on any paper
+  whose results-space ≠ its preprocessing space; the label just happens to make it scoreless here.
+- **1 upstream input-corruption** (liu_2005): auto-flagged by the system's own `methods_not_found` slice
+  signal, confirmed by the de-interleave run — not a model defect.
+
+**Blind correct-rate (Wilson 95%), both denominators:**
+- all blind: **11/17 = 64.7% [41, 83]**
+- reachable-only: **11/14 = 78.6% [52, 92]** (excludes the 2 unreachable leaks + 1 corruption)
+
+The reachable-only exclusion is a scoring-policy call **identified POST-HOC** (after seeing the score) — the
+same shape as the map-v2 correction: a-priori-defensible (an unreachable label can't be scored) but not
+pre-registered, so both numbers stand. The 2 excluded leaks are real defects — if design (B) makes
+`native_volume` reachable they would count and the reachable rate would drop. The finding is the
+decomposition:
 
 - **Correct (11):** the 8 bare-MNI-family papers (agtzidis, derosa, gordon, liu_2013, tang, vanderwal,
   weber, wheaton) + cole (Talairach) + power (absent) + braun (deferred, K=3-unstable).
