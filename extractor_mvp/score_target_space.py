@@ -11,8 +11,9 @@ generate_sfn_review's value_not_in_literal -> Family-specified). Scoring the sta
 lossy and produced a spurious 9-paper "enum-gap" class; that MISSING status is itself a false-missing
 spec defect, scored on the diagnostic here and documented in docs/findings/target_space-false-missing.md.
 
-Denominator: 19 labels. binder_1999 has no prediction (post-batch) -> EXCLUDED. oconnor/mueller are
-non-blind (shown as worked examples) -> counted but flagged; the rate is quoted over the BLIND set.
+Denominator: 19 labels, all now with a prediction (binder was run separately 2026-07-31). oconnor/mueller
+are non-blind (shown as worked examples) -> the rate is quoted over the BLIND set of 17. Errors partition
+into model-accuracy / capability-limited (CALL 7 unreachable) / demonstrated-input-corruption.
 
 Run:  uv run python extractor_mvp/score_target_space.py
 """
@@ -30,6 +31,9 @@ PREDS = GT / "target_space_predictions_v040_frozen.csv"
 MAP = GT / "target_space_scoring_map.csv"
 
 NON_BLIND = {"oconnor_2017", "mueller_2021"}  # shown as worked-example rows
+# liu_2005's batch MISSING is DEMONSTRATED input-corruption (two-column interleaving): a clean
+# de-interleaved slice recovers Talairach 3/3 (target_space-pending-runs.md) -> upstream, not a model error.
+INPUT_CORRUPTION = {"liu_2005"}
 GESTURES = (
     "atlas",
     "standard space",
@@ -73,7 +77,9 @@ def error_class(label: str, pred: str, fr: str, raw: str) -> str:
     if label == "canonical" and pred == "family_specified":
         return "specificity flattening (resolvable file grabbed as bare MNI)"
     if label == "native_volume" and pred == "family_specified":
-        return "cross-axis leak (surface template's MNI frame grabbed as volumetric)"
+        if "mni" in (raw or "").lower():  # grabbed a surface template's MNI frame (chen)
+            return "cross-axis leak (surface template's MNI frame grabbed as volumetric)"
+        return "results-space leak (derived-map space grabbed as target; CALL 7(a)) [binder]"
     return f"other mismatch ({label} vs {pred})"
 
 
@@ -119,6 +125,11 @@ def main() -> int:
             if (not ok and label == "native_volume")
             else ""
         )
+        tag += (
+            " [input-corruption: recovers on clean slice]"
+            if (not ok and pid in INPUT_CORRUPTION)
+            else ""
+        )
         rows.append(
             f"  {pid:16s} label={label:16s} -> pred={pred:16s} {'OK ' if ok else 'ERR'} {cls}{tag}"
         )
@@ -138,10 +149,14 @@ def main() -> int:
     )
     print(f"No prediction (excluded): {sorted(no_pred)}")
     cap = [p for p in errors if labels[p] == "native_volume"]  # CALL 7, unreachable by construction
+    corrupt = [
+        p for p in errors if p in INPUT_CORRUPTION
+    ]  # demonstrated upstream, not a model error
+    acc = [p for p in errors if p not in cap and p not in corrupt]
     print(
-        f"Of {len(errors)} errors: {len(errors) - len(cap)} accuracy + {len(cap)} capability-limited "
-        f"(CALL 7 native_volume unreachable: {cap}; target_space-call7-unreachable.md). "
-        f"binder (pending) is the same class. chen's cross-axis fix is scoring-neutral on this row."
+        f"Of {len(errors)} errors: {len(acc)} model-accuracy + {len(cap)} capability-limited "
+        f"(CALL 7 unreachable: {cap}) + {len(corrupt)} demonstrated-input-corruption ({corrupt}). "
+        f"See target_space-call7-unreachable.md / target_space-pending-runs.md."
     )
 
     print("\n=== error-class decomposition (the finding, not the rate) ===")

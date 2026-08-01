@@ -6,7 +6,11 @@
 # extractor GRABBED raw_diagnostic then relabeled status->MISSING (a false-missing; see
 # docs/findings/target_space-false-missing.md). The scorer keys on failure_reason so this captured
 # signal is NOT lost (v1 of this file omitted failure_reason and the map scored these as absent).
-# binder_1999 is ABSENT from this batch (added as the 19th label AFTER the batch) — it has no prediction.
+# binder_1999 was not in the batch (added as the 19th label after it); its prediction is from a SEPARATE
+# K=3 run 2026-07-31 (same model pin, extractor_mvp/scripts/run_pending_target_space.py) -> EXTRACTED
+# Talairach 3/3, a results-space leak (grabbed from the SPM statmap-projection sentence; CALL 7(a)).
+# liu_2005's row below stays MISSING (the corrupted-PDF batch result); the de-interleave diagnostic run
+# recovers Talairach 3/3 on a clean slice -> demonstrated input-corruption (docs/findings/target_space-pending-runs.md).
 paper_id,extractor_status,extractor_value,failure_reason,raw_diagnostic,status_k3,stable
 agtzidis_2020,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
 braun_2015,DEFERRED_TO_CITATION,,,,DEFERRED/MISSING/DEFERRED,no
@@ -26,3 +30,4 @@ vanderwal_2016,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,
 viduarre_2017,MISSING_FROM_PAPER,,,,MISSING/MISSING/MISSING,yes
 weber_2024,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI152,MISSING/MISSING/MISSING,yes
 wheaton_2004,MISSING_FROM_PAPER,,value_not_in_literal:underspecified[MNI],MNI,MISSING/MISSING/MISSING,yes
+binder_1999,EXTRACTED,Talairach,,,EXTRACTED/EXTRACTED/EXTRACTED,yes

@@ -61,8 +61,10 @@ capability, which is why it is hard.
 **Score CALL 7 rows as capability-limited, not accuracy errors.** The scorer (`score_target_space.py`) now
 tags `native_volume` errors as capability-limited and reports the split (accuracy errors vs
 capability-limited), so a cited number does not charge the extractor for a conclusion it is architecturally
-forbidden to reach. chen is the one such row now scored; binder (pending its run,
-`target_space-pending-runs.md`) is the same class and will join it.
+forbidden to reach. Both chen and binder are now scored capability-limited (2 of 19). binder's run
+(2026-07-31) confirmed it live: `EXTRACTED Talairach` 3/3 — a **results-space leak** (CALL 7(a)), Talairach
+pulled from the derived-map SPM sentence — so binder is capability-limited AND exhibits the leak; the
+native_volume it *should* carry stays unreachable regardless.
 
 Related: [`target_space-false-missing.md`](target_space-false-missing.md),
 [`value-support-guard-substring-hole.md`](value-support-guard-substring-hole.md),

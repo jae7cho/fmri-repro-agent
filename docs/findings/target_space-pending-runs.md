@@ -1,9 +1,21 @@
 # Pending target_space runs — outcomes PRE-COMMITTED (2026-07-31)
 
-Two open items from scoring need a bedrock K=3 run (unavailable in the environment where the score was
-computed). Both outcomes of both runs are committed **here, before the run**, so neither can be read
-one-directionally. Harness: `extractor_mvp/scripts/run_pending_target_space.py` (model pin == the frozen
-batch). Six calls total.
+Two open items from scoring need a bedrock K=3 run. Both outcomes of both runs are committed **here, before
+the run**, so neither can be read one-directionally. Harness: `extractor_mvp/scripts/run_pending_target_space.py`
+(model pin == the frozen batch). Six calls total.
+
+## RESULTS — BOTH RUNS DONE (2026-07-31, bedrock sonnet-4-5, profile `bedrock-extractor`)
+
+- **liu_2005** (clean slice): target_space **`EXTRACTED Talairach` 3/3**; slice-validity gate PASSED —
+  base_pipeline **`EXTRACTED BrainVoyager` 3/3** (matches the known-good). Corrupted-PDF batch result was
+  MISSING 3/3. → **Outcome 1: input-corruption DEMONSTRATED CAUSAL.** On a clean slice it recovers and maps
+  to `family_specified` = its label = correct; the batch miss is upstream slicing, not a model error.
+- **binder** (normal path): target_space **`EXTRACTED Talairach` 3/3**. → **Outcome 1: results-space leak
+  CONFIRMED (CALL 7(a))** — Talairach pulled from the derived-map (SPM) sentence. Scores `family_specified`
+  vs `native_volume`; binder is capability-limited (native_volume unreachable) AND exhibits the leak.
+
+Score updated: 19 scored, 11 correct / 8 error = **5 model-accuracy + 2 capability-limited (chen, binder) +
+1 demonstrated-input-corruption (liu_2005)**. The pre-committed outcomes below are kept for the record.
 
 ## Run 1 — liu_2005: is the target_space miss input-corruption?
 

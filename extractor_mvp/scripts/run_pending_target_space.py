@@ -59,25 +59,32 @@ def run(label: str, text: str, client: object, report_base_pipeline: bool = Fals
         value = ts["extraction"].get("value") if ts else None
         line = f"  draw{k}: target_space status={status} value={value!r} failure_reason={fr!r} raw={raw!r}"
         if report_base_pipeline:
-            bp = _field(prep, "base_pipeline_name")
-            bstatus = bp["extraction"]["status"] if bp else "NO_STEP"
-            bval = bp["extraction"].get("value") if bp else None
+            # base_pipeline is a top-level ProvenancedField (extraction.value.name), NOT a step
+            bp = prep.model_dump(mode="json").get("base_pipeline") or {}
+            be = bp.get("extraction") or {}
+            bstatus = be.get("status", "NO_FIELD")
+            bv = be.get("value")
+            bname = bv.get("name") if isinstance(bv, dict) else bv
             line += (
-                f"  |  base_pipeline status={bstatus} value={bval!r}  (BrainVoyager => slice OK)"
+                f"  |  base_pipeline status={bstatus} name={bname!r}  (BrainVoyager => slice OK)"
             )
         print(line)
 
 
 def main() -> int:
+    import sys
+
+    only = sys.argv[1] if len(sys.argv) > 1 else ""  # optional filter: "liu" or "binder"
     client = build_client()
-    # liu_2005: de-interleaved slice fed directly (bypass find_methods_section)
-    run("liu_2005 [de-interleaved slice]", SLICE.read_text(), client, report_base_pipeline=True)
-    # binder: normal path
-    text, parser = load_pdf_text(BINDER_PDF)
-    if parser == "failed":
-        print("\nbinder_1999: pypdf returned no text -- cannot run.")
-    else:
-        run("binder_1999 [normal path]", find_methods_section(text).text, client)
+    if not only or "liu" in only:
+        # liu_2005: de-interleaved slice fed directly (bypass find_methods_section)
+        run("liu_2005 [de-interleaved slice]", SLICE.read_text(), client, report_base_pipeline=True)
+    if not only or "binder" in only:
+        text, parser = load_pdf_text(BINDER_PDF)
+        if parser == "failed":
+            print("\nbinder_1999: pypdf returned no text -- cannot run.")
+        else:
+            run("binder_1999 [normal path]", find_methods_section(text).text, client)
     print(
         "\nRead against docs/findings/target_space-pending-runs.md (outcomes pre-committed). "
         "For liu_2005, CONFIRM base_pipeline recovered BrainVoyager before reading target_space."

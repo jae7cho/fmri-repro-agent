@@ -69,18 +69,24 @@ forms → MISSING; braun itself is K=3-unstable. 1 of 3 deferred labels reachabl
 
 ## Coverage & denominator (name the omissions)
 
-- **binder_1999 has NO extractor prediction** (added as the 19th label after the 18-paper batch); unscoreable
-  from the frozen audit, needs an extractor run before a complete number.
+- **binder_1999** was run separately (2026-07-31, same model pin) and now HAS a prediction — the denominator
+  is closed at **19 scored**.
 - **oconnor and mueller are non-blind** (appear as the worked-example rows AND their own rows). The rate is
-  quoted over the **BLIND set of 16** (18 scored − 2 non-blind).
+  quoted over the **BLIND set of 17** (19 scored − 2 non-blind).
 
 ## Score (report-only; map + predictions both committed)
 
-Over the 18 papers with a prediction: **11 correct / 7 error**. Blind set: **11 of 16 correct** (5 error).
-Of the 7 errors, **1 (chen) is capability-limited** — CALL 7 `native_volume` is unreachable by construction
-(the value-support guard forbids an absence-evidenced value; `target_space-call7-unreachable.md`) — so
-**6 are accuracy** errors. binder (pending) is the same class → **2 of 19 labels are unreachable by
-construction**. The finding is the decomposition, not the rate:
+Over all **19** papers: **11 correct / 8 error**. Blind set: **11 of 17 correct** (6 error). The 8 errors
+partition four ways — the honest headline is this split, not a raw rate:
+**5 model-accuracy · 2 capability-limited · 1 demonstrated-input-corruption**.
+- **2 capability-limited** (chen, binder): CALL 7 `native_volume` is unreachable by construction (the
+  value-support guard forbids an absence-evidenced value; `target_space-call7-unreachable.md`) — a cited
+  accuracy number should not charge these.
+- **1 demonstrated-input-corruption** (liu_2005): a clean de-interleaved slice recovers Talairach 3/3
+  (BrainVoyager 3/3 validates the slice) vs MISSING 3/3 on the corrupted PDF — upstream slicing, not a model
+  error (`target_space-pending-runs.md`).
+So the **model-accuracy denominator is 5 errors**, on the papers the extractor could reach with clean input.
+The finding is the decomposition:
 
 - **Correct (11):** the 8 bare-MNI-family papers (agtzidis, derosa, gordon, liu_2013, tang, vanderwal,
   weber, wheaton) + cole (Talairach) + power (absent) + braun (deferred, K=3-unstable).
@@ -102,17 +108,21 @@ construction**. The finding is the decomposition, not the rate:
   family target. The cross-axis leak is real and fixable, but chen's `native_volume` is a CALL 7 reading
   (unreachable by construction), so a perfect cross-axis firewall yields MISSING → absent, still ≠
   native_volume — **the cross-axis fix buys no scoring improvement on this row** (`target_space-call7-unreachable.md`).
-- **family miss (1):** liu_2005 — Talairach **not captured at all** (`failure_reason=None`, raw=None); cole's
-  Talairach WAS caught. **HYPOTHESIS (untested here): input-corruption** — liu_2005's two-column layout
-  interleaves methods with the reference list (demonstrated for base_pipeline, `pdf-glue-false-missing.md`);
-  the `failure_reason=None` signature fits "never saw an intact sentence." The confirming test is a
-  de-interleaved K=3 re-extraction. Per the cole cautionary (glue *looked* causal, tested → REFUTED), this is
-  **NOT reclassified without the run**, which needs bedrock API access unavailable in this environment.
+- **results-space leak (1) — CAPABILITY-LIMITED:** binder — `EXTRACTED Talairach` 3/3 (2026-07-31 run),
+  pulled from the SPM statmap-projection sentence (Talairach applied to DERIVED maps) — the first LIVE
+  CALL 7(a) instance. Scores `family_specified` vs `native_volume`. Also CALL 7-unreachable (native_volume
+  has no quote), so like chen the leak-fix is scoring-neutral; two mechanisms on one unreachable row.
+- **demonstrated-input-corruption (1):** liu_2005 — batch MISSING (Talairach not captured); the two-column
+  layout interleaves methods with the reference list (`pdf-glue-false-missing.md`). **CONFIRMED causal
+  (2026-07-31):** a clean de-interleaved slice recovers Talairach 3/3 (BrainVoyager 3/3 validates the slice)
+  vs MISSING 3/3 on the corrupted PDF — on clean input it maps to `family_specified` = its label = correct.
+  An upstream PDF failure, NOT a model error. cole's opposite (there glue looked causal, tested → refuted).
 - **specificity flattening (1):** oconnor — resolvable FSL file grabbed as bare "MNI".
 
-**Pending runs (need bedrock API):** (a) liu_2005 de-interleave K=3 — does Talairach appear on a clean
-slice? If yes, it moves to demonstrated-input-corruption. (b) **binder** — no prediction (added post-batch);
-the remaining denominator gap. Neither runnable here.
+**Both pending runs are DONE (2026-07-31, bedrock sonnet-4-5, `run_pending_target_space.py`):** liu_2005 →
+Talairach 3/3 on the clean slice (input-corruption confirmed causal); binder → Talairach 3/3 (results-space
+leak confirmed, denominator closed). Outcomes were pre-committed before the run:
+`docs/findings/target_space-pending-runs.md`.
 
 ## Caveat (standing)
 
