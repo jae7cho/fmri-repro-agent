@@ -504,3 +504,47 @@ correctly stayed a nit. Committed the pre-registration in order — protocol fir
 native_volume 2 / study_specific 2 / canonical 1 / absent 1 = 19. Three adversarial-read rounds plus this
 derivability check converged; the timestamped commit order is the pre-registration. Next: derive the
 scored CSV + build a target_space scorer (none exists yet), then score extractor output against the key.
+
+---
+
+## 2026-07-31 (evening)
+
+Hours: 17:16 - 21:48 ET
+
+Scored target_space end to end, and the scoring surfaced more than the labels did. Derived the labels CSV,
+PRE-REGISTERED the extractor->label mapping table + froze the K=3 predictions before scoring (7bca618),
+then built a scorer (fbde79d). First number (3 correct / 15 error) was WRONG — the map v1 keyed on status
+alone, so 9 papers where the extractor GRABBED a bare "MNI" but relabeled status->MISSING
+(value_not_in_literal) scored as absent, a spurious "enum-gap capability class." Author caught it against
+my own earlier "12 family-specified" inspection; map v2 keys on failure_reason -> 11 correct / 7 error.
+Kept the integrity discipline: committed v2 with a stated reason, reported both numbers; the collapse was
+PREDICTED (9) before the change and came out 8 (liu_2005 deviated), and the deviation was run down rather
+than absorbed — that mismatch is the argument v2 tracks the extractor, not a target number.
+
+Findings that outlived the rate. false-missing: the spec records MissingFromPaper for papers that stated
+"MNI" — asserting absence where there's presence, in the system whose thesis is that distinction (a core
+defect the reporting layer masks). CALL 7 native_volume (binder/chen) can't be emitted by the extractor
+because the value-support guard (the anti-fabrication firewall, shipped after viduarre) forbids an
+absence-evidenced value — right to keep the guard, wrong to force it through extraction. Verified poldrack
+is NOT the base_pipeline [45] parser bug (target_space deferral is model-driven; poldrack extract-over-
+defer'd "atlas space") — my own over-reach for a demonstrated mechanism, retracted; viduarre is a distinct
+silent-miss, so the deferral class split in two.
+
+Found the bedrock-extractor AWS profile (I'd wrongly said no creds) and ran the two pending items, outcomes
+pre-committed. liu_2005: clean de-interleaved slice -> Talairach 3/3 with the BrainVoyager 3/3 slice-
+validity gate passing -> input-corruption DEMONSTRATED CAUSAL (cole's opposite). binder: Talairach 3/3 ->
+results-space leak confirmed live (CALL 7(a)); denominator closed at 19. Reframed scoring three ways
+(separating "model wrong?" from "label scoreable?"): 5 reachable-accuracy / 2 unreachable-LEAK (active
+defects, not absorbed — would count if native_volume becomes reachable) / 1 input-corruption; both
+denominators with Wilson (blind 11/17 = 64.7% [41,83]; reachable-only 11/14 = 78.6% [52,92]), the exclusion
+marked post-hoc; and wired the scorer to consume the system's OWN methods_not_found slice flag (auto-flag,
+0 collateral, scales past hand-tests).
+
+Closed on the architecture (design-resolution.md): the false-missing is a TYPE problem (closed Literal),
+not vocabulary — neither add-enum-member (A) nor add-completeness-field (B) fixes it; the fix is
+verbatim-always typing (verbatim term always + optional resolved id), which makes extraction structurally
+incapable of the defect and makes completeness derived not stored (kills B). CALL 7 routes to the
+INFERENCE layer (basis enumerated_pipeline_complete + ceiling; guard intact). Step-absence ("deliberately
+not performed" != silence — the hallucination-vs-absence thesis at the step level) HELD until it recurs
+(motion/smoothing). Both correctness fixes are focused next-session work, recorded so the reasoning
+survives — the conversation is not the artifact. Commits 305bcb6..c041f6f.
