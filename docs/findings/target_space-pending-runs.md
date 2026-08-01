@@ -45,12 +45,15 @@ the timeseries stays native (label = `native_volume`, CALL 7(a)).
   scores ERROR. It surfaces a sibling of the family/absent gap: **`native_volume` is also unreachable via
   MISSING** — the extractor can't distinguish "kept in native space" (a positive choice) from "nothing
   found." More evidence for design (B) (split which-space from how-completely-specified).
-- **Extractor emits EXTRACTED+native_volume:** the only genuinely-correct outcome, and unlikely — binder
-  never states "native space"; native is inferred (CALL 7(a)), which the extractor has no signal for.
+- **Extractor emits EXTRACTED+native_volume:** would be correct — but **unreachable by construction.**
+  binder's native is CALL 7(a)-inferred (no sentence states it; the evidence is an absence), and the
+  value-support guard forbids an EXTRACTED value with no supporting quote
+  (`target_space-call7-unreachable.md`). The extractor cannot produce this outcome.
 
-So binder is predicted to score ERROR either way under the current map, but the *class* differs
-(results-space leak vs native_volume-via-MISSING gap) — that distinction is the point of running it, and
-it closes the denominator (18 → 19 with a prediction).
+So binder **cannot score correct** under the current architecture — it is one of the 2-of-19
+unreachable-by-construction rows (capability-limited). The run does NOT test correctness; it tests **which
+failure class** — results-space leak (grabs Talairach) vs the native_volume-via-MISSING gap — and closes
+the denominator (18 → 19 with a prediction). Either way binder is capability-limited, not an accuracy error.
 
 ## After the runs
 

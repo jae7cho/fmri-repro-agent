@@ -77,7 +77,10 @@ forms → MISSING; braun itself is K=3-unstable. 1 of 3 deferred labels reachabl
 ## Score (report-only; map + predictions both committed)
 
 Over the 18 papers with a prediction: **11 correct / 7 error**. Blind set: **11 of 16 correct** (5 error).
-The finding is the decomposition, not the rate:
+Of the 7 errors, **1 (chen) is capability-limited** — CALL 7 `native_volume` is unreachable by construction
+(the value-support guard forbids an absence-evidenced value; `target_space-call7-unreachable.md`) — so
+**6 are accuracy** errors. binder (pending) is the same class → **2 of 19 labels are unreachable by
+construction**. The finding is the decomposition, not the rate:
 
 - **Correct (11):** the 8 bare-MNI-family papers (agtzidis, derosa, gordon, liu_2013, tang, vanderwal,
   weber, wheaton) + cole (Talairach) + power (absent) + braun (deferred, K=3-unstable).
@@ -95,7 +98,10 @@ The finding is the decomposition, not the rate:
 - **deferral not recognized (1):** viduarre — `status=MISSING`, `failure_reason=None`, raw=None, no
   fabrication (unlike its base_pipeline behaviour): a silent miss on the "technique of Smith et al."
   form. Distinct from poldrack (which grabbed a phrase); they do NOT share a mechanism.
-- **cross-axis leak (1):** chen — surface template's MNI frame grabbed as a volumetric family target. New.
+- **cross-axis leak (1) — CAPABILITY-LIMITED:** chen — surface template's MNI frame grabbed as a volumetric
+  family target. The cross-axis leak is real and fixable, but chen's `native_volume` is a CALL 7 reading
+  (unreachable by construction), so a perfect cross-axis firewall yields MISSING → absent, still ≠
+  native_volume — **the cross-axis fix buys no scoring improvement on this row** (`target_space-call7-unreachable.md`).
 - **family miss (1):** liu_2005 — Talairach **not captured at all** (`failure_reason=None`, raw=None); cole's
   Talairach WAS caught. **HYPOTHESIS (untested here): input-corruption** — liu_2005's two-column layout
   interleaves methods with the reference list (demonstrated for base_pipeline, `pdf-glue-false-missing.md`);

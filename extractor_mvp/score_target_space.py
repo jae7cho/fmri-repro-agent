@@ -112,6 +112,13 @@ def main() -> int:
             cls_counts[cls] += 1
         tag = " [non-blind]" if pid in NON_BLIND else ""
         tag += "" if p["stable"] == "yes" else " [K=3 UNSTABLE]"
+        # CALL 7 native_volume is inferred from an absence -> the value-support guard forbids the
+        # extractor emitting it (target_space-call7-unreachable.md). Capability-limited, not accuracy.
+        tag += (
+            " [capability-limited: CALL 7 unreachable]"
+            if (not ok and label == "native_volume")
+            else ""
+        )
         rows.append(
             f"  {pid:16s} label={label:16s} -> pred={pred:16s} {'OK ' if ok else 'ERR'} {cls}{tag}"
         )
@@ -130,6 +137,12 @@ def main() -> int:
         f"[= {len(blind) - len(blind_err)}/{len(blind)} correct]"
     )
     print(f"No prediction (excluded): {sorted(no_pred)}")
+    cap = [p for p in errors if labels[p] == "native_volume"]  # CALL 7, unreachable by construction
+    print(
+        f"Of {len(errors)} errors: {len(errors) - len(cap)} accuracy + {len(cap)} capability-limited "
+        f"(CALL 7 native_volume unreachable: {cap}; target_space-call7-unreachable.md). "
+        f"binder (pending) is the same class. chen's cross-axis fix is scoring-neutral on this row."
+    )
 
     print("\n=== error-class decomposition (the finding, not the rate) ===")
     for cls, n in cls_counts.most_common():
