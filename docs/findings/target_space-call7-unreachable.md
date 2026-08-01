@@ -1,5 +1,14 @@
 # CALL 7 native_volume is unreachable by construction — the fabrication guard forbids an absence-evidenced conclusion
 
+**RESOLVED (2026-07-31): "unreachable" was mis-diagnosis — it was mis-located in the EXTRACTION layer.**
+native_volume here is an *inference from structural completeness* (the enumerated pipeline terminates with
+no volumetric target), not an extraction. Route it to the **inference layer** with a basis
+(`enumerated_pipeline_complete`) + confidence ceiling: extraction stays `MissingFromPaper` (truthful), the
+resolved value is `native_volume` with a stated basis, scoring compares the resolved value, and the
+value-support guard is untouched. So it is reachable *and* the firewall holds. The analysis below (why the
+guard blocks it in the extraction layer) still stands as the reason it must NOT be forced through
+extraction. See [`target_space-design-resolution.md`](target_space-design-resolution.md).
+
 **Finding (2026-07-31).** Two of the 19 target_space labels — chen and binder, both `native_volume` — are
 **unreachable by the extractor as built**, and not for a reason any map or enum change can fix. Their
 `native_volume` is a **CALL 7** reading: no sentence states a volumetric target; the label is inferred from

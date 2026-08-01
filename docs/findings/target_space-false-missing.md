@@ -62,5 +62,11 @@ how-completely-specified (a `target_space_completeness` field) fixes both the sp
 class of confusion that produced the v1 map — the same structural honesty, applied once. (A) would leave
 the enum carrying both axes and would have to be *un-conflated* later anyway.
 
+**SUPERSEDED (2026-07-31): neither (A) nor (B).** The defect is the field's TYPE (a closed `Literal`), not
+its vocabulary — both options leave a closed vocabulary deciding recordability. The fix is **verbatim-always
+typing** (the field always carries the verbatim term + an optional resolved identifier), making extraction
+structurally incapable of the false-missing and making completeness *derived*, not stored (so (B) is moot).
+See [`target_space-design-resolution.md`](target_space-design-resolution.md).
+
 Related: [`extraction-specificity-flattening.md`](extraction-specificity-flattening.md);
 `ground_truth/target_space_README.md` (the map correction + score).
