@@ -14,6 +14,7 @@ from fmri_repro.spec.preprocessing import (
     PipelineRef,
     Preprocessing,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
     TemporalFiltering,
 )
@@ -101,7 +102,10 @@ def _ts_inferred(prep: Any, basis: Any, conf: float) -> Any:
         prep,
         {
             "spatial_normalization.target_space": InferredDefault(
-                value="MNI152NLin6Asym", basis=basis, confidence=conf, alternative_inferences=[]
+                value=SpecifiedTerm(resolved="MNI152NLin6Asym", resolution="resolved"),
+                basis=basis,
+                confidence=conf,
+                alternative_inferences=[],
             )
         },
     )
@@ -165,7 +169,7 @@ def test_citation_fallback_when_kb_unchanged(monkeypatch):
     resolver = _StubResolver(
         {
             "spatial_normalization.target_space": InferredDefault(
-                value="MNI152NLin6Asym",
+                value=SpecifiedTerm(resolved="MNI152NLin6Asym", resolution="resolved"),
                 basis=PriorPublicationBasis(citation="Glasser et al. 2013", note="x"),
                 confidence=0.56,
                 alternative_inferences=[],

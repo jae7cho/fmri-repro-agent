@@ -1,5 +1,20 @@
 # target_space false-missing: the spec asserts absence for papers that stated "MNI"
 
+**FIXED (mechanism) in v0.5.0 — demonstration pending re-extraction.** The five `literal_type` fields now
+carry a `SpecifiedTerm{verbatim, resolved, resolution}`, so the extractor's build path can no longer
+relabel a stated-but-unresolvable term to `MissingFromPaper`: it records EXTRACTED with `resolved=None`.
+The mechanism is fixed and unit-tested (`test_underspecified_term_is_recorded_extracted_not_missing`,
+`test_success_path_retains_verbatim_alongside_resolved_mueller_shape`). It is **not yet demonstrated
+end-to-end**: no committed spec document has been written by the retyped extractor. The nine papers below
+still carry `MissingFromPaper` in every committed artifact, and migration explicitly cannot repair them
+(the discarded term lived only in the gitignored diagnostic). The frozen predictions the score is computed
+against are pre-retype output; map v3 reads them by translating the old columns into the new shape, which
+is faithful but is not genuine 0.5.0 extractor output. **The proof is a re-extraction at 0.5.0 (K=3):** the
+nine should become EXTRACTED with `verbatim="MNI"`/`"MNI152"` and `resolution="underspecified"`, which also
+refreshes the frozen predictions into the real new shape. Until then the fix is asserted-and-unit-tested,
+not demonstrated on the corpus. The analysis below stands as the record of the defect and the reasoning
+that led to the retype.
+
 **Finding (2026-07-31, surfaced while scoring target_space).** For 9 of the 18 audited papers the
 extractor's SPEC records `spatial_normalization.target_space.extraction.status = MissingFromPaper` —
 yet the paper explicitly **stated a bare MNI-family target** ("MNI", "MNI152", "MNI-152", "SPM MNI

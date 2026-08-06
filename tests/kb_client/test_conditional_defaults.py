@@ -15,7 +15,10 @@ from fmri_repro.spec.preprocessing import (
     IntensityNormalization,
     Preprocessing,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
+    SurfaceRegistration,
+    TargetSurface,
 )
 from fmri_repro.spec.provenance import (
     BASIS_CEILINGS,
@@ -69,6 +72,15 @@ def _extracted(field_id: str, value: Any, t: Any) -> ProvenancedField:
     )
 
 
+def _extracted_term(field_id: str, member: Any, member_type: Any) -> ProvenancedField:
+    """EXTRACTED 0.5.0 retyped field: a resolved member wrapped in a SpecifiedTerm."""
+    return _extracted(
+        field_id,
+        SpecifiedTerm(verbatim=member, resolved=member, resolution="resolved"),
+        SpecifiedTerm[member_type],
+    )
+
+
 def _preprocessing(
     target_surface_pf: ProvenancedField, surfreg_pf: ProvenancedField
 ) -> Preprocessing:
@@ -109,12 +121,12 @@ def _apply(prep: Preprocessing) -> ProvenancedField:
 
 def test_fslr_32k_derives_msm_sulc_at_ceiling():
     prep = _preprocessing(
-        _extracted("target_surface", "fsLR_32k", str),
+        _extracted_term("target_surface", "fsLR_32k", TargetSurface),
         _missing("surface_registration", str),
     )
     sr = _apply(prep)
     assert sr.inference.status == "INFERRED_DEFAULT"
-    assert sr.inference.value == "msm_sulc"
+    assert sr.inference.value.resolved == "msm_sulc"
     assert sr.inference.basis.basis_type == "derived"
     assert sr.inference.basis.source_field_ids == ["surface_projection.target_surface"]
     assert sr.inference.confidence == 0.70  # min(0.70, BASIS_CEILINGS["derived"])
@@ -123,12 +135,12 @@ def test_fslr_32k_derives_msm_sulc_at_ceiling():
 
 def test_fsaverage5_derives_freesurfer_recon_below_ceiling():
     prep = _preprocessing(
-        _extracted("target_surface", "fsaverage5", str),
+        _extracted_term("target_surface", "fsaverage5", TargetSurface),
         _missing("surface_registration", str),
     )
     sr = _apply(prep)
     assert sr.inference.status == "INFERRED_DEFAULT"
-    assert sr.inference.value == "freesurfer_recon"
+    assert sr.inference.value.resolved == "freesurfer_recon"
     assert sr.inference.confidence == 0.55  # lineage-inferred, below the 0.70 ceiling
     assert sr.inference.confidence < BASIS_CEILINGS["derived"]
 
@@ -144,7 +156,7 @@ def test_target_surface_missing_fails_closed():
 
 def test_target_surface_matches_no_rule_fails_closed():
     prep = _preprocessing(
-        _extracted("target_surface", "native", str),  # matches no rule's `when`
+        _extracted_term("target_surface", "native", TargetSurface),  # matches no rule's `when`
         _missing("surface_registration", str),
     )
     sr = _apply(prep)
@@ -153,10 +165,10 @@ def test_target_surface_matches_no_rule_fails_closed():
 
 def test_surface_registration_already_extracted_is_untouched():
     prep = _preprocessing(
-        _extracted("target_surface", "fsLR_32k", str),
-        _extracted("surface_registration", "msm_all", str),  # paper stated it
+        _extracted_term("target_surface", "fsLR_32k", TargetSurface),
+        _extracted_term("surface_registration", "msm_all", SurfaceRegistration),  # paper stated it
     )
     sr = _apply(prep)
     assert sr.extraction.status == "EXTRACTED"
-    assert sr.extraction.value == "msm_all"  # unchanged; inherited EXTRACTED guard
+    assert sr.extraction.value.resolved == "msm_all"  # unchanged; inherited EXTRACTED guard
     assert sr.inference.status == "NOT_APPLICABLE"

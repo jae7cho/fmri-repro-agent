@@ -36,7 +36,7 @@ and the ordered ``steps`` list (list position IS the order — COBIDAS §4.3).
 
 from __future__ import annotations
 
-from typing import Annotated, ClassVar, Literal, Self
+from typing import Annotated, ClassVar, Generic, Literal, Self, TypeVar
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -67,6 +67,42 @@ class PipelineRef(BaseModel):
 
     name: str
     version: ProvenancedField[str]
+
+
+T = TypeVar("T")
+
+
+class SpecifiedTerm(BaseModel, Generic[T]):  # noqa: UP046
+    """A recorded methodological term: the paper's verbatim words plus, when the
+    synonym resolver produced one, the canonical member it maps to.
+
+    Introduced in 0.5.0 to retype the five ``literal_type`` fields (``target_space``,
+    ``target_surface``, ``surface_registration``, intensity ``convention``, temporal
+    ``method``) so that recording a term NEVER depends on the resolver succeeding. A
+    closed ``Literal`` made a stated-but-unresolvable term (bare "MNI") drop to
+    ``MissingFromPaper`` — the spec asserting absence where there was presence, in the
+    system whose thesis is that distinction. Here the verbatim term is always kept and
+    ``resolved`` is optional, so the false-missing becomes structurally impossible.
+
+    - ``verbatim`` — the paper's own words. ``None`` only when the value arrived via the
+      inference arm (nothing was stated in the paper to quote).
+    - ``resolved`` — the canonical enum member, when the resolver produced one; else ``None``.
+    - ``resolution`` — the resolver's own verdict (``synonym_resolver.ResolveStatus`` with
+      ``no_match`` and ``ambiguous`` folded to ``unrecognized``). This is PROVENANCE — it records why
+      the resolver did (not) resolve, information previously discarded — NOT the completeness grader.
+      Completeness is derived from the named-vs-unnamed heuristic on ``verbatim`` PLUS this field, not
+      from this field alone: ``underspecified`` (bare "MNI") -> family-level; but ``unrecognized`` does
+      NOT decide family-vs-absent — gordon ("EPI template") and power ("atlas space") are both
+      ``unrecognized`` yet grade ``family_specified`` and ``absent`` respectively, and the gesture
+      heuristic on ``verbatim`` is what separates them (see ``ground_truth/target_space_scoring_map.csv``).
+      NOTE: folding ``no_match``/``ambiguous`` into one ``unrecognized`` discards a distinction — a mild
+      irony in a change whose purpose is to stop discarding terms (the verbatim survives either way);
+      revisit the fold if the resolver ever needs to explain WHY a term did not resolve.
+    """
+
+    verbatim: str | None = None
+    resolved: T | None = None
+    resolution: Literal["resolved", "underspecified", "unrecognized"] = "unrecognized"
 
 
 # ---------------------------------------------------------------------------
@@ -807,7 +843,7 @@ SpatialNormalizationInterpolation = Literal["linear", "spline", "sinc", "other"]
 
 class SpatialNormalization(BaseModel):
     kind: Literal["spatial_normalization"] = "spatial_normalization"
-    target_space: ProvenancedField[TargetSpace]
+    target_space: ProvenancedField[SpecifiedTerm[TargetSpace]]
     resolution_mm: ProvenancedField[float]
     method: ProvenancedField[SpatialNormalizationMethod]
     warp: ProvenancedField[WarpType]
@@ -841,9 +877,9 @@ SurfaceRegistration = Literal["freesurfer_recon", "msm_sulc", "msm_all", "other"
 
 class SurfaceProjection(BaseModel):
     kind: Literal["surface_projection"] = "surface_projection"
-    target_surface: ProvenancedField[TargetSurface]
+    target_surface: ProvenancedField[SpecifiedTerm[TargetSurface]]
     vol2surf_sampling: ProvenancedField[Vol2SurfSampling]
-    surface_registration: ProvenancedField[SurfaceRegistration]
+    surface_registration: ProvenancedField[SpecifiedTerm[SurfaceRegistration]]
     cifti: ProvenancedField[bool]
 
     cobidas_row: ClassVar[str] = "surface_projection"
@@ -1085,7 +1121,7 @@ IntensityNormalizationConvention = Literal[
 class IntensityNormalization(BaseModel):
     kind: Literal["intensity_normalization"] = "intensity_normalization"
     scope: ProvenancedField[IntensityNormalizationScope]
-    convention: ProvenancedField[IntensityNormalizationConvention]
+    convention: ProvenancedField[SpecifiedTerm[IntensityNormalizationConvention]]
     value: ProvenancedField[float]
 
     cobidas_row: ClassVar[str] = "intensity_normalization"
@@ -1143,7 +1179,7 @@ TEMPORAL_STANDARDIZATION_FIELD_META: dict[str, FieldMeta] = {
 
 class TemporalStandardization(BaseModel):
     kind: Literal["temporal_standardization"] = "temporal_standardization"
-    method: ProvenancedField[TemporalStandardizationMethod]
+    method: ProvenancedField[SpecifiedTerm[TemporalStandardizationMethod]]
 
     cobidas_row: ClassVar[str] = "DIVERGENCE"  # no COBIDAS D.3 row for signal standardization
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -1215,7 +1251,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.4.1"
+SCHEMA_VERSION = "0.5.0"
 
 
 class MigrationInfo(BaseModel):
@@ -1251,7 +1287,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.4.1"] = "0.4.1"
+    schema_version: Literal["0.5.0"] = "0.5.0"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

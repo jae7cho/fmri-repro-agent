@@ -48,7 +48,10 @@ from fmri_repro.spec.preprocessing import (
     PipelineRef,
     Preprocessing,
     SpatialSmoothing,
+    SpecifiedTerm,
     SurfaceProjection,
+    SurfaceRegistration,
+    TargetSurface,
     TemporalFiltering,
 )
 from fmri_repro.spec.provenance import (
@@ -63,7 +66,7 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
     Span,
 )
-from fmri_repro.spec.v0_4_0 import StudySpec  # current root; scripts emit 0.4.0 documents
+from fmri_repro.spec.v0_4_0 import StudySpec  # current root; scripts emit 0.5.0 documents
 
 _FIXED_RUN_ID = "00000000000000000000000000000002"
 _FIXED_CREATED_AT = datetime(2026, 5, 21, 0, 0, 0, tzinfo=UTC)
@@ -77,7 +80,7 @@ def _span(text: str, start: int) -> Span:
 
 def _missing(field_id: str, t: type) -> ProvenancedField:
     """MISSING + LEFT_MISSING shorthand. Caller-supplied ``t`` is the element type."""
-    return ProvenancedField[t](
+    return ProvenancedField[t](  # type: ignore[valid-type]  # runtime-parametrized generic
         field_id=field_id,
         extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
         inference=LeftMissing(reason="not reported in paper"),
@@ -507,10 +510,12 @@ def _hcp_preprocessing() -> Preprocessing:
         ),
         steps=[
             SurfaceProjection(
-                target_surface=ProvenancedField[str](
+                target_surface=ProvenancedField[SpecifiedTerm[TargetSurface]](
                     field_id="target_surface",
-                    extraction=Extracted[str](
-                        value="fsLR_32k",
+                    extraction=Extracted[SpecifiedTerm[TargetSurface]](
+                        value=SpecifiedTerm(
+                            verbatim="fsLR_32k", resolved="fsLR_32k", resolution="resolved"
+                        ),
                         spans=[
                             Span(
                                 start=1000,
@@ -541,10 +546,12 @@ def _hcp_preprocessing() -> Preprocessing:
                         alternative_inferences=[],
                     ),
                 ),
-                surface_registration=ProvenancedField[str](
+                surface_registration=ProvenancedField[SpecifiedTerm[SurfaceRegistration]](
                     field_id="surface_registration",
-                    extraction=Extracted[str](
-                        value="msm_all",
+                    extraction=Extracted[SpecifiedTerm[SurfaceRegistration]](
+                        value=SpecifiedTerm(
+                            verbatim="MSMAll", resolved="msm_all", resolution="resolved"
+                        ),
                         spans=[
                             Span(
                                 start=1100,

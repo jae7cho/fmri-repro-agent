@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 import pytest
+from fmri_repro.spec.migrations import parse_any_version
 from fmri_repro.spec.preprocessing import (
     DistortionCorrection,
     PipelineRef,
@@ -745,7 +746,7 @@ def test_protocol_faithful_chen_fixture():
     # 1 unmappable · 8 not covered), 0 inferred, 0 deferred. The 8 not_covered fields are
     # extractor-coverage, NOT source absence (the core honesty fix).
     data = json.loads(_CHEN_JSON.read_text())
-    prep = Preprocessing.model_validate(data["preprocessing"])
+    prep = parse_any_version(data["preprocessing"])  # 0.4.x batch output -> migrate to 0.5.0
     out = render.to_protocol(prep, source="chen_2015")
     assert out.count("[from paper]") == 5
     assert "[INFERRED" not in out
@@ -770,7 +771,9 @@ def test_protocol_faithful_chen_fixture():
 def test_cobidas_coverage_chen_fixture() -> None:
     from extractor_mvp.cobidas import assess_coverage
 
-    prep = Preprocessing.model_validate(json.loads(_CHEN_JSON.read_text())["preprocessing"])
+    prep = parse_any_version(
+        json.loads(_CHEN_JSON.read_text())["preprocessing"]
+    )  # migrate 0.4.x->0.5.0
     rows = render.flatten(prep)
     vr = next((r for r in rows if r.path == "base_pipeline.version"), None)
     cov = assess_coverage(rows, vr.extraction_status if vr else None)

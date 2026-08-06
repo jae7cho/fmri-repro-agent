@@ -1,18 +1,23 @@
-"""Versioned root for the ReplicationSpec 0.4.x line (currently stamps 0.4.1).
+"""Versioned root for the ReplicationSpec — the single live ``StudySpec`` root (currently stamps 0.5.0).
 
-This is the single live root for the 0.4 line. Per the additive-patch convention (see
-:mod:`fmri_repro.spec.migrations`), a backward-compatible vocabulary bump is applied IN PLACE —
-the module keeps its name and its ``Literal`` is bumped to the current patch (0.4.0 -> 0.4.1 added
-the ``study_specific`` TargetSpace value), rather than forking a new ``v0_4_1.py``. Old data
-migrates forward via a pure re-stamp hop.
+This module is the sole live root. Both additive-patch bumps and the one structural bump so far are
+applied IN PLACE (see :mod:`fmri_repro.spec.migrations`), the module keeping its name and its
+``Literal`` being bumped, rather than forking a ``v0_4_1.py`` / ``v0_5_0.py``:
 
-Changes vs 0.3.0: purely additive at the provenance layer — the shared
-:class:`~fmri_repro.spec.provenance.Extracted` model gains an optional
+- 0.4.0 -> 0.4.1 (additive): the ``study_specific`` ``TargetSpace`` value; pure re-stamp hop.
+- 0.4.1 -> 0.5.0 (STRUCTURAL): the five ``literal_type`` fields (``target_space``, ``target_surface``,
+  ``surface_registration``, intensity ``convention``, temporal ``method``) retyped to
+  ``SpecifiedTerm{verbatim, resolved, resolution}`` so recording a stated term no longer depends on the
+  resolver succeeding. The convention *permits* ("may warrant") a distinct root for a structural change
+  but does not require one; the existing pattern deliberately avoids per-version roots (a new root only
+  stamps over the one shared mutating :mod:`preprocessing`, so it buys nothing here). Old data migrates
+  forward via a real doc-transform hop, not a re-stamp.
+
+Earlier provenance-layer change (0.3.0 -> 0.4.0): the shared
+:class:`~fmri_repro.spec.provenance.Extracted` model gained an optional
 ``span_recovered: bool = False`` flag, set True when a quote's char-offset span
 was located ONLY by the tolerant corrupted-source tier of the span resolver
-(tier 5) rather than a clean exact/near match. There is **no structural change
-to the spec chain** (same roots, groups, and steps as 0.3.0); a 0.3.0 document
-parses unchanged because the new field is optional-with-default.
+(tier 5) rather than a clean exact/near match.
 
 Versioning model (read this before assuming these modules are readers): the version
 modules share the one mutating :mod:`fmri_repro.spec.preprocessing`. So
@@ -37,7 +42,7 @@ from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):
-    schema_version: Literal["0.4.1"] = "0.4.1"
+    schema_version: Literal["0.5.0"] = "0.5.0"
     run: RunMeta
     specs: list[ReplicationSpec] = Field(min_length=1)
     study_analysis: StudyAnalysis | None = None
@@ -45,8 +50,8 @@ class StudySpec(BaseModel):
     @model_validator(mode="after")
     def _stamps_match_pinned_version(self) -> Self:
         """Every nested ``Preprocessing.schema_version`` must equal this root's pinned
-        version. Holds natively (nested stamps default to 0.4.1); a backstop for a future
-        bump that desyncs the outer/inner Literals (today the nested ``Literal["0.4.1"]`` is
+        version. Holds natively (nested stamps default to 0.5.0); a backstop for a future
+        bump that desyncs the outer/inner Literals (today the nested ``Literal["0.5.0"]`` is
         the first-line enforcement)."""
         for i, spec in enumerate(self.specs):
             for j, prep in enumerate(spec.preprocessing):

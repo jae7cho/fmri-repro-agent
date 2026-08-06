@@ -111,11 +111,12 @@ def test_resolutions_capture_raw_value_on_success():
     # the field resolved successfully to the canonical literal
     pf = _field(prep, "surface_projection.surface_registration")
     assert pf.extraction.status == "EXTRACTED"
-    assert pf.extraction.value == "freesurfer_recon"
+    assert pf.extraction.value.resolved == "freesurfer_recon"  # 0.5.0: SpecifiedTerm.resolved
+    assert pf.extraction.value.verbatim == "FreeSurfer's spherical registration"  # verbatim kept
     # ...and the accumulator retained the RAW value alongside the resolved one
     rec = next(r for r in resolutions if r.field == "surface_projection.surface_registration")
     assert rec.raw_value == "FreeSurfer's spherical registration"
-    assert rec.resolved_value == "freesurfer_recon"
+    assert rec.resolved_value == "freesurfer_recon"  # record still logs the resolved member
     assert rec.matched_alias == "FreeSurfer's spherical registration"
     # only SUCCESSFUL targeted fields are recorded (missing fields produce no record)
     assert not any(r.field == "surface_projection.target_surface" for r in resolutions)
@@ -137,17 +138,37 @@ def test_unresolvable_quote_becomes_missing_with_diagnostic():
     assert any("extraction_quote_unresolved" in d.failure_reason for d in diags)
 
 
-def test_value_not_in_literal_becomes_missing_with_diagnostic():
+def test_underspecified_term_is_recorded_extracted_not_missing():
+    # 0.5.0 INVERSION of the former false-missing defect. "MNI152" is underspecified (broader than
+    # any TargetSpace member) -> still must NOT be coerced to a variant (non-coercion holds), but the
+    # verbatim term is now RECORDED: EXTRACTED with resolved=None, not relabeled MissingFromPaper.
+    # The spec no longer asserts absence where the paper stated a term. No value_not_in_literal
+    # diagnostic is emitted (nothing was discarded).
     payload = _all_resolvable()
-    # "MNI152" is underspecified (broader than any TargetSpace member) -> must NOT
-    # be coerced; stays value_not_in_literal with an enriched diagnostic.
     payload.target_space = _extracted("MNI152", "normalized to MNI152NLin6Asym")
     prep, diags, _ = extract_preprocessing(_paper(), "m", client=_fake_client(payload))
     pf = _field(prep, "spatial_normalization.target_space")
-    assert pf.extraction.status == "MISSING_FROM_PAPER"
-    assert pf.inference.reason == "value_not_in_literal"
-    assert any(d.failure_reason.startswith("value_not_in_literal") for d in diags)
-    assert any("underspecified" in d.failure_reason for d in diags)
+    assert pf.extraction.status == "EXTRACTED"  # was MISSING_FROM_PAPER (the false-missing defect)
+    assert pf.extraction.value.verbatim == "MNI152"  # the paper's own term, preserved
+    assert pf.extraction.value.resolved is None  # non-coercion: no variant invented
+    assert pf.extraction.value.resolution == "underspecified"
+    assert not any(d.failure_reason.startswith("value_not_in_literal") for d in diags)
+
+
+def test_success_path_retains_verbatim_alongside_resolved_mueller_shape():
+    # 0.5.0 also fixes the SUCCESS path: pre-0.5.0 a resolved value discarded the paper's wording
+    # (mueller kept only "study_specific", losing "subject-specific anatomical template … ANTs").
+    # Now the resolved member AND the verbatim phrase are both recorded.
+    phrase = "subject-specific anatomical template (ANTs multivariate template construction)"
+    quote = f"scans were registered to a {phrase}"
+    payload = _all_resolvable()
+    payload.target_space = _extracted(phrase, quote)
+    prep, _, _ = extract_preprocessing(_paper(quote), "m", client=_fake_client(payload))
+    pf = _field(prep, "spatial_normalization.target_space")
+    assert pf.extraction.status == "EXTRACTED"
+    assert pf.extraction.value.resolved == "study_specific"  # resolver still succeeds
+    assert pf.extraction.value.verbatim == phrase  # ...and the paper's own words are kept
+    assert pf.extraction.value.resolution == "resolved"
 
 
 def test_all_missing_yields_all_missing_no_diagnostics():

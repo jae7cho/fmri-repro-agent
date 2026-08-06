@@ -41,6 +41,7 @@ from fmri_repro.spec.preprocessing import (
     PipelineRef,
     Preprocessing,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
     TemporalFiltering,
 )
@@ -76,6 +77,33 @@ _KIND_TO_CLASS: Final[dict[str, type]] = {
     "temporal_filtering": TemporalFiltering,
     "intensity_normalization": IntensityNormalization,
 }
+
+# 0.5.0: the retyped literal_type fields carry a SpecifiedTerm{verbatim, resolved, resolution}.
+# A KB-inferred value for one of these is a SpecifiedTerm with verbatim=None (nothing was stated in
+# the paper) and resolved=<member>; reading a sibling's value unwraps .resolved for rule matching.
+_SPECIFIED_TERM_FIELDS: Final[frozenset[tuple[str, str]]] = frozenset(
+    {
+        ("spatial_normalization", "target_space"),
+        ("surface_projection", "target_surface"),
+        ("surface_projection", "surface_registration"),
+        ("intensity_normalization", "convention"),
+        ("temporal_standardization", "method"),
+    }
+)
+
+
+def _member_of(value: object) -> object:
+    """The resolved member behind a field value: unwrap a SpecifiedTerm, else the value itself."""
+    return value.resolved if isinstance(value, SpecifiedTerm) else value
+
+
+def _inferred_value(step_kind: str, field_name: str, member: object) -> object:
+    """Wrap an inferred bare member into a SpecifiedTerm for a retyped field (verbatim=None — the
+    value came from inference, nothing was stated in the paper); a non-retyped field keeps the
+    bare member."""
+    if (step_kind, field_name) in _SPECIFIED_TERM_FIELDS:
+        return SpecifiedTerm(verbatim=None, resolved=member, resolution="resolved")
+    return member
 
 
 # --- public API ------------------------------------------------------------
@@ -290,7 +318,7 @@ def _apply_param_result(
         basis = VersionDefaultBasis(tool=pipeline_id, version=version)
         confidence = min(result.proposed_confidence, BASIS_CEILINGS["version_default"])
         new_inference = InferredDefault(
-            value=result.value,
+            value=_inferred_value(step_kind, field_name, result.value),
             basis=basis,
             confidence=confidence,
             alternative_inferences=[],
@@ -327,14 +355,14 @@ def _apply_conditional(
     sib_pf: ProvenancedField | None = getattr(sib_step, sib_attr, None)
     if sib_pf is None or sib_pf.extraction.status != "EXTRACTED":
         return  # sibling not extracted -> no signal -> fail closed
-    sib_value = sib_pf.extraction.value
+    sib_value = _member_of(sib_pf.extraction.value)  # 0.5.0: unwrap SpecifiedTerm.resolved
     matched = next((r for r in cond.rules if sib_value in r.when), None)
     if matched is None:
-        return  # extracted sibling value matches no rule -> fail closed
+        return  # extracted sibling value matches no rule (incl. resolved=None) -> fail closed
     basis = DerivedBasis(source_field_ids=[cond.conditional_on], note=matched.source)
     confidence = min(matched.proposed_confidence, BASIS_CEILINGS["derived"])
     inferred: InferredDefault = InferredDefault(
-        value=matched.value,
+        value=_inferred_value(getattr(step, "kind", ""), field_name, matched.value),
         basis=basis,
         confidence=confidence,
         alternative_inferences=[],

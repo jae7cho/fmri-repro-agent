@@ -20,7 +20,7 @@ from __future__ import annotations
 import re
 import typing
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
     from datetime import date
@@ -38,6 +38,7 @@ from fmri_repro.spec.preprocessing import (
     Preprocessing,
     Segmentation,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
     SurfaceRegistration,
     TargetSpace,
@@ -382,12 +383,15 @@ class DeferralRecord:
 # the dotted path is only for diagnostics / the summary. Note the intensity LLM
 # attrs map to the step's "convention" / "value" fields.
 _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
+    # 0.5.0 retype: literal_type (4th) stays the bare Literal (drives resolver + membership);
+    # t (5th, the ProvenancedField generic) becomes SpecifiedTerm[X] so the verbatim term is
+    # always recorded. The numeric fields (literal_type=None) keep t=float — different path.
     (
         "target_space",
         "target_space",
         "spatial_normalization.target_space",
         TargetSpace,
-        TargetSpace,
+        SpecifiedTerm[TargetSpace],
     ),
     ("resolution_mm", "resolution_mm", "spatial_normalization.resolution_mm", None, float),
     (
@@ -395,21 +399,21 @@ _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
         "surface_registration",
         "surface_projection.surface_registration",
         SurfaceRegistration,
-        SurfaceRegistration,
+        SpecifiedTerm[SurfaceRegistration],
     ),
     (
         "target_surface",
         "target_surface",
         "surface_projection.target_surface",
         TargetSurface,
-        TargetSurface,
+        SpecifiedTerm[TargetSurface],
     ),
     (
         "intensity_convention",
         "convention",
         "intensity_normalization.convention",
         IntensityNormalizationConvention,
-        IntensityNormalizationConvention,
+        SpecifiedTerm[IntensityNormalizationConvention],
     ),
     ("intensity_value", "value", "intensity_normalization.value", None, float),
     # No value_context (no sibling number); field_id "method" != "convention", so the
@@ -420,7 +424,7 @@ _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
         "method",
         "temporal_standardization.method",
         TemporalStandardizationMethod,
-        TemporalStandardizationMethod,
+        SpecifiedTerm[TemporalStandardizationMethod],
     ),
 ]
 
@@ -499,31 +503,36 @@ def _process_field(
     if fe.value is None or fe.verbatim_quote is None:
         raise ValueError("extracted FieldExtractionResult must set value and verbatim_quote")
     if literal_type is not None:
+        # 0.5.0 retype: recording NEVER depends on resolution succeeding. The paper's verbatim
+        # term is always kept; ``resolved`` is filled only when the resolver produced a member,
+        # and ``res_status`` records the resolver's verdict. A term the resolver cannot map is now
+        # EXTRACTED with resolved=None — no longer relabeled MissingFromPaper (the false-missing
+        # defect: the spec asserting absence where there was presence). See
+        # spec.preprocessing.SpecifiedTerm and docs/findings/target_space-false-missing.md.
+        verbatim = str(fe.value)
+        resolved: Any
+        res_status: Literal["resolved", "underspecified", "unrecognized"]
         synonyms_entry = SYNONYMS_BY_FIELD.get(field_id)
         if synonyms_entry is not None:
             syns, under = synonyms_entry
-            res = resolve_to_literal(str(fe.value), syns, under, value_context)
+            res = resolve_to_literal(verbatim, syns, under, value_context)
             if res.status == "resolved":
-                value: Any = res.resolved
+                resolved, res_status = res.resolved, "resolved"
             elif fe.value in typing.get_args(literal_type):
-                value = fe.value  # LLM emitted an exact member already (e.g. "other")
+                resolved, res_status = (
+                    fe.value,
+                    "resolved",
+                )  # LLM emitted an exact member (e.g. "other")
             else:
-                reason = f"value_not_in_literal:{res.status}"
-                if res.matched_alias:
-                    reason += f"[{res.matched_alias}]"
-                return (
-                    _missing_pf(field_id, t, "value_not_in_literal"),
-                    ExtractionDiagnostic(dotted, reason, fe.value, fe.verbatim_quote),
-                    None,
-                )
-        elif fe.value not in typing.get_args(literal_type):
-            return (
-                _missing_pf(field_id, t, "value_not_in_literal"),
-                ExtractionDiagnostic(dotted, "value_not_in_literal", fe.value, fe.verbatim_quote),
-                None,
-            )
+                # underspecified ("MNI") stays distinct from unrecognized ("atlas space") /
+                # ambiguous so the completeness derivation can grade family vs absent.
+                resolved = None
+                res_status = "underspecified" if res.status == "underspecified" else "unrecognized"
+        elif fe.value in typing.get_args(literal_type):
+            resolved, res_status = fe.value, "resolved"  # no synonym table; exact member only
         else:
-            value = fe.value
+            resolved, res_status = None, "unrecognized"
+        value: Any = SpecifiedTerm(verbatim=verbatim, resolved=resolved, resolution=res_status)
     else:
         try:
             value = float(fe.value)
@@ -957,11 +966,18 @@ def _extract_from_prompt(
                     matched_alias = resolve_to_literal(
                         str(fe.value), syns, under, value_context
                     ).matched_alias
+            _resolved_val = field_pf.extraction.value
             resolutions.append(
                 ResolutionRecord(
                     field=dotted,
                     raw_value=fe.value,
-                    resolved_value=field_pf.extraction.value,
+                    # 0.5.0: the retyped fields carry a SpecifiedTerm; record the resolved member
+                    # (None when unresolved) so the record keeps its raw->resolved semantics.
+                    resolved_value=(
+                        _resolved_val.resolved
+                        if isinstance(_resolved_val, SpecifiedTerm)
+                        else _resolved_val
+                    ),
                     matched_alias=matched_alias,
                 )
             )

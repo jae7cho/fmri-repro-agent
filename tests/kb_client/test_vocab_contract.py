@@ -55,6 +55,7 @@ from fmri_repro.spec.preprocessing import (
     SliceTimeCorrection,
     SpatialNormalization,
     SpatialSmoothing,
+    SpecifiedTerm,
     SurfaceProjection,
     TemporalFiltering,
     TemporalStandardization,
@@ -119,6 +120,12 @@ def _literal_members(payload: Any) -> tuple[str, tuple[Any, ...]] | None:
     Returns ``("scalar", allowed)`` for ``Literal[...]``,
     ``("list", allowed)`` for ``list[Literal[...]]``, else ``None``.
     """
+    # 0.5.0: the retyped literal_type fields are ProvenancedField[SpecifiedTerm[Literal[...]]];
+    # peel the SpecifiedTerm wrapper to its inner Literal (the KB serves bare members, which land
+    # in SpecifiedTerm.resolved), so the vocab contract still covers convention/target_surface/etc.
+    meta = getattr(payload, "__pydantic_generic_metadata__", None)
+    if meta and meta.get("origin") is SpecifiedTerm and meta.get("args"):
+        payload = meta["args"][0]
     if typing.get_origin(payload) is Literal:
         return ("scalar", typing.get_args(payload))
     if typing.get_origin(payload) is list:

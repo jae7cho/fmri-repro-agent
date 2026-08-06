@@ -16,14 +16,20 @@ at finalization). Set-level fact — lives here, not as a CSV column regeneratio
 - **`target_space_labels_v1.csv`** — canonical for scoring. Derived from the xlsx by
   `derive_target_space_csv.py` (examples skipped -> 19 rows).
 - **`target_space_labels_v1.xlsx`** — the human-editable source.
-- **`target_space_scoring_map.csv`** — the PRE-REGISTERED extractor → label mapping, keyed on
-  `(status, failure_reason, raw_diagnostic)`. Committed before the scorer runs so it can't be tuned to a
-  number. **v2** (see "Map correction" below): v1 keyed on status alone and was lossy.
+- **`target_space_scoring_map.csv`** — the PRE-REGISTERED extractor → label mapping. **v3** keys on the
+  VALUE the 0.5.0 retype made recordable — the reconstructed `SpecifiedTerm{verbatim, resolved,
+  resolution}` (a documented member→tier lookup; `underspecified` → family; `unrecognized` →
+  named-vs-unnamed on the verbatim) — not the `failure_reason` (v2) or `status` alone (v1, lossy).
+  Committed before the scorer runs so it can't be tuned. v1 and v2 stand in git history. See
+  "Map revisions" below.
 - **`target_space_predictions_v040_frozen.csv`** — frozen K=3 predictions incl. `failure_reason` and
   `slice_suspicious` (the extractor's OWN `methods_not_found` / fallback-slice flag). The scorer consumes
-  `slice_suspicious` to **auto-flag input-corruption-suspect rows** rather than hand-listing them — a signal
-  the system already computes, so it scales as more fields are scored (liu_2005 is the only flagged paper
-  here; its de-interleave run confirmed it). Turns a manual six-call adjudication into a computed flag.
+  `slice_suspicious` to auto-flag rows **corruption-SUSPECT** — a signal the system already computes, so it
+  scales past hand-listing. **Suspect ≠ demonstrated:** a flagged row STAYS in the model-accuracy
+  denominator (untested); only a **DEMONSTRATED** causal claim — a cited run that fed a clean slice, passed
+  a slice-validity gate, and showed the field recovering — is excluded. The flag suspects; causation needs
+  the run, because corruption can be present and non-causal (cole: flagged, tested, REFUTED). liu_2005 is
+  both here (de-interleave run); it is the only flagged paper.
 - Scorer: `extractor_mvp/score_target_space.py` (report-only).
 
 ## The two vocabularies (why a mapping table is needed)
@@ -35,7 +41,32 @@ and **MISSING+value_not_in_literal:underspecified[MNI] → family_specified** (t
 MNI-family term it couldn't resolve — "said MNI, no variant" — mirroring generate_sfn_review's
 `value_not_in_literal → Family-specified`).
 
-## Map correction (transparency)
+## Map revisions
+
+- **v1 → v2** (below): keyed on `status` alone → keyed on `failure_reason`; a *correction* (v1 was
+  lossy). Fixed the spurious "9-paper enum-gap".
+- **v2 → v3** (0.5.0 retype): keyed on `failure_reason` → keyed on the **VALUE** (the reconstructed
+  `SpecifiedTerm{verbatim, resolved, resolution}`). Not a correction — a *re-expression*. The retype
+  makes the paper's term always recordable, so the natural key is the value, not the diagnostic reason
+  v2 had to read. **The numbers do NOT move: 11 correct / 8 error, identical partition, blind
+  11/17 = 64.7% and reachable-only 11/14 = 78.6% — unchanged from v2.** They *cannot* move on the frozen
+  predictions: the value is reconstructed from the same frozen fields v2 keyed on. This was the
+  pre-committed expectation ("if any number moves, STOP"); it held.
+  - **Caveat — translated, not re-extracted.** The frozen predictions are *pre-retype* output; v3 reads
+    them by translating the old columns into the new shape (`reconstruct_struct`). Numbers holding is
+    good evidence the translation is faithful, but this is NOT yet genuine 0.5.0 extractor output.
+    Demonstrating the retype (and scoring v3 against real new-shape output) requires a re-extraction at
+    0.5.0 — see [`docs/findings/target_space-false-missing.md`](../docs/findings/target_space-false-missing.md).
+  - **Completeness derives from the heuristic + the field, not the field alone.** `resolution` is
+    *provenance* (it records the resolver's verdict); it does NOT discriminate the case that motivated
+    GATE 2. gordon and power are both `unrecognized` yet grade `family_specified` and `absent` — the
+    **named-vs-unnamed gesture test on the verbatim** separates them, applied AFTER the `underspecified` →
+    family rule (so a family term containing a gesture substring, "MNI standard space", is not misgraded).
+    A reader who assumes `resolution` picks the tier will be confused by gordon; it does not.
+
+  v2 (keyed on `failure_reason`) stands in git history.
+
+## Map correction (v1 → v2, transparency)
 
 **Map v1 (committed `7bca618`) was lossy and produced a spurious result; it is superseded here.** v1 keyed
 on `status` alone (MISSING → absent), so the 9 papers where the extractor GRABBED a bare MNI-family term

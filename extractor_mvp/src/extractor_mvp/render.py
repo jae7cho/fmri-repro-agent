@@ -44,7 +44,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from fmri_repro.spec.preprocessing import PipelineRef, Preprocessing
+from fmri_repro.spec.preprocessing import PipelineRef, Preprocessing, SpecifiedTerm
 from fmri_repro.spec.provenance import (
     BASIS_CEILINGS,
     Basis,
@@ -277,9 +277,22 @@ def to_json(preprocessing: Preprocessing) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _fmt_specified_term(v: SpecifiedTerm) -> str:
+    """Render a 0.5.0 ``SpecifiedTerm``: the resolved member when there is one, always
+    showing the paper's verbatim words when they differ; the verbatim term alone when
+    unresolved (0.5.0 records it rather than discarding it to a false-missing)."""
+    if v.resolved is not None:
+        if v.verbatim and str(v.verbatim) != str(v.resolved):
+            return f'{v.resolved} (paper: "{v.verbatim}")'
+        return str(v.resolved)
+    return f'"{v.verbatim}"' if v.verbatim else "(term not recorded)"
+
+
 def _fmt_value(value: Any) -> str:
     if isinstance(value, PipelineRef):
         return str(value.name)
+    if isinstance(value, SpecifiedTerm):
+        return _fmt_specified_term(value)
     if isinstance(value, (list, tuple)):
         return ", ".join(str(v) for v in value)
     return str(value)

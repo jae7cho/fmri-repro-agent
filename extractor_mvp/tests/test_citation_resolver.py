@@ -12,6 +12,7 @@ from types import SimpleNamespace
 from typing import Any
 
 import pytest
+from fmri_repro.spec.preprocessing import SpecifiedTerm
 from fmri_repro.spec.provenance import InferredDefault, PriorPublicationBasis
 
 from extractor_mvp.citation_resolver import (
@@ -150,7 +151,7 @@ def test_apply_resolved_citations_upgrades_inference_only():
 
     resolved = {
         "spatial_normalization.target_space": InferredDefault(
-            value="MNI152NLin6Asym",
+            value=SpecifiedTerm(resolved="MNI152NLin6Asym", resolution="resolved"),
             basis=PriorPublicationBasis(citation="Glasser et al. 2013", note="one-hop"),
             confidence=0.5,
             alternative_inferences=[],
@@ -162,7 +163,7 @@ def test_apply_resolved_citations_upgrades_inference_only():
     assert after.extraction.status == "DEFERRED_TO_CITATION"
     assert after.inference.status == "INFERRED_DEFAULT"
     assert after.inference.basis.basis_type == "prior_publication"
-    assert after.inference.value == "MNI152NLin6Asym"
+    assert after.inference.value.resolved == "MNI152NLin6Asym"
     # original object not mutated
     assert before.inference.status == "LEFT_MISSING"
 

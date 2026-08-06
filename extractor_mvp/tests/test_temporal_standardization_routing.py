@@ -81,14 +81,14 @@ def test_zscore_signal_routes_to_temporal_standardization() -> None:
     )
     ts = _ts_step(prep)
     assert ts.method.extraction.status == "EXTRACTED"
-    assert ts.method.extraction.value == "voxel_temporal_zscore"
+    assert ts.method.extraction.value.resolved == "voxel_temporal_zscore"  # 0.5.0 SpecifiedTerm
 
 
 def test_other_method_accepted() -> None:
     prep = _prep(_payload(temporal_standardization_method=_ex("other", _ZSCORE_QUOTE)))
     ts = _ts_step(prep)
     assert ts.method.extraction.status == "EXTRACTED"
-    assert ts.method.extraction.value == "other"
+    assert ts.method.extraction.value.resolved == "other"
 
 
 def test_step_always_emitted_with_missing_method_when_absent() -> None:
@@ -98,9 +98,10 @@ def test_step_always_emitted_with_missing_method_when_absent() -> None:
     assert ts.method.extraction.status == "MISSING_FROM_PAPER"
 
 
-def test_non_literal_method_value_demoted_to_missing() -> None:
-    # Direct Literal validation (no synonym table): a value outside the Literal is
-    # demoted to MISSING with a value_not_in_literal diagnostic.
+def test_non_literal_method_value_recorded_unresolved() -> None:
+    # 0.5.0: a value outside the Literal (no synonym table for "method") is no longer demoted to
+    # MISSING — it is RECORDED as EXTRACTED with resolved=None, resolution="unrecognized" (the
+    # verbatim term is kept, not discarded). No value_not_in_literal diagnostic is emitted.
     prep, diags, _ = extract_preprocessing(
         ParsedPaper(text=TEXT, source="t", parser="manual"),
         "m",
@@ -109,16 +110,22 @@ def test_non_literal_method_value_demoted_to_missing() -> None:
         ),
     )
     ts = _ts_step(prep)
-    assert ts.method.extraction.status == "MISSING_FROM_PAPER"
-    assert any(
+    assert ts.method.extraction.status == "EXTRACTED"
+    assert ts.method.extraction.value.verbatim == "min_max_scaled"
+    assert ts.method.extraction.value.resolved is None
+    assert ts.method.extraction.value.resolution == "unrecognized"
+    assert not any(
         d.field == "temporal_standardization.method" and "value_not_in_literal" in d.failure_reason
         for d in diags
     )
 
 
-def test_intensity_convention_no_longer_accepts_zscore() -> None:
-    # End-to-end for §3b: z-score routed into the intensity convention is rejected
-    # (voxel_temporal_zscore left IntensityNormalizationConvention in Build 1).
+def test_intensity_convention_does_not_resolve_zscore() -> None:
+    # §3b: z-score fed into the intensity convention no longer resolves (voxel_temporal_zscore left
+    # IntensityNormalizationConvention in Build 1). 0.5.0 records the verbatim term as EXTRACTED with
+    # resolved=None rather than relabeling MISSING — "not a valid convention" is now resolved=None.
     prep = _prep(_payload(intensity_convention=_ex("voxel_temporal_zscore", _ZSCORE_QUOTE)))
     intensity = next(s for s in prep.steps if s.kind == "intensity_normalization")
-    assert intensity.convention.extraction.status == "MISSING_FROM_PAPER"
+    assert intensity.convention.extraction.status == "EXTRACTED"
+    assert intensity.convention.extraction.value.resolved is None
+    assert intensity.convention.extraction.value.verbatim == "voxel_temporal_zscore"

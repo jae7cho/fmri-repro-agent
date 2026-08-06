@@ -40,6 +40,7 @@ from fmri_repro.spec.preprocessing import (
     PipelineRef,
     Preprocessing,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
     TemporalFiltering,
 )
@@ -284,7 +285,12 @@ def test_branch_a_certain_extracted_version_fires_kb_version_default():
             f"{step_cls.__name__}.{field_name}: expected INFERRED_DEFAULT, "
             f"got {pf.inference.status}"
         )
-        assert pf.inference.value == expected_value
+        actual = pf.inference.value
+        if isinstance(actual, SpecifiedTerm):
+            actual = (
+                actual.resolved
+            )  # 0.5.0: retyped fields carry a SpecifiedTerm (verbatim=None on inference)
+        assert actual == expected_value
         assert pf.inference.basis.basis_type == "version_default"
         assert pf.inference.basis.tool == "hcp_minimal"
         assert pf.inference.basis.version == "v4.1.3"

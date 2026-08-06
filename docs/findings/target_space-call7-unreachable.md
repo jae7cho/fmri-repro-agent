@@ -9,6 +9,18 @@ value-support guard is untouched. So it is reachable *and* the firewall holds. T
 guard blocks it in the extraction layer) still stands as the reason it must NOT be forced through
 extraction. See [`target_space-design-resolution.md`](target_space-design-resolution.md).
 
+**DECISION (0.5.0 retype — basis NOT built).** The verbatim+resolved retype shipped (v0.5.0); the CALL 7
+inference *basis* did not. `enumerated_pipeline_complete` was proposed as an inference basis at ceiling
+0.75, then **dropped**: it changes no output — nothing produces the inference, because detecting
+enumerated-pipeline-completeness is an unbuilt capability, so adding the enum value now is unused schema
+(the same YAGNI test applied elsewhere). What is retained is the **decision, not the code**: a CALL 7
+`native_volume` conclusion belongs to the **INFERENCE arm with a stated basis, never to extraction** — the
+value-support guard correctly forbids it as an extraction (its evidence is the ABSENCE of a volumetric
+step, which no quote can support), and routing it to extraction would breach the firewall the guard
+enforces. So chen and binder remain **unreachable-but-active-leaks** under 0.5.0: the retype does NOT make
+`native_volume` reachable (it fixes the false-*missing*, a different axis). Build the detection first, then
+add the basis; the reasoning is preserved here for whoever does.
+
 **Finding (2026-07-31).** Two of the 19 target_space labels — chen and binder, both `native_volume` — are
 **unreachable by the extractor as built**, and not for a reason any map or enum change can fix. Their
 `native_volume` is a **CALL 7** reading: no sentence states a volumetric target; the label is inferred from

@@ -51,6 +51,14 @@ MIGRATION_FLOOR = "0.2.0"
 # is the structural signature of a pre-0.2.0 (0.1.0) document.
 _PRE_FLOOR_MARKER = "voxel_temporal_zscore"
 _ADDED_IN_0_3_0 = ("method", "filtering_integrated")  # required fields NuisanceRegression gained
+# 0.4.1 -> 0.5.0: the five literal_type fields retype from a bare Literal member to
+# SpecifiedTerm{verbatim, resolved, resolution}. Step kind -> the retyped field(s) it carries.
+_RETYPED_IN_0_5_0: dict[str, tuple[str, ...]] = {
+    "spatial_normalization": ("target_space",),
+    "surface_projection": ("target_surface", "surface_registration"),
+    "intensity_normalization": ("convention",),
+    "temporal_standardization": ("method",),
+}
 
 
 class MigrationError(RuntimeError):
@@ -97,6 +105,35 @@ def _missing_field(field_id: str) -> dict[str, Any]:
     return dict(json.loads(pf.model_dump_json()))
 
 
+def _lift_value(v: Any) -> Any:
+    """One bare enum member -> the 0.5.0 ``SpecifiedTerm`` struct. Old values were resolved
+    members by construction, so the lossless lift is ``verbatim = resolved = old``. Idempotent:
+    an already-lifted dict value is returned unchanged."""
+    if isinstance(v, dict):
+        return v
+    return {"verbatim": v, "resolved": v, "resolution": "resolved"}
+
+
+def _lift_to_specified_term(field: Any) -> None:
+    """In place: rewrite a retyped field's bare-member value into the ``SpecifiedTerm`` struct,
+    on whichever provenance arm carries a value (Extracted / InferredDefault + its alternatives).
+
+    A field carrying NO value (MissingFromPaper / DeferredToCitation / LeftMissing) is left
+    untouched — there is nothing to lift, which is exactly why a historical false-missing cannot
+    be repaired here (see the hop comment in :func:`migrate_to_current`)."""
+    if not isinstance(field, dict):
+        return
+    ext = field.get("extraction")
+    if isinstance(ext, dict) and ext.get("status") == "EXTRACTED":
+        ext["value"] = _lift_value(ext.get("value"))
+    inf = field.get("inference")
+    if isinstance(inf, dict) and inf.get("status") == "INFERRED_DEFAULT":
+        inf["value"] = _lift_value(inf.get("value"))
+        for alt in inf.get("alternative_inferences") or []:
+            if isinstance(alt, dict):
+                alt["value"] = _lift_value(alt.get("value"))
+
+
 def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     """Return a NEW dict migrated to the current schema. Never mutates ``doc``.
 
@@ -120,8 +157,29 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # 0.3.0 -> 0.4.0: adds only the optional-default Extracted.span_recovered field; no doc
     # transform is needed (an absent flag validates to False) — the hop is a pure re-stamp.
     # 0.4.0 -> 0.4.1: adds only the additive TargetSpace value "study_specific"; no doc transform
-    # (a doc that never used it validates unchanged) — pure re-stamp. Both hops fall through to the
-    # single stamp write below; migrator_version is f-string-generated from SCHEMA_VERSION.
+    # (a doc that never used it validates unchanged) — pure re-stamp.
+    #
+    # 0.4.1 -> 0.5.0 (STRUCTURAL, a real doc-transform — NOT a re-stamp): the five literal_type
+    # fields retype from a bare Literal member to SpecifiedTerm{verbatim, resolved, resolution}.
+    # Lift each carried value in place; old values were resolved enum members, so
+    # verbatim=resolved=old with resolution="resolved" is lossless.
+    #
+    # HISTORICAL FALSE-MISSINGS CANNOT BE REPAIRED HERE. A <=0.4.1 doc that recorded
+    # MissingFromPaper for a stated-but-unresolvable term (the value_not_in_literal false-missing:
+    # a paper wrote "MNI", the resolver returned underspecified, and the extractor relabeled the
+    # field MISSING) carries NO value to lift — the paper's term lived only in the extractor_mvp
+    # ExtractionDiagnostic, which was NEVER part of the committed spec model (it sits in a gitignored
+    # results/ tree). So this hop carries those false-missings FORWARD: structurally retyped and still
+    # empty. The retype prevents FUTURE false-missings; correcting the existing ones needs
+    # re-extraction under 0.5.0, not migration.
+    if _version_tuple(source) < _version_tuple("0.5.0"):
+        for step in out.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            for fid in _RETYPED_IN_0_5_0.get(step.get("kind", ""), ()):
+                _lift_to_specified_term(step.get(fid))
+    # Both re-stamp hops and the 0.5.0 transform fall through to the single stamp write below;
+    # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
     out["written_under"] = source
     out["written_under_inferred"] = inferred

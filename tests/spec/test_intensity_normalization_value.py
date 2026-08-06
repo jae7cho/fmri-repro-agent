@@ -11,7 +11,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from fmri_repro.spec.preprocessing import IntensityNormalization
+from fmri_repro.spec.preprocessing import (
+    IntensityNormalization,
+    IntensityNormalizationConvention,
+    SpecifiedTerm,
+)
 from fmri_repro.spec.provenance import (
     Extracted,
     LeftMissing,
@@ -46,8 +50,16 @@ def test_magnitude_conventions_still_accept_a_value() -> None:
     # the global_* conventions DO have a magnitude — must not be rejected
     inten = IntensityNormalization(
         scope=_missing("scope", str),
-        convention=_extracted("convention", str, "global_median_1000"),
+        convention=_extracted(
+            "convention",
+            SpecifiedTerm[IntensityNormalizationConvention],
+            SpecifiedTerm(
+                verbatim="global_median_1000",
+                resolved="global_median_1000",
+                resolution="resolved",
+            ),
+        ),
         value=_extracted("value", float, 1000.0),
     )
     assert inten.value.extraction.value == 1000.0
-    assert inten.convention.extraction.value == "global_median_1000"
+    assert inten.convention.extraction.value.resolved == "global_median_1000"

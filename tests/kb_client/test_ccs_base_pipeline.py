@@ -32,6 +32,7 @@ from fmri_repro.spec.preprocessing import (
     PipelineRef,
     Preprocessing,
     SpatialNormalization,
+    SpecifiedTerm,
     SurfaceProjection,
     TemporalFiltering,
 )
@@ -243,7 +244,12 @@ def test_ccs_certain_version_fires_exactly_five_version_defaults():
             f"{step_cls.__name__}.{field_name}: expected INFERRED_DEFAULT, "
             f"got {pf.inference.status}"
         )
-        assert pf.inference.value == expected_value
+        actual = pf.inference.value
+        if isinstance(actual, SpecifiedTerm):
+            actual = (
+                actual.resolved
+            )  # 0.5.0: retyped fields carry a SpecifiedTerm (verbatim=None on inference)
+        assert actual == expected_value
         assert pf.inference.basis.basis_type == "version_default"
         assert pf.inference.basis.tool == "ccs"
         assert pf.inference.basis.version == "2015"

@@ -375,10 +375,20 @@ def classify(extraction: dict, inference: dict) -> tuple[str, str, str]:
         inf_reason = inference.get("reason", "")
 
     if ext == "EXTRACTED":
-        value = str(extraction.get("value", ""))
+        raw = extraction.get("value", "")
         spans = extraction.get("spans", [])
         quote = spans[0].get("text", "")[:400].replace("\n", " ") if spans else ""
-        return "Extracted ✓", value, quote
+        # 0.5.0: the five literal_type fields carry a SpecifiedTerm{verbatim, resolved, resolution}.
+        # Completeness is read FROM the value (not reconstructed from a value_not_in_literal
+        # diagnostic, which is gone): a resolved member -> Extracted ✓; a recorded-but-unresolved
+        # term (the former false-missings: bare "MNI", "atlas space") -> Family-specified, showing
+        # the paper's verbatim words. The human labeler applies the named-vs-unnamed judgment (a
+        # bare atlas/standard-space gesture grades absent).
+        if isinstance(raw, dict) and "resolved" in raw and "resolution" in raw:
+            if raw.get("resolved") is not None:
+                return "Extracted ✓", str(raw["resolved"]), quote
+            return "Family-specified", str(raw.get("verbatim") or ""), quote
+        return "Extracted ✓", str(raw), quote
 
     if ext == "DEFERRED_TO_CITATION":
         deferrals = extraction.get("deferrals", [])
@@ -386,7 +396,8 @@ def classify(extraction: dict, inference: dict) -> tuple[str, str, str]:
         return "Deferred ↗", "", ref
 
     reason_map = {
-        "value_not_in_literal": "Family-specified",
+        # value_not_in_literal is gone in 0.5.0 (the five literal_type fields are now EXTRACTED
+        # with a SpecifiedTerm and graded in the EXTRACTED branch above, not relabeled MISSING).
         "extraction_quote_unresolved": "Quote unresolved",
         "deferral_quote_unresolved": "Deferral unresolved",
         "deferred_pending_citation_resolution": "Deferred (pending)",
