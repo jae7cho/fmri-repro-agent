@@ -548,3 +548,57 @@ INFERENCE layer (basis enumerated_pipeline_complete + ceiling; guard intact). St
 not performed" != silence — the hallucination-vs-absence thesis at the step level) HELD until it recurs
 (motion/smoothing). Both correctness fixes are focused next-session work, recorded so the reasoning
 survives — the conversation is not the artifact. Commits 305bcb6..c041f6f.
+
+
+## 2026-08-06
+
+Hours: 17:50 - 20:54 ET
+
+Built the verbatim+resolved retype the last session designed (v0.5.0), the false-missing TYPE fix. Opened by
+splitting slice_suspicious into two corruption states — SUSPECT (the system's own methods_not_found flag;
+untested; stays in the denominator) vs DEMONSTRATED (a tested causal claim; excluded) — numbers invariant.
+Two hard gates before touching the core type: nested generics (ProvenancedField[SpecifiedTerm[TargetSpace]])
+round-trip and reject bad members in this Pydantic v2 — PASS; and what power_2014 actually emits — "atlas
+space" (no_match), so the two-field struct is insufficient and the resolver-verdict field goes in. Retyped
+all five literal_type fields to SpecifiedTerm{verbatim, resolved, resolution}; structural 0.4.1->0.5.0 with a
+REAL doc-transform hop (lift EXTRACTED bare->struct, carry MISSING false-missings forward — migration CANNOT
+repair them, the term lived only in the gitignored diagnostic); _process_field stops relabeling; consumers, kb
+inference, generators, schema, scoring map v3 (keyed on the value; 11/8 held) all moved. Full suite green
+(root 235, extractor_mvp 275), mypy+ruff. Commit 382795a.
+
+Caught gordon at DESIGN time, before STEP 5's gate could. The design's completeness rule "unrecognized ->
+absent" would have silently moved gordon ("EPI template", a NAMED template) correct->error; kept v2's
+named-vs-unnamed gesture test inside the unrecognized branch, applied after underspecified->family, so no
+number moved. And named the honest limit of GATE 2's third field: on this corpus it changes NO grade (the
+gesture heuristic reproduces v2), and gordon/power are both unrecognized yet grade differently — so resolution
+is PROVENANCE, not the grader; completeness derives from the heuristic PLUS the field. Wrote that into the
+docstrings so a future reader isn't misled.
+
+Then demonstrated it end to end, and the demonstration was more interesting than the retype — as the pre-reg
+warned. Pre-registered before spending (7ab4894). The 1-paper smoke contradicted the expectation on the first
+data point: agtzidis stayed MissingFromPaper via quote_not_found, not EXTRACTED. The cause was a COMMITTED
+finding the pre-reg failed to consult — span-resolution-hard-drop.md (Phase 1) named agtzidis target_space as
+a pypdf /C2 mangle (× rendered "/C2"), Phase 2 fixes never run. The value_not_in_literal short-circuit had been
+HIDING it: the old flow never reached quote resolution for these papers; remove it and a latent, documented
+defect surfaces. Artifact-vs-conversation gap in a new direction — the findings doc had it, the pre-reg
+didn't. Amended the pre-reg to a true expectation (bae9a84), restated the claim narrow, then ran K=3 x 19
+papers (57 bedrock calls, 0 failed, 0 value_not_in_literal on every draw). Result: 11/12 false-missings now
+record the term — EXTRACTED, K=3-stable, verbatim MATCHING the frozen raw (extraction unchanged, only
+recording). agtzidis stayed quote_not_found all 3 draws, scored family_specified via the diagnostic raw = the
+OLD side-channel, NOT the fix (flagged, not laundered). Two non-stationarity movers (braun deferred->absent,
+mueller absent->study_specific, both stable 3/3 this run) shifted the BLIND rate 11/17->10/17 = model variance,
+not the retype; the translation was faithful for the target population. The headline "the spec no longer
+records MissingFromPaper for a stated term" is too broad and now known false for agtzidis; the true claim is
+narrower — value_not_in_literal path closed, quote_not_found path (a separate, previously-documented defect)
+still open. Refreshed the frozen predictions into real 0.5.0 shape (v050 CSV). Commit 015a5ce.
+
+Closed scoping motion_correction (read-only) as the next field. Rich 9-field step, 4 closed Literals, method
+the headline candidate; neither extracted nor emitted today. Corpus attests it densely — 16/19 name or imply
+a tool, only braun truly silent (deferred). The real work is not enum coverage but two boundaries the protocol
+must adjudicate — realignment vs coregistration terminology (binder/liu_2013 state motion correction AS
+"coregistration"/"iterative procedure") and the realignment step vs motion-params-for-nuisance (ciric/gordon/
+chen name both in one breath) — plus the same pypdf mangling that broke agtzidis: wheaton's "motion
+correc-tion" (hyphenated line break) evaded the grep, a survey false-negative to design around. COBIDAS commits
+only the D.3 row title + mandatory-conditional flag, not the sub-item list.
+
+Commits: 382795a (retype), 7ab4894 + bae9a84 (pre-reg + amendment), 015a5ce (demonstration).
