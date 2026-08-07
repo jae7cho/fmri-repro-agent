@@ -1,7 +1,46 @@
 # Pre-registration: 0.5.0 re-extraction of the target_space corpus
 
 **Committed BEFORE the run (2026-08-06, ET), so the falsifiability is on record, not in conversation.**
-Retype commit: `382795a`. Run this against that HEAD.
+Retype commit: `382795a`. Run this against that HEAD. **AMENDED 2026-08-06** after a 1-paper smoke + a
+free proxy but BEFORE the full run — the original expectation was known-wrong for agtzidis (see below).
+
+## AMENDMENT (after the smoke + free proxy, before the full run)
+
+The original expectation below ("all 12 flip to EXTRACTED") was **already known to be wrong for agtzidis**
+— the pre-reg failed to consult a committed finding.
+[`span-resolution-hard-drop.md`](span-resolution-hard-drop.md) (Phase 1) recorded **target_space ×2**
+silent span-drops and named **agtzidis target_space** specifically as a recoverable *pypdf-mangle* case:
+pypdf renders `×` as the literal `/C2`, so agtzidis's slice carries `3 /C2 3 /C2 3m m 3` where the model
+regularized `3 × 3 × 3 mm3`. Phase 2 (the fixes) was measured but never run. So this is a committed
+latent defect, not a discovery — the artifact/conversation gap in a new direction.
+
+**Why the retype surfaced it.** The `value_not_in_literal` short-circuit was HIDING the hard-drop: the old
+flow returned MISSING at the value check, *before* quote resolution ran, so the span-drop could never fire
+for these papers. Removing the short-circuit lets the value reach quote resolution, and a known latent
+defect surfaces. The **root cause is pypdf, not the retype**, and the **value-support guard is working as
+designed** — it correctly refuses to ground a quote that does not match the (mangled) source. agtzidis
+belongs to the same family as cole's AFNI-glue and liu_2005's column interleaving: different mechanism,
+same origin (source corruption).
+
+**Restated claim (narrower, and true).** NOT "the spec no longer records `MissingFromPaper` for a stated
+term" — now known false for agtzidis. The accurate claim: **the retype closes the `value_not_in_literal`
+path to false-missing; the `quote_not_found` path remains open and is a separate, previously-documented
+defect** (`span-resolution-hard-drop.md`, Phase 2 unbuilt).
+
+**Do not let the score launder this.** If agtzidis's v3 grade holds at `family_specified`, that is NOT
+evidence the fix works there: `reconstruct_struct` falls back to the diagnostic's `raw="MNI"` for a
+`quote_not_found` row — the exact diagnostic-side-channel workaround the retype was meant to retire. So
+agtzidis is still scored by the OLD mechanism; "numbers unchanged" is honest ONLY if this is stated.
+
+**Amended expectation (this is what the run tests):**
+- **~11/12** of the value_not_in_literal papers flip to **EXTRACTED** with the verbatim preserved
+  (`resolution="underspecified"` for the 9 bare-MNI; `"unrecognized"` for gordon/poldrack/power).
+- **agtzidis: `quote_not_found` → stays `MissingFromPaper`** (documented pypdf-mangle). It MAY flip on a
+  cleaner draw — fresh K=3, the model's quote varies run to run; its core phrase resolves, only the
+  garbled `/C2` tail breaks the full quote.
+- **Any currently-CORRECT row that moves** means the retype has a scoring consequence the translation hid.
+- **A verbatim differing from the diagnostic's raw** means EXTRACTION behavior changed, not just recording
+  (the retype provably does not touch `fe.value`, so this would be a bug or a real model shift).
 
 ## Why
 
@@ -22,14 +61,15 @@ interesting result.
   call, the prompt, or `fe.value`. So the extracted **verbatim is model-determined and should match the
   frozen diagnostic's raw_value** (modulo model non-stationarity across a fresh K=3).
 
-## Expected outcome (success case)
+## Expected outcome (per the amendment above)
 
-The 12 papers the pre-retype extractor recorded as `value_not_in_literal` -> `MISSING_FROM_PAPER` (the
-false-missings) become **EXTRACTED** with `resolved=None` and the verbatim preserved:
+Of the 12 papers the pre-retype extractor recorded as `value_not_in_literal` -> `MISSING_FROM_PAPER`,
+**~11 become EXTRACTED** with `resolved=None` and the verbatim preserved; **agtzidis stays
+`MissingFromPaper` via `quote_not_found`** (pypdf-mangle, may flip on a cleaner draw):
 
 | paper | frozen raw_value | expected 0.5.0 | resolution | v3 grade (unchanged) |
 |---|---|---|---|---|
-| agtzidis_2020 | MNI | EXTRACTED, verbatim≈"MNI" | underspecified | family_specified ✓ |
+| agtzidis_2020 | MNI | **quote_not_found -> MISSING** (pypdf `/C2` mangle) | n/a | family_specified ✓ (scored via diagnostic raw — old mechanism, NOT the fix) |
 | chen_2015 | MNI | EXTRACTED, verbatim≈"MNI" | underspecified | family_specified (ERR vs native_volume, unreachable) |
 | derosa_2025 | MNI-152 | EXTRACTED, verbatim≈"MNI-152" | underspecified | family_specified ✓ |
 | liu_2013 | MNI | EXTRACTED, verbatim≈"MNI" | underspecified | family_specified ✓ |
