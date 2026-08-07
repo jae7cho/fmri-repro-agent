@@ -113,7 +113,42 @@ If the numbers do NOT hold against real output, the translation (`reconstruct_st
 extractor disagree about at least one row. That disagreement — not the retype — becomes the result to
 run down: which row, and whether the translation over-simplified the frozen columns or the model shifted.
 
-## Outcome
+## Outcome (2026-08-06, after the full K=3 run)
 
-_To be filled in after the run (per-draw states, K=3 majority, verbatim vs frozen raw, v3 score,
-which failure modes fired if any)._
+Run: `results/batch_v050_labelset/` draws 1-3, 19 papers each, **0 failed** (no partial output — the
+miss/harness-failure ambiguity is cleared). Every draw: **0 value_not_in_literal** (the path is
+eliminated on real output) + 3 quote-unresolved. Durable real-shape record:
+`ground_truth/target_space_predictions_v050.csv`; scorer: `extractor_mvp/score_v050_reextraction.py`.
+
+**The fix is demonstrated.** **11/12** value_not_in_literal false-missings now record the term — EXTRACTED,
+**K=3-stable (all 3/3)**, verbatim preserved and **matching the frozen raw** (chen "MNI", derosa "MNI-152",
+gordon "EPI template", poldrack "3-mm isotropic atlas space", power "atlas space", weber "MNI152", …). The
+verbatim-match confirms the retype changed only recording, not extraction — **failure mode #1 did not
+fire**.
+
+**agtzidis: exactly as amended-predicted.** Stayed `MissingFromPaper` via `quote_not_found` on **all 3
+draws** (did NOT flip on a cleaner draw). Graded `family_specified` via the diagnostic raw — the OLD
+side-channel, **NOT the fix**. The documented pypdf-mangle (`span-resolution-hard-drop.md`, Phase 2
+unbuilt) stands.
+
+**Two NON-STATIONARITY movers (orthogonal to the retype), both stable 3/3 this run:**
+- **braun** deferred → absent: fresh K=3 gave MISS/MISS/MISS; deferral detection dropped (frozen was
+  DEFERRED/MISS/DEFERRED, already K=3-unstable). A currently-correct row moved (**failure mode #2 fired**);
+  investigation → non-stationarity (#3), not a translation flaw.
+- **mueller** absent → study_specific: fresh K=3 gave EXTR/EXTR/EXTR; the construction phrase was newly
+  captured (frozen was MISS/MISS/MISS). An improvement, also non-stationarity.
+
+**Score.** Total **11/8** (matches frozen total, different composition). **Blind moved 11/17 → 10/17
+(64.7% → 58.8%)**, reachable 78.6% → 71.4% — driven entirely by braun (blind, correct→error); mueller's
+offsetting improvement is non-blind so it does not lift the blind rate. The v3 **translation was faithful
+for the retype's target population** (every value_not_in_literal paper grades identically real-vs-translated);
+the blind-rate drop is **model non-stationarity on braun, not a translation error and not the retype**.
+
+**Verdict on the pre-reg's question** ("if the numbers hold, the translation was faithful"): for the
+retype's target population they held exactly (11/12 flipped verbatim-faithful; agtzidis as documented). The
+blind-rate drop is a separate, orthogonal non-stationarity signal on braun — recorded as data, not
+attributable to the fix.
+
+**Phase 2 (span-resolution) — open.** agtzidis is the lone target_space `quote_not_found`; the broader
+hard-drop is corpus-wide across 6 fields (`span-resolution-hard-drop.md`). Whether to build Fix A/B is a
+separate decision; the retype (commit `382795a`) is demonstrated as far as it claims.

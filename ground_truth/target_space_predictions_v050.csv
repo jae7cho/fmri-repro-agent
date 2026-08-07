@@ -1,0 +1,20 @@
+paper_id,k3_status,maj_status,resolved,verbatim,resolution,diag_raw,diag_reason,scoring_mode,stable,v3_grade,label,correct
+agtzidis_2020,MISSING_FROM_PAPER/MISSING_FROM_PAPER/MISSING_FROM_PAPER,MISSING_FROM_PAPER,,MNI,unrecognized,MNI,extraction_quote_unresolved:quote_not_found,fallback,yes,family_specified,family_specified,yes
+binder_1999,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,Talairach,Talairach,resolved,,,fix,yes,family_specified,native_volume,no
+braun_2015,MISSING_FROM_PAPER/MISSING_FROM_PAPER/MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,unrecognized,,,absent,yes,absent,deferred,no
+chen_2015,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,native_volume,no
+ciric_2017,MISSING_FROM_PAPER/MISSING_FROM_PAPER/MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,unrecognized,,,absent,yes,absent,study_specific,no
+cole_2013,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,Talairach,Talairach,resolved,,,fix,yes,family_specified,family_specified,yes
+derosa_2025,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI-152,underspecified,,,fix,yes,family_specified,family_specified,yes
+gordon_2014,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,EPI template,unrecognized,,,fix,yes,family_specified,family_specified,yes
+liu_2005,MISSING_FROM_PAPER/MISSING_FROM_PAPER/MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,unrecognized,,,absent,yes,absent,family_specified,no
+liu_2013,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,family_specified,yes
+mueller_2021,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,study_specific,subject-specific anatomical template,resolved,,,fix,yes,study_specific,study_specific,yes
+oconnor_2017,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,canonical,no
+poldrack_2015,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,3-mm isotropic atlas space,unrecognized,,,fix,yes,absent,deferred,no
+power_2014,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,atlas space,unrecognized,,,fix,yes,absent,absent,yes
+tang_2025,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,family_specified,yes
+vanderwal_2016,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,family_specified,yes
+viduarre_2017,MISSING_FROM_PAPER/MISSING_FROM_PAPER/MISSING_FROM_PAPER,MISSING_FROM_PAPER,,,unrecognized,,,absent,yes,absent,deferred,no
+weber_2024,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI152,underspecified,,,fix,yes,family_specified,family_specified,yes
+wheaton_2004,EXTRACTED/EXTRACTED/EXTRACTED,EXTRACTED,,MNI,underspecified,,,fix,yes,family_specified,family_specified,yes

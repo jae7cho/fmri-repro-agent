@@ -1,19 +1,23 @@
 # target_space false-missing: the spec asserts absence for papers that stated "MNI"
 
-**FIXED (mechanism) in v0.5.0 — demonstration pending re-extraction.** The five `literal_type` fields now
-carry a `SpecifiedTerm{verbatim, resolved, resolution}`, so the extractor's build path can no longer
-relabel a stated-but-unresolvable term to `MissingFromPaper`: it records EXTRACTED with `resolved=None`.
-The mechanism is fixed and unit-tested (`test_underspecified_term_is_recorded_extracted_not_missing`,
-`test_success_path_retains_verbatim_alongside_resolved_mueller_shape`). It is **not yet demonstrated
-end-to-end**: no committed spec document has been written by the retyped extractor. The nine papers below
-still carry `MissingFromPaper` in every committed artifact, and migration explicitly cannot repair them
-(the discarded term lived only in the gitignored diagnostic). The frozen predictions the score is computed
-against are pre-retype output; map v3 reads them by translating the old columns into the new shape, which
-is faithful but is not genuine 0.5.0 extractor output. **The proof is a re-extraction at 0.5.0 (K=3):** the
-nine should become EXTRACTED with `verbatim="MNI"`/`"MNI152"` and `resolution="underspecified"`, which also
-refreshes the frozen predictions into the real new shape. Until then the fix is asserted-and-unit-tested,
-not demonstrated on the corpus. The analysis below stands as the record of the defect and the reasoning
-that led to the retype.
+**FIXED (mechanism) in v0.5.0; DEMONSTRATED on the corpus (2026-08-06 re-extraction — 11/12).** The five
+`literal_type` fields now carry a `SpecifiedTerm{verbatim, resolved, resolution}`, so the build path can no
+longer relabel a stated-but-unresolvable term to `MissingFromPaper`: it records EXTRACTED with
+`resolved=None`. Unit-tested (`test_underspecified_term_is_recorded_extracted_not_missing`,
+`test_success_path_retains_verbatim_alongside_resolved_mueller_shape`) AND demonstrated on genuine 0.5.0
+output: a K=3 re-extraction (record: `ground_truth/target_space_predictions_v050.csv`; pre-reg + outcome:
+[`target_space-0.5.0-reextraction-prereg.md`](target_space-0.5.0-reextraction-prereg.md)) showed **11 of
+the 12** value_not_in_literal papers now record the term — EXTRACTED, K=3-stable, verbatim matching the
+frozen raw.
+
+**The 12th (agtzidis) does NOT flip** — it stays `MissingFromPaper` via `quote_not_found`. That is a
+SEPARATE, previously-documented defect, not the value_not_in_literal path: pypdf renders `×` as `/C2`, so
+the model's regularized quote won't ground ([`span-resolution-hard-drop.md`](span-resolution-hard-drop.md),
+Phase 2 unbuilt). Its score holds only via the diagnostic raw fallback — the OLD side-channel, not the fix.
+So the honest, narrow claim: **the retype closes the `value_not_in_literal` path to false-missing
+(demonstrated); the `quote_not_found` path remains open.** Historical false-missings in committed artifacts
+are still not repaired by migration (re-extraction is required). The analysis below stands as the record of
+the defect and the reasoning that led to the retype.
 
 **Finding (2026-07-31, surfaced while scoring target_space).** For 9 of the 18 audited papers the
 extractor's SPEC records `spatial_normalization.target_space.extraction.status = MissingFromPaper` —
