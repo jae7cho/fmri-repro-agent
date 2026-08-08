@@ -1,0 +1,245 @@
+# Ground-truth protocol — `motion_correction` (v1)
+
+**Ratified 2026-08-07 (ET):** all five definitional calls (§5) ratified by the author; this protocol is committed as pre-registration — *before any label is written*.
+
+**Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
+signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
+silent edit. Single-rater, author-labelled (Jae Wook Cho) — a stated limitation; inter-rater reliability
+deferred and conditional, as in base_pipeline v1.3 and target_space v1.2.
+
+**Corpus:** the 19 analysable papers (cabral excluded, per base_pipeline D10).
+
+**What is different about this field, and why it matters methodologically:** `motion_correction` is
+**not extracted today** — it is absent from the extraction model, from `_FIELD_SPECS`, from the prompt,
+and from `_assemble`'s emitted step list. So these labels are written before any extractor output for
+this field exists. That is a stronger blindness than target_space had, where the protocol's definitional
+calls were partly shaped by auditing extractor output. Extraction will be built *to this protocol*
+rather than the protocol being written around extraction's behaviour.
+
+**Honest qualification:** a deterministic grep survey of the corpus was run during scoping (tool-name
+terms, QC terms). It surfaced which papers name a tool. That is not extractor output and is not the
+thing being validated, but the labels are not blind to it. Stated rather than claimed away.
+
+---
+
+## 1. What COBIDAS actually requires (the denominator)
+
+COBIDAS Report v1.0, Table D.3 "Preprocessing Reporting", the *Motion correction* row (Mandatory = Y).
+Seven bullets, quoted in substance:
+
+1. Name of software/method.
+2. Use of non-rigid registration, and if so the type of transformation.
+3. Use of motion susceptibility correction (fieldmap-based unwarping), and the software/method.
+4. Reference scan (e.g. 1st scan or middle scan).
+5. Image similarity metric (e.g. normalized correlation, mutual information).
+6. Interpolation type (e.g. spline, sinc), **and whether image transformations are combined to allow a
+   single interpolation**.
+7. Use of slice-to-volume registration methods, or integration with slice time correction.
+
+**Mapping to spec fields** (`MotionCorrection`, preprocessing.py:687-706):
+
+| D.3 bullet | spec field(s) |
+|---|---|
+| 1 name of software/method | `method` |
+| 2 non-rigid + transformation type | `nonrigid`, `transform_type` |
+| 3 fieldmap unwarping + software | `fieldmap_unwarping`, `unwarping_method` |
+| 4 reference scan | `reference_scan` |
+| 5 similarity metric | `similarity_metric` |
+| 6 interpolation + combined transforms | `interpolation`, **`transforms_combined` (NEW)** |
+| 7 slice-to-volume / STC integration | `slice_to_volume` |
+
+All seven bullets map. `transforms_combined` does not exist in the spec today — it is added as part of
+this arc (COBIDAS-mandated, and attested in-corpus by poldrack).
+
+**Labelling is at the BULLET level** (seven items), because the bullet is COBIDAS's unit of obligation
+and the compliance table is the Goal-2 deliverable. The field mapping is recorded so extraction can be
+built against it later.
+
+---
+
+## 2. Scope: label seven, build one
+
+- **`method` (bullet 1) is labelled at full rigour** — state, verbatim value, supporting quote — because
+  it is the only bullet getting extraction in this arc, and therefore the only one that will be
+  **scored** against the extractor.
+- **Bullets 2-7 are labelled as attestation only** — did the paper report this, with the verbatim if so.
+  Most are absent (scoping survey: reference scan ~4/19, similarity metric ~0, interpolation ~0), so
+  this is fast.
+
+**These are different kinds of claim and must not be conflated.** The `method` labels support an
+extractor-accuracy claim once extraction exists. The bullet 2-7 attestations support a **literature**
+claim — item-by-item COBIDAS reporting completeness across the corpus — backed by author labels and
+independent of any extractor. The second is arguably the more useful output for Goal 2, and it is
+available without building six more extraction fields.
+
+---
+
+## 3. Label vocabulary
+
+### `method` (bullet 1) — five states
+
+- **`named_tool`** — a specific software or method is named: MCFLIRT, SPM realign, AFNI 3dvolreg, ANTs,
+  INRIAlign, FLIRT.
+- **`described_only`** — the operation is stated but no tool is named: "motion correction was
+  performed", "rigid body realignment". Performance is established; the tool is not.
+- **`deferred`** — the method is not stated but is attributed elsewhere: to a citation, or to a named
+  pipeline whose motion step the paper does not itself describe. Consistent with base_pipeline v1.3's
+  named-by-provenance rule.
+- **`absent`** — the paper makes no statement about motion correction at all.
+- **`stated_not_performed`** — the paper explicitly states it did not perform motion correction. (No
+  corpus instance expected; the state exists because explicit negative reporting is the reproducibility
+  gold standard and must be representable — see §5, CALL 5's sibling problem.)
+
+### Bullets 2-7 — four attestation states
+
+- **`reported`** — the bullet is addressed, **including an explicit negative**. "No fieldmap-based
+  unwarping was applied" *satisfies* bullet 3; a stated negative is reporting, not silence. Record the
+  verbatim.
+- **`not_reported`** — silent.
+- **`not_applicable`** — the bullet is malformed for this pipeline's design. See CALL 5 (one-step
+  resampling and `interpolation`).
+- **`deferred`** — addressed only by attribution to a citation or named pipeline.
+
+---
+
+## 4. Performance determination (feeds the compliance rendering)
+
+The three-state compliance rendering (see the amended `DESIGN_cobidas_coverage.md`) needs performance
+established **from the paper's own text**, never from a prior about which steps are universal.
+
+- **performed** — `method` ∈ {`named_tool`, `described_only`, `deferred`}
+- **not performed** — `method` = `stated_not_performed`
+- **indeterminate** — `method` = `absent`
+
+Note this is why `described_only` must be a distinct state rather than collapsing into `absent`: a paper
+that says "motion correction" and nothing else has *established performance* while reporting no
+parameters. That is the population where non-compliance is assertible.
+
+---
+
+## 5. The five definitional calls (all RATIFIED 2026-08-07)
+
+### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
+**RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
+The *paper* wrote "motion correction", not "MCFLIRT"; producing the tool name would require resolving
+Jenkinson 2002 — which is the citation resolver's job, with its own provenance and confidence
+(base_pipeline D1: citation-deferral → DEFERRED, no genre test for citations). Label what the paper
+stated; resolution is resolution.
+
+**`deferred` is not a reporting failure.** Under `DESIGN_cobidas_coverage.md` §2, a D.3 row is addressed
+iff a field is `EXTRACTED` **or** `DEFERRED_TO_CITATION` — so oconnor satisfies D.3 bullet 1 by deferral
+and counts as *reported* in the compliance table. Compliance and label state are different axes.
+
+*Limitation:* the state does not distinguish deferral targets of very different reproducibility value —
+oconnor's resolves to a specific tool, braun's ("as previously described in refs. 47 and 48") to another
+paper's prose. The verbatim quote preserves *which* citation, so this is assessable downstream; recorded
+as the deferral-reproducibility problem already tracked in `docs/findings/citation-index-backlog.md`. No
+new state.
+
+### CALL 2 — realignment described as "coregistration" is still `motion_correction`
+**RATIFIED as drafted.** The discriminator is **what is aligned to what**, not the word used. EPI volumes
+aligned to each other, or to a within-run reference → **`motion_correction`**. EPI aligned to the
+anatomical → **`coregistration`**, a different step.
+
+Worked cases: binder — "All EPI images were spatially coregistered using an iterative procedure that
+minimizes variance in voxel intensity differences between images (Cox, 1996b)": "**between images**"
+(plural, within the timeseries) is the operative phrase → `motion_correction`. The anatomical only enters
+later, when the SPGR scans and SPMs are projected to stereotaxic space; binder describes **no func→anat
+coregistration step at all** — so reading this sentence as coregistration would leave a paper that
+realigned its timeseries with no motion correction anywhere. liu_2013 — "image coregistration to correct
+for head motion" — the stated purpose is motion.
+**CALL 2a — RATIFIED: binder = `described_only`.** The general test it establishes: *does the paper's own
+text identify the method, or must the citation be read to know what was done?* Binder characterises the
+algorithm in-paper (iterative, minimising variance in voxel intensity differences between images) →
+`described_only`. oconnor gives only the operation name plus a pointer → `deferred`. So `described_only`
+spans a range of detail — from cole's bare "motion correction" to binder's characterised algorithm — and
+the difference lives in the verbatim quote, not in the state.
+
+*Verification flag:* **Cox 1996b is not identified.** Cox 1996a is the AFNI software paper; 1996b is a
+different work of the same year and has NOT been verified. Do not assume it is a volume-registration paper.
+
+### CALL 3 — the realignment step is distinct from the motion parameters it feeds to nuisance regression
+**RATIFIED as drafted.** Six papers describe both in one sentence (ciric, gordon, agtzidis, chen, poldrack, liu_2013).
+- The **transform applied to the data** → `motion_correction.method`
+- The **parameters used as regressors** → `nuisance_regression` (COBIDAS D.3 row *Artifact and
+  structured noise removal*, which explicitly covers motion-parameter regressors and their expansion)
+
+Worked case: ciric — MCFLIRT realignment → `motion_correction.method = named_tool (MCFLIRT)`; "six
+realignment parameters returned by MCFLIRT" used as regressors → `nuisance_regression`, not here.
+Friston-24 (ciric, chen) is nuisance, never motion_correction.
+
+### CALL 4 — label by what the operation IS, not what the paper calls it
+**RATIFIED as drafted.** derosa describes "motion correction via ICA-AROMA". ICA-AROMA is ICA-based denoising — the spec has
+`ica_denoise`, and COBIDAS files it under *Artifact and structured noise removal*. It is not
+realignment. So derosa's ICA-AROMA does not populate `motion_correction.method`; whether derosa's
+`method` is `described_only` or `absent` depends on whether realignment per se is stated anywhere in its
+full text (the scoping survey found it "not clearly stated" — **read the full methods before
+labelling**).
+
+### CALL 5 — one-step resampling: `interpolation` is `not_applicable`, `transforms_combined` is `reported`
+**RATIFIED as drafted.** Where a pipeline composes motion, distortion, and registration transforms into a single interpolation,
+there is no motion-specific interpolation to report — the question is malformed for that design, which
+is different from silence.
+Worked case: poldrack — "The transforms for head motion correction and affine registration to atlas
+space were combined with the field-map-based distortion correction to resample the data … in a single
+step using FSL's applywarp tool." → bullet 6: `interpolation` = `not_applicable`,
+`transforms_combined` = `reported`. Note this makes poldrack *more* compliant on bullet 6 than a paper
+that reports neither.
+HCP-lineage papers (Glasser 2013 §fMRIVolume: all transforms concatenated, "a single spline
+interpolation, minimizing interpolation-induced blurring") behave the same; viduarre defers to Glasser
+and is therefore `deferred` rather than `not_applicable`.
+**This is the third field in which not-applicable and absent have had to be distinguished**
+(after target_space's CALL 7 and the study_specific/native_volume split). Recorded as a recurring
+structural need, not a motion quirk.
+
+### Why named vs unnamed is labelled, even if the tools are near-equivalent
+
+COBIDAS bullet 1 asks for the **name of software/method**, so a protocol that collapsed `named_tool` and
+`described_only` would make bullet 1 unreportable and remove the first row of the compliance table.
+
+Separately, tool identity is not only an image-similarity question: implementations differ in cost
+function, interpolation kernel, and reference-volume default, so the **estimated motion parameters**
+differ — and six corpus papers feed those parameters into nuisance regression, with FD derived from them
+driving censoring thresholds. Different estimates → different regressors and different frames censored,
+even where the realigned volumes look alike. This is why D.3 asks for similarity metric and interpolation
+as separate bullets. (Mechanism, not magnitude — no specific comparison study is cited, as none has been
+verified.)
+
+---
+
+## 6. Labelling procedure
+
+1. **Label from the full paper** — methods, figure captions, supplement. Do **not** rely on term search.
+   The scoping survey missed wheaton's "motion correc-tion" (pypdf hyphenation across a line break) and
+   would have recorded a false absence. Same pypdf-mangle family as the agtzidis `/C2` and cole `AFNI48`
+   defects.
+2. Label `method` first (it determines performance), then bullets 2-7.
+3. Record a **verbatim quote** for every `named_tool`, `described_only`, `deferred`, and every
+   `reported` bullet. For `not_applicable`, record the quote establishing the design (poldrack's
+   single-step sentence).
+4. `Value` column convention (inherited from target_space v1.2): the **verbatim term** when the paper
+   names one; blank otherwise, with Notes carrying the adjudication.
+5. If a paper does not fit these states, the protocol is incomplete — amend, bump the version, re-commit,
+   *then* label. Do not force it.
+
+## 7. Inter-rater reliability
+
+Single-rater (author). The labels are not independent of the system's developer, and this is a stated
+limitation, not a resolved one. A second or panel rater and κ are deferred, conditional on pursuing
+publication. If added, raters work from this protocol alone, blind to author labels and to extractor
+output.
+
+## 8. What this produces
+
+Two distinct outputs, not to be merged:
+
+1. **An item-by-item COBIDAS reporting-completeness table** for the *Motion correction* row across 19
+   papers — a literature finding, backed by author labels, independent of extractor accuracy. Expected
+   shape from the scoping survey: bullet 1 attested densely, bullets 4-7 sparsely or not at all.
+2. **A scored `method` accuracy figure** once extraction is built — with Wilson intervals, an error
+   decomposition by named class, and the reachability/corruption partitioning established in the
+   target_space arc.
+
+Neither is a compliance *verdict*. Non-compliance is asserted only where the paper's own text
+establishes the step was performed and a mandated sub-item is unreported — the *performed and
+underreported* state in the amended coverage design.
