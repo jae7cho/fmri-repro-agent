@@ -1,6 +1,10 @@
-# Ground-truth protocol — `motion_correction` (v1)
+# Ground-truth protocol — `motion_correction` (v1.1)
 
-**Ratified 2026-08-07 (ET):** all five definitional calls (§5) ratified by the author; this protocol is committed as pre-registration — *before any label is written*.
+**Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
+
+**Changelog**
+- **v1 (2026-08-07):** CALLs 1–5 ratified; pre-registered before any label.
+- **v1.1 (2026-08-08):** rules surfaced during labelling, recorded before labelling continued — CALL 1 refined (a package whose *module* IS the method → `named_tool`; a pipeline wrapping an unnamed third-party tool → `deferred`); a new **CALL 6** (blanket deferral applies to every bullet, not only bullet 1); a new **CALL 7** (deferral is per-row — a citation's scope is set by whether it *substitutes* for a row's description or *supports* one that is present), with CALL 6 reconciled as its wholesale special case (braun confirmed, viduarre softened to a candidate pending its full text); and the §7 co-adjudication note revised to describe the actual working method (candidate states proposed with same-model-family LLM assistance, author-ratified) and its reporting consequences. **v1.1 also edits a RATIFIED call:** CALL 5's flat viduarre `deferred` is softened to a *default* "pending the full-text check", because CALL 7's new bullet-level override may flip that bullet if viduarre describes its own resampling — CALL 5 (ratified 2026-08-07) had pre-assigned a bullet the later rules leave open. And `derosa` is removed from CALL 1's SPM-family pointer list (CALL 4 establishes derosa's only motion statement is ICA-AROMA, a different D.3 row), with a note clarifying the list is a pointer, not an assignment.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -117,7 +121,7 @@ parameters. That is the population where non-compliance is assertible.
 
 ---
 
-## 5. The five definitional calls (all RATIFIED 2026-08-07)
+## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08)
 
 ### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
 **RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
@@ -125,6 +129,17 @@ The *paper* wrote "motion correction", not "MCFLIRT"; producing the tool name wo
 Jenkinson 2002 — which is the citation resolver's job, with its own provenance and confidence
 (base_pipeline D1: citation-deferral → DEFERRED, no genre test for citations). Label what the paper
 stated; resolution is resolution.
+
+**Refinement (v1.1) — package vs wrapper.** Naming a package whose *module* IS the method counts as
+`named_tool`; naming a pipeline that *wraps* an unnamed third-party tool is `deferred`. agtzidis —
+"performed with SPM12 … realigning the functional data to the mean image of each session" → `named_tool`:
+SPM's Realign module *is* the method; nothing is hidden behind the package name. oconnor — "C-PAC … motion
+correction" citing Jenkinson → `deferred`: C-PAC is a wrapper; the motion tool it calls is never named in
+the paper. This governs the SPM-family papers (mueller, gordon, tang, wheaton) and the C-PAC/CCS
+papers (oconnor, weber, vanderwal, chen), so it must be **explicit, not tacit**. This list is a **pointer**
+to which papers the rule will likely govern, not an assignment — every paper is labelled from its own text.
+(derosa is deliberately absent: CALL 4 establishes its only motion statement is ICA-AROMA, a different D.3
+row, so the package-vs-wrapper rule does not decide its `method`.)
 
 **`deferred` is not a reporting failure.** Under `DESIGN_cobidas_coverage.md` §2, a D.3 row is addressed
 iff a field is `EXTRACTED` **or** `DEFERRED_TO_CITATION` — so oconnor satisfies D.3 bullet 1 by deferral
@@ -187,7 +202,7 @@ step using FSL's applywarp tool." → bullet 6: `interpolation` = `not_applicabl
 that reports neither.
 HCP-lineage papers (Glasser 2013 §fMRIVolume: all transforms concatenated, "a single spline
 interpolation, minimizing interpolation-induced blurring") behave the same; viduarre defers to Glasser
-and is therefore `deferred` rather than `not_applicable`.
+and therefore defaults to `deferred` rather than `not_applicable`, pending the full-text check (CALL 6).
 **This is the third field in which not-applicable and absent have had to be distinguished**
 (after target_space's CALL 7 and the study_specific/native_volume split). Recorded as a recurring
 structural need, not a motion quirk.
@@ -204,6 +219,62 @@ driving censoring thresholds. Different estimates → different regressors and d
 even where the realigned volumes look alike. This is why D.3 asks for similarity metric and interpolation
 as separate bullets. (Mechanism, not magnitude — no specific comparison study is cited, as none has been
 verified.)
+
+### CALL 6 — blanket deferral applies to every bullet, not only bullet 1
+**Added v1.1 (2026-08-08).** Where a paper defers preprocessing wholesale without describing any step,
+every D.3 bullet for that row is `deferred` — **not** `not_reported`. This is the **special case of CALL 7**
+in which the citation substitutes for *every* row — nothing is described anywhere in the paper.
+
+Rationale: the label records **what the paper did**. braun ("Data were preprocessed according to standard
+protocols as previously described in refs. 47 and 48") did not omit the similarity metric; it pointed
+elsewhere for all of it. Marking bullets 2–7 `not_reported` would make braun indistinguishable from a
+paper that described its preprocessing and omitted those items — a different reporting behaviour. Whether
+a blanket deferral *satisfies* COBIDAS is a compliance question for the rendering layer
+(`DESIGN_cobidas_coverage.md` §A), not a labelling one — consistent with the project's discipline of
+labelling what was stated and leaving adequacy to interpretation. `deferred` is already a bullet-state
+value (§3); this call states when it applies to the whole row.
+
+**Confirmed instance:** braun — verified wholesale: no preprocessing step is described in the paper's own
+voice, and everything after "After preprocessing" is analysis.
+
+**Candidate (not confirmed):** viduarre — its "the procedure described by Glasser et al." defers the
+pipeline rows, but whether the paper describes anything in its own voice has not been checked against its
+full text. To be determined when viduarre is labelled; **do not pre-assign**.
+
+### CALL 7 — deferral is per-row; a citation's scope is set by what it does in the sentence
+**Added v1.1 (2026-08-08).** Deferral is decided **per D.3 row**, not per paper, and a citation's scope is
+set by what it does in the sentence.
+
+**The test: does the citation SUBSTITUTE for a description of that row, or SUPPORT one that is present?**
+- **Substitutes** → that row is `deferred`.
+- **Supports** → not a deferral; label from the description.
+
+Worked cases (all from corpus text):
+- **agtzidis, dataset citation:** "we used the publicly available studyforrest data set … for full
+  experimental details, we refer to the paper presenting the original data set (Hanke et al., 2016)"
+  substitutes for **acquisition** and design, not preprocessing — agtzidis describes its own preprocessing
+  in its own voice. The motion row is **not** deferred. *A citation's scope does not extend to rows the
+  paper describes itself.*
+- **agtzidis, supporting citation:** "we initially followed a standard preprocessing pipeline (Poldrack
+  et al., 2011). The process comprised realigning…" — the citation supports an enumerated pipeline, so
+  `named_tool` stands. Had the paper **not** enumerated, the same phrasing would substitute.
+- **binder:** the Cox (1996b) reference supports a described algorithm → `described_only`, per CALL 2a.
+- **braun:** "preprocessed according to standard protocols as previously described in refs. 47 and 48"
+  substitutes for **every** preprocessing row — the wholesale case CALL 6 governs.
+- **Pipeline citations do double duty.** Glasser 2013 describes both a dataset and a preprocessing
+  pipeline, so "HCP minimally preprocessed data (Glasser 2013)" substitutes for the minimal-pipeline rows
+  — motion included. This is why the test cannot key on what **kind** of work is cited (dataset vs
+  pipeline) but only on what the citation is *doing*.
+- **Mixed case, the general form:** "HCP minimal preprocessing (Glasser 2013), then nuisance regression
+  following Power et al." → the motion row is `deferred` to Glasser; the artifact/noise row is deferred to
+  Power, or `named_tool` if the paper describes the method. Two rows, two independent scopes, one paper.
+- **Do not conflate on a shared name:** "HCP minimal preprocessing plus ICA-FIX" defers motion to Glasser
+  while naming a method for artifact/noise removal. "HCP" appears in both; the rows are unrelated. Same
+  discipline as CALL 4 (label by what the operation IS).
+
+**Bullet-level override:** when a row is `deferred`, its bullets default to `deferred` — but a bullet the
+paper states explicitly is `reported`, overriding the row default (e.g. a paper deferring to HCP that
+nonetheless names its reference scan).
 
 ---
 
@@ -228,6 +299,29 @@ Single-rater (author). The labels are not independent of the system's developer,
 limitation, not a resolved one. A second or panel rater and κ are deferred, conditional on pursuing
 publication. If added, raters work from this protocol alone, blind to author labels and to extractor
 output.
+
+### Co-adjudication (v1.1)
+
+Candidate sentences were located and states **proposed with LLM assistance of the same model family as the
+extractor** (claude-sonnet-4-5); the **author reviewed and ratified every state**. The papers worked through
+jointly so far are **agtzidis_2020, braun_2015**.
+
+This is a **stronger contamination risk** than clarification-only assistance, and is **stated rather than
+mitigated**. Ground truth partly produced by the model under evaluation inflates agreement in a way no
+downstream check can detect. It is the same limitation target_space v1.2 recorded for its pre-registered
+adjudications — stated, not resolved.
+
+**Consequence for reporting:** the `method` accuracy figure must carry this caveat **prominently, not in a
+footnote** — it is materially weaker evidence than the base_pipeline figure, whose labels were
+author-produced.
+
+The **bullet 2–7 attestation table is far less exposed**: "did the paper state a similarity metric" is
+close to a factual read with little adjudication room. That table — the item-by-item COBIDAS
+reporting-completeness finding — is the **Goal-2 deliverable** and stands largely independent of this
+limitation.
+
+**Per-row `co-adjudicated` flags in Notes remain required**; name **every** paper worked through jointly,
+not only the contested ones.
 
 ## 8. What this produces
 
