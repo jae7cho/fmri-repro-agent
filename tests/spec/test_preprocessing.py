@@ -56,6 +56,7 @@ from fmri_repro.spec.preprocessing import (
     IntensityCorrection,
     IntensityNormalization,
     MotionCorrection,
+    MotionCorrectionMethod,
     NonsteadystateRemoval,
     NuisanceRegression,
     PipelineRef,
@@ -182,10 +183,11 @@ def _slice_time_correction() -> SliceTimeCorrection:
 
 def _motion_correction(method: str = "mcflirt") -> MotionCorrection:
     return MotionCorrection(
-        method=_pf_extracted("method", method, str),
+        method=_pf_extracted_term("method", method, MotionCorrectionMethod),
         reference_scan=_pf_missing("reference_scan", str),
         similarity_metric=_pf_missing("similarity_metric", str),
         interpolation=_pf_missing("interpolation", str),
+        transforms_combined=_pf_missing("transforms_combined", bool),
         nonrigid=_pf_missing("nonrigid", bool),
         transform_type=_pf_missing("transform_type", str),
         fieldmap_unwarping=_pf_missing("fieldmap_unwarping", bool),
@@ -716,7 +718,12 @@ def test_distortion_correction_intended_fieldmap_not_applicable_accepted() -> No
 # Covers Fix 3: fields demoted to inference_applicable=False (version_default-
 # only candidates; flip to True when the KB lands).
 _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
-    (MotionCorrection, "method", "mcflirt", str),
+    (
+        MotionCorrection,
+        "method",
+        SpecifiedTerm(resolved="mcflirt", resolution="resolved"),
+        SpecifiedTerm[MotionCorrectionMethod],
+    ),
     (DistortionCorrection, "method", "topup", str),
     (Coregistration, "method", "flirt_bbr", str),
     (ICADenoise, "method", "fix", str),
@@ -1159,6 +1166,7 @@ def test_field_id_must_match_attribute_name() -> None:
             reference_scan=_pf_missing("reference_scan", str),
             similarity_metric=_pf_missing("similarity_metric", str),
             interpolation=_pf_missing("interpolation", str),
+            transforms_combined=_pf_missing("transforms_combined", bool),
             nonrigid=_pf_missing("nonrigid", bool),
             transform_type=_pf_missing("transform_type", str),
             fieldmap_unwarping=_pf_missing("fieldmap_unwarping", bool),
@@ -1602,10 +1610,10 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.0) is the live root.
+    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.1) is the live root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.0"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.1"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1615,12 +1623,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.5.0"
-    assert prep.written_under == "0.5.0"
+    assert prep.schema_version == "0.5.1"
+    assert prep.written_under == "0.5.1"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.0"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.1"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1628,7 +1636,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.5.0",
+            written_under="0.5.1",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),

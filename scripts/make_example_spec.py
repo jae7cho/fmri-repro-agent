@@ -49,11 +49,13 @@ from fmri_repro.spec.core import (
 from fmri_repro.spec.preprocessing import (
     Despike,
     MotionCorrection,
+    MotionCorrectionMethod,
     NonsteadystateRemoval,
     NuisanceRegression,
     PipelineRef,
     Preprocessing,
     SpatialSmoothing,
+    SpecifiedTerm,
     TemporalFiltering,
 )
 from fmri_repro.spec.provenance import (
@@ -701,10 +703,12 @@ def _hnu_preprocessing() -> Preprocessing:
                 threshold=_missing("threshold", float),
             ),
             MotionCorrection(
-                method=ProvenancedField[str](
+                method=ProvenancedField[SpecifiedTerm[MotionCorrectionMethod]](
                     field_id="method",
-                    extraction=Extracted[str](
-                        value="mcflirt",
+                    extraction=Extracted[SpecifiedTerm[MotionCorrectionMethod]](
+                        value=SpecifiedTerm(
+                            verbatim="FSL MCFLIRT", resolved="mcflirt", resolution="resolved"
+                        ),
                         spans=[_span("FSL MCFLIRT", 1200)],
                         confidence=0.95,
                     ),
@@ -713,6 +717,7 @@ def _hnu_preprocessing() -> Preprocessing:
                 reference_scan=_missing("reference_scan", str),
                 similarity_metric=_missing("similarity_metric", str),
                 interpolation=_missing("interpolation", str),
+                transforms_combined=_missing("transforms_combined", bool),
                 nonrigid=_missing("nonrigid", bool),
                 transform_type=_missing("transform_type", str),
                 fieldmap_unwarping=_missing("fieldmap_unwarping", bool),
@@ -836,10 +841,12 @@ def _msc_preprocessing() -> Preprocessing:
         ),
         steps=[
             MotionCorrection(
-                method=ProvenancedField[str](
+                method=ProvenancedField[SpecifiedTerm[MotionCorrectionMethod]](
                     field_id="method",
-                    extraction=Extracted[str](
-                        value="mcflirt",
+                    extraction=Extracted[SpecifiedTerm[MotionCorrectionMethod]](
+                        value=SpecifiedTerm(
+                            verbatim="FSL MCFLIRT", resolved="mcflirt", resolution="resolved"
+                        ),
                         spans=[_span("FSL MCFLIRT", 1500)],
                         confidence=0.95,
                     ),
@@ -848,6 +855,7 @@ def _msc_preprocessing() -> Preprocessing:
                 reference_scan=_missing("reference_scan", str),
                 similarity_metric=_missing("similarity_metric", str),
                 interpolation=_missing("interpolation", str),
+                transforms_combined=_missing("transforms_combined", bool),
                 nonrigid=_missing("nonrigid", bool),
                 transform_type=_missing("transform_type", str),
                 fieldmap_unwarping=_missing("fieldmap_unwarping", bool),

@@ -167,6 +167,11 @@ MOTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
         inference_applicable=True,
         source="derived",
     ),
+    "transforms_combined": FieldMeta(
+        justification_axis="pipeline",
+        inference_applicable=False,
+        source="derived",
+    ),
     "nonrigid": FieldMeta(
         justification_axis="pipeline",
         inference_applicable=False,
@@ -686,10 +691,16 @@ MotionInterpolation = Literal["linear", "spline", "sinc", "other"]
 
 class MotionCorrection(BaseModel):
     kind: Literal["motion_correction"] = "motion_correction"
-    method: ProvenancedField[MotionCorrectionMethod]
-    reference_scan: ProvenancedField[MotionReferenceScan]
-    similarity_metric: ProvenancedField[MotionSimilarityMetric]
-    interpolation: ProvenancedField[MotionInterpolation]
+    # 0.5.1: the four closed Literals retype to SpecifiedTerm[X] (the v0.5.0 pattern) — the corpus
+    # already exceeds MotionCorrectionMethod's members (ICA-AROMA, Cox-1996b, WashU in-house rigid-body),
+    # so a raw Literal would reintroduce the false-missing the retype fixed.
+    method: ProvenancedField[SpecifiedTerm[MotionCorrectionMethod]]
+    reference_scan: ProvenancedField[SpecifiedTerm[MotionReferenceScan]]
+    similarity_metric: ProvenancedField[SpecifiedTerm[MotionSimilarityMetric]]
+    interpolation: ProvenancedField[SpecifiedTerm[MotionInterpolation]]
+    # 0.5.1: COBIDAS D.3 bullet 6 — "whether image transformations are combined to allow a single
+    # interpolation" (attested by poldrack; canonical in HCP fMRIVolume). Bool sibling of nonrigid.
+    transforms_combined: ProvenancedField[bool]
     nonrigid: ProvenancedField[bool]
     transform_type: ProvenancedField[str]
     fieldmap_unwarping: ProvenancedField[bool]
@@ -1251,7 +1262,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.5.0"
+SCHEMA_VERSION = "0.5.1"
 
 
 class MigrationInfo(BaseModel):
@@ -1287,7 +1298,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.5.0"] = "0.5.0"
+    schema_version: Literal["0.5.1"] = "0.5.1"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

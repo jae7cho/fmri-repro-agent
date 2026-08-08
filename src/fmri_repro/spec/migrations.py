@@ -178,6 +178,17 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
                 continue
             for fid in _RETYPED_IN_0_5_0.get(step.get("kind", ""), ()):
                 _lift_to_specified_term(step.get(fid))
+    # 0.5.0 -> 0.5.1 (PATCH, pure re-stamp — NO doc transform): MotionCorrection gains a bool field
+    # (transforms_combined) and retypes its four closed Literals to SpecifiedTerm[X]. VERSION-CONFLICT
+    # NOTE: the convention's enumeration lists "changes a field type" under STRUCTURAL, but its governing
+    # TEST is "does every prior document remain valid, unchanged?" — and it does: NO committed document
+    # contains a motion_correction step (MotionCorrection is never instantiated in _assemble), so
+    # retyping fields that appear in zero documents, and adding one to that step, breaks none. The
+    # additive test (the substance) governs over the field-type enumeration (a proxy for "makes existing
+    # documents invalid") when the two conflict on a never-emitted step. Hence patch + re-stamp: there is
+    # nothing to transform. (If motion_correction is ever emitted, a future doc-transform hop must lift
+    # its literal_type fields like the 0.5.0 block above.)
+    #
     # Both re-stamp hops and the 0.5.0 transform fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
