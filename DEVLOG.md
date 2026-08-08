@@ -602,3 +602,52 @@ correc-tion" (hyphenated line break) evaded the grep, a survey false-negative to
 only the D.3 row title + mandatory-conditional flag, not the sub-item list.
 
 Commits: 382795a (retype), 7ab4894 + bae9a84 (pre-reg + amendment), 015a5ce (demonstration).
+
+
+## 2026-08-07
+
+Hours: 17:46 - 21:49 ET
+
+Motion arc: protocol-before-extraction, a stronger blindness than target_space had — motion_correction is not
+extracted, not emitted, not in `_assemble`, so the labels get written before any extractor output exists and
+extraction is built TO the protocol, not the protocol audited FROM extraction. Schema prep first (v0.5.1):
+added `transforms_combined` (COBIDAS D.3 bullet 6, "whether transforms are combined to allow a single
+interpolation" — poldrack attests it) and retyped MotionCorrection's four closed Literals to SpecifiedTerm[X],
+because the corpus already exceeds MotionCorrectionMethod's five members (derosa ICA-AROMA, binder's Cox
+procedure, WashU in-house rigid-body) and a raw Literal would reintroduce the false-missing the retype just
+fixed. Version-conflict named and resolved: the convention's enumeration lists "changes a field type" as
+STRUCTURAL, but its governing TEST is "does any prior document break?" — none do, because no committed document
+contains a motion_correction step. The test governs the enumeration on a never-emitted step → PATCH, pure
+re-stamp; flagged, proceeded per instruction, recorded in the migration hop.
+
+The artifact-vs-conversation gap, twice more. The step wanted me to amend DESIGN_cobidas_coverage.md; it existed
+NOWHERE — repo, Downloads, git history. A governing decision living only in the chat project. Stopped rather
+than fabricate the sections the amendment references but does not reproduce. Author supplied it; committed the
+base VERBATIM (9bba492, the stale `extractor.py:645-725` ref preserved and noted, not silently fixed), then
+merged the four-state amendment (b4bd214) — superseded text retained under pointers, firewall + 16-row registry
+preserved verbatim, the Intersubject re-render dated as a consequence, not a new power finding. Then the gap one
+level deeper: the committed coverage doc's §5 depends on the reason-partition concept, defined in an UNCOMMITTED
+DELTA. Batch-committed all eight uncommitted design records verbatim (b6972ef; `--no-verify` to preserve one
+file's trailing whitespace — archival records, not code) with a docs/design/README flagging that
+DESIGN_anatomical_steps_v0_3_0 carries a now-FALSE claim (COBIDAS PDFs are page images, no text layer — they
+aren't, D.3 reads fine, which is how the seven-bullet motion row got quoted). Without the note someone
+re-derives row titles from the catalog on a stale caveat.
+
+Ratified the five motion calls and pre-registered. CALL 2a is the sharp one: binder = described_only, not
+deferred — the test is whether the paper's OWN text identifies the method (binder characterises the algorithm
+in-paper: iterative, minimising variance between images) or whether you must read the citation (oconnor gives
+only the operation name + a pointer → deferred). described_only therefore spans cole's bare "motion correction"
+to binder's characterised algorithm; the detail lives in the verbatim quote, not the state. Flagged Cox 1996b
+as unverified (1996a is the AFNI paper; 1996b is a different work) rather than assume a volume-registration
+paper. CALL 1: deferred is not a reporting failure — DESIGN §2 counts DEFERRED_TO_CITATION as addressed, so
+oconnor satisfies bullet 1; compliance and label state are different axes. Named-vs-unnamed stated as MECHANISM
+not magnitude (tool identity changes estimated parameters → different nuisance regressors and FD-censored
+frames; six papers feed those parameters) — did NOT cite a comparison study neither of us verified. Synced the
+workbook Glossary to the ratified calls; confirmed the Labels sheet byte-identical (fingerprint match) so it
+cannot drift and stays blank. Two commits, schema first so the protocol's `transforms_combined` reference
+resolves against a committed field: c297479 (schema) then 2e331d0 (pre-registration — protocol + blank
+instrument, before any label; the commit ORDER is the proof). First push of the arc: b89fef3..2e331d0 carried
+08-06 and 08-07 both to origin/main.
+
+Commits: 9bba492 (cobidas base) · b6972ef (8 design records) · b4bd214 (four-state amendment) · c297479 (motion
+schema v0.5.1) · 2e331d0 (motion pre-registration). Pushed.
