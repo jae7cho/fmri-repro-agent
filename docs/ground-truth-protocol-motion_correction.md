@@ -1,10 +1,11 @@
-# Ground-truth protocol — `motion_correction` (v1.1)
+# Ground-truth protocol — `motion_correction` (v1.2)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
 **Changelog**
 - **v1 (2026-08-07):** CALLs 1–5 ratified; pre-registered before any label.
 - **v1.1 (2026-08-08):** rules surfaced during labelling, recorded before labelling continued — CALL 1 refined (a package whose *module* IS the method → `named_tool`; a pipeline wrapping an unnamed third-party tool → `deferred`); a new **CALL 6** (blanket deferral applies to every bullet, not only bullet 1); a new **CALL 7** (deferral is per-row — a citation's scope is set by whether it *substitutes* for a row's description or *supports* one that is present), with CALL 6 reconciled as its wholesale special case (braun confirmed, viduarre softened to a candidate pending its full text); and the §7 co-adjudication note revised to describe the actual working method (candidate states proposed with same-model-family LLM assistance, author-ratified) and its reporting consequences. **v1.1 also edits a RATIFIED call:** CALL 5's flat viduarre `deferred` is softened to a *default* "pending the full-text check", because CALL 7's new bullet-level override may flip that bullet if viduarre describes its own resampling — CALL 5 (ratified 2026-08-07) had pre-assigned a bullet the later rules leave open. And `derosa` is removed from CALL 1's SPM-family pointer list (CALL 4 establishes derosa's only motion statement is ICA-AROMA, a different D.3 row), with a note clarifying the list is a pointer, not an assignment.
+- **v1.2 (2026-08-11):** CALL 8 added — bullet 7 concerns slice-to-volume registration or STC integration as properties of the motion correction, not the occurrence of STC; six labels written under the wider reading are to be revised by the author.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -121,7 +122,7 @@ parameters. That is the population where non-compliance is assertible.
 
 ---
 
-## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08)
+## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11)
 
 ### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
 **RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
@@ -275,6 +276,33 @@ Worked cases (all from corpus text):
 **Bullet-level override:** when a row is `deferred`, its bullets default to `deferred` — but a bullet the
 paper states explicitly is `reported`, overriding the row default (e.g. a paper deferring to HCP that
 nonetheless names its reference scan).
+
+### CALL 8 — bullet 7 is about the MOTION CORRECTION, not the occurrence of slice-time correction
+**Added v1.2 (2026-08-11).** D.3 bullet 7 reads: *"Use of any slice-to-volume registration methods, or
+integrated with slice time correction."* Both clauses are properties **of the motion correction**:
+(a) was motion estimated **per-slice** rather than per-volume (slice-to-volume registration); or
+(b) were motion correction and STC solved as **one integrated operation** rather than sequentially.
+**Whether the paper performed STC at all is a different D.3 row** (`slice_time_correction`), with its own
+bullets. A sentence listing STC and motion correction as separate sequential steps addresses **neither**
+clause of bullet 7.
+
+Worked cases (all currently mislabelled `reported`):
+- **cole:** "we performed slice timing correction, motion correction, …" — a list of steps performed; says
+  nothing about slice-level estimation or integration → `not_reported`.
+- **gordon:** "Images were then slice-time corrected," → `not_reported`.
+- **chen:** "corrected acquisition timing among image slices" → `not_reported` (two sequential operations,
+  no integration stated).
+
+**The narrow exception — a stated absence of STC forecloses integration:**
+- **agtzidis:** "(without slice timing correction)" and **ciric:** "We did not apply slice timing
+  correction during preprocessing…" → `reported`. If no STC was performed there is nothing to integrate,
+  so clause (b) is settled by the paper's own statement — consistent with the protocol's existing rule
+  that a stated negative counts as `reported`.
+
+*Expectation:* slice-to-volume registration is a rare technique (fetal/infant work); the scoping survey
+found **zero** corpus instances. This bullet is expected to be near-empty — that near-emptiness is a
+**finding about the standard**, not a labelling failure. A high `reported` rate on bullet 7 is a signal
+the bullet is being **misread**.
 
 ---
 
