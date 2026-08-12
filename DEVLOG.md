@@ -651,3 +651,47 @@ instrument, before any label; the commit ORDER is the proof). First push of the 
 
 Commits: 9bba492 (cobidas base) · b6972ef (8 design records) · b4bd214 (four-state amendment) · c297479 (motion
 schema v0.5.1) · 2e331d0 (motion pre-registration). Pushed.
+
+
+## 2026-08-11
+
+Hours: 20:18 - 20:51 ET
+
+Protocol v1.2 for `motion_correction`. Added CALL 8: D.3 bullet 7 ("slice-to-volume registration methods,
+or integrated with slice time correction") is a property OF the motion correction — motion estimated
+per-slice not per-volume, or motion+STC solved as one integrated operation — NOT whether STC ran at all
+(that is the separate `slice_time_correction` row). A sentence listing STC and motion correction as
+sequential steps addresses neither clause → `not_reported` (cole, gordon, chen); narrow exception, a stated
+ABSENCE of STC forecloses integration → `reported` (agtzidis "(without slice timing correction)", ciric "We
+did not apply slice timing correction"), consistent with the existing stated-negative-is-reported rule.
+Expectation note: slice-to-volume registration is rare (fetal/infant); the scoping survey found zero corpus
+instances, so the bullet should be near-empty — a high `reported` rate signals the bullet is being misread,
+a finding about the standard, not a labelling failure. Bumped v1.1 → v1.2 (title, changelog, §5 header);
+committed the protocol only (pathspec-scoped) as 4fa807f and pushed (cf0373b..4fa807f). Standing checks
+first: ET clock (weekday but 20:xx, past the 17:00 commit block), HEAD, CALL count 1–8.
+
+Excel had the labelling instrument open at first, so held the workbook sync rather than clobber the live
+session, and gave the STEP 4 relabel report for the author's hand-edits (bullet 7 → `not_reported` for
+chen/cole/gordon and liu_2005 — the last `reported` with no verbatim, unsupported under §6 regardless;
+stays `reported` for agtzidis/ciric as stated negatives; `co-adjudicated` owed for agtzidis_2020 +
+braun_2015). Once Excel closed, synced the Glossary tab to v1.2 (CALL 8 + near-empty note; legend → CALLs
+1–8) under a gate proving only the instructional legend cell A22 changed and every label data cell +
+dropdowns + freeze were byte-identical. Then, at the author's explicit direction and with the author
+supplying every adjudication, transcribed the derosa_2025 row: method_state named_tool → described_only
+(CALL 4 — ICA-AROMA is ICA denoising, no realignment tool named; performance asserted, so described_only
+over absent); bullets 2–6 → `not_reported`; the two orphaned verbatims (F7 FLIRT/BBR coregistration, L7
+"12 DOF" MNI transform) MOVED byte-identical into Notes with their exclusion rationale (evidence for a
+second rater, not cleared); flagged `co-adjudicated` (§7 — assistant supplied the CALL 4 conflict and the
+bullet-by-bullet corrections, author ratified); label marked PROVISIONAL pending Supplemental Materials
+(§2.4.4 defers the FC-stream preprocessing). Also noted in Notes: realignment demonstrably occurred (§2.4.3
+six motion regressors, §2.4.9 mean FD) though the step is never stated — the CALL 3 boundary in reverse.
+Committed labels + Glossary together as c016858 and pushed; the gate confirmed no unintended cell moved.
+
+Open for the author: bullet 7 → `not_reported` still to apply for chen/cole/gordon/liu_2005;
+`co-adjudicated` Notes still owed for agtzidis_2020 + braun_2015; chen_2015 per-row CALL 7 scope; the
+remaining SPM-family and other rows unlabelled. Flagged a protocol gap surfaced by derosa (three analysis
+streams — univariate FSL+AROMA, RSA SPM12, FC CONN+SPM): which stream does the motion row record when a
+paper runs several? Not worth a CALL for one paper, but a trigger if a second multi-stream paper appears in
+the remaining ~ten (recorded here; a labelling-time home in the protocol still open).
+
+Commits: 4fa807f (protocol v1.2 — CALL 8, 20:22) · c016858 (derosa labels + Glossary v1.2, 20:50). Both pushed.
