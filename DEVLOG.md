@@ -695,3 +695,57 @@ paper runs several? Not worth a CALL for one paper, but a trigger if a second mu
 the remaining ~ten (recorded here; a labelling-time home in the protocol still open).
 
 Commits: 4fa807f (protocol v1.2 — CALL 8, 20:22) · c016858 (derosa labels + Glossary v1.2, 20:50). Both pushed.
+
+
+## 2026-08-12
+
+Hours: 18:23 - 19:29 ET
+
+Two author-ratified label-correction batches on `motion_correction_labels_v1.xlsx` plus a protocol
+amendment, ending in an unresolved staging slip. Author adjudicated every label change; I executed the
+specified diffs and did not adjudicate.
+
+**51-cell correction set.** Four C-PAC/CCS wrapper papers (chen, oconnor, vanderwal, weber) → method
+`deferred` with all six bullets `deferred` (CALL 1 pipeline-wrapper + CALL 7 bullet-level default; this
+also resolved chen's long-open per-row scope); chen value → CCS. poldrack → `deferred`, bullets `deferred`
+except fieldmap + combined-transforms `reported` with verbatims (CALL 7 overrides — applywarp *resamples*,
+does not estimate motion; method deferred to ref 45, the WashU pipeline). viduarre bullets → `deferred`,
+value blanked (wholesale deferral like braun, deferral target Smith/Glasser recorded in Notes) — the
+on-disk value was already "Smith/Glasser", not the spec's "HCP", so blanked per the wholesale-deferral
+intent and flagged. binder b5 verbatim extended to "…between images"; power b2 + b6 `reported` (rigid-body
+stated-negative + combined interpolation); mueller b3 `reported` (SPM Realign & Unwarp). Applied
+idempotently — the author had pre-applied several method_state changes during her own labelling, so the
+spec's "from" states were stale-at-target (flagged). Caught and fixed an openpyxl `cell(value=None)`
+no-op that had silently skipped viduarre's value clear (49/50 → re-ran from the pristine STEP-0 backup for
+51/51). Gate confirmed only the specified cells moved; staged.
+
+**Protocol v1.3 — narrowed CALL 8's stated-negative carve-out.** A stated negative counts as `reported`
+only when it concerns *the bullet's own subject*; "we did not apply STC" is about a different step, so
+agtzidis and ciric bullet 7 are `not_reported`, not `reported`. Contrast preserved (power's "rigid body
+realignment" IS about the motion transform → bullet 2 `reported`) to keep the rule non-arbitrary; secondary
+ground that both cells lack a verbatim (§6). Superseded carve-out text retained under CALL 8 with a
+pointer, per amendment discipline. Result: bullet 7 is 0/19 across the corpus — the near-empty outcome
+CALL 8 anticipated. v1.2 → v1.3.
+
+**Two more label fixes under the new rule.** ciric b2 `reported` → `not_reported` (its verbatim was
+func→struct BBR coregistration, a different D.3 row per CALL 2 — moved to Notes, same class as the poldrack
+b2 fix); agtzidis reference-scan verbatim "mean" → the full sentence. Glossary synced to v1.3 with the
+Labels sheet byte-identical (fingerprint c001ce → 93880b for the two label edits, then unchanged across the
+Glossary write — proven by an in-script before/after diff).
+
+**Staging slip, and its Option-A fix.** Intended a protocol-only commit but ran `git commit -m` without a
+pathspec while the workbook was already staged at its 51-cell version, so the first attempt (70e47af,
+since removed) mixed protocol v1.3 AND workbook@51-cell — the two things the two-commit structure was meant
+to keep apart. Fixed the next sitting (2026-08-13), author-approved Option A: `git reset --soft 433b780`,
+then re-committed by pathspec — protocol only (**82df9fc**), then the workbook carrying everything
+(**1cfb8e8**: the 51-cell set + the v1.3 label edits + the two owed co-adjudicated flags) — and
+force-with-lease pushed over the mixed commit (`70e47af...1cfb8e8 forced update`). The count was also
+resolved: the labels message had claimed 12 co-adjudicated but the sheet held 11; agtzidis and braun —
+owed across three turns under §7 and never landed — were added (agtzidis, where realignment was
+reclassified from `absent` to motion correction in consultation; braun's wholesale deferral that became
+CALL 6), taking the sheet-verified count to **13**, the figure used in the commit message. The slip is
+recorded here, not tidied away.
+
+Commits: 82df9fc (protocol v1.3 — narrow CALL 8) · 1cfb8e8 (motion_correction labels v1 — 19 papers, 13
+co-adjudicated). Re-committed cleanly by pathspec after the 70e47af staging slip; force-with-lease pushed
+2026-08-13. This DEVLOG entry committed separately, last.
