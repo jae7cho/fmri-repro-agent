@@ -749,3 +749,57 @@ recorded here, not tidied away.
 Commits: 82df9fc (protocol v1.3 — narrow CALL 8) · 1cfb8e8 (motion_correction labels v1 — 19 papers, 13
 co-adjudicated). Re-committed cleanly by pathspec after the 70e47af staging slip; force-with-lease pushed
 2026-08-13. This DEVLOG entry committed separately, last.
+
+## 2026-08-13
+
+Hours: 20:05 - 20:49 ET
+
+**v1.4 amendment applied (CALL 9) — six edits, verbatim, three paths.** Protocol
+`ground-truth-protocol-motion_correction.md` v1.3 → v1.4: title, changelog, §5 header, and the CALL 9
+body — the labelled unit is a preprocessing prefix, not an analysis (stream individuation by the paper's
+own description with the labeller forbidden from creating one; the convergent / singly_attested /
+divergent arms; divergence assessed on the bullet's ANSWER not the text; a deferring stream attests per
+CALL 6; a pointer to the paper's own supplement is not a deferral but an UNREAD stream with no arm
+assigned; `multi_target_unscoreable` as a scoring class distinct from `unreachable` — arity mismatch, not
+vocabulary). tang_2025 ratified convergent on what tang wrote (both streams name SPM12 as the tool
+performing the method; the CVR/FC value+quote mismatch reconciled); derosa_2025 ratified two-stream — RSA
+is not individuated as a preprocessing prefix, since §2.4.3's DeRosa 2024 citation substitutes for the RSA
+*method* and §2's Kim 2020 for *acquisition*, neither for preprocessing — FC stream unread, row
+PROVISIONAL, three outcomes pre-registered before the supplement is read. K=0 divergent papers. New
+tool-reference finding `docs/findings/dpabi-dparsf-spm-realign-equivalence.md` (byte-identical to the
+drafted source): DPARSF's `Realign.mat` preset equals SPM12-master's realign defaults on all eleven
+parameters, filed as a `version_default` KB candidate with both scope caveats in the doc — spm12 master
+not a release tag, and the file read was `DPARSF/DPARSFA_run.m` not DPABI generally — and explicitly NOT
+the basis for tang's label. Glossary CALL 9 row inserted at 29 (Recording convention → 30, Named vs
+unnamed → 31). §7's co-adjudication list corrected from the 2 named papers (agtzidis, braun) to the 13
+flagged in the instrument, derived live from Labels column Q at apply-time rather than transcribed from
+the amendment; the derived set matched exactly — the check passed rather than tripped. Verification: the
+five protocol hunks map 1:1 to the five text edits (3 deletions — old title, old §5 header, old §7
+sentence — and 114 insertions; the stat bar's 117 is total changed lines), Labels sheet 0 cell diffs,
+DVs and freeze J7 unchanged.
+
+**C20 near-miss — a spec defect I authored, caught pre-commit by the transparency note and by no gate
+item.** EDIT 6 told the applying agent to "replace `v1.3` with `v1.4`" in Glossary C20. I wrote that rule
+against a 180-char-truncated read of the cell and therefore never saw that C20's only `v1.3` is a
+historical fact about CALL 8 ("…narrowed v1.3 2026-08-12"), not a document version stamp — unlike B20,
+C20 never carried a stamp of its own, so the rule presupposed one that does not exist. Applied verbatim
+as specified, it produced "narrowed v1.4 2026-08-12": a false provenance claim, CALL 8 narrowed at a v1.4
+date that did not yet exist, sitting in the labelling instrument's own legend. It surfaced because the
+applying agent reported where the verbatim rule landed rather than only that it had applied; the defect
+was identified from that flag in the design session and the author ratified the fix — revert the
+substring, append "; CALL 9 added v1.4 2026-08-13" before the paren, mirroring B20. **The defect never
+reached a commit** — a near-miss, not a retraction. Root cause is the recurring one: a claim asserted
+from a partial view of the artifact rather than the artifact (here the claim was a rule, and the partial
+view was my own truncated cell read). Note what did NOT catch it — Labels byte-identical, DVs, freeze,
+CALL count 1–9, all three v1.4 strings, derived §7 list: every gate item green against a substitution
+that was correctly applied and semantically wrong. The control that worked was
+mechanical-rule-plus-report-where-it-landed, which is cheaper than a gate and catches a class gates
+cannot.
+
+**One unspecified action, named rather than passed silently.** The inserted CALL 9 Glossary row (B29/C29)
+was given row 28's (CALL 8) cell style so it renders like its siblings. Benign and correct, but not in
+EDIT 6 — logged because it is an unlogged change to a versioned artifact.
+
+Commits: 7643d8a (protocol v1.4 — CALL 9) · 324d8fd (tool-reference finding: DPARSF realign ≡ SPM12
+defaults) · 0475605 (Glossary v1.4 sync — CALL 9 row + header, C20 corrected before commit). Step 1 of
+the motion arc (the multi-stream gap) closes here. This DEVLOG entry committed separately, last.
