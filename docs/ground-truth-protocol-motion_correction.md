@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.3)
+# Ground-truth protocol — `motion_correction` (v1.4)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -7,6 +7,16 @@
 - **v1.1 (2026-08-08):** rules surfaced during labelling, recorded before labelling continued — CALL 1 refined (a package whose *module* IS the method → `named_tool`; a pipeline wrapping an unnamed third-party tool → `deferred`); a new **CALL 6** (blanket deferral applies to every bullet, not only bullet 1); a new **CALL 7** (deferral is per-row — a citation's scope is set by whether it *substitutes* for a row's description or *supports* one that is present), with CALL 6 reconciled as its wholesale special case (braun confirmed, viduarre softened to a candidate pending its full text); and the §7 co-adjudication note revised to describe the actual working method (candidate states proposed with same-model-family LLM assistance, author-ratified) and its reporting consequences. **v1.1 also edits a RATIFIED call:** CALL 5's flat viduarre `deferred` is softened to a *default* "pending the full-text check", because CALL 7's new bullet-level override may flip that bullet if viduarre describes its own resampling — CALL 5 (ratified 2026-08-07) had pre-assigned a bullet the later rules leave open. And `derosa` is removed from CALL 1's SPM-family pointer list (CALL 4 establishes derosa's only motion statement is ICA-AROMA, a different D.3 row), with a note clarifying the list is a pointer, not an assignment.
 - **v1.2 (2026-08-11):** CALL 8 added — bullet 7 concerns slice-to-volume registration or STC integration as properties of the motion correction, not the occurrence of STC; six labels written under the wider reading are to be revised by the author.
 - **v1.3 (2026-08-12):** CALL 8's stated-negative carve-out narrowed — a stated negative must concern the bullet's own subject; labels written under the narrow reading. agtzidis and ciric bullet 7 → `not_reported`; bullet 7 is now 0/19 across the corpus. The superseded carve-out text is retained under CALL 8 with a pointer.
+- **v1.4 (2026-08-13):** CALL 9 added — the labelled unit is a preprocessing prefix, not an analysis;
+  what counts as a stream; stream-label provenance; the three-arm per-bullet classification
+  (`convergent` / `singly_attested` / `divergent`); a deferring stream attests; a pointer to the paper's
+  own supplement is not a deferral but an unread stream; divergence is assessed on the bullet's answer,
+  not on the text of the statements; the `multi_target_unscoreable` scoring class; the instrument-recut
+  threshold stated as a workload judgement. `tang_2025` ratified **convergent** (both streams name SPM12
+  as the tool performing the method); `derosa_2025` ratified **two-stream** (RSA is not individuated as a
+  preprocessing prefix) with the FC stream **unread** and the row **PROVISIONAL**. **No label state
+  changes at v1.4** beyond tang's value/quote stream reconciliation. §7's co-adjudication list corrected
+  from 2 named papers to the 13 flagged in the instrument.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -123,7 +133,7 @@ parameters. That is the population where non-compliance is assertible.
 
 ---
 
-## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12)
+## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12; CALL 9 added v1.4 2026-08-13)
 
 ### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
 **RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
@@ -325,6 +335,102 @@ verbatim requirement regardless of the reading.
 COBIDAS asks whether motion correction used slice-to-volume registration or was integrated with STC; **no
 corpus paper addresses either**.
 
+### CALL 9 — the labelled unit is a preprocessing prefix, not an analysis
+**Added v1.4 (2026-08-13).** COBIDAS D.3 is a *preprocessing* table, so the labelled unit is the
+preprocessing applied to an acquisition — not the number of analyses run on it.
+
+**What counts as a stream.** A stream is a **distinct preprocessing prefix, individuated by the paper's
+own description** — not by the number of analyses, results, or figures. One preprocessing feeding two
+analyses is **one** stream. A "main" and a "sensitivity" pipeline described as separately preprocessed
+are **two**. Where the paper's individuation is ambiguous, the paper is single-stream and the ambiguity
+is recorded in Notes; **a stream is never created by the labeller's reading.**
+
+**Stream labels.** Use the paper's own naming where it exists (tang's `CVR` / `FC` come from its
+subheadings). Where the paper names no streams, the labeller assigns one, and **that assignment is
+flagged in Notes as a labeller judgement** — the same disclosure discipline as `co-adjudicated`.
+
+**Per-bullet classification — three arms:**
+
+- **`convergent`** — two or more streams make statements about this bullet and the statements agree.
+- **`singly_attested`** — exactly one stream makes any statement about this bullet — *describing or
+  deferring* — and the others are silent. The bullet is labelled from the attesting stream. *Silence is
+  not agreement*: this arm exists so the corpus table can distinguish "the streams concur" from "one
+  stream spoke," and so a paper's transition is legible — a `singly_attested` paper whose silent stream
+  later speaks moves to `divergent`, rather than mysteriously ceasing to be convergent.
+- **`divergent`** — two or more streams make conflicting or differently-answered statements about this
+  bullet. The bullet is labelled **per stream** as an appended row keyed `paper_id::stream_label`; the
+  parent row carries a pointer, not a state. Every reported denominator is restated as *"N papers, K
+  stream-rows."*
+
+`convergent` and `singly_attested` label normally on the parent row, with the arm recorded in Notes.
+
+**Divergence is assessed on the bullet's ANSWER, not on the text of the statements.** Two streams whose
+wording differs but whose answer to the bullet's question is the same are `convergent`. Bullet 1 asks
+for the *name of the software/method performing the step*; a stream writing "SPM12" and a stream writing
+"DPABI and SPM12" both answer SPM12, and one naming an additional wrapper is not a different answer.
+Without this clause, "differently specified" invites a text-diff reading under which every multi-stream
+paper is divergent on wording alone, and the arm stops discriminating.
+
+**A deferring stream attests.** A stream that points *outside* the paper for this bullet — to a
+citation, or to a named pipeline whose internals it does not describe — has made a *statement* about the
+bullet, not remained silent. This follows CALL 6 (deferral is a distinct reporting behaviour, not
+omission) and `DESIGN_cobidas_coverage.md` §2 (a row is addressed iff `EXTRACTED` **or**
+`DEFERRED_TO_CITATION`). **Consequence:** where one stream describes a method and another defers, the
+streams are differently *answered* and the bullet is `divergent`, not `singly_attested`. Silence and
+deferral are not interchangeable at the stream level for the same reason they are not at the paper level.
+
+**A pointer to the paper's own supplement is not a deferral.** §6 step 1 makes the supplement part of the
+paper, so an internal cross-reference is neither description, deferral, nor silence — the stream is
+**unread**, and **no arm may be assigned until its text is obtained**. The row stays `PROVISIONAL`. This
+is an evidence-availability state, not a fourth arm.
+
+**Why per-stream rather than a single collapsed state.** Least-specified biases the corpus toward
+non-compliance; any-stream biases toward compliance; primary-stream requires the labeller to judge which
+reported result is headline — a judgement this protocol otherwise avoids. Per-stream disaggregation is
+the only neutral option.
+
+**Instrument-recut threshold — a workload judgement, not a soundness rule.** Mixed granularity is
+**sound at any K**: a `::stream` row is a finer-grained true statement of the same kind of claim, and the
+restated denominator keeps it honest. Below three divergent papers, disaggregate ad hoc. At three, the
+pattern is structural rather than incidental and the instrument should be re-cut per stream wholesale,
+with every paper relabelled at that granularity — because by then the per-paper rows are the anomaly.
+Three is a judgement about effort and is stated as one.
+
+**Consequence for extraction: `multi_target_unscoreable`.** A divergent paper is **not** `unreachable` in
+the target_space sense. `unreachable` means the label cannot be expressed in the extractor's output
+vocabulary (binder `native_volume`, chen cross-axis). Here each stream-row's value is perfectly
+expressible; the extractor emits one value and there are two targets. That is an **arity mismatch, not a
+vocabulary one**, and it takes its own scoring class — `multi_target_unscoreable` — so the `unreachable`
+bucket does not become a catch-all and stop meaning anything at scoring. `multi_target_unscoreable` cells
+are excluded from **both** the accuracy numerator and denominator and reported as a named line in the
+error decomposition.
+
+**Papers under this call at v1.4.**
+
+- **`tang_2025` — two paper-named streams (`CVR`, `FC`); `convergent` on bullet 1.** RATIFIED on what
+  tang wrote: the CVR stream states the data "were analyzed using the MATLAB-based SPM12 toolbox"; the FC
+  stream states they "were analyzed using the DPABI and SPM12 toolboxes." Both name SPM12 as the tool
+  performing the method, so both satisfy CALL 1's package-vs-wrapper condition in its agtzidis form —
+  nothing is hidden behind a package name. The streams differ in wording, not in the bullet's answer, so
+  the answer-not-text clause applies. The committed row's value/quote mismatch (value drawn from the CVR
+  stream, quote from the FC stream) is reconciled to record both streams. *No tool-behaviour evidence is
+  load-bearing for this label* — had DPABI's realign preset deviated from SPM12's, tang's sentences would
+  be unchanged and so would the labels; such a deviation is a KB fact entering downstream through the
+  inference arm with a basis, never through labelling. See
+  `docs/findings/dpabi-dparsf-spm-realign-equivalence.md`, filed as tool reference for that reason.
+- **`derosa_2025` — TWO streams, not three; arm undetermined; row PROVISIONAL.** The univariate stream is
+  described in the paper's own voice (FSL 5.0.10, ICA-AROMA, BET, FLIRT). The FC stream (§2.4.4) points
+  to Supplemental Materials. **RSA is not a stream:** §2.4.3's citation to DeRosa et al. (2024) substitutes
+  for a description of the *RSA method*, and §2's Kim et al. (2020) reference covers data collection
+  procedures, i.e. *acquisition* — neither substitutes for a preprocessing description, so under CALL 7's
+  scope test neither individuates a preprocessing prefix, and the ambiguity default forbids the labeller
+  creating one. The FC stream's text is **unobtained**, so no arm is assigned and the row remains
+  `PROVISIONAL`. **Pre-registered outcomes, recorded before the supplement is read:** if the supplement
+  *describes* the FC preprocessing and names a realignment tool → `divergent`; if it *defers* to a
+  citation → `divergent` (a deferring stream attests); if it is *silent on motion* → `singly_attested`.
+
+**Corpus status at v1.4: K = 0 divergent papers.** derosa is the only live path to K = 1.
+
 ---
 
 ## 6. Labelling procedure
@@ -353,7 +459,12 @@ output.
 
 Candidate sentences were located and states **proposed with LLM assistance of the same model family as the
 extractor** (claude-sonnet-4-5); the **author reviewed and ratified every state**. The papers worked through
-jointly so far are **agtzidis_2020, braun_2015**.
+jointly are the **13 flagged `co-adjudicated` in the instrument's Notes column**: agtzidis_2020,
+braun_2015, chen_2015, ciric_2017, derosa_2025, mueller_2021, oconnor_2017, poldrack_2015, power_2014,
+vanderwal_2016, viduarre_2017, weber_2024, binder_1999. (The v1.1–v1.3 text named only agtzidis_2020 and
+braun_2015; the instrument accumulated flags that the protocol did not track. Corrected at v1.4 — the
+per-row Notes flags in the workbook are authoritative, and this list is derived from them, not the
+reverse.)
 
 This is a **stronger contamination risk** than clarification-only assistance, and is **stated rather than
 mitigated**. Ground truth partly produced by the model under evaluation inflates agreement in a way no
