@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.4)
+# Ground-truth protocol — `motion_correction` (v1.5)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -17,6 +17,17 @@
   preprocessing prefix) with the FC stream **unread** and the row **PROVISIONAL**. **No label state
   changes at v1.4** beyond tang's value/quote stream reconciliation. §7's co-adjudication list corrected
   from 2 named papers to the 13 flagged in the instrument.
+- **v1.5 (2026-08-17):** Two additions, no label changes. (a) **CALL 1 clarification — the binding test.**
+  A package named as governing a *procedure set* does not populate a step's field unless the paper binds a
+  named tool to *that step*; where the only tool bound to the step is disqualified by another call, the
+  state falls back to `described_only` with a blank value. Stated because the v1.1 package-vs-wrapper
+  refinement excluded derosa without saying what governs it instead, leaving the reasoning in the
+  instrument's Notes rather than the protocol. Written as a positive test rather than a second exclusion,
+  per `docs/findings/temporal-firewall-fix.md`. (b) **CALL 10 — the subject → role ordered decision.**
+  Extends CALL 3 with **two** role arms it does not contain: `APPLY` (poldrack's `applywarp` — neither
+  estimator nor nuisance consumer) and `HOST` (MATLAB, Python). Makes the decision ordered and mandatory
+  (subject before role, role before tool). Records CALL 10's seven-passage fitting set and the resulting
+  prompt-fitting contamination inside the protocol.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -133,7 +144,7 @@ parameters. That is the population where non-compliance is assertible.
 
 ---
 
-## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12; CALL 9 added v1.4 2026-08-13)
+## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12; CALL 9 added v1.4 2026-08-13; CALL 1 clarified and CALL 10 added v1.5 2026-08-17)
 
 ### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
 **RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
@@ -152,6 +163,32 @@ papers (oconnor, weber, vanderwal, chen), so it must be **explicit, not tacit**.
 to which papers the rule will likely govern, not an assignment — every paper is labelled from its own text.
 (derosa is deliberately absent: CALL 4 establishes its only motion statement is ICA-AROMA, a different D.3
 row, so the package-vs-wrapper rule does not decide its `method`.)
+
+**Clarification (v1.5) — the binding test.** The v1.1 refinement says which rule does *not* decide derosa;
+it does not say which does. The governing question is neither package-vs-wrapper nor named-vs-unnamed but
+**binding**: *does the paper attribute a named tool to THIS step, or only to the enclosing procedure set?*
+
+- **Bound** → the tool populates the field. agtzidis: *"performed with SPM12 … The process comprised
+  realigning the functional data to the mean image of each session"* — the step is described in the
+  paper's own voice and the package governs it; SPM12 → Realign is a one-to-one binding. `named_tool` / SPM12.
+- **Not bound** → a package named as governing a *procedure set* populates nothing. It is not enough that
+  the package is named, named with a version, or named in the same sentence as the step.
+- **Bound but disqualified** → where the only tool bound to this step is routed elsewhere by another call,
+  the assertion of performance stands and no tool name survives: `described_only`, **blank value**.
+
+**Worked case — derosa_2025.** *"Standard fMRI preprocessing procedures were carried out using the FSL
+suite (version 5.0.10) …, including motion correction via ICA-AROMA (version 0.3 beta)."* FSL is named,
+with a version, but bound to the *procedure set*, not to motion correction. The only tool bound to this
+step is ICA-AROMA, which CALL 4 routes to the artifact/noise row. Nothing bound survives →
+`described_only`, blank value. (`absent` is arguable if the sentence is read as claiming only denoising;
+the assertion of performance is credited. Recorded as the judgement it is.)
+
+**The asymmetry is intended and will look perverse without this rule.** FSL 5.0.10 — named, versioned —
+yields a blank value, while SPM12 yields SPM12. The difference is binding, not specificity. A rater who
+reaches for "but FSL is named with a version" has skipped the test.
+
+This is the same discipline CALL 10's Axis 2 enforces one level down: the tool must hold the ESTIMATE role
+*for this step*, not merely appear in the passage.
 
 **`deferred` is not a reporting failure.** Under `DESIGN_cobidas_coverage.md` §2, a D.3 row is addressed
 iff a field is `EXTRACTED` **or** `DEFERRED_TO_CITATION` — so oconnor satisfies D.3 bullet 1 by deferral
@@ -430,6 +467,87 @@ error decomposition.
   citation → `divergent` (a deferring stream attests); if it is *silent on motion* → `singly_attested`.
 
 **Corpus status at v1.4: K = 0 divergent papers.** derosa is the only live path to K = 1.
+
+### CALL 10 — subject → role: an ordered decision, and two more role arms
+**Added v1.5.** CALL 3 splits two ways: the transform applied to the data populates
+`motion_correction.method`; the parameters used as regressors belong to `nuisance_regression`. Seven
+corpus passages show two further roles that fall through that split. CALL 10 adds them and makes the
+decision ordered.
+
+**The decision is ordered and mandatory. Subject before role; role before tool. A tool name is never the
+entry point.**
+
+**Axis 1 — SUBJECT (gate; restates CALL 2, adds nothing).** What is aligned to what?
+- EPI↔EPI, or EPI→a within-run/within-session reference volume or mean → **this row**.
+- EPI→anatomical, EPI→atlas/template, surface registration → **a different row. Stop.**
+
+**Axis 2 — ROLE (new).** For every tool named in the surviving passage, assign exactly one:
+- **ESTIMATE** — computes the rigid-body transform between functional volumes. *Only this role populates
+  the field*, and only when **bound to this step** per CALL 1's binding test.
+- **APPLY** *(new — not in CALL 3)* — resamples data using a transform estimated elsewhere. Populates
+  nothing here, **even when "head motion correction" occurs in the same sentence**.
+- **CONSUME** — takes the estimated parameters as input to something else: nuisance regressors, censoring,
+  exclusion criteria, or a summary statistic (FD, RMS displacement). Belongs to `nuisance_regression` or
+  QC, per CALL 3.
+- **HOST** *(new — not in CALL 3)* — a language or environment the estimator runs in (MATLAB, Python).
+  Never the value.
+
+**Emission.**
+- Exactly one tool in ESTIMATE, bound to this step → `named_tool`; value = that tool; span = the
+  **ESTIMATE mention specifically**, never a CONSUME mention of the same tool.
+- Axis 1 passes and the operation is described, but no bound tool is in ESTIMATE → `described_only`,
+  value **blank**. Named tools elsewhere in the passage do not license a value (CALL 1 binding test).
+- The ESTIMATE role is attributed to a citation or an undecomposed pipeline/wrapper → `deferred`; value =
+  the pipeline name if the paper gives one, blank if it gives only a citation.
+- **`absent` and `stated_not_performed` are unchanged from §3 and unaffected by this call.** Axis 1
+  **presupposes that an operation was performed**. A paper stating nothing about between-volume alignment
+  is `absent` — there is no operation to assign a subject to. A paper stating the step was *not* performed
+  is `stated_not_performed`, and it **exits before the decision rather than failing Axis 1's gate**: the
+  operation is named, merely negated (ciric's slice-timing sentence is the shape). Neither state reaches
+  Axis 2.
+
+**Worked cases — the seven passages this call was derived from,** each with the wrong answer the
+un-ordered reading produces.
+
+| paper | trap in the text | wrong | right |
+|---|---|---|---|
+| poldrack_2015 | "transforms for head motion correction … combined … to resample the data … using FSL's applywarp tool" | `named_tool` / applywarp | **APPLY** → `deferred`, blank (ESTIMATE deferred to ref 45) |
+| ciric_2017 | MCFLIRT named 3×: once ESTIMATE, twice CONSUME (motion estimates as regressors; RMS displacement) | right value, **wrong span** | `named_tool` / MCFLIRT, span = the "(3) realignment … using MCFLIRT" clause |
+| cole_2013 | tools in sentence 1, steps in sentence 2; Freesurfer re-scoped later to segmentation | `AFNI and Freesurfer` | `named_tool` / **AFNI** |
+| agtzidis_2020 | one package coordinates a four-step list; a parenthetical sits inside the realign clause | package bound only to the first step, or dropped | `named_tool` / SPM12 |
+| gordon_2014 | two nested parentheticals between package and verb; **MATLAB is nearer**; RMS is a third attractor | `MATLAB` or `RMS` | `named_tool` / **SPM8** (MATLAB = HOST, RMS = CONSUME) |
+| liu_2013 | "FCP scripts … employs AFNI and FSL"; `align_epi_anat.py` named later | `AFNI` or `FSL` | `described_only`, **blank** (nothing bound in ESTIMATE; align_epi_anat fails Axis 1) |
+| chen_2015 | STC and motion in one coordinated verb phrase; engines cited [48–50], never mapped to steps | `named_tool` / an engine | `deferred` / CCS |
+
+**Why ordered rather than a list of exclusions.** `docs/findings/temporal-firewall-fix.md` records that the
+temporal stanza **already contained** the relevant exclusion and a near-identical near-miss example, and
+the model overrode it: *"the baseline failure is not a missing rule."* What worked was restructuring into a
+mandatory subject-first decision. CALL 10 adopts that structure deliberately; the axes are to be **emitted
+as discrete steps**, not offered as prose guidance.
+
+**Limitation — the fitting set is seven passages.** The same finding is the cautionary case: its
+subject-first fix did **not** reach derosa's "activation patterns" or viduarre's ICA components, two shapes
+absent from its fitting set. CALL 10's four role arms are the roles present in these seven passages. A role
+they do not exhibit — a tool that estimates motion as a side effect of a differently-named operation, or a
+pipeline estimating in one package and re-estimating in another — is **not covered**, and encountering one
+is grounds to amend, not to force-fit.
+
+**And the boundary between "an uncovered role" and "a role covered by a different call" is itself a
+judgement.** derosa's ICA-AROMA is arguably an instance of the first hypothetical above — a tool whose named
+operation is denoising and whose motion involvement is incidental — yet it is resolved by CALL 4, not by
+CALL 10's role axis. So a passage that appears to need a fifth arm may instead need routing to an existing
+call, and the two are not distinguishable by inspection of the role alone. Expect the next amendment to
+arrive at this boundary; record which way it was decided and why, rather than adding an arm by default.
+
+**Contamination disclosure — recorded here because this is the pre-registration artifact.** The axes were
+derived with these seven papers' committed labels in view, so any extraction stanza built on this call is
+**prompt-fitted** on them. With the 13 papers flagged `co-adjudicated`, the sets overlap on four
+(agtzidis_2020, chen_2015, ciric_2017, poldrack_2015): contaminated union **16 of 19**, leaving **3** clean
+on both axes — liu_2005, tang_2025, wheaton_2004 — of which tang_2025 was label-adjudicated in the session
+that produced this call. **No stratification of this corpus yields an uncontaminated accuracy estimate.**
+The `method` figure is therefore **diagnostic, not evaluative**: it establishes which error classes exist
+and roughly where; it does not measure extractor quality. Any report leads with the error decomposition and
+states this caveat and the co-adjudication caveat **before** the rate, with intervals.
 
 ---
 
