@@ -803,3 +803,117 @@ EDIT 6 — logged because it is an unlogged change to a versioned artifact.
 Commits: 7643d8a (protocol v1.4 — CALL 9) · 324d8fd (tool-reference finding: DPARSF realign ≡ SPM12
 defaults) · 0475605 (Glossary v1.4 sync — CALL 9 row + header, C20 corrected before commit). Step 1 of
 the motion arc (the multi-stream gap) closes here. This DEVLOG entry committed separately, last.
+
+## 2026-08-17
+
+Hours: 17:43 - 22:15 ET
+
+**Protocol v1.5 applied — CALL 1 clarification + CALL 10.** Six edits, three paths, no label changes.
+`ground-truth-protocol-motion_correction.md` v1.4 → v1.5. **(a) CALL 1 — the binding test.** The v1.1
+package-vs-wrapper refinement excluded derosa ("the package-vs-wrapper rule does not decide its `method`")
+without stating what governs it instead, so the reasoning lived in the instrument's Notes and not in the
+protocol — the one place a second rater looks. The governing question is neither package-vs-wrapper nor
+named-vs-unnamed but **binding**: does the paper attribute a named tool to THIS step, or only to the
+enclosing procedure set? Bound → populates (agtzidis: "performed with SPM12 … The process comprised
+realigning …", a one-to-one SPM12→Realign binding). Not bound → a package named as governing a procedure
+set populates nothing, even named with a version. Bound but disqualified by another call → `described_only`
+with a blank value. derosa carries it as the worked case: "using the FSL suite (version 5.0.10) …,
+including motion correction via ICA-AROMA (version 0.3 beta)" — FSL bound to the procedure set, ICA-AROMA
+the only tool bound to this step and routed elsewhere by CALL 4, nothing bound survives. The asymmetry
+(versioned FSL yields blank, SPM12 yields SPM12) is binding, not specificity, and is stated as intended so
+a rater does not read it as a labelling error. Written as a **positive test rather than a second
+exclusion**, on the `temporal-firewall-fix` evidence that an exclusion-plus-near-miss stanza was overridden
+by the model where a restructured ordered decision was not. **(b) CALL 10 — subject → role.** Ordered and
+mandatory: subject before role, role before tool; a tool name is never the entry point. Axis 1 SUBJECT
+restates CALL 2 as a gate. Axis 2 ROLE extends CALL 3 with **two** arms it does not contain — `APPLY`
+(poldrack's `applywarp`, neither estimator nor nuisance consumer, in the same sentence as "head motion
+correction") and `HOST` (MATLAB, Python) — alongside `ESTIMATE` (the only role that populates, and only
+when bound per CALL 1) and `CONSUME`. Emission covers all five §3 states: `stated_not_performed` exits
+before the decision rather than failing Axis 1's gate, since Axis 1 presupposes performance and a stated
+negative names the operation and negates it. Seven worked cases with the wrong answer shown (poldrack,
+ciric, cole, agtzidis, gordon, liu_2013, chen), the fitting-set limitation stated, and one clause noting
+that the boundary between "an uncovered role" and "a role covered by another call" is itself a judgement —
+derosa's ICA-AROMA is arguably an instance of the first hypothetical and is resolved by CALL 4, so the next
+amendment will arrive here and should record which way it decided rather than adding an arm by default.
+Glossary: C21 appended (756 chars), row 30 inserted with CALL 10 (1230 chars), `Recording convention` → 31,
+`Named vs unnamed` → 32. Labels sheet 0 cell diffs, DVs and freeze `J7` unchanged. Workbook built on blob
+`19497` — the corrected v1.4 C20 blob, not the pre-fix `19501` — verified from the blob, not from the
+report.
+
+**Gate item 6 near-miss — the gate carried the defect it was written to catch.** I wrote item 6 as
+"B20, C20 and C21 each still contain `v1.1, v1.2, v1.3, v1.4` plus the new `v1.5`" — a **hardcoded literal
+token list**. It holds for B20 and C20 and is false for C21, which contains only `v1.1`, because CALL 1 was
+amended once and untouched at v1.2/v1.3/v1.4. Satisfying the assertion literally would have required
+inventing version tokens for amendments CALL 1 never received: **fabricated provenance, inside the gate
+guarding against fabricated provenance.** Replaced with a derived per-cell invariant — capture each cell's
+`v1.\d` set before editing, assert post = pre ∪ {v1.5}, compare against no literal. Applied and verified:
+B20 and C20 {v1.1–v1.4}→+v1.5, C21 {v1.1}→{v1.1, v1.5}. Root cause is an assertion written as a literal
+where it should have been derived from the artifact — the same shape as the retracted "0/N report a
+version" claim, which was a hardcoded constant in code; this was a hardcoded constant in a gate spec.
+Third instance of that shape in this project.
+
+**Three for three: both defects were caught by the applying agent reporting a mismatch, neither by a gate.**
+On 2026-08-13 the C20 substitution rule was applied verbatim and the agent flagged **where the rule
+landed**, and the false "narrowed v1.4 2026-08-12" stamp was caught from that flag. Today the agent
+**stopped before applying** and reported the C21 mismatch rather than adapting to it — the better of the
+two responses, since detection preceded the write. In both cases every gate item was green or would have
+been: Labels byte-identical, DVs, freeze, CALL count, version strings, derived §7 list. The gates verify
+that specified edits landed; they cannot verify that the specification was right. What has actually caught
+both defects is **apply-verbatim-and-report-where-it-landed, plus stop-on-mismatch-rather-than-adapt** —
+cheaper than a gate and catching a class gates structurally cannot. Worth treating as the primary control
+rather than a courtesy. Three for three as of this entry — the third instance was a row index in this
+entry's own open-item note, inferred from a list position rather than read from the sheet, and caught by
+the same control it describes.
+
+**Contamination arithmetic computed from the sheet, and it decides the framing.** CALL 10's axes were
+derived with seven papers' committed labels in view, so any stanza built on it is prompt-fitted on them.
+Against the 13 flagged `co-adjudicated`, the sets overlap on four (agtzidis_2020, chen_2015, ciric_2017,
+poldrack_2015): contaminated union **16 of 19**, leaving **3** clean on both axes — liu_2005, tang_2025,
+wheaton_2004 — and effectively **2**, since tang_2025's arm and value/quote reconciliation were adjudicated
+in the session that produced the call. Two papers is not a figure. **No stratification of this corpus
+yields an uncontaminated accuracy estimate**, so the `method` figure is **diagnostic, not evaluative**: it
+establishes which error classes exist and roughly where, and does not measure extractor quality. Recorded
+inside the protocol rather than deferred to the write-up. Consistent with how both prior arcs actually paid
+off — base_pipeline's decomposition mattered more than 82.4%, target_space's more than 11/17.
+
+**Pre-registration committed before the run (`ccf8a35`).** `described_only` reachability is the step-2
+gate: four papers hold that state (derosa, liu_2013, power_2014, binder_1999) and the extractor must emit
+`verbatim` with `resolved=None` for an unnamed operation rather than collapsing to `MISSING_FROM_PAPER`,
+which would make four papers structurally unscoreable in the way binder's `native_volume` was — and would
+surface **after** the state-map committed, the worst time. Probe: `motion_correction.method` only, six
+papers with agtzidis as positive control and poldrack as APPLY control, **K=10** per `variance.md` and the
+temporal finding's fixed→fixed 4/10 → 0/10, recording `verbatim`/`resolved`/`resolution`/span per draw.
+derosa's readings pre-declared **four** ways, not three — `FSL` (binding violation), `ICA-AROMA` (CALL 4),
+**six-motion-regressors §2.4.3 or mean-FD §2.4.9 (CONSUME leak, CALL 10 Axis 2)**, or the target. The
+fourth is live precisely because the label's Notes record that realignment demonstrably occurred and only
+its downstream use is stated, so motion-parameter text is the only tool-adjacent text available to the
+model. Inferential asymmetry stated: one `verbatim=None` draw demonstrates unreachability, forty clean
+draws are evidence for reachability and not proof. **The probe cannot validate CALL 10** — readings 1–3 are
+extraction errors to record, not evidence against the call. All six probe papers are already inside the
+contaminated union, so iterating stanza wording on probe results adds no new contamination; that licence
+explicitly does not extend to liu_2005, tang_2025 or wheaton_2004, the only cells a held-out reading could
+ever touch. Also pre-registered: a `span_role` column {estimate, apply, consume, host, out_of_scope}, with
+a cell correct only when state, value **and** span_role match. ciric justifies it — MCFLIRT named three
+times, once ESTIMATE and twice CONSUME, so a value-only scorer marks it correct while the extractor picked
+the wrong mention. Both prior maps were value-only (`target_space_scoring_map.csv`: `resolved, resolution,
+label_state, rationale`). The map's rationale must state that this makes the motion figure **stricter than
+either prior field's and not comparable to 82.4% or 11/17** — a lower number is a harder rule before it is
+a worse extractor.
+
+**Open, found while computing the contamination arithmetic: the Labels sheet has a 20th populated column-A
+row.** Row 21 is empty; row 22 is the green instructional footer ("GREEN = fill these in. Label from the
+FULL paper …"), outside the DV ranges (`B2:B20`) but inside the used range (`max_row 22`). Any scorer
+keying on "non-empty column A" reads **N=20** and scores a sentence fragment as a paper. Not fixed. The
+scorer must iterate the 19 known paper_ids or stop at row 20, and hard-fail if the count is not 19.
+
+**Step 1 of the motion arc closes here** — the multi-stream gap (CALL 9), the realignment-vs-nuisance
+boundary made operational (CALL 10), and derosa's binding resolution, all pre-registered before any
+extraction exists. Order from here: probe → interpret against the four pre-declared readings → `span_role`
+into the map design → state-map pre-registered → stanza written against the committed protocol → K-draw
+variance → and only then a number, decomposition first. The attestation table (bullets 2–7 across 19
+papers, ~10 of 114 cells reported, bullet 7 at 0/19) depends on none of this and remains the Goal-2
+deliverable.
+
+Commits: b567e99 (protocol v1.5 — CALL 1 binding clarification + CALL 10) · ccf8a35 (pre-registration —
+reachability probe + span_role) · ade9608 (Glossary v1.5 sync — CALL 1 clarification appended, CALL 10 row
+inserted, per-cell version-token invariant held). This DEVLOG entry committed separately, last.
