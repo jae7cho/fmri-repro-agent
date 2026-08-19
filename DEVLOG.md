@@ -917,3 +917,55 @@ deliverable.
 Commits: b567e99 (protocol v1.5 — CALL 1 binding clarification + CALL 10) · ccf8a35 (pre-registration —
 reachability probe + span_role) · ade9608 (Glossary v1.5 sync — CALL 1 clarification appended, CALL 10 row
 inserted, per-cell version-token invariant held). This DEVLOG entry committed separately, last.
+
+## 2026-08-18
+
+Hours: 21:27 - 22:14 ET
+
+**Attestation finding committed (`227e690`) — the Goal-2 deliverable, and it needs no extractor.**
+`docs/findings/motion-attestation-table.md`: COBIDAS D.3 bullets 2–7 across the 19 papers, read from the
+Labels sheet at v1.5 (`ade9608`). **9 of 114 cells `reported`, 64 `not_reported`, 41 `deferred`**; bullet 7
+(`slice_to_volume`) is **0 of 19**; `not_applicable` never assigned; every one of the 9 `reported` cells
+carries a verbatim quote, zero exceptions. Reporting is concentrated, not thin-but-even — the 9 cells fall
+in 7 papers, 12 papers report nothing across 2–7, and no paper exceeds 2 of 6. The author's unexpected
+result is **#4: deferral is wholesale.** Of the 7 papers whose *method* is `deferred`, 6 defer all six of
+bullets 2–7 (braun, chen, oconnor, vanderwal, viduarre, weber) — 36 of the 41 deferred cells; exactly one
+paper mixes (poldrack, 4 deferred / 2 reported), and the last deferred cell is cole's single one. That
+gives CALL 7 (per-row deferral) an empirical justification it lacked: **it changes the answer for one paper
+in nineteen** — poldrack's 2 reported cells, which a blanket rule would have swallowed, i.e. a fifth of the
+headline number. CALL 6 (blanket deferral covers every bullet) is the common case the same data vindicates
+in the other direction (the 36 cells). Labels are human-ratified, not extractor output, so this clears the
+standing bar that unscored extractor output is never a literature finding; it stands whether or not the
+method arc completes.
+
+**Pre-commit review — three checks I ran because the author couldn't, three fixes.** (1) The doc pointed the
+bullet-numbering + D.3 mapping at protocol **§2**; §2 is only the method-vs-attestation scope split — both
+the seven-bullet enumeration and the "Mapping to spec fields" table are in **§1**. Repointed §2 → §1 (the
+author also folded in a note that the doc's field names are the workbook column stems, cross-referenced by
+bullet number). (2) Caveat 1 was **flattening §7**: it said the attestation table "does not escape" the
+co-adjudication caveat, dropping §7's own finding that the table is "far less exposed" than the method
+figure because attestation is a presence/absence read with little adjudication room. Restored the asymmetry.
+(3) The no-CI decision was justified on its own terms but silently departed from base_pipeline's Wilson
+[59, 94]; I proposed naming the departure, the author **sharpened it past my version** — the two figures are
+different kinds of quantity: base_pipeline's 82.4% is an accuracy *rate* over repeatable trials, where an
+interval describes extractor-behaviour uncertainty; this 9/114 is a **census**, a complete count with
+nothing sampled and therefore no sampling error to describe. The departure is principled, and
+base_pipeline's interval is not impugned by it.
+
+**The gating check the author named: the two §7 quotes must match the source.** Caveat 1 now quotes §7 —
+"far less exposed" and "largely independent of this limitation." Verified both against §7 at HEAD before the
+commit: verbatim match. This is the quote-drift defect class the project keeps catching; here it was
+pre-verified rather than caught after the fact, so it is not a fourth instance. (My first automated pass
+flagged the second quote as a mismatch — a line-wrap in the matcher, not the text; re-checked wrap-tolerant,
+clean.)
+
+**Docs-only, one path, pushed.** No other file moved — the finding carries its own reasoning, so no protocol
+or workbook change rode along.
+
+**Open, parked to rule fresh:** `value_kind` on `FieldExtractionResult` — whether `described_only` gets a
+discriminator so the state-map keys on it mechanically, versus the scorer re-applying CALL 1's binding test
+to a free string. The author's read is the discriminator; left unruled deliberately, since the reachability
+probe's pass condition, derosa's four pre-declared readings, and the state-map all wait on it.
+
+Commits: 227e690 (finding — COBIDAS D.3 attestation, 9/114 reported, bullet 7 at 0/19, deferral wholesale in
+6 of 7 deferring papers). This DEVLOG entry committed separately, last.
