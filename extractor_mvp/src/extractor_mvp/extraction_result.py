@@ -42,8 +42,9 @@ class FieldExtractionResult(BaseModel):
             if self.value is None or self.verbatim_quote is None:
                 raise ValueError(
                     "status='extracted' requires both value and verbatim_quote. "
-                    "If the field is stated but the exact sentence is unclear, "
-                    "use status='missing'."
+                    "Use status='missing' ONLY when no quotable sentence exists. Uncertainty about whether the sentence "
+                    "belongs to THIS field is not grounds for 'missing' — a stated field with a quotable sentence must "
+                    "use 'extracted'."
                 )
             if self.deferral_sentence is not None or self.ref_string is not None:
                 raise ValueError("status='extracted' must not set deferral_sentence or ref_string.")
