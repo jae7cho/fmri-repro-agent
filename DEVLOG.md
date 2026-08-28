@@ -969,3 +969,193 @@ probe's pass condition, derosa's four pre-declared readings, and the state-map a
 
 Commits: 227e690 (finding — COBIDAS D.3 attestation, 9/114 reported, bullet 7 at 0/19, deferral wholesale in
 6 of 7 deferring papers). This DEVLOG entry committed separately, last.
+
+## 2026-08-19
+
+Hours: 17:43 - 22:15 ET
+
+*(Entry written retroactively on 2026-08-26 from the commits and the design session; the hours are the
+work, not the writing.)*
+
+**`value_kind` ruled: option (b) — the discrimination lives in the scoring map, not the LLM schema.** The
+blocker was that `FieldExtractionResult`'s three statuses cannot separate two label states: `extracted`
+requires both `value` and `verbatim_quote`, `missing` forbids both, so `described_only` and `named_tool`
+are the *same* status, differing only in whether `value` holds an operation phrase or a tool name. Options
+considered and declined: **(a)** a fourth status — blocked, `provenance.py` is FROZEN with three arms;
+**(c)** a model-emitted `value_kind` — viable and additive, declined for now rather than change the LLM
+output contract before the stanza exists; **(d)** keying on `SpecifiedTerm.resolved` — ruled out by that
+type's own docstring, which records that `unrecognized` does not decide the grade (gordon "EPI template"
+and power "atlas space" are both `unrecognized` and grade differently), and because a real tool missing
+from the resolver vocabulary would resolve to `None` and read as `described_only`, the false-missing class
+`SpecifiedTerm` exists to prevent. (b) has working precedent: `target_space_scoring_map.csv` already
+discriminates two label states from one resolver verdict via a gesture heuristic on `verbatim`.
+
+**Prereg amendment 1 (44f285f), append-only, v1 byte-identical (v1 was 38 lines; the file is now 162).**
+Supplies the pass condition v1 left underdetermined. Six-row state map; `undecided` as a third heuristic
+outcome that **halts** rather than defaulting, because defaulting toward either side silently biases and
+destroys the only signal that would justify revisiting (c) — the `undecided` count *is* the measure of whether
+(b) was adequate. A `value` matching both vocabularies (e.g. "motion correction via ICA-AROMA") halts rather
+than resolving by precedence. `deferred` + `target_kind="supplement"` maps to **`unread`**, not `deferred`,
+per CALL 9 — the extractor predates that call and its behaviour is correct (`extractor.py:602`, `:726` narrow
+"supplement" → "paper" for the frozen `Deferral` while retaining the original in `DeferralRecord`); only the
+label mapping diverged, so under (b) this is a map rule and not a code change. Correctness now requires
+**state + value + `span_role == estimate`**, which makes the motion figure stricter than either prior field's
+and not comparable to 82.4% or 11/17. `stated_not_performed` is recorded as **unreachable but unexercised** (0
+of 19) — a known vocabulary gap, invalidating the map for that cell if a future corpus hits it. binder_1999 is
+pre-declared as an expected `undecided`: its quote describes an algorithm in prose ("an iterative procedure
+that minimizes variance in voxel intensity differences") and no closed vocabulary recognises that. The
+heuristic vocabulary is enumerated before the run and may not be extended after seeing output; it was seeded
+from the four `described_only` papers, all already inside the contaminated union, so it adds no new
+contamination. derosa's four v1 readings are now evaluable: readings 1 and 2 both land `named_tool` and are
+separated only by `value`; readings 3 and 4 both land `described_only` and are separated only by `span_role` —
+neither distinction existed under v1.
+
+**Validator guidance narrowed (37b21dd).** `status="extracted"`'s error text told the model to use
+`missing` "if the field is stated but the exact sentence is unclear" — which invites bailing on
+*uncertainty about field membership* rather than on *absence of a quotable sentence*. Now states that
+`missing` applies only when no quotable sentence exists. One string literal; three statuses, all field
+definitions and every other validator branch unchanged; ruff, mypy and the test suite pass. Lands before
+the probe so the probe tests the corrected wording.
+
+**Withdrawn: the `target_kind` round-trip "defect".** I reported that `FieldExtractionResult.target_kind`'s
+`"supplement"` member could not map into the frozen `provenance.Deferral`. It maps fine, deliberately, at
+two commented sites in `extractor.py`. I asserted it from reading `extraction_result.py` alone — **fourth
+instance of assert-from-a-partial-view**, this time while instructing the author to verify. The second
+reported defect (the validator message) survived but was substantially downgraded, from "inverted" to a
+wording sharpening, once the `spans: min_length=1` grounding requirement made clear the forced choice is
+real.
+
+**Process cost, recorded as a cost.** Five flag-then-resolve cycles this arc — the C20 substitution rule,
+the hardcoded gate-item-6 token list, the row-21/22 index, the withdrawn `target_kind` defect, the
+downgraded validator message — four of them originating with me. Three were genuine and improved the
+artifact; two were false alarms that cost design rounds. The honest metric is that **zero defects reached a
+commit**, so the control works, but its false-positive rate is real and is paid in rounds rather than in
+corrupted history. Three of the five came from reading one file and asserting about a system. Corrective,
+adopted going forward: **no defect is reported until its handling site has been searched** — a single grep
+of `extractor.py` would have killed the `target_kind` claim before it was written, at a cost of thirty
+seconds against the round it actually took.
+
+Commits: 44f285f (prereg amendment 1 — state map under ruling (b)) · 37b21dd (extraction_result — validator
+guidance narrowed to quotability). Both committed 2026-08-19 and logged here on 2026-08-26; the DEVLOG
+entry for that session was drafted but not committed at the time, which is itself the gap this entry
+closes.
+
+## 2026-08-26
+
+Hours: 20:10 - 21:45 ET
+
+**Two read-only assessments, and the largest scoping decision of the project: Track A (the COBIDAS
+completeness checker) is the November deliverable; Track B (the motion extraction arc) continues off the
+critical path.** No code was written today. The decision rests on what the assessments found rather than
+on planning.
+
+**Assessment 1 — the output generator is not immature; it is unwired.** `render.to_cobidas_coverage`
+(render.py:607) already emits "COBIDAS asks N; the paper reports A, defers B, is silent on C", partitioned
+mandatory/optional and assessable/not-assessable, over a real 16-row D.3 registry with `assess_coverage`
+(cobidas.py:142). `_ADDRESSING_STATUSES = {EXTRACTED, DEFERRED_TO_CITATION}` only (cobidas.py:120), so an
+inferred default never inflates compliance. All four provenance states render distinguishably
+(render.py:147-157, 310-323, 490-505), pinned by tests/test_render.py:502-510, and MISSING_FROM_PAPER
+renders at better than four-state resolution via the reason partition (render.py:411-435) separating "not
+reported in source" from "not assessed by current extractor". **The critical safety property was already
+solved deliberately:** `to_cobidas_coverage` takes its denominator from the static registry
+(cobidas.py:154), not from `_assemble`'s step list, so a step with no extractor renders as "no fields
+assessed by current extractor" and never as absent — pinned by tests/test_cobidas.py:115, with the intent
+stated at cobidas.py:16-18. What does not exist is any caller: render.py's only importers are `tests/`;
+batch.py never imports it; there is no `[project.scripts]` in either pyproject.toml; demo.py is text-in by
+construction. Producing a report today requires hand-loading batch JSON in a REPL.
+
+**Consequence, and the reason this reverses an earlier assumption: extraction coverage does not gate the
+deliverable.** 15 of 19 spec steps have no extractor, and that is fine — "not assessed by current
+extractor" is a true and useful statement to a reader, and each field Track B later extracts upgrades one
+D.3 row from not-assessed to assessed. The extraction backlog is incremental value, not a prerequisite. An
+earlier estimate that the tool was gated on the extraction backlog was wrong and is withdrawn.
+
+**Assessment 2 — the volumetric distribution exists; the surface distribution does not exist at any
+stage.** Volumetric, committed at docs/ground-truth-protocol-target_space.md:422 and DEVLOG.md:479-480,
+503-504: `family_specified 10 / deferred 3 / native_volume 2 / study_specific 2 / canonical 1 / absent 1 =
+19`, with a clean 19-row per-paper basis at ground_truth/target_space_labels_v1.csv and per-paper
+adjudications at the protocol's Known-adjudications section (:406-423). It exists **only as inline prose**;
+no table, CSV, or figure carries it and no committed code tallies it — score_target_space.py's sole Counter
+(:159) is over error classes. The surface axis has nothing: no labelling instrument (the xlsx has no
+surface sheet or column), no scoring-map rows, no labels, no counts. The protocol ratifies a
+**two-distribution** deliverable (:269-276) and only one axis is built. Building the surface axis is a
+labelling effort on the scale of the motion arc.
+
+**The poster is reframed around the retraction, because the submitted abstract's headline IS the retracted
+claim.** The abstract states "13 of 20 papers (65%) stated a normalization space that could not be resolved
+to a canonical specification." docs/ground-truth-protocol-target_space.md:63-68 already records that this
+was a single-draw, unscored extractor count conflating three reporting behaviours, and states the arc's
+purpose as producing "the number presented in November" — so the correction was foreseen and its
+replacement is built. **The correction is a stronger contribution than the original claim**, and squarely
+on-theme for the accepted session (K.04.a, Ethical and policy issues; keywords Reproducibility,
+Neuroimaging, Open science): an automated compliance auditor produced a number, the number was wrong, and
+the reason it was wrong is that it collapsed distinct reporting behaviours into one bucket. Notably **two of
+the 19 are `native_volume`** — papers that performed no normalization at all, a complete and correct methods
+statement that the original number counted as a compliance failure — and three more were deferrals, where
+the information exists in a citation. Only `absent` (1) is a reporting absence. The four-state provenance
+model stops being an implementation detail and becomes the thesis, demonstrated on our own headline claim.
+The abstract's title ("Bridging the gap between neuroimaging reporting guidelines and machine-readable
+methods") promises an instrument connecting a standard to a representation, not an accuracy figure, so the
+checker is the more faithful reading of what was submitted.
+
+**Scope decisions.** (i) **Volumetric axis only** on the poster, stating that the surface axis is
+labelled-pending rather than presenting one distribution as the whole finding; the joint statement
+(:271-275) depends on the surface axis and defers with it. (ii) **No accuracy rate as a poster claim** —
+not because it is contaminated (target_space's contamination is light: two non-blind worked examples,
+ground_truth/target_space_README.md:108-109, giving blind 11/17 [41,83]), but because it answers a different
+question than the poster asks. The poster's claim is about the literature's reporting completeness; an
+extractor-accuracy rate is a claim about the tool. More pointedly, a poster arguing that a distribution over
+reporting behaviours is the right output undercuts itself by leading with a rate. The rate's instability is
+the useful part and belongs in the nondeterminism panel instead: v040_frozen gives 11/17, the 0.5.0
+re-extraction 10/17, moved entirely by braun on model non-stationarity. (iii) **Pre-generated reports, not
+a live demonstration** — a live run needs venue network, credentials, per-run cost, 30-90s latency, and
+robustness to arbitrary PDFs (scanned, no text layer,
+methods-finder misses), which is a separate and larger problem given the pypdf mangling already documented
+in docs/findings/pdf-glue-false-missing.md. (iv) **Generate one paper's report twice, ahead of time, and
+show both if they differ** — same input, two runs, two outputs is the documented temp-0 nondeterminism, and
+it makes the case for reporting a distribution rather than a rate better than a sentence does. braun is the
+candidate, being the case that flipped the accuracy rate between vintages. If the two runs come back
+identical that is also worth knowing, as free evidence about attestation stability. (v) **No rendering or
+figures until all computation is committed** — compute first, render once.
+
+**Three traps recorded so they do not bite in October.** (1) The published volumetric distribution comes
+from `target_space_labels_v1.csv` (19 rows), **never** from `target_space_labels_v1.xlsx`, whose 21 rows
+include two `(EXAMPLE)` duplicates of oconnor and mueller that inflate `canonical` to 2 and
+`study_specific` to 3; stripped at derive_target_space_csv.py:56-58. (2) **The "~7" does not exist.** Four
+numbers attach to "MNI family" across the record — 7, 9, 10, 12 — counted at different stages (pre-label
+audit, full-text enumeration, extractor grade, final label). Only the final label count of **10** has an
+exact per-paper list (protocol :413-414). Cite 10; never cite 7. (3) **The accuracy figure has two
+vintages**: v040_frozen gives blind 11/17, the 0.5.0 re-extraction gives 10/17, moved entirely by braun on
+model non-stationarity (docs/findings/target_space-0.5.0-reextraction-prereg.md:141-145). Any quoted rate
+must name its prediction vintage on its face.
+
+**Track A scope committed** as docs/TRACK_A_SCOPE.md. Must-do, in order: **A2** make the
+coverage-section guard structural — the property is currently held by one line (render.py:602), while
+to_text (:350) and to_bullets (:379) iterate present steps only, and A1 creates the first non-test caller;
+**A1** wire render into batch.py, which already holds a live Preprocessing (:213) and already writes
+per-paper files (:279); **A3** fix the Software header/body disagreement (render.py:638-642 gates the
+suffix on `mand_not_reported` while :667 gates the body on `software.addressed`, so they contradict each
+other when base_pipeline is missing — verified divergent at HEAD, and which reading is correct is an
+author's semantic call, not a fix); **A4** a PDF→report entry point. Should-do: **A5** a corpus-level
+COBIDAS table, and two hardening items — a label-state tally in score_target_space.py and a file write in
+that scorer, which is stdout-only (:1) so every published rate was hand-transcribed with nothing checking
+the prose against a rerun. Deferred with reasons in the doc: rendering and figures, K-draw uncertainty
+machinery (shared with Track B's pre-registered variance step — build once, for both), the sub-fields
+dropped in rendering, the surface distribution, arbitrary-PDF robustness, the motion arc, and the three
+stale-token defects in the instrument.
+
+**Three of my own claims withdrawn this session.** I had carried `citation_resolver.py` as unbuilt; it exists
+(9,463 bytes) and is wired into the extract path at batch.py:264, 276 and extractor.py:1127-1145, though it
+has zero call sites in render.py. And "output generator maturity unassessed" undersold render.py at 31,663
+bytes, the second-largest module in the extractor. Both were carried forward from summaries rather than
+read — the same partial-view pattern the log has been accumulating, here costing a wrong strategic estimate
+rather than a wrong defect report. Also: I stated the spec defines 20 preprocessing step classes.
+`PreprocStep` (preprocessing.py:1233-1254) enumerates 19; the sentence was internally inconsistent, since 15
+unextracted requires a denominator of 19 and I wrote 20. Caught by the applying agent, who also declined to
+unilaterally edit the same sentence in the build contract — correctly, since a build scope and a log
+disagreeing is worse than either being wrong alone.
+
+**Open, unchanged.** The two 2026-08-19 commits and their DEVLOG entry precede this one. Track B: the
+reachability probe is pre-registered (ccf8a35 + 44f285f) and unrun. Track A begins at A2.
+
+Commits: e05c30d (Track A build scope). This DEVLOG entry committed separately, last.
