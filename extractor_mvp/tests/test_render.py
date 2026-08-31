@@ -7,6 +7,7 @@ Offline only: builds spec objects in-process and loads the committed
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -40,6 +41,7 @@ from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from fmri_repro.spec.v0_4_0 import StudySpec  # current root; examples/spec.json is a 0.4.0 doc
 
 from extractor_mvp import render
+from extractor_mvp.cobidas import COBIDAS_D3_ROWS
 
 # ---------------------------------------------------------------------------
 # Locating the example spec (repo_root/examples/spec.json)
@@ -155,8 +157,8 @@ def test_example_renderers_run_and_json_round_trips(idx: int):
     # no exceptions
     rows = render.flatten(prep)
     assert rows
-    txt = render.to_text(prep)
-    bullets = render.to_bullets(prep)
+    txt = render.to_field_table(prep)
+    bullets = render.to_field_bullets(prep)
     js = render.to_json(prep)
     assert txt and bullets and js
     # round-trip
@@ -264,18 +266,18 @@ def test_synthetic_row_payloads():
 
 def test_synthetic_renderers_run_and_round_trip():
     prep = _synthetic_preprocessing()
-    txt = render.to_text(prep)
-    bullets = render.to_bullets(prep)
+    txt = render.to_field_table(prep)
+    bullets = render.to_field_bullets(prep)
     js = render.to_json(prep)
     assert Preprocessing.model_validate_json(js) == prep
-    # to_text shows the five-state header line and the expected per-state phrasing
+    # to_field_table shows the five-state header line and the expected per-state phrasing
     assert "states:" in txt
     assert "from paper: 6.0" in txt
     assert "inferred: gaussian" in txt
     assert "(version_default, conf 0.9)" in txt
     assert "deferred to Esteban 2019" in txt
     assert "not reported" in txt
-    # to_bullets: bold step header + path-prefixed bullets
+    # to_field_bullets: bold step header + path-prefixed bullets
     assert "**spatial_smoothing**" in bullets
     assert "- spatial_smoothing.fwhm_mm: extracted 6.0" in bullets
     assert "- base_pipeline.version: deferred" in bullets
@@ -370,7 +372,7 @@ def test_notapplicable_base_pipeline_single_row():
     assert base_rows[0].path == "base_pipeline"
     assert base_rows[0].state == render.BASE_NOT_APPLICABLE
     assert not any(r.path == "base_pipeline.version" for r in rows)
-    assert "not applicable (from-scratch)" in render.to_text(prep)
+    assert "not applicable (from-scratch)" in render.to_field_table(prep)
 
 
 def test_to_json_matches_model_dump_json():
@@ -410,7 +412,7 @@ def test_base_pipeline_outer_missing_no_version_row():
     assert base_rows[0].path == "base_pipeline"
     assert base_rows[0].state == render.MISSING_FROM_PAPER
     assert not any(r.path == "base_pipeline.version" for r in rows)
-    assert "base_pipeline: not reported" in render.to_text(prep)
+    assert "base_pipeline: not reported" in render.to_field_table(prep)
 
 
 def test_base_pipeline_outer_deferred_no_version_row():
@@ -437,10 +439,10 @@ def test_base_pipeline_outer_deferred_no_version_row():
     assert base_rows[0].state == render.DEFERRED_TO_CITATION
     assert base_rows[0].deferral_refs == ["Glasser 2013 - HCP MPP"]
     assert not any(r.path == "base_pipeline.version" for r in rows)
-    assert "base_pipeline: deferred to Glasser 2013 - HCP MPP" in render.to_text(prep)
+    assert "base_pipeline: deferred to Glasser 2013 - HCP MPP" in render.to_field_table(prep)
 
 
-def test_to_text_shows_inferred_line(capsys):
+def test_to_field_table_shows_inferred_line(capsys):
     """TASK 3: a step field at (MISSING, INFERRED_DEFAULT) renders the inferred line."""
     smoothing = SpatialSmoothing(
         fwhm_mm=_extracted("fwhm_mm", 6.0),
@@ -458,7 +460,7 @@ def test_to_text_shows_inferred_line(capsys):
         inference=NotApplicable(),
     )
     prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[smoothing])
-    txt = render.to_text(prep)
+    txt = render.to_field_table(prep)
     print(txt)
     assert "kernel_type: inferred: gaussian   (version_default, conf 0.9)" in txt
 
@@ -690,12 +692,66 @@ def test_protocol_deterministic():
 # ---------------------------------------------------------------------------
 # COBIDAS D.3 coverage section
 # ---------------------------------------------------------------------------
-def test_to_protocol_includes_cobidas_section() -> None:
-    out = render.to_protocol(_synthetic_preprocessing())
-    assert "## COBIDAS D.3 coverage (preprocessing)" in out
-    assert "Mandatory rows: 14" in out
-    assert "Assessed by AESPA:" in out
-    assert "Not assessed by AESPA:" in out
+@pytest.mark.parametrize("surface", render.REPORT_SURFACES, ids=lambda f: f.__name__)
+def test_report_surface_accounts_for_every_mandatory_d3_row(surface) -> None:
+    """Every sanctioned report surface must account for D.3 rows the extractor never saw.
+
+    Replaces the older `to_protocol`-specific check, which asserted a string was present in
+    one function's output and so passed while a new caller bypassed that function entirely.
+    This keys on the OUTPUT and on the registry, never on the call graph.
+
+    `_synthetic_preprocessing()` is `steps=[SpatialSmoothing]`, so `motion_correction` emits
+    no FieldRows at all: a surface walking present steps would omit it silently.
+    """
+    out = surface(_synthetic_preprocessing())
+
+    # 1. fails on any report lacking the coverage section, however it was produced
+    header = re.search(r"^Mandatory rows: (\d+)$", out, re.M)
+    assert header is not None, "report carries no COBIDAS D.3 coverage section"
+    n_mandatory = int(header.group(1))
+
+    # 2. the denominator is the standard, not this Preprocessing's steps
+    assert n_mandatory == sum(1 for r in COBIDAS_D3_ROWS if r.mandatory)
+
+    # 3. a denominator switched from the catalog to present-steps would not reconcile
+    assessed = re.search(r"^  Assessed by AESPA: (\d+)", out, re.M)
+    not_assessed = re.search(r"^  Not assessed by AESPA: (\d+)", out, re.M)
+    assert assessed is not None and not_assessed is not None
+    assert int(assessed.group(1)) + int(not_assessed.group(1)) == n_mandatory
+
+    # 4. the live regression: a step with NO extractor is NAMED, not silently dropped
+    assert "Motion correction" in out
+
+
+def test_field_views_are_not_reports() -> None:
+    """The partial views must NOT grow a coverage section.
+
+    Bolting one on is the obvious wrong move once the rename lands: it would make them look
+    like reports while they still omit D.3 rows for which no field rows exist.
+    """
+    prep = _synthetic_preprocessing()
+    for view in (render.to_field_table, render.to_field_bullets):
+        out = view(prep)
+        assert "Mandatory rows:" not in out
+        assert "COBIDAS D.3 coverage" not in out
+
+
+@pytest.mark.xfail(
+    strict=True,
+    reason="Commit 2 (Track A item D). to_field_table's MISSING branch returns a bare "
+    "'not reported' consulting no reason, so a field the extractor never targeted reads as "
+    "a REPORTING gap in the field view while to_report calls it 'not assessed by current "
+    "extractor'. Flip to a passing assertion when _REASON_LINE routing lands.",
+)
+def test_field_view_characterises_an_untargeted_field_like_the_report() -> None:
+    """The two surfaces must not contradict each other about the same field."""
+    prep = _one_field_spec(_missing_reason("space", "not_targeted_by_mvp"))
+    # the report already characterises it correctly
+    assert "not assessed by current extractor" in render.to_report(prep)
+    # the field view must agree rather than calling it a reporting gap
+    field_view = render.to_field_table(prep)
+    assert "not assessed by current extractor" in field_view
+    assert "space: not reported" not in field_view
 
 
 def test_cobidas_coverage_deterministic() -> None:

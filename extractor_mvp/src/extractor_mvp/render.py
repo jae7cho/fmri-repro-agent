@@ -1,8 +1,34 @@
 """MVP output layer for a single :class:`~fmri_repro.spec.preprocessing.Preprocessing`.
 
-One flattener, three thin formatters (COBIDAS reporting is per-pipeline, so the
-unit here is exactly one ``Preprocessing``):
+COBIDAS reporting is per-pipeline, so the unit here is exactly one ``Preprocessing``.
 
+REPORT surfaces — safe to show a paper's author
+-----------------------------------------------
+A report accounts for EVERY COBIDAS D.3 row, including rows the extractor never examined,
+because its denominator comes from the standard rather than from the steps present (see
+:mod:`extractor_mvp.cobidas`). Only these may be presented as "the report":
+
+- :func:`to_report` — THE supported report surface; listed in :data:`REPORT_SURFACES`,
+  which the guard test parametrizes over. Delegates to :func:`to_protocol`.
+- :func:`to_protocol` — the implementation behind :func:`to_report`: a tool-agnostic
+  Markdown replication protocol that appends :func:`to_cobidas_coverage`. Also listed in
+  :data:`REPORT_SURFACES` in its own right, since it is public and holds every current
+  caller.
+- :func:`to_cobidas_coverage` — the D.3 coverage section on its own.
+
+PARTIAL views — NOT reports
+---------------------------
+These walk ``flatten()`` rows only, so a D.3 row for which the extractor produces no field
+rows (``motion_correction`` today) is ABSENT from their output entirely. Showing one to an
+author would report a paper as complete where the tool simply never looked:
+
+- :func:`to_field_table` — per-field text view with per-state counts.
+- :func:`to_field_bullets` — condensed markdown, one line per field.
+
+Neither is a completeness report. Use :func:`to_report` for anything author-facing.
+
+Structural
+----------
 - :func:`flatten` — ``Preprocessing -> list[FieldRow]``. The single source of
   truth. Walks ``base_pipeline`` (incl. the nested ``PipelineRef.version``) then
   ``steps`` in list order (list position *is* pipeline order — never reordered).
@@ -10,8 +36,6 @@ unit here is exactly one ``Preprocessing``):
   stamp (``schema_version``); round-trips via ``model_validate_json`` for a document of
   the CURRENT schema. A document written under an older schema must be read through
   ``fmri_repro.spec.migrations.parse_any_version`` (migrate-then-parse), not this path.
-- :func:`to_text` — deterministic, no-LLM human report with per-state counts.
-- :func:`to_bullets` — condensed markdown, one line per field.
 
 ``fmri_repro`` is contract-frozen; rendering lives here on the consumer side.
 
@@ -41,6 +65,7 @@ display label takes one of the four reachable values.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
@@ -68,7 +93,7 @@ MISSING_FROM_PAPER = "MISSING_FROM_PAPER"
 LEFT_MISSING = "LEFT_MISSING"
 BASE_NOT_APPLICABLE = "BASE_NOT_APPLICABLE"
 
-#: Display-state order used for the to_text header counts (stable, exhaustive).
+#: Display-state order used for the to_field_table header counts (stable, exhaustive).
 _STATE_ORDER: tuple[str, ...] = (
     EXTRACTED,
     INFERRED_DEFAULT,
@@ -78,7 +103,7 @@ _STATE_ORDER: tuple[str, ...] = (
     BASE_NOT_APPLICABLE,
 )
 
-#: Condensed labels for to_bullets.
+#: Condensed labels for to_field_bullets.
 _SHORT_LABEL: dict[str, str] = {
     EXTRACTED: "extracted",
     INFERRED_DEFAULT: "inferred",
@@ -323,8 +348,15 @@ def _fmt_field_text(row: FieldRow) -> str:
     return ""
 
 
-def to_text(preprocessing: Preprocessing) -> str:
-    """Deterministic, no-LLM human report of one ``Preprocessing``."""
+def to_field_table(preprocessing: Preprocessing) -> str:
+    """Per-field text view with per-state counts. **NOT a completeness report.**
+
+    Deterministic, no-LLM. Walks ``flatten()`` rows only, so a COBIDAS D.3 row for which
+    the extractor produces no field rows (``motion_correction`` today) does not appear at
+    all. Presenting this to an author would report their paper as complete where the tool
+    never looked. Use :func:`to_report` for author-facing output; this view is for
+    inspecting extraction.
+    """
     rows = flatten(preprocessing)
     counts = {state: 0 for state in _STATE_ORDER}
     for r in rows:
@@ -371,8 +403,12 @@ def _fmt_value_suffix(row: FieldRow) -> str:
     return ""
 
 
-def to_bullets(preprocessing: Preprocessing) -> str:
-    """Condensed markdown: one bullet per field, grouped under a bold step header."""
+def to_field_bullets(preprocessing: Preprocessing) -> str:
+    """Condensed markdown, one bullet per field under a bold step header. **NOT a report.**
+
+    Same limitation as :func:`to_field_table`: ``flatten()`` rows only, so a D.3 row with no
+    extractor field rows is absent entirely. Use :func:`to_report` for author-facing output.
+    """
     rows = flatten(preprocessing)
     lines: list[str] = []
     current_group: str | None = None
@@ -523,6 +559,11 @@ def to_protocol(
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
+    A REPORT surface, listed in :data:`REPORT_SURFACES` in its own right: appends
+    :func:`to_cobidas_coverage`, so every D.3 row is accounted for including rows the
+    extractor never examined. Remains public and unchanged; :func:`to_report` is the name
+    new callers should reach for and delegates here.
+
     Deterministic, no-LLM. Renders the base pipeline (name + a version sub-line), a
     four-way completeness header (specified · inferred · deferred · require-your-input,
     counted over the full ``flatten()`` tally), then each preprocessing step in
@@ -602,6 +643,36 @@ def to_protocol(
     lines.append(to_cobidas_coverage(preprocessing).rstrip())
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+# ---------------------------------------------------------------------------
+# The report surface
+# ---------------------------------------------------------------------------
+
+
+def to_report(
+    preprocessing: Preprocessing,
+    source: str | None = None,
+    *,
+    methods_slice: MethodsSlice | None = None,
+) -> str:
+    """THE supported report surface — the only output safe to present as "the report".
+
+    Delegates to :func:`to_protocol`, which appends :func:`to_cobidas_coverage` so every
+    COBIDAS D.3 row is accounted for, including rows the extractor never examined. The
+    partial views (:func:`to_field_table`, :func:`to_field_bullets`) walk ``flatten()``
+    rows only and silently omit such rows; they are not reports.
+    """
+    return to_protocol(preprocessing, source, methods_slice=methods_slice)
+
+
+#: Surfaces a caller may present as "the report". The guard test parametrizes over this
+#: tuple: a surface listed here without a coverage section fails, and a surface NOT listed
+#: here is not a sanctioned report. :func:`to_protocol` is listed in its own right, not
+#: merely reached through :func:`to_report` — it is documented as a report and holds every
+#: current caller, so covering it only while delegation happens to hold would leave the
+#: guard resting on an implementation detail.
+REPORT_SURFACES: tuple[Callable[..., str], ...] = (to_report, to_protocol)
 
 
 def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
