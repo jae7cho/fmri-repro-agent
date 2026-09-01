@@ -1159,3 +1159,139 @@ disagreeing is worse than either being wrong alone.
 reachability probe is pre-registered (ccf8a35 + 44f285f) and unrun. Track A begins at A2.
 
 Commits: e05c30d (Track A build scope). This DEVLOG entry committed separately, last.
+
+## 2026-08-27
+
+Hours: 20:38 - 22:00 ET
+
+*(Entry written 2026-08-30 from the session record and the staged diff; the hours are the work.)*
+
+*(The A2 work was staged Thursday 2026-08-27 and committed Sunday 2026-08-30; the hours are the work,
+not the commit.)*
+
+**Track A opened at A2 — the coverage-section guard — and the assessment found a second defect the item
+was not scoped to fix.** The briefed risk was omission: `to_field_table` and `to_field_bullets` iterate
+present steps only (render.py:350, :379), so a step with no extractor vanishes, and only render.py:602
+staples the catalog section onto `to_protocol`. Real, and A2 addresses it. But `_fmt_field_text`'s MISSING
+branch (render.py:317-318) returns `"not reported"` **consulting no reason at all**, while `to_protocol`
+routes the same rows through `_REASON_LINE` (render.py:422-435) and says `"not assessed by current
+extractor"`. On a real `_assemble` output that is **19 of 27 field rows asserting something false about the
+author's manuscript** for fields the extractor never targeted, and the two surfaces contradict each other
+about the same object. A coverage section fixes none of the 19. Omission and mislabelling are separate
+defects; the second is filed as **D**, a sibling of A3, and deliberately not folded into A2 — a behaviour
+change inside a structural guard is how one change becomes two under one review.
+
+**Ruled: Option A, plus the surface-parametrized test; D characterises rather than declines.** Option A
+(one sanctioned report surface, partials renamed to what they are) was chosen because the mistake is
+*available* today for a documentable reason: render.py:13 and :327 both call `to_text` a "human report",
+while the module docstring (render.py:3, "One flattener, three thin formatters") omits `to_protocol` and
+`to_cobidas_coverage` entirely — a reader orienting from the top of the file learns the wrong thing.
+Correcting the docs deletes the invitation. **Option B declined**: a required `coverage:` keyword costs the
+same eight call sites, and `coverage=True` on a field view would wrap a coverage section around 19 false
+statements — a guard that makes a wrong output look endorsed is worse than none. **Option C (a `Report`
+return type) deferred, not rejected**: it is the only option with real enforcement and the natural
+escalation if a second non-test caller appears after `batch.py`, but ~14 test assertions to guard one
+caller before A1 exists is building ahead of need. Recorded in TRACK_A_SCOPE.md so it is not rediscovered.
+For **D**, the ruling is *characterise, not decline*: route the MISSING branch through the existing
+`_REASON_LINE` table. Omitting untargeted rows was considered and rejected — dropping them is silent
+omission, the exact harm A2 prevents, relocated. Characterising costs nothing and buys accuracy, and it is
+the same hallucination-versus-absence cut the project rests on, applied one surface down: `"not reported in
+source"` versus `"not assessed by current extractor"` is `MISSING_FROM_PAPER` versus untargeted, made
+visible. Having the reason table exist and not routing the partial views through it was an inconsistency,
+not a design choice.
+
+**A2 staged, with rendering proved byte-identical to HEAD rather than inferred from a green suite.**
+render.py at HEAD was imported alongside the working-tree module and the same `_assemble` object rendered
+through both: all six surfaces identical, including `to_report == HEAD to_protocol`. That is the direct
+evidence for the no-behaviour-change constraint; a passing suite would only have been consistent with it.
+`git diff --stat` on `cobidas.py` and `test_cobidas.py` is empty, so the :154 static-registry denominator
+and the test_cobidas.py:115 pin — the property being protected — are untouched, and the A3 region
+(render.py:638-642 / :667) appears zero times in the diff. Contents: module docstring rewritten into
+REPORT / PARTIAL / structural sections; `to_report` added as the single sanctioned report surface, with
+`to_protocol` retained as the implementation it delegates to (an alias-rename would have moved ~14 pinning
+assertions and broken the behaviour-free constraint); `to_text` → `to_field_table` and `to_bullets` →
+`to_field_bullets`, both docstrings now stating plainly that they are not completeness reports and omit D.3
+rows for which the extractor produces no field rows; `REPORT_SURFACES = (to_report, to_protocol)` declared,
+with the residual hole recorded in a comment — a surface not listed there is not sanctioned, and no
+registry-based guard closes that. `to_protocol` was initially excluded on the grounds that `to_report`
+reaches it; that was backwards, since it makes the guard depend on delegation continuing to hold, and
+`to_protocol` is public, documented as a report, and holds every current caller. Listed in its own right,
+so the parametrized test runs twice. Two internal comments the assessment had missed (render.py:71, :81)
+were caught and updated. Three tests replace `test_to_protocol_includes_cobidas_section`, which asserted a
+string in `to_protocol`'s output and would have passed while a new caller bypassed `to_protocol` entirely:
+a surface-parametrized test keyed on the output and the registry rather than the call graph (header
+present, `Mandatory rows: N` reconciled against the registry, assessed + not-assessed == N so a
+catalog→present-steps switch fails, and "Motion correction" named); a negative counterpart asserting a
+field view is *not* a report, which stops the obvious wrong move of bolting coverage onto the partials once
+the rename lands; and a cross-surface consistency test marked **`xfail(strict=True)`** naming D. Strict was
+the applying agent's improvement on the specification — a non-strict marker would let D's fix pass silently
+and leave a stale marker behind, where strict makes the flip deliberate and fails if D is ever reverted.
+One assertion the assessment correctly refused: "every mandatory aspect string appears in the report" would
+fail on a well-reporting paper, because addressed rows are named in no section of `to_cobidas_coverage`
+(render.py:688, :701) and only the header counts the full 14. Suite: 277 passed / 2 skipped / 1 xfailed;
+ruff, ruff-format and mypy clean on both packages.
+
+**Three diagnostics, and the finding was the opposite of the report.** I was told a `Co-Authored-By`
+trailer had landed on two commits and asked how to handle it. **It never landed** —
+`.local/hooks/commit-msg`, a gitignored one-line `sed`, had stripped it at commit time; the commits were
+always clean. The applying agent had verified what it *sent* rather than what landed, which is a permanent
+property of that hook rather than a slip: a `commit-msg` hook rewrites the message after handoff, so
+anything read back from one's own input is stale by construction, and the same reasoning applies to
+`pre-commit` reformatting files after staging. **The real finding is one layer up:** `~/.claude/settings.json`
+had **no attribution key at all** — the setting was absent, not disabled, contrary to what I had recorded —
+so for an unknown span of commits a gitignored one-line `sed` with no output on success was the *only*
+thing keeping trailers out of the log. Single point of failure, invisible to anyone cloning the repo since
+`.local/` is untracked. Closed at the source by adding `attribution: {commit: "", pr: ""}`; `pr` as well as
+`commit`, since sole author-of-record is a convention about the record and not about one git verb. **Also
+corrected: the convention is not "zero trailers in history."** `b6972ef` (2026-08-07) carries one,
+predating the current setup; retained rather than rewritten, since it is pushed and DEVLOG footers cite
+hashes. My argument for not rebasing had rested on the premise being unbroken — it was not, and the
+conclusion survives on the better ground that rewriting published history to fix a provenance annotation
+corrupts provenance records. An accurately-described exception is stronger than a premise that fails when
+someone checks.
+
+**Off-hours guard pinned; a stale interpreter had been running it.** `.local/hooks/pre-commit` and
+`pre-push` both called bare `python3`, which resolved to an unrelated project's venv leaked in through
+`VIRTUAL_ENV` — first on `PATH`, inherited by every subshell, and the cause of an unexplained import
+failure earlier in the arc. The guard enforcing the IP-clearance commit window therefore depended on
+another project's directory continuing to exist. Both hooks now call `"$ROOT/.venv/bin/python"`, verified
+in three directions (passes now, still blocks at a simulated Wed 14:00 ET, override honoured).
+`.venv/bin/python` **fails closed** on a fresh clone before `uv sync` — the correct failure mode for a
+compliance control, which must not silently not-run; `/usr/bin/python3` was declined because it can be a
+Command Line Tools stub, trading a legible failure for a confusing one.
+
+**Process tally.** Fifth assert-from-a-partial-view instance, and the second in two days where the partial
+view was the agent's own output rather than a file. The rule adopted from it, which generalises further
+than the corrective it replaced: **a proposal about state should carry the verification of that state, not
+defer it to whoever acts on the proposal.** That is the rule I broke in proposing a remedy for a trailer
+neither of us had read back — and it applies to most recommendations in this project, since nearly all of
+them rest on a state report I did not produce.
+
+**A dating defect in the two committed entries, and a convention gap behind it.** Settled from git's
+authoritative timestamps: `44f285f` and `37b21dd` are Wednesday 2026-08-19 20:35 EDT; `e05c30d` and
+`41c2867` are Thursday 2026-08-27 21:02-21:03 EDT. Every date and weekday in both entries is correct, and
+the sessions were 23 hours apart rather than spanning midnight. **The defect is elsewhere: both entries'
+footers cite commits that did not exist during the session they document.** The 08-26 entry's
+`Commits: e05c30d` names a commit made Thursday, 23 hours after that Wednesday session ended at 21:45; the
+08-19 entry's footer says "logged here on 2026-08-26" while `41c2867`, the commit carrying it, is Thursday
+the 27th. Neither is rewritten — they are pushed, DEVLOG footers cite hashes, and a later entry correcting
+earlier ones is how this log has handled every other error. **The convention itself is the gap:** "DEVLOG
+last with real hashes" silently implies same-session commits and produces this anachronism whenever a
+session's work lands on a later day, which is the normal case here. **Adopted: the `Commits:` footer states
+the commit date whenever it differs from the entry date.** Applied in this entry's own footer. Also noted:
+`docs/TRACK_A_SCOPE.md:3` reads "Scoped 2026-08-26", which is accurate — the decision was Wednesday even
+though the file landed Thursday.
+
+**Open.** D is staged-adjacent but unrun; the `xfail(strict=True)` in the suite encodes the defect it will
+fix, so nothing is lost by pushing A2 alone. Then A3 (the Software header/body disagreement, which carries
+a semantic ruling on whether an unassessable Software row is a violation or an unknown), then A1. Also
+open: `docs/TRACK_A_SCOPE.md:22-23` and `DEVLOG.md:1134` still name `to_text`/`to_bullets`; the DEVLOG line
+is a historical record and stays, but the scope doc is a live build contract and should be updated — in a
+docs pass, not under a code commit, so it stays clear which moved first. And the reason-string wording
+review deferred into D: `"not assessed by current extractor"` reads as an admission where the useful
+reading is *this row is unexamined, read the paper yourself*, and whether `"unclassified"` can reach a user
+at all is unestablished.
+
+Commits: d90507b (render — to_report as the only report surface; field views renamed and documented as
+partial; coverage section pinned by a surface-parametrized test), committed 2026-08-30. This DEVLOG entry
+committed separately, last, on 2026-09-01.
