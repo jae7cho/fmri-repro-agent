@@ -6,6 +6,7 @@ Offline only: builds spec objects in-process and loads the committed
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 from pathlib import Path
@@ -276,7 +277,9 @@ def test_synthetic_renderers_run_and_round_trip():
     assert "inferred: gaussian" in txt
     assert "(version_default, conf 0.9)" in txt
     assert "deferred to Esteban 2019" in txt
-    assert "not reported" in txt
+    # a gap row characterises its reason instead of asserting the paper omitted it.
+    # _missing_left's reason is deliberately unknown (see the unclassified test below).
+    assert "unspecified (reason: no defensible default)" in txt
     # to_field_bullets: bold step header + path-prefixed bullets
     assert "**spatial_smoothing**" in bullets
     assert "- spatial_smoothing.fwhm_mm: extracted 6.0" in bullets
@@ -403,7 +406,8 @@ def test_base_pipeline_outer_missing_no_version_row():
         extraction=MissingFromPaper(
             searched_terms=["pipeline", "fMRIPrep", "HCP"], sections_searched=["Methods"]
         ),
-        inference=LeftMissing(reason="no base pipeline named or inferable"),
+        # the reason extractor.py:867 actually emits for this shape
+        inference=LeftMissing(reason="no_base_pipeline_named"),
     )
     prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[_one_step()])
     rows = render.flatten(prep)
@@ -412,7 +416,12 @@ def test_base_pipeline_outer_missing_no_version_row():
     assert base_rows[0].path == "base_pipeline"
     assert base_rows[0].state == render.MISSING_FROM_PAPER
     assert not any(r.path == "base_pipeline.version" for r in rows)
-    assert "base_pipeline: not reported" in render.to_field_table(prep)
+    # BEFORE (Track A item D): asserted "base_pipeline: not reported" — a claim about the
+    # author's manuscript, emitted without consulting the reason. Now characterised.
+    assert (
+        "base_pipeline: no base pipeline named in source — you must specify"
+        in render.to_field_table(prep)
+    )
 
 
 def test_base_pipeline_outer_deferred_no_version_row():
@@ -574,7 +583,7 @@ def _one_field_spec(reason_field: ProvenancedField) -> Preprocessing:
 
 
 def test_protocol_each_base_reason_renders_its_line():
-    # 4. each of the 6 known base reasons -> its exact _REASON_LINE callout.
+    # 4. each of the 9 known base reasons -> its exact _REASON_LINE callout.
     expected = {
         "not_stated_in_text": "not reported in source — you must specify",
         "no_base_pipeline_named": "no base pipeline named in source — you must specify",
@@ -582,9 +591,22 @@ def test_protocol_each_base_reason_renders_its_line():
         "value_not_in_literal": (
             "reported in source but not resolvable to a controlled value — map manually"
         ),
-        "not_targeted_by_mvp": "not assessed by current extractor",
+        "not_targeted_by_mvp": "not examined by the extractor — check the source yourself",
         "extraction_quote_unresolved": (
             "value present in source but span unresolved (extractor limitation)"
+        ),
+        # These three fire before/instead of quote validation, so they describe the
+        # extractor and assert nothing about the manuscript.
+        "value_not_numeric": (
+            "extractor returned a non-numeric value for this field — enter manually"
+        ),
+        "extraction_quote_missing": (
+            "extractor returned a value with no supporting quote — unverifiable, "
+            "check the source yourself"
+        ),
+        "deferral_quote_unresolved": (
+            "extractor reported a deferral to another source but could not locate the "
+            "deferring sentence — check the source yourself"
         ),
     }
     for reason, line in expected.items():
@@ -608,6 +630,107 @@ def test_protocol_unknown_reason_is_unclassified_not_a_source_gap():
     assert "1 unclassified" in out
     assert "not reported in source" not in out
     assert "unmappable to controlled vocabulary" not in out
+
+
+#: Reason bases that provably cannot reach a gap callout: each is paired with a
+#: DeferredToCitation extraction, so _display_state routes the row to DEFERRED_TO_CITATION
+#: and neither _fmt_field_text nor _protocol_main ever consults the reason tables.
+_UNREACHABLE_REASON_BASES = {
+    "deferred_to_citation",  # extractor.py:472, :734
+    "citation_shaped_name_value_unsupported",  # extractor.py:783
+}
+
+
+def _producible_reason_bases(path: Path) -> tuple[set[str], list[str]]:
+    """Base LeftMissing.reasons a module can produce, and any it builds non-literally.
+
+    Resolves the two ways a reason reaches a ProvenancedField — the 3rd positional argument
+    of ``_missing_pf(...)`` and the ``reason=`` keyword of ``LeftMissing(...)`` — through
+    string constants, f-string prefixes, and module/function locals bound to either.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    def literal(node: ast.AST, consts: dict[str, str]) -> str | None:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return node.value
+        if isinstance(node, ast.JoinedStr) and node.values:  # f"base:{suffix}" -> "base:"
+            head = node.values[0]
+            if isinstance(head, ast.Constant) and isinstance(head.value, str):
+                return head.value
+        if isinstance(node, ast.Name):
+            return consts.get(node.id)
+        return None
+
+    consts: dict[str, str] = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            lit = literal(node.value, {})
+            if lit is not None:
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        consts[target.id] = lit
+
+    bases: set[str] = set()
+    dynamic: list[str] = []
+    for node in ast.walk(tree):
+        if not (isinstance(node, ast.Call) and isinstance(node.func, ast.Name)):
+            continue
+        args: list[ast.AST] = []
+        if node.func.id == "_missing_pf" and len(node.args) >= 3:
+            args.append(node.args[2])
+        elif node.func.id == "LeftMissing":
+            args += [kw.value for kw in node.keywords if kw.arg == "reason"]
+        for arg in args:
+            lit = literal(arg, consts)
+            if lit is None:
+                dynamic.append(f"{path.name}:{getattr(arg, 'lineno', '?')}")
+            else:
+                bases.add(lit.split(":", 1)[0])
+    return bases, dynamic
+
+
+def test_every_producible_reason_base_is_mapped() -> None:
+    """No reason this codebase produces may fall through to the ``unclassified`` fallback.
+
+    Regression guard for Track A item D. ``value_not_numeric``, ``extraction_quote_missing``
+    and ``deferral_quote_unresolved`` were live producers present in NEITHER reason table, so
+    a real report could render ``unspecified (reason: value_not_numeric)`` — a raw internal
+    token in author-facing output — and count the row as ``unclassified`` in the completeness
+    header. Enumerating the producers, rather than pinning a hand-written list, means a newly
+    added reason fails here until it is either mapped or documented as unreachable.
+    """
+    from fmri_repro.spec import migrations
+
+    sources = [
+        Path(render.__file__).with_name("extractor.py"),
+        Path(migrations.__file__),
+    ]
+    bases: set[str] = set()
+    dynamic: list[str] = []
+    for src in sources:
+        assert src.is_file(), f"reason source moved: {src}"
+        found, unresolved = _producible_reason_bases(src)
+        bases |= found
+        dynamic += unresolved
+
+    assert not dynamic, (
+        f"reason argument(s) this scan cannot resolve: {dynamic}. The guard is only as good "
+        "as its enumeration — extend _producible_reason_bases rather than ignoring these."
+    )
+    # the scan really does reach all three producer shapes (literal, f-string, local)
+    for expected in ("not_stated_in_text", "not_targeted_by_mvp", "deferral_quote_unresolved"):
+        assert expected in bases, f"scan missed a known producer: {expected}"
+
+    unmapped = sorted(
+        b
+        for b in bases - _UNREACHABLE_REASON_BASES
+        if b not in render._REASON_BUCKET or b not in render._REASON_LINE
+    )
+    assert not unmapped, (
+        f"reason base(s) missing from _REASON_BUCKET and/or _REASON_LINE: {unmapped}. "
+        "An unmapped reason renders as 'unspecified (reason: ...)' in author-facing output "
+        "and is counted as 'unclassified'. Add an entry to BOTH tables in render.py."
+    )
 
 
 def test_protocol_header_bucket_math_and_not_covered_never_source():
@@ -736,22 +859,22 @@ def test_field_views_are_not_reports() -> None:
         assert "COBIDAS D.3 coverage" not in out
 
 
-@pytest.mark.xfail(
-    strict=True,
-    reason="Commit 2 (Track A item D). to_field_table's MISSING branch returns a bare "
-    "'not reported' consulting no reason, so a field the extractor never targeted reads as "
-    "a REPORTING gap in the field view while to_report calls it 'not assessed by current "
-    "extractor'. Flip to a passing assertion when _REASON_LINE routing lands.",
-)
 def test_field_view_characterises_an_untargeted_field_like_the_report() -> None:
-    """The two surfaces must not contradict each other about the same field."""
+    """The surfaces must not contradict each other about the same field.
+
+    Was xfail(strict=True) until Track A item D routed the field views' MISSING branch
+    through _REASON_LINE. Both field views are covered, not just to_field_table: the
+    to_field_bullets conflation lived in _SHORT_LABEL and was a separate code path.
+    """
     prep = _one_field_spec(_missing_reason("space", "not_targeted_by_mvp"))
-    # the report already characterises it correctly
-    assert "not assessed by current extractor" in render.to_report(prep)
-    # the field view must agree rather than calling it a reporting gap
-    field_view = render.to_field_table(prep)
-    assert "not assessed by current extractor" in field_view
-    assert "space: not reported" not in field_view
+    line = "not examined by the extractor — check the source yourself"
+    assert line in render.to_report(prep)
+    for view in (render.to_field_table(prep), render.to_field_bullets(prep)):
+        assert line in view
+        # the field the extractor never targeted is NOT called a reporting gap...
+        assert "space: not reported" not in view
+        # ...and is not silently dropped either (the harm A2 prevents, relocated)
+        assert "space" in view
 
 
 def test_cobidas_coverage_deterministic() -> None:
@@ -810,9 +933,9 @@ def test_protocol_faithful_chen_fixture():
         "Completeness: 5 specified in source · 3 not reported in source · "
         "1 reported but unmappable to controlled vocabulary · 8 not covered by extractor"
     ) in out
-    # Field-level callouts use "not assessed by current extractor"; the COBIDAS section uses
+    # Field-level callouts use "not examined by the extractor"; the COBIDAS section uses
     # distinct row-level wording, so the plain global count is exactly the 8 per-field callouts.
-    assert out.count("not assessed by current extractor") == 8  # coverage gap, not absence
+    assert out.count("not examined by the extractor") == 8  # coverage gap, not absence
     assert out.count("map manually") == 1  # value_not_in_literal
     # multi-step pipeline order preserved
     assert (

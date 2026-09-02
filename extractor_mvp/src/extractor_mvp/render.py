@@ -103,13 +103,15 @@ _STATE_ORDER: tuple[str, ...] = (
     BASE_NOT_APPLICABLE,
 )
 
-#: Condensed labels for to_field_bullets.
+#: Condensed labels for to_field_bullets, for the states that carry a value or a
+#: citation. The two GAP states are deliberately ABSENT: a gap row's label is its
+#: :data:`_REASON_LINE` callout (via :func:`_short_label`), because a fixed label
+#: cannot distinguish "the paper omitted this" from "the extractor never looked".
+#: Re-adding a MISSING_FROM_PAPER / LEFT_MISSING key here reintroduces that conflation.
 _SHORT_LABEL: dict[str, str] = {
     EXTRACTED: "extracted",
     INFERRED_DEFAULT: "inferred",
     DEFERRED_TO_CITATION: "deferred",
-    MISSING_FROM_PAPER: "not reported",
-    LEFT_MISSING: "not inferred",
     BASE_NOT_APPLICABLE: "not applicable (from-scratch)",
 }
 
@@ -339,10 +341,14 @@ def _fmt_field_text(row: FieldRow) -> str:
     if row.state == DEFERRED_TO_CITATION:
         refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
         return f"deferred to {refs}"
-    if row.state == MISSING_FROM_PAPER:
-        return "not reported"
-    if row.state == LEFT_MISSING:
-        return "not inferred (no basis)"
+    if row.state in (MISSING_FROM_PAPER, LEFT_MISSING):
+        # CHARACTERISE the absence, never label it. A bare "not reported" is a claim about
+        # the AUTHOR'S MANUSCRIPT, and is false for every field the extractor never targeted
+        # (>=19 of 27 rows on any paper — _assemble hardcodes ``not_targeted_by_mvp`` for
+        # those). Same table, same wording as :func:`_protocol_main`, so the surfaces cannot
+        # contradict each other about the same field. (LEFT_MISSING display is defensive —
+        # unreachable via flatten() — but treated identically, as in the protocol view.)
+        return _reason_detail(row)
     if row.state == BASE_NOT_APPLICABLE:
         return "not applicable (from-scratch)"
     return ""
@@ -416,7 +422,7 @@ def to_field_bullets(preprocessing: Preprocessing) -> str:
         if r.group != current_group:
             current_group = r.group
             lines.append(f"**{current_group}**")
-        label = _SHORT_LABEL.get(r.state, r.state)
+        label = _short_label(r)
         lines.append(f"- {r.path}: {label}{_fmt_value_suffix(r)}")
     return "\n".join(lines) + "\n"
 
@@ -452,6 +458,11 @@ _REASON_BUCKET: dict[str, str] = {
     "not_targeted_by_mvp": "not_covered",  # mirrors batch.py _IGNORE_REASON
     "extraction_quote_unresolved": "not_covered",
     "field_not_in_schema_version": "not_covered",  # field absent when the source doc was written
+    # Previously unmapped, so they fell to ``unclassified`` and leaked their raw internal
+    # token into author-facing output. All three are live producers in extractor.py.
+    "value_not_numeric": "unmappable",  # same shape as value_not_in_literal: uncoercible to type
+    "extraction_quote_missing": "not_covered",
+    "deferral_quote_unresolved": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -462,11 +473,24 @@ _REASON_LINE: dict[str, str] = {
     "value_not_in_literal": (
         "reported in source but not resolvable to a controlled value — map manually"
     ),
-    "not_targeted_by_mvp": "not assessed by current extractor",
+    "not_targeted_by_mvp": "not examined by the extractor — check the source yourself",
     "extraction_quote_unresolved": "value present in source but span unresolved (extractor limitation)",
     "field_not_in_schema_version": (
         "field did not exist in the schema version this document was written under "
         "(added by a later version; forward-migrated)"
+    ),
+    # These three fire BEFORE (or instead of) quote validation, so nothing has confirmed the
+    # value is grounded in the source. They therefore describe what the EXTRACTOR did, and
+    # assert nothing about what the manuscript reports. See the semantics note in
+    # tests/test_render.py::test_every_producible_reason_base_is_mapped.
+    "value_not_numeric": "extractor returned a non-numeric value for this field — enter manually",
+    "extraction_quote_missing": (
+        "extractor returned a value with no supporting quote — unverifiable, "
+        "check the source yourself"
+    ),
+    "deferral_quote_unresolved": (
+        "extractor reported a deferral to another source but could not locate the "
+        "deferring sentence — check the source yourself"
     ),
 }
 
@@ -479,10 +503,38 @@ _BUCKET_HEADER: tuple[tuple[str, str], ...] = (
 )
 
 
+def _reason_base(row: FieldRow) -> str:
+    """The BASE LeftMissing.reason for a gap row (suffix after ``:`` dropped)."""
+    return (row.left_missing_reason or "").split(":", 1)[0]
+
+
 def _gap_bucket(row: FieldRow) -> str:
     """Bucket a MISSING/LEFT_MISSING row by its base LeftMissing.reason."""
-    base = (row.left_missing_reason or "").split(":", 1)[0]
-    return _REASON_BUCKET.get(base, "unclassified")
+    return _REASON_BUCKET.get(_reason_base(row), "unclassified")
+
+
+def _reason_detail(row: FieldRow) -> str:
+    """The per-field callout for a gap row — THE single source of gap wording.
+
+    Every surface that renders an absence routes through here, so no two surfaces can
+    describe the same field differently. An unmapped base reason falls back to a literal
+    ``unspecified (reason: ...)`` rather than being silently absorbed into a source-absence
+    claim; ``test_every_producible_reason_base_is_mapped`` keeps that fallback unreachable
+    for reasons this codebase actually produces.
+    """
+    base = _reason_base(row)
+    return _REASON_LINE.get(base, f"unspecified (reason: {base})")
+
+
+def _short_label(row: FieldRow) -> str:
+    """Condensed bullet label for :func:`to_field_bullets`.
+
+    Gap rows characterise their reason (same wording as every other surface); all other
+    states use their fixed :data:`_SHORT_LABEL`.
+    """
+    if row.state in (MISSING_FROM_PAPER, LEFT_MISSING):
+        return _reason_detail(row)
+    return _SHORT_LABEL.get(row.state, row.state)
 
 
 def _fmt_basis_note(row: FieldRow) -> str:
@@ -536,9 +588,7 @@ def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> 
     if st in (MISSING_FROM_PAPER, LEFT_MISSING):
         # Reason-partitioned callout: source-absence vs extractor-coverage. (LEFT_MISSING
         # display is defensive — unreachable via flatten() — but treated identically.)
-        base = (row.left_missing_reason or "").split(":", 1)[0]
-        detail = _REASON_LINE.get(base, f"unspecified (reason: {base})")
-        return f"{label}: {detail}"
+        return f"{label}: {_reason_detail(row)}"
     if st == BASE_NOT_APPLICABLE:
         return f"{label}: built from scratch (no named base pipeline)"
     return label

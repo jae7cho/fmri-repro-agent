@@ -62,12 +62,12 @@ def test_assemble_new_steps_fields_are_untargeted():
 
 def test_protocol_renders_new_steps_generically():
     # No emitter change: to_protocol walks steps generically, so the new steps render
-    # with their cobidas_row group tags and the "not assessed by current extractor" line.
+    # with their cobidas_row group tags and the "not examined by the extractor" line.
     out = to_protocol(_assembled())
     for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
         assert kind in out
-    # Field-level callouts use "not assessed by current extractor"; the COBIDAS section uses
+    # Field-level callouts use "not examined by the extractor"; the COBIDAS section uses
     # distinct row-level wording ("no fields assessed ..."), so a plain global count is exact.
     # 8 pre-existing untargeted + 4 anatomical (brain_extraction 2, segmentation 2)
     # + 7 nuisance_regression = 19.
-    assert out.count("not assessed by current extractor") == 19
+    assert out.count("not examined by the extractor") == 19
