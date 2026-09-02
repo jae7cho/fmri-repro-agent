@@ -784,8 +784,13 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
         return "" if rc.covered_by_extractor else "  (no fields assessed by current extractor)"
 
     # 1. Unconditional violation: only the Software row can appear here.
+    # The coverage condition is the SAME one the header requires at the `violation` line
+    # above (mand_not_reported is a subset of mand_assessed, i.e. covered_by_extractor).
+    # Without it this branch asserts non-compliance from a row the tool could not assess —
+    # which is inference from absence of evidence, and it fired on real papers: see
+    # cobidas._software_coverage for the NotApplicable two-producer case.
     software = by_id["software"]
-    if not software.addressed:
+    if software.covered_by_extractor and not software.addressed:
         name = _base_pipeline_name(preprocessing)
         named = f"Pipeline named: {name}. " if name else ""
         if version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":

@@ -877,6 +877,49 @@ def test_field_view_characterises_an_untargeted_field_like_the_report() -> None:
         assert "space" in view
 
 
+def test_software_violation_surfaces_agree_for_every_base_pipeline_state() -> None:
+    """Header and body must make the SAME claim about the Software row (Track A item A3).
+
+    The header guarded the unconditional-violation flag on ``covered_by_extractor``; the body
+    guarded only on ``addressed``, so for a base_pipeline the extractor could not assess, one
+    report contradicted itself — the header counting Software as unassessed while the body
+    accused the author of an unconditional COBIDAS violation. Both now require coverage.
+    """
+
+    def _prep(bp: object) -> Preprocessing:
+        return Preprocessing(applies_to=_applies_to(), base_pipeline=bp, steps=[_one_step()])
+
+    deferred = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=DeferredToCitation(
+            deferrals=[Deferral(ref="Glasser 2013", span=_span(), target_kind="pipeline")],
+            searched_terms=["pipeline"],
+            sections_searched=["Methods"],
+        ),
+        inference=LeftMissing(reason="deferred_to_citation"),
+    )
+    none_named = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=MissingFromPaper(searched_terms=["pipeline"], sections_searched=["Methods"]),
+        inference=LeftMissing(reason="no_base_pipeline_named"),
+    )
+    cases = (
+        # a cited pipeline IS reported -> no violation on either surface
+        ("deferred to a citation", deferred, False),
+        # searched and nothing named -> a real, citable violation on both surfaces
+        ("searched, none named", none_named, True),
+        # NotApplicable carries two opposite meanings -> the tool cannot tell -> silence
+        ("NotApplicable", NotApplicable(), False),
+    )
+    for label, bp, expect_violation in cases:
+        out = render.to_cobidas_coverage(_prep(bp))
+        header = out.split("###")[0]
+        in_header = "Software — unconditional violation" in header
+        in_body = "NOT REPORTED — COBIDAS D.3 requires" in out
+        assert in_header == in_body, f"{label}: header says {in_header}, body says {in_body}"
+        assert in_body is expect_violation, label
+
+
 def test_cobidas_coverage_deterministic() -> None:
     prep = _synthetic_preprocessing()
     assert render.to_cobidas_coverage(prep) == render.to_cobidas_coverage(prep)

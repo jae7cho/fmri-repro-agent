@@ -139,6 +139,48 @@ def _row_covered_by_extractor(field_rows: list[Any]) -> bool:  # list[render.Fie
     return any(r.left_missing_reason != _UNTARGETED_REASON for r in field_rows)
 
 
+def _software_coverage(base_row: Any, version_extraction_status: str | None) -> tuple[bool, bool]:
+    """``(addressed, covered_by_extractor)`` for the unconditional Software row.
+
+    The Software row maps to ``base_pipeline`` rather than a step kind, so it cannot use
+    :func:`_row_covered_by_extractor`. It must still obey the SAME rule as the other 15 rows:
+    a field the extractor targeted and found nothing for is COVERED, and renders as a claim
+    about the paper; a field it never targeted is not.
+
+    **addressed — did the PAPER answer the software question?**
+    When a ``base_pipeline.version`` row exists (the outer arm resolved a ``PipelineRef``),
+    the version's own extraction status answers it. When no version row exists, the
+    ``base_pipeline`` row's own status answers it: ``DEFERRED_TO_CITATION`` ADDRESSES the row
+    — per :data:`_ADDRESSING_STATUSES`, a deferral is a report — and ``MISSING_FROM_PAPER``
+    does not. These are two genuinely different questions; do NOT collapse them. Keying only
+    off the version row (as this did before) made a paper that CITES its pipeline unaddressed,
+    so the report accused it of an unconditional COBIDAS violation. That is the
+    absence-of-evidence conflation this project exists to avoid, and it had shipped.
+
+    **covered — did the EXTRACTOR look?**
+    True whenever a ``base_pipeline`` row exists with a targeted reason. ``base_pipeline`` is
+    always targeted (``_build_base_pipeline`` runs on every paper), so the untargeted case is
+    UNREACHABLE today; its branch below exists only so the rule reads completely, and it is
+    pinned as row E in ``test_software_coverage_over_every_base_pipeline_state``.
+
+    The one False case is ``NotApplicable``, and it is deliberate, not an oversight: do not
+    "fix" it into a violation. ``NotApplicable`` has TWO producers meaning opposite things —
+    a genuine from-scratch pipeline (render.flatten's reading) and
+    ``fmri_repro.kb_client.base_pipeline`` (a pipeline the paper DID name that ``recognize()``
+    did not know, with an uncertain outer extraction). The value cannot distinguish them, so
+    the tool cannot tell what the paper said, and silence is the honest output. Deciding
+    otherwise would encode a coin-flip into an accusation against an author. Disambiguating
+    the two producers is filed as deferred work.
+    """
+    if base_row is None or base_row.extraction_status is None:
+        return False, False  # NotApplicable (or no base_pipeline row at all)
+    if base_row.left_missing_reason == _UNTARGETED_REASON:
+        return False, False  # unreachable today; kept so the rule reads completely
+    if version_extraction_status is not None:
+        return version_extraction_status == "EXTRACTED", True
+    return base_row.extraction_status in _ADDRESSING_STATUSES, True
+
+
 def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> list[RowCoverage]:
     """Assess every D.3 row from flattened ``FieldRow`` rows + the base_pipeline.version
     extraction status. Extraction arm ONLY — an INFERRED_DEFAULT value is not a *report*.
@@ -150,11 +192,14 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
     for r in rows:
         by_kind.setdefault(r.group, []).append(r)
 
+    base_row = next(
+        (r for r in by_kind.get("base_pipeline", []) if r.path == "base_pipeline"), None
+    )
+
     out: list[RowCoverage] = []
     for cr in COBIDAS_D3_ROWS:
         if cr.row_id == "software":
-            addressed = version_extraction_status == "EXTRACTED"
-            covered = version_extraction_status is not None  # the extractor targets version
+            addressed, covered = _software_coverage(base_row, version_extraction_status)
         else:
             mapped = [r for k in cr.spec_kinds for r in by_kind.get(k, [])]
             addressed = any(r.extraction_status in _ADDRESSING_STATUSES for r in mapped)

@@ -21,6 +21,21 @@ def _fr(group: str, extraction_status: str, reason: str | None = None) -> FieldR
     )
 
 
+def _bp_row(extraction_status: str | None, reason: str | None = None) -> FieldRow:
+    """The OUTER base_pipeline row exactly as ``flatten()`` emits it.
+
+    ``path`` must be literally ``base_pipeline`` — the ``base_pipeline.version`` row shares
+    the same ``group``, so the software rule selects on path.
+    """
+    return FieldRow(
+        path="base_pipeline",
+        group="base_pipeline",
+        state=extraction_status or "BASE_NOT_APPLICABLE",
+        extraction_status=extraction_status,
+        left_missing_reason=reason,
+    )
+
+
 def _by_id(rows: list[RowCoverage]) -> dict[str, RowCoverage]:
     return {rc.row.row_id: rc for rc in rows}
 
@@ -91,11 +106,91 @@ def test_intersubject_addressed_via_either_kind() -> None:
 # --- software row special case ----------------------------------------------
 
 
-def test_software_addressed_iff_version_extracted() -> None:
-    assert _by_id(assess_coverage([], "EXTRACTED"))["software"].addressed is True
-    # date_inferred_version leaves the extraction arm MISSING -> NOT addressed (a violation).
-    assert _by_id(assess_coverage([], "MISSING_FROM_PAPER"))["software"].addressed is False
-    assert _by_id(assess_coverage([], None))["software"].addressed is False
+def test_software_coverage_over_every_base_pipeline_state() -> None:
+    """(covered, addressed) for the Software row under every base_pipeline state, A-F.
+
+    REPLACES ``test_software_addressed_iff_version_extracted``, which asserted over
+    ``assess_coverage([], "EXTRACTED")`` — no base_pipeline row, yet a version status. That
+    input cannot occur: ``flatten()`` emits a version row only when the outer arm resolved a
+    PipelineRef, so a version status always implies a base_pipeline row. The old test was
+    pinning behaviour for an impossible state, which is why it did not catch the deferral bug.
+
+    ``addressed`` answers "did the PAPER answer the software question?" and has two arms —
+    the version row's status when one exists, else the base_pipeline row's own status.
+    ``covered`` answers "did the EXTRACTOR look?".
+    """
+    cases = [
+        # label, base_pipeline row, version status, covered, addressed
+        ("A extracted + version reported", _bp_row("EXTRACTED"), "EXTRACTED", True, True),
+        ("B extracted, version missing", _bp_row("EXTRACTED"), "MISSING_FROM_PAPER", True, False),
+        (
+            "C searched, none named",
+            _bp_row("MISSING_FROM_PAPER", "no_base_pipeline_named"),
+            None,
+            True,
+            False,
+        ),
+        (
+            "D deferred to citation",
+            _bp_row("DEFERRED_TO_CITATION", "deferred_to_citation"),
+            None,
+            True,
+            True,
+        ),
+        (
+            "E untargeted (unreachable today)",
+            _bp_row("MISSING_FROM_PAPER", "not_targeted_by_mvp"),
+            None,
+            False,
+            False,
+        ),
+        ("F NotApplicable", _bp_row(None), None, False, False),
+    ]
+    for label, bp, ver, covered, addressed in cases:
+        rc = _by_id(assess_coverage([bp], ver))["software"]
+        assert rc.covered_by_extractor is covered, f"{label}: covered_by_extractor"
+        assert rc.addressed is addressed, f"{label}: addressed"
+
+
+def test_deferred_pipeline_is_not_a_software_violation() -> None:
+    """A paper that CITES its pipeline has reported it — ``_ADDRESSING_STATUSES`` says so.
+
+    Regression guard for shipped behaviour: keying software coverage off the version row
+    alone left a deferral unaddressed, so the report accused a citing paper of an
+    unconditional COBIDAS violation. It fired on real corpus papers (braun_2015, whose span
+    reads "preprocessed according to standard protocols as previously described in refs. 47
+    and 48"; also viduarre_2017).
+    """
+    rc = _by_id(assess_coverage([_bp_row("DEFERRED_TO_CITATION", "deferred_to_citation")], None))[
+        "software"
+    ]
+    assert rc.addressed is True and rc.covered_by_extractor is True
+
+
+def test_searched_but_none_named_is_covered_like_any_other_row() -> None:
+    """The whole point of the fix: software obeys the rule the other 15 rows already follow.
+
+    A field the extractor targeted and found nothing for is COVERED (compare
+    ``test_targeted_missing_field_is_covered_by_extractor``), so it renders as a claim about
+    the paper rather than disappearing into the tool-gap bucket.
+    """
+    rc = _by_id(assess_coverage([_bp_row("MISSING_FROM_PAPER", "no_base_pipeline_named")], None))[
+        "software"
+    ]
+    assert rc.covered_by_extractor is True and rc.addressed is False
+
+
+def test_registry_denominator_is_static_not_steps_present() -> None:
+    """``assess_coverage`` returns all 16 D.3 rows whatever the spec contains.
+
+    This is the property the cobidas.py fence protected: the denominator comes from the
+    STANDARD, not from the steps present. Computed over present steps it would measure tool
+    coverage and report it as compliance.
+    """
+    for rows in ([], [_fr("spatial_normalization", "EXTRACTED")], [_bp_row("EXTRACTED")]):
+        cov = assess_coverage(rows, None)
+        assert len(cov) == 16
+        assert [rc.row.row_id for rc in cov] == [r.row_id for r in COBIDAS_D3_ROWS]
 
 
 # --- covered-by-extractor (tool gap vs source gap) --------------------------
