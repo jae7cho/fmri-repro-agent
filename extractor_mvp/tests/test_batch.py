@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from types import SimpleNamespace
@@ -90,6 +91,72 @@ def test_run_batch_end_to_end(monkeypatch, tmp_path: Path):
     assert spans, "expected at least one extracted span"
     for sp in spans:
         assert "span_in_slice" in sp and "span_in_full_paper" in sp
+
+
+def test_run_batch_writes_a_completeness_report_per_paper(monkeypatch, tmp_path: Path):
+    """A1: run_batch writes a rendered report alongside papers/{paper_id}.json.
+
+    Pins the two properties that make the report safe rather than merely present: it is a
+    SANCTIONED report surface (to_report, so the catalog-driven coverage section is stapled
+    on and the D.3 denominator comes from the standard, not the steps present), and its
+    per-row wording characterises absence rather than labelling every gap "not reported".
+    """
+    _patch(monkeypatch)
+    config = BatchConfig(
+        model="m",
+        output_dir=tmp_path / "out",
+        papers=[PdfPaper(paper_id="p1", path=tmp_path / "p1.pdf")],
+    )
+    results = batch.run_batch(config)
+    r = results[0]
+    assert r.render_error is None
+
+    report_path = config.output_dir / "papers" / "p1.md"
+    assert report_path.is_file(), "no report written alongside the per-paper JSON"
+    report = report_path.read_text()
+    assert report == r.report
+
+    # a REPORT, not a field view: the coverage section and the static 16-row denominator
+    assert "COBIDAS D.3 coverage (preprocessing)" in report
+    assert "Mandatory rows: 14" in report
+    assert "p1" in report  # source is threaded through
+    # D: untargeted rows are characterised, never labelled as the author's omission
+    assert "not examined by the extractor" in report
+    assert ": not reported\n" not in report
+
+
+def test_render_failure_keeps_the_extraction(monkeypatch, tmp_path: Path):
+    """A report failure must not discard a paid-for extraction.
+
+    to_report is pure and well-tested, but it runs inside _process_paper (the only place the
+    live MethodsSlice exists), which is BEFORE run_batch writes the per-paper JSON. An escaping
+    exception would throw away the LLM call. It is recorded and printed instead of swallowed.
+    """
+    _patch(monkeypatch)
+
+    def _boom(*_args: Any, **_kwargs: Any) -> str:
+        raise RuntimeError("render exploded")
+
+    monkeypatch.setattr(batch, "to_report", _boom)
+    config = BatchConfig(
+        model="m",
+        output_dir=tmp_path / "out",
+        papers=[PdfPaper(paper_id="p1", path=tmp_path / "p1.pdf")],
+    )
+    results = batch.run_batch(config)
+    r = results[0]
+
+    assert r.status == "success" and r.n_extracted == 2  # extraction preserved
+    assert r.report is None
+    assert "RuntimeError: render exploded" in (r.render_error or "")
+    assert (config.output_dir / "papers" / "p1.json").is_file()  # ...and written
+    assert not (config.output_dir / "papers" / "p1.md").exists()  # no half-written report
+
+    # ...and it reaches the DURABLE record, not only stderr: a RENDER-FAIL line printed
+    # during a 19-paper run is scrollback, but summary.csv/.md are what gets read after.
+    rows = list(csv.DictReader((config.output_dir / "summary.csv").open(encoding="utf-8")))
+    assert "RuntimeError: render exploded" in rows[0]["render_error"]
+    assert "RuntimeError: render exploded" in (config.output_dir / "summary.md").read_text()
 
 
 def test_run_batch_pdf_parse_failure(monkeypatch, tmp_path: Path):

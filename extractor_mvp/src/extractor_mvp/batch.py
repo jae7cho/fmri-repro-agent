@@ -31,6 +31,7 @@ from extractor_mvp.extractor import ResolutionRecord, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
+from extractor_mvp.render import to_report
 
 if TYPE_CHECKING:
     from extractor_mvp.citation_resolver import CitationResolver
@@ -57,6 +58,11 @@ SUMMARY_COLUMNS = [
     "n_missing_quote_unresolved",
     "n_value_not_in_literal",
     "error_message",
+    # A render failure must reach the DURABLE record, not just stderr. On a 19-paper run a
+    # RENDER-FAIL line exists only in scrollback; summary.csv/.md are what gets read after.
+    # Safe to append: the one external reader (score_base_pipeline_tier_a.py) uses DictReader,
+    # and multi_acquisition_batch.py carries its own separate column list.
+    "render_error",
 ]
 
 
@@ -79,6 +85,11 @@ class PaperResult:
     n_value_not_in_literal: int
     extraction_json: dict[str, Any] | None
     error_message: str | None
+    #: The rendered COBIDAS completeness report (to_report). None on the error paths, and
+    #: None if rendering itself failed — see ``render_error``, which is then set. Defaulted
+    #: so the two early-return constructions above stay positional and unchanged.
+    report: str | None = None
+    render_error: str | None = None
 
 
 def _count_distinct_datasets(text: str) -> int:
@@ -210,6 +221,21 @@ def _process_paper(
             f"{type(exc).__name__}: {exc}",
         )
 
+    # Rendered HERE, not in run_batch: to_report's suspicious-methods warning needs the live
+    # MethodsSlice, and extraction_json["methods"] carries only its metadata — not `text` — so
+    # run_batch cannot rebuild one. Rendering there would silently drop the warning on exactly
+    # the papers most likely to be wrong.
+    #
+    # Narrowly guarded: to_report is pure and deterministic, but an exception escaping here
+    # would discard a paid-for extraction before run_batch writes it. The failure is recorded
+    # and printed, never swallowed.
+    report: str | None = None
+    render_error: str | None = None
+    try:
+        report = to_report(preprocessing, source=paper_id, methods_slice=methods)
+    except Exception as exc:
+        render_error = f"{type(exc).__name__}: {exc}"
+
     counts = _tally(preprocessing)
     prep_dump = preprocessing.model_dump(mode="json")
     _translate_spans(prep_dump, methods.start_offset)
@@ -254,6 +280,8 @@ def _process_paper(
         counts["n_value_not_in_literal"],
         extraction_json,
         None,
+        report,
+        render_error,
     )
 
 
@@ -288,6 +316,16 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
                     default=str,
                 ),
                 encoding="utf-8",
+            )
+        # The completeness report, alongside papers/{paper_id}.json. Written AFTER the JSON so
+        # a report write cannot cost the extraction it describes.
+        if result.report is not None:
+            (papers_dir / f"{paper.paper_id}.md").write_text(result.report, encoding="utf-8")
+        elif result.render_error is not None:
+            print(
+                f"  RENDER-FAIL {paper.paper_id}: {result.render_error} "
+                "(extraction kept; no report written)",
+                file=sys.stderr,
             )
         # loud on failure, quiet on success
         if result.status in ("pdf_parse_failed", "extraction_failed"):
