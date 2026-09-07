@@ -27,6 +27,13 @@
 
 **The citable claim:** 0/19 corpus papers naming a base pipeline report its version (all `version_deferred_to_kb`). A universal, unconditional, verifiable COBIDAS failure on the standard's most basic item — and the reason `date_inferred_version` exists at all.
 
+> **Retracted 2026-09-07.** The claim above is false and is retained as superseded text
+> rather than rewritten. It restated a hardcoded constant, not a measurement. At least three
+> corpus papers report a separate version, named from the papers themselves at
+> `docs/ground-truth-protocol.md:397-398`. See `docs/findings/cobidas-version-criterion.md`
+> for the criterion (OHBM COBIDAS Report v1.0 §4.3, p. 10), the retraction, and why
+> `ground-truth-protocol.md:393-401`'s stated mechanism no longer describes HEAD.
+
 ---
 
 ## 1. Why `_assemble` must NOT change
