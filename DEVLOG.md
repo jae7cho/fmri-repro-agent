@@ -1295,3 +1295,154 @@ at all is unestablished.
 Commits: d90507b (render — to_report as the only report surface; field views renamed and documented as
 partial; coverage section pinned by a surface-parametrized test), committed 2026-08-30. This DEVLOG entry
 committed separately, last, on 2026-09-01.
+
+## 2026-09-07
+
+Hours: to 19:40 ET. The start is not recorded; the earliest evidence is a `.git` mtime of
+12:48.
+
+**A1's acceptance run, and a gate that could not fail in the direction that mattered.** The
+batch had never been run since `214b55c` added the per-paper report. Confirmed two ways before
+spending anything: no `papers/*.md` anywhere in the tree, and no `render_error` column in any
+on-disk `summary.csv` while `batch.py:65` defines one. The run
+(`extractor_mvp/configs/batch_a1_acceptance_config.yaml`, 19 papers, model and paper list
+identical to the v050 draws) wrote 19 `.md` and 19 `.json`, `render_error` empty on all 19 rows,
+and 19 of 19 papers matched a partition derived from this run's own JSONs.
+
+The acceptance test as I first specified it could not fail on the failure mode it existed to
+catch. Both A3 criteria were `grep -c ... == 0`, so a regression suppressing the violation
+section for *every* paper would have passed both, because the fix's whole content is conditional
+suppression. The repair was the complement: assert the full partition, with the five
+`MISSING_FROM_PAPER` papers as a negative control. All five emitted the section, and that is
+what makes braun's and viduarre's absence readable as conditional rather than global. The two
+greps are one signal and were reported as one: `render.py:753` and `:793` evaluate the same
+predicate and fall silent together.
+
+Defect D passed on all 19, with `not examined by the extractor` appearing 19 times per report
+and `: not reported$` zero times corpus-wide. `liu_2005` came back `methods_not_found` with
+`fallback_full_text`, and its report carries the slice warning, which incidentally proves
+`214b55c`'s stated reason for rendering inside `_process_paper` where the `MethodsSlice` is
+live.
+
+**The verification corrective, second half.** The rule adopted on 08-27 was that a proposal
+about state carries the verification of that state. It needs its other half stated: **a
+verification that contradicts the belief it was testing halts the work.** Either the check is
+wrong or the belief is, and both need resolving before the next action.
+
+The instance: moving 22 batch configs, the agent ran a check for relative paths, got 22 of 22
+immediately after asserting all paths were absolute, and proceeded into the move anyway. The
+regex was wrong. But one config, `config_diag.yaml`, genuinely did have a relative `output_dir`,
+and after the move it would have written run output into the tracked `configs/` tree. A 22-of-22
+result should have been implausible on its face given the assertion it contradicted. The move
+happened to be safe; that was luck, not method.
+
+The asymmetry is the finding. Three of the agent's errors this session are instances: a title
+line cited as `render.py:626` when it is 629, a pointer in `TRACK_A_SCOPE.md` to a `_tally`
+item in a findings doc that does not contain one, and the 22/22 case. The first two were caught
+by verification at the point of assertion and never reached a commit. The third was not caught,
+because the contradicting result did not stop anything. Verification catches errors where it is
+run; the rule has to say what a contradiction obliges.
+
+**Sixth and seventh assert-from-a-partial-view instances**, both the agent's, both its own prior
+output rather than a file, both caught before landing.
+
+**Four predicate-from-consumer errors, three mine and one the agent's, against the same
+function.** The split matters. Two parties independently making the same error against
+`_software_coverage` is evidence about the code, not about either party.
+
+- Mine: predicted the section partition from `render.py:793` alone, without reading
+  `_software_coverage`. The predicted membership was exactly inverted, 5 present / 14 absent
+  against the true 14 / 5, while the counts coincided.
+- Mine: asserted the two A3 greps were independent confirmations.
+- Mine: predicted `test_render.py`'s exact counts as the recoupling friction, reasoning from the
+  string asserted rather than the fixture feeding it. Chen is `EXTRACTED`, routes to B3b, and
+  the count cannot move.
+- The agent's: reported the `INFERRED_DEFAULT` path as an A3-class defect after searching only
+  its consumers. `rg 'inference=InferredDefault'` settles it in one command: nothing in the
+  extraction path writes that arm, so the branch is a reader-side path with no producer.
+
+`_software_coverage` is four branches behind a 33-line docstring, consumed at `render.py:793` by
+a two-clause condition that reveals none of it. Anyone reasoning from the call site gets it
+wrong. `0604877` §5 is the argued response: the full seven-branch table written down, with each
+branch's source line and reachability.
+
+The corrective generalises the 08-27 one from state to structure: **a claim about a predicate is
+verified at its definition, and a defect is not reported until both its producer and its
+consumer have been read.** The agent's `INFERRED_DEFAULT` report had a reader and no writer; the
+superseded `test_software_addressed_iff_version_extracted`, named and explained at
+`test_cobidas.py:112-116`, pinned a state `flatten()` cannot produce. Same shape, opposite ends.
+
+**Collapsed buckets: three instances, and the third was introduced by a correct fix for the
+second.** This is the finding, and it is not a repair narrative.
+
+1. The retracted SfN abstract claim, `13/20 (65%) could not be resolved to a canonical space`,
+   one bucket spanning distinct reporting behaviours. Ruled diagnostic rather than evaluative.
+2. A3: the Software header and body disagreed because coverage keyed off the version row alone,
+   so a citing paper was accused of an unconditional violation. `c9c2951` fixed it.
+3. `addressed` spanning two questions, *did the paper say anything about software* and *did it
+   give version and revision number*. `c9c2951` created this one by making the row addressed
+   for a deferring paper.
+
+Instance 3 was found this session, not shipped and detected later like the first two, and it is
+**not fixed**. The ruling is ratified and recorded in `0604877`; no code implements it. A3's
+diagnosis stands and only its repair is superseded, which is the honest reading: the false part
+was the accusation wording, not the finding.
+
+**Two surfaces for one fact: four instances, the same finding seen from the output side.** The
+collapsed-bucket pattern is one predicate carrying two questions; this is two emitters
+disagreeing about one fact. They are two faces of the same defect class.
+
+- `addressed` versus what the Software row's mandatory content asks (`cobidas.py:13-14`).
+- `n_deferred` reads 0 corpus-wide while two papers defer their base pipeline. `_tally`
+  iterates `preprocessing.steps` only (`batch.py:111`), and `base_pipeline` and `steps` are
+  sibling fields on `Preprocessing` (`preprocessing.py:1306-1307`), so it is structurally
+  invisible to the tally, while its docstring says it buckets the targeted
+  fields and `cobidas.py:161-162` says `base_pipeline` is always targeted. Classified as a code
+  defect, deferred behind A5's design, which must first settle whether the fix widens `_tally`
+  or narrows the docstring and has A5 read the JSONs.
+- Three emitted strings carry "the extractor did not examine this row"
+  (`render.py:476`, `:769`, `:784`), and a fourth wording survives only as a comment at `:782`.
+- The console rollup says `19 successful, 0 failed` while `summary.csv` says 18 `success` plus
+  one `methods_not_found`, because `batch.py:382` buckets the two together.
+
+The `summary.csv` and report denominators disagree on all 19 papers. Derived from this run's
+reports, which are not tracked: the CSV sums 7 targeted step fields every time, while the report
+assesses 7, 8, or 9 depending on whether a version row exists. Where the totals coincide,
+agtzidis and liu_2005, they coincide over different membership.
+
+**The 0/19 version claim is retracted, and its stated mechanism no longer describes the code.**
+COBIDAS §4.3 p. 10 supplies the criterion: the exact version, with `SPM12` and `FSL 5.0` named
+insufficient against `SPM12 revision 6225` and `FSL 5.0.8`. `extractor.py:132-140` implements
+that at the prompt. The code does not: `quote_supports_value` is whole-token containment with no
+version-shape logic, so a model returning `SPM12` with a supporting quote would be recorded
+`EXTRACTED`. Extraction status is a separateness predicate, not a compliance predicate, and
+ground-truth labels for this field are to be assigned against §4.3 read directly.
+
+`ground-truth-protocol.md:393-401`'s conclusion stands and its mechanism is stale in all three
+clauses: `_build_version_pf` is a real extraction path, the prompt does ask for a version, and
+`assess_coverage` reads a value that is no longer a constant. Three papers report separate
+versions, named from the papers themselves at `ground-truth-protocol.md:397-398`. That
+establishes the claim is false; it does not establish a rate, and the extractor's
+`EXTRACTED` set converging on the same three is not independent confirmation.
+
+**Two clean-clone failures the repository recorded nowhere, both now closed.** `hard_drop_audit.py`
+and `retry_audit.py` are tracked and read a config that was never tracked, so both raised
+`FileNotFoundError` on any fresh clone. And `import extractor_mvp` succeeds under both virtual
+environments, resolving under the repository root as a namespace package with `__file__` set to
+`None` and without `boto3`, so a batch run there dies at the first model call rather than at
+import. The first is closed by `0982b84` and `21a40e7`, the second by `126ecd6`.
+
+**Open.** The ruling is ratified and unimplemented. Next: the re-render script, built
+reproduce-then-change so that re-rendering all 19 at HEAD produces 19 byte-identical files
+before the predicate changes, since otherwise the two-paper diff is unattributable; then the
+`test_cobidas.py` recoupling, which supersedes
+`test_deferred_pipeline_is_not_a_software_violation` by name and flips row D of the state test.
+`#8` sits behind A5's design. A4 and A5 are otherwise unchanged. No labelling has started for
+`base_pipeline.version`, and the per-tool exactness rule is to be fixed before it does.
+
+Commits: 7748e7b (docs — the §4.3 criterion and the 0/19 retraction) · 0982b84 (configs moved
+out of the ignored results/ tree) · 21a40e7 (scripts — _V6_CONFIG repointed, load_batch_config
+guarded) · ca47171 (config_diag.yaml deleted) · c90ac2d (docs — four report-surface
+inconsistencies, Track A status) · 126ecd6 (CONTRIBUTING — the two-interpreter setup) · 0604877
+(DELTA — a deferral does not address the Software row). All committed 2026-09-07. This DEVLOG
+entry committed separately, last.
