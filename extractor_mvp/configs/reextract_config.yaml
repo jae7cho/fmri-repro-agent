@@ -1,0 +1,11 @@
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_reextract
+papers:
+  - paper_id: liu_2013
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf
+  - paper_id: mueller_2021
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Mueller_2021.pdf
+  - paper_id: poldrack_2015
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Poldrack_2015.pdf
+  - paper_id: power_2014
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf

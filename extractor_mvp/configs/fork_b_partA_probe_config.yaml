@@ -1,0 +1,9 @@
+# Fork B Part A live probe: power_2014 regression canary + smith_2013 deferred probe.
+# Cheap 2-paper run (does not overwrite the full batch_sfn_v3 results).
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/fork_b_partA_probe
+papers:
+  - paper_id: power_2014
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf
+  - paper_id: smith_2013
+    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Smith_2013.pdf

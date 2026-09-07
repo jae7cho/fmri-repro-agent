@@ -1,0 +1,30 @@
+# v7 full re-run — EXACT mirror of batch_v6_full_config.yaml (same 20 paper_ids/paths,
+# SAME model sonnet-4-5-20250929 -> v6->v7 delta is NOT model-confounded). Only output_dir
+# differs. v7 changes are code-side: methods_finder slice repair + schema v0.3.0 + nuisance
+# step + cabral_2017 exclusion (auto-skipped by the registry -> N=19).
+# v6 full-20 regeneration on the 0.2.0 schema. Mirrors sfn_batch_v5_config.yaml EXACTLY
+# (same 20 paper_ids + PDF paths); only output_dir differs. Model pinned to v5's 4.5 so
+# the v5->v6 delta is NOT model-confounded. output_dir is gitignored.
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_v7_full
+papers:
+  - {paper_id: agtzidis_2020, path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Agtzidis_2020.pdf}
+  - {paper_id: binder_1999,   path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Binder_1999.pdf}
+  - {paper_id: braun_2015,    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Braun_2015.pdf}
+  - {paper_id: cabral_2017,   path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cabral_2017.pdf}
+  - {paper_id: chen_2015,     path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Chen_2015.pdf}
+  - {paper_id: ciric_2017,    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Ciric_2017.pdf}
+  - {paper_id: cole_2013,     path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cole_2013.pdf}
+  - {paper_id: derosa_2025,   path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/DeRosa_2025.pdf}
+  - {paper_id: gordon_2014,   path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Gordon_2014.pdf}
+  - {paper_id: liu_2005,      path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2005.pdf}
+  - {paper_id: liu_2013,      path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf}
+  - {paper_id: mueller_2021,  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Mueller_2021.pdf}
+  - {paper_id: oconnor_2017,  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/OConnor_2017.pdf}
+  - {paper_id: poldrack_2015, path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Poldrack_2015.pdf}
+  - {paper_id: power_2014,    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf}
+  - {paper_id: tang_2025,     path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Tang_2025.pdf}
+  - {paper_id: vanderwal_2016,path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Vanderwal_2016.pdf}
+  - {paper_id: viduarre_2017, path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Viduarre_2017.pdf}
+  - {paper_id: weber_2024,    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Weber_2024.pdf}
+  - {paper_id: wheaton_2004,  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Wheaton_2004.pdf}

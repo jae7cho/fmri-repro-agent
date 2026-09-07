@@ -1,0 +1,5 @@
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: results/batch_v040_labelset/_diag
+papers:
+- paper_id: oconnor_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/OConnor_2017.pdf

@@ -1,0 +1,13 @@
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_multi_acq
+papers:
+  - paper_id: cho_2021
+    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf
+  - paper_id: weber_2024
+    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Weber_2024.pdf
+  - paper_id: yang_2025
+    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Yang_2025.pdf
+  - paper_id: marek_2022
+    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Marek_2022.pdf
+  - paper_id: greene_2022
+    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Greene_2022.pdf

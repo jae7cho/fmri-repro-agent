@@ -1,0 +1,14 @@
+# Build 3 delta batch: temporal_standardization discrimination validation.
+# Model pinned to v5's Sonnet 4.5 (NOT the 4.6 committed example) so the v5->v6 delta
+# is attributable to pipeline changes, not a model shift. output_dir is gitignored.
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_v6_delta
+papers:
+  - {paper_id: liu_2013,      path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf}
+  - {paper_id: cho_2021,      path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf}
+  - {paper_id: power_2014,    path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf}
+  - {paper_id: gordon_2014,   path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Gordon_2014.pdf}
+  - {paper_id: cole_2013,     path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cole_2013.pdf}
+  - {paper_id: viduarre_2017, path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Viduarre_2017.pdf}
+  - {paper_id: marek_2022,    path: /Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Marek_2022.pdf}
+  - {paper_id: chen_2015,     path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Chen_2015.pdf}

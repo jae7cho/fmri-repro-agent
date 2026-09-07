@@ -1,0 +1,41 @@
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_a1_acceptance
+papers:
+- paper_id: agtzidis_2020
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Agtzidis_2020.pdf
+- paper_id: braun_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Braun_2015.pdf
+- paper_id: chen_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Chen_2015.pdf
+- paper_id: ciric_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Ciric_2017.pdf
+- paper_id: cole_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cole_2013.pdf
+- paper_id: derosa_2025
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/DeRosa_2025.pdf
+- paper_id: gordon_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Gordon_2014.pdf
+- paper_id: liu_2005
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2005.pdf
+- paper_id: liu_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf
+- paper_id: mueller_2021
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Mueller_2021.pdf
+- paper_id: oconnor_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/OConnor_2017.pdf
+- paper_id: poldrack_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Poldrack_2015.pdf
+- paper_id: power_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf
+- paper_id: tang_2025
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Tang_2025.pdf
+- paper_id: vanderwal_2016
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Vanderwal_2016.pdf
+- paper_id: viduarre_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Viduarre_2017.pdf
+- paper_id: weber_2024
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Weber_2024.pdf
+- paper_id: wheaton_2004
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Wheaton_2004.pdf
+- paper_id: binder_1999
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Binder_1999.pdf

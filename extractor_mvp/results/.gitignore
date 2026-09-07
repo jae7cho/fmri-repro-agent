@@ -1,0 +1,9 @@
+# Run output only: large, regenerable, and LLM-produced, so none of it is tracked.
+# Batch configs are the INPUT that makes a run reproducible, not output, and they live
+# in ../configs/ where they are tracked normally. Do not add a config here.
+#
+# !.gitignore keeps this file itself visible; without it the '*' below hides the rule
+# from anyone cloning the repository.
+*
+!.gitkeep
+!.gitignore

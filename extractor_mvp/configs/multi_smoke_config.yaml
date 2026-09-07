@@ -1,0 +1,5 @@
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/multi_smoke
+papers:
+  - paper_id: schwartz_2018
+    path: /Users/cwook/Documents/neurorepro/tested_lit/Schwartz_2018.pdf
