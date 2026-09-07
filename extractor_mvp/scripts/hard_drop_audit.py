@@ -34,7 +34,7 @@ from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 from extractor_mvp.span_resolver import resolve_quote
 
 _MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-_V6_CONFIG = Path(__file__).resolve().parent.parent / "results" / "batch_v6_full_config.yaml"
+_V6_CONFIG = Path(__file__).resolve().parent.parent / "configs" / "batch_v6_full_config.yaml"
 
 # raw response-model field -> (step kind, step attr) for reading the FINAL state. base_pipeline_name
 # is special (prep.base_pipeline). base_pipeline_ref is excluded (it is attribution, not a value).

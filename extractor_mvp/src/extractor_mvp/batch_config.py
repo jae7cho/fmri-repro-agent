@@ -39,6 +39,8 @@ def load_batch_config(config_path: Path) -> BatchConfig:
     """Load + validate a YAML config. Relative paper/output paths are resolved
     against the config file's directory so a config is portable."""
     config_path = config_path.resolve()
+    if not config_path.is_file():
+        raise FileNotFoundError(f"batch config not found: {config_path}")
     base = config_path.parent
     config = BatchConfig.model_validate(yaml.safe_load(config_path.read_text(encoding="utf-8")))
 

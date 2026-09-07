@@ -39,7 +39,7 @@ from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 
 _MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"  # the v6-pinned model
-_V6_CONFIG = Path(__file__).resolve().parent.parent / "results" / "batch_v6_full_config.yaml"
+_V6_CONFIG = Path(__file__).resolve().parent.parent / "configs" / "batch_v6_full_config.yaml"
 
 
 def _corpus_papers() -> list[tuple[str, Path]]:
