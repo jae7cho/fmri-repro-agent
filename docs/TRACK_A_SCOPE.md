@@ -14,6 +14,25 @@ critical path.** 15 of 19 spec steps having no extractor does not block this del
 renders an unextracted step as *"no fields assessed by current extractor"* — a true and useful statement.
 Each field Track B later extracts upgrades one row from not-assessed to assessed.
 
+## Status, updated 2026-09-07
+
+- **A2 landed** (`d90507b`). `to_report` is the only sanctioned report surface, the coverage
+  section is pinned by a surface-parametrized test over `REPORT_SURFACES` (`render.py:725`),
+  and the two field views are documented as partial.
+- **A3 landed** (`c9c2951`). The Software header and body now share one coverage condition
+  (`render.py:793`). The bug described below is fixed; that section is retained as the record
+  of what was wrong.
+- **A1 code landed** (`214b55c`). `run_batch` writes `papers/{paper_id}.md` (`batch.py:323`).
+  Its acceptance criterion, 19 rendered reports with `render_error` empty on every row, was met
+  by the corpus run of 2026-09-07.
+- A4 and A5 are open. A5's design must also settle whether `_tally` (`batch.py:99`) should
+  count `base_pipeline`: its docstring says it buckets the targeted fields, `base_pipeline` is
+  targeted (`cobidas.py:161-162`), and it iterates `preprocessing.steps` only (`batch.py:111`),
+  so `n_deferred` reads 0 corpus-wide while two papers defer their base pipeline.
+
+Source line numbers throughout this document were accurate when it was scoped on 2026-08-26.
+Several have since moved. Verify at HEAD before relying on any of them.
+
 ---
 
 ## A2 — make the coverage-section guard STRUCTURAL (do this first)
@@ -25,13 +44,24 @@ print `Completeness: 8 not reported in source · 19 not covered by extractor` �
 that was never examined is invisible. A2 must land **before A1**, because A1 creates the first non-test
 caller and the convention has no defence against a second one.
 
+> **Correction, 2026-09-07.** `to_text` and `to_bullets` were renamed to `to_field_table`
+> (`render.py:357`) and `to_field_bullets` (`render.py:412`) in `d90507b`. Neither emits a
+> `Completeness:` line. That header is emitted only by `to_protocol` (`render.py:677`), so the
+> illustration above describes no surface at HEAD. The safety property is also no longer held
+> by a single line: `REPORT_SURFACES` (`render.py:725`) makes it structural, which is what A2
+> delivered.
+
 **Done when:** a field-rendering view either carries the catalog-driven coverage section or cannot be
 called in a report context — enforced by structure, not by comment. A test asserts that a report produced
 without the coverage section fails rather than renders.
 
 **Do not change:** `to_cobidas_coverage`'s static-registry denominator (cobidas.py:154), or the behaviour
-pinned by `tests/test_cobidas.py:115` (`covered_by_extractor is False` for a never-emitted kind). That is
-the property being protected.
+pinned by `test_never_emitted_kind_row_is_not_covered` (`covered_by_extractor is False` for a
+never-emitted kind). That is the property being protected. **Corrected 2026-09-07:** this
+originally cited `tests/test_cobidas.py:115`, which now falls inside
+`test_software_coverage_over_every_base_pipeline_state`, a different test. The denominator
+itself is `COBIDAS_D3_ROWS` (`cobidas.py:50`), pinned by
+`test_registry_denominator_is_static_not_steps_present`.
 
 **Size:** small. Structural, not algorithmic.
 
