@@ -197,8 +197,8 @@ viduarre_2017 `['Glasser et al.']`, binder_1999 `None`. braun's report already r
 
 **Why the wording is part of this delta and not a follow-up.** The predicate change alone
 emits the WRONG sentence for both deferring papers. `_base_pipeline_name` returns `None` when
-no `PipelineRef` resolves, so `named` is empty and braun and viduarre receive binder_1999's
-bare variant, `(No version reported by the paper.)` — a paper that cited its pipeline told
+no `PipelineRef` resolves, so `named` is empty and braun and viduarre receive the bare
+variant then written for the unnamed case — a paper that cited its pipeline told
 exactly what a paper that named nothing is told. That is A3's original complaint in a quieter
 register, so the deferral line ships with the predicate.
 

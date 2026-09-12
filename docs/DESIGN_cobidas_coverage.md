@@ -110,7 +110,8 @@ Addressed in source: 4 / 16 rows   ·   Non-mandatory: 2   ·   Beyond COBIDAS: 
 
 ### Not reported (mandatory, unconditional)
 - Software: version and revision number NOT REPORTED — COBIDAS D.3 requires this for
-  each software used. (Pipeline named: CCS. Version inferred by AESPA, not reported by the paper.)
+  each software used. (Pipeline named: CCS. Give its version and revision number; AESPA
+  inferred one, the paper did not report it.)
 
 ### Not reported whether performed (mandatory if performed)
 - Motion correction · Slice time correction · Coregistration · Distortion correction ·

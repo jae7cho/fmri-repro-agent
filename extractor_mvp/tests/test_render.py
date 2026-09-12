@@ -948,7 +948,44 @@ def test_deferred_software_line_names_the_citation() -> None:
     out = render.to_cobidas_coverage(prep)
     assert "### Not reported (mandatory, unconditional)" in out
     assert "pipeline identity deferred to refs. 47 and 48." in out
-    assert "No version reported by the paper." not in out
+    # Must not fall through to either non-deferral line. Asserting the CURRENT strings, not
+    # a retired one: an exclusion of a string nothing emits any more cannot fail.
+    assert "No software named in the source." not in out
+    assert "Pipeline named:" not in out
+
+
+def test_software_line_states_the_action_for_each_case() -> None:
+    """One heading, four lines, each naming the action the author needs (DELTA §8).
+
+    The unnamed case is the one that motivated the rework: telling an author who named no
+    software that their version is missing is the wrong instruction. The inferred case is a
+    disclosure rather than guidance and must keep saying AESPA supplied the version.
+    """
+    named = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=Extracted[PipelineRef](
+            value=PipelineRef(name="CCS", version=_missing_reason("version", "not_stated_in_text")),
+            spans=[_span("preprocessed with CCS")],
+            confidence=0.8,
+        ),
+        inference=NotApplicable(),
+    )
+    none_named = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=MissingFromPaper(searched_terms=["pipeline"], sections_searched=["Methods"]),
+        inference=LeftMissing(reason="no_base_pipeline_named"),
+    )
+
+    out_named = render.to_cobidas_coverage(
+        Preprocessing(applies_to=_applies_to(), base_pipeline=named, steps=[_one_step()])
+    )
+    assert "Pipeline named: CCS. Give its version and revision number." in out_named
+
+    out_unnamed = render.to_cobidas_coverage(
+        Preprocessing(applies_to=_applies_to(), base_pipeline=none_named, steps=[_one_step()])
+    )
+    assert "No software named in the source. Name the software," in out_unnamed
+    assert "Pipeline named:" not in out_unnamed
 
 
 def test_deferred_software_line_does_not_double_the_terminator() -> None:

@@ -809,12 +809,22 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
             detail = f"Version not reported; pipeline identity deferred to {joined}."
         else:
             name = _base_pipeline_name(preprocessing)
-            named = f"Pipeline named: {name}. " if name else ""
-            if version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":
-                ver = "Version inferred by AESPA, not reported by the paper."
+            if name is None:
+                # The action is to NAME the software. Telling an author who named nothing
+                # that their version is missing is the wrong instruction (DELTA §8).
+                detail = (
+                    "No software named in the source. Name the software, and give its "
+                    "version and revision number."
+                )
+            elif version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":
+                # A disclosure, not guidance: without it a reader takes an AESPA-inferred
+                # version for one the paper reported.
+                detail = (
+                    f"Pipeline named: {name}. Give its version and revision number; AESPA "
+                    "inferred one, the paper did not report it."
+                )
             else:
-                ver = "No version reported by the paper."
-            detail = f"{named}{ver}"
+                detail = f"Pipeline named: {name}. Give its version and revision number."
         lines.append("### Not reported (mandatory, unconditional)")
         lines.append(
             "- Software: version and revision number NOT REPORTED — COBIDAS D.3 requires "
