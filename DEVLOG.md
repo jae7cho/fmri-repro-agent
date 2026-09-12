@@ -1446,3 +1446,128 @@ guarded) · ca47171 (config_diag.yaml deleted) · c90ac2d (docs — four report-
 inconsistencies, Track A status) · 126ecd6 (CONTRIBUTING — the two-interpreter setup) · 0604877
 (DELTA — a deferral does not address the Software row). All committed 2026-09-07. This DEVLOG
 entry committed separately, last.
+
+## 2026-09-11
+
+Hours: ~21:00 - 00:50 ET, running past midnight; the four commits are stamped 2026-09-12.
+
+**The re-render gate, and a self-test that could not fail.** The DELTA needed a harness that
+could say which papers a predicate change alters, and say it attributably. Two designs were on
+the table: compare today's render against a stored baseline, or compare two code versions over
+one fixed input. The baseline framing collapsed on inspection — both the `.md` outputs and the
+`.json` inputs live under the `*`-ignored `results/`, so "verifiable by anyone" was never
+available, and a manifest of output hashes cannot separate "the render changed" from "the
+inputs changed". The repository had already solved this once: A2 (`d90507b`) imported HEAD's
+module alongside the working tree and rendered one object through both (`DEVLOG.md:1204`).
+`814a1fc` takes that shape and fixes its hazard — A2's method needs two copies of
+`extractor_mvp` importable at once, which is exactly the namespace shadow `126ecd6` documents,
+so the gate runs the two renders as separate subprocesses with `PYTHONPATH` selecting a git
+worktree. Both editable packages must be overridden or old `render.py` imports new
+`fmri_repro`.
+
+The first acceptance criterion I wrote for it was worthless. `--against HEAD` returning 19
+identical is also what a silently failed `PYTHONPATH` override returns, because both
+subprocesses then run working-tree code. The pass condition was satisfied by the failure it
+existed to catch. The fix is the negative control now recorded in the script's own docstring:
+`--against d31e8b7` (`c9c2951^`) must return 7 changed, the papers with no
+`base_pipeline.version` row.
+
+**A check must be able to fail for the reason it exists.** This is the session's corrective and
+it generalises three shapes that had been tracked separately. Five instances, four of them
+found here:
+
+1. A3's two acceptance greps, both `grep -c ... == 0`, passed by the global suppression they
+   were meant to catch (2026-09-07).
+2. The relative-path regex returning 22 of 22 immediately after the opposite had been asserted,
+   and the work continuing past it (2026-09-07).
+3. A footer-hash verification whose loop emitted a spurious `DOES NOT RESOLVE`, and a second
+   attempt whose per-hash column resolved `${h}^^^^{commit}` — the fourth ancestor, not the
+   commit. Both the agent's; the decisive check was the sorted set comparison, which held.
+4. A `python3` heredoc that failed on quoting so the fix never applied, paired with a `grep`
+   written in the same breath that matched the wrong line and reported success. The agent's.
+5. An assertion in `test_render.py` excluding the string `"No version reported by the paper."`
+   from the deferral line — correct when written, vacuous one commit later once `f44771a`
+   retired that string entirely. The agent's, caught before it landed.
+
+The sharper statement, and the one worth carrying: **a check written alongside a change is not
+independent of it.** It inherits the change's assumptions in the same breath. Instances 4 and 5
+are that specifically; 1, 2 and 3 are the weaker "a check that cannot fail".
+
+**Verify against the checker that will actually run.** `814a1fc` was rejected by the
+pre-commit `mypy` hook on a `no-any-return` that a local `mypy` had passed. The hook runs with
+`additional_dependencies: []` and therefore cannot see the package, so `to_report` resolves to
+`Any`; the local run had it importable and saw a real `str`. Reproduced with
+`--no-site-packages` before fixing, rather than guessing. Local green is not hook green. Same
+family as `verify-what-landed-not-what-you-sent`, one step earlier in the pipeline.
+
+**Fifth predicate-from-consumer error, mine.** I predicted the negative control would return 2
+changed, on the grounds that A3 changed exactly braun and viduarre's Software section. The
+section-level claim is right — `braun` goes 1 to 0, `binder` stays 1 to 1 — but `c9c2951` also
+moved `covered`, so the Software row shifted from "Not assessed by AESPA" into "Assessed by
+AESPA" in the header of all seven no-version-row papers. A section-level prediction against a
+byte-level instrument under-counts. The harness returned 7 and was right; the expectation was
+wrong. Recorded in the script's docstring so the next reader is not told to expect 2.
+
+**The DELTA implemented, in two commits so each diff attributes.** `d8c97c6` rules the wording
+that §8 left open, before any code: one heading retained, because every case is the same
+COBIDAS finding and a second heading would imply a deferral carries a different status; four
+lines, because Goal 1 is actionable guidance and the action differs. The fourth line is not
+polish. **The predicate alone emits the wrong sentence** — `_base_pipeline_name` returns `None`
+when no `PipelineRef` resolves, so both deferring papers receive the bare line written for a
+paper that named no software at all, which is A3's original complaint in a quieter register.
+
+`59e732b` is the predicate plus the deferral line: 2 reports change, braun_2015 and
+viduarre_2017, verified against `d8c97c6`. `f44771a` is the other three lines: 14 change, and
+braun and viduarre are not among them. Doing all four at once would have moved 16 of 19 in one
+diff and attributed none of them. The expected identical set for the second gate — derosa,
+liu_2013, oconnor plus the two settled in the first — was derived before running and met
+exactly.
+
+Also ruled: `DEFERRED_TO_CITATION` leaves `_ADDRESSING_STATUSES` untouched. It is read at a
+second site for the other 15 rows, where a deferral remains a report per CALL 1, and narrowing
+the frozenset would have reversed a ratified protocol call as a side effect of what looks like
+a one-line edit.
+
+**The gate paid for itself on something no test asserted.** First render of the deferral line
+gave viduarre `deferred to Glasser et al..` — the ref already ends in a period and the line
+appended one. No test asserted it, and no reviewer reading a diff would have seen it; a
+byte-level comparison did. Pinned by `test_deferred_software_line_does_not_double_the_terminator`,
+using viduarre's real ref rather than a hypothetical. The gate's value is not only attribution.
+
+**`#8` is not blocked on A5, and the 2026-09-07 entry says otherwise.** That entry
+(`DEVLOG.md:1401`) records the `_tally` denominator defect as "deferred behind A5's design,
+which must first settle whether the fix widens `_tally` or narrows the docstring". The design
+already settled it, before the question was asked: `docs/TRACK_A_SCOPE.md:126-129` states that
+`SUMMARY_COLUMNS` carries no D.3 content and that `RowCoverage` is the right per-paper unit to
+aggregate over. Traced at HEAD: `_tally`'s output reaches `summary.csv` (batch.py:273-280) and
+`extraction_json["counts"]` (batch.py:253), **nothing reads `["counts"]` back**, and
+`assess_coverage` consumes `flatten()` rows and never the tally. A5 therefore cannot inherit
+the gap. `#8` is a small independent fix — `_tally`'s docstring claims it buckets the targeted
+fields, `base_pipeline` is targeted (cobidas.py:171-172), and it iterates `preprocessing.steps`
+only — and it can land any time.
+
+**A documentation defect found by implementing the document.** The DELTA's §7 lists two
+superseded test artifacts. There are three: `test_software_violation_surfaces_agree_for_every_base_pipeline_state`
+(test_render.py:880) carried a case asserting a deferred pipeline produces no violation. §7 was
+written before anyone searched `test_render.py`, so it listed what `test_cobidas.py` held. The
+test keeps its name and purpose — header/body agreement is orthogonal to which way the
+predicate rules — and only its expected value moved. §7 is left uncorrected here deliberately,
+so the fix does not ride inside the wording commit.
+
+Two smaller agent errors worth recording. It recommended A2's import-HEAD-alongside method four
+days after writing the `126ecd6` section documenting that exact hazard, which is citing a
+precedent without checking whether the precedent's method is safe in the new context. And it
+seeded the word "committed" for the `.md` files into a subagent prompt, where it propagated
+into that agent's findings until an adversarial pass checked tracking and found `git ls-files`
+returns 0 for that directory.
+
+**Open.** A4 is the remaining critical-path item and carries a decision to settle first: live
+demonstration versus pre-generated example reports (`docs/TRACK_A_SCOPE.md`), which changes
+whether A4 needs polish or merely needs to work. Target 2026-10-31, poster 2026-11-14. A5 is
+SHOULD, not MUST. `#8` and the §7 correction are small and independent. No labelling has
+started for `base_pipeline.version`.
+
+Commits: 814a1fc (re-render identity gate) · d8c97c6 (design — the Software-row wording ruled)
+· 59e732b (predicate — a deferral answers identity, not the version; deferral line) · f44771a
+(the other three lines state the action). All committed 2026-09-12. This DEVLOG entry committed
+separately, last.
