@@ -108,6 +108,39 @@ the fix.
 link of the chain exists and is already sequenced in `_process_paper` (batch.py:155-215):
 `load_pdf_text` → `find_methods_section` → `ParsedPaper` → `extract` → *(new)* `render`.
 
+> **Correction, 2026-09-12.** A1 (`214b55c`) landed after this was scoped and invalidated the
+> central premise. `batch.py` DOES import `render` — `batch.py:34` is
+> `from extractor_mvp.render import to_report` — and `_process_paper`, now at `batch.py:163`
+> rather than :155-215, already runs the whole chain and writes `papers/{paper_id}.md`
+> (`batch.py:323`). The `*(new)*` on `render` above is no longer new.
+>
+> What survives: there is still no `[project.scripts]` in either `pyproject.toml`, and
+> `demo.py` is still text-in (`--text` required, `demo.py:56`) and still never imports
+> `render`.
+>
+> So the remaining gap is not assembly. It is single-PDF ergonomics and an installed entry
+> point: `batch.py` reaches the chain only through a `BatchConfig` listing papers.
+>
+> **Re-estimated: small, not medium.** Measured by building and running it — roughly 30
+> non-blank lines plus a `[project.scripts]` table, reusing eight existing functions untouched
+> through one call to `_process_paper`. Verified that nothing on the path needs `BatchConfig`,
+> the papers list, the citation resolver or the summary writers: the exclusion gate
+> (`batch.py:300`), the resolver build (`:292`) and all three writers (`:345-347`) are in
+> `run_batch`, outside the per-paper call. What remains is six small gaps — an argv surface
+> (`batch.main`'s `--config` is `required=True`, `batch.py:407`), the `.md` write and `mkdir`
+> (both in `run_batch`, `batch.py:290-291`, `:322-323`), a `paper_id` default, a model default
+> (no such constant exists), and the fact that `_process_paper` is private and the name is
+> taken twice in the package (`batch.py:163`, `multi_acquisition_batch.py:94`) — plus three
+> judgment calls that are decisions rather than work: exit semantics for a single paper,
+> `python -m` versus a console script, and whether `_process_paper` gets promoted.
+>
+> **Blocked on a packaging defect, which is separate work.** `pypdf` is dev-only
+> (`extractor_mvp/pyproject.toml:29`; absent from `dependencies`, `:13-22`), and
+> `pdf_loader.py:22-28` imports it inside a `try` that returns `("", "failed")`. An installed
+> console script would therefore fail on EVERY PDF with `"pypdf returned no text"`
+> (`batch.py:185`), a message that blames the PDF, and `pdf_creation_date` would return `None`,
+> silently disabling KB version inference. Move `pypdf` to runtime before A4.
+
 **Done when:** one command takes a PDF path and writes a completeness report. Not a service, not a web
 interface — a command-line entry point.
 

@@ -1449,7 +1449,7 @@ entry committed separately, last.
 
 ## 2026-09-11
 
-Hours: ~21:00 - 00:50 ET, running past midnight; the four commits are stamped 2026-09-12.
+Hours: ~21:00 - 01:30 ET, running past midnight; the four commits are stamped 2026-09-12.
 
 **The re-render gate, and a self-test that could not fail.** The DELTA needed a harness that
 could say which papers a predicate change alters, and say it attributably. Two designs were on
