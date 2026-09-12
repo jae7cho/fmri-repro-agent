@@ -149,13 +149,23 @@ def _software_coverage(base_row: Any, version_extraction_status: str | None) -> 
 
     **addressed — did the PAPER answer the software question?**
     When a ``base_pipeline.version`` row exists (the outer arm resolved a ``PipelineRef``),
-    the version's own extraction status answers it. When no version row exists, the
-    ``base_pipeline`` row's own status answers it: ``DEFERRED_TO_CITATION`` ADDRESSES the row
-    — per :data:`_ADDRESSING_STATUSES`, a deferral is a report — and ``MISSING_FROM_PAPER``
-    does not. These are two genuinely different questions; do NOT collapse them. Keying only
-    off the version row (as this did before) made a paper that CITES its pipeline unaddressed,
-    so the report accused it of an unconditional COBIDAS violation. That is the
-    absence-of-evidence conflation this project exists to avoid, and it had shipped.
+    the version's own extraction status answers it. When no version row exists, only an
+    ``EXTRACTED`` base_pipeline answers it. These are two genuinely different questions; do
+    NOT collapse them.
+
+    ``DEFERRED_TO_CITATION`` does NOT address this row, and that SUPERSEDES the repair made
+    in ``c9c2951`` without disturbing its diagnosis. That commit correctly found the report
+    accusing a citing paper of an unconditional COBIDAS violation, and repaired it by making
+    the row addressed. The false part was the accusation's wording, not the finding: COBIDAS
+    §4.3 attaches no deferral clause to the version requirement, and the only citation-like
+    mechanism it raises there (the RRID) is additive. This row's mandatory content is version
+    and revision number; a deferring paper answers pipeline identity, not version. The row is
+    unaddressed and the line beneath the heading says identity was deferred to the citation.
+    See ``docs/design/DELTA_software_row_deferral.md``.
+
+    Scoped to THIS branch. :data:`_ADDRESSING_STATUSES` is also read by the per-row rule in
+    :func:`assess_coverage`, where a deferral remains a report per CALL 1, and must not be
+    narrowed there.
 
     **covered — did the EXTRACTOR look?**
     True whenever a ``base_pipeline`` row exists with a targeted reason. ``base_pipeline`` is
@@ -178,7 +188,7 @@ def _software_coverage(base_row: Any, version_extraction_status: str | None) -> 
         return False, False  # unreachable today; kept so the rule reads completely
     if version_extraction_status is not None:
         return version_extraction_status == "EXTRACTED", True
-    return base_row.extraction_status in _ADDRESSING_STATUSES, True
+    return base_row.extraction_status == "EXTRACTED", True
 
 
 def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> list[RowCoverage]:

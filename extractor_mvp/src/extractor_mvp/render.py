@@ -791,16 +791,34 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     # cobidas._software_coverage for the NotApplicable two-producer case.
     software = by_id["software"]
     if software.covered_by_extractor and not software.addressed:
-        name = _base_pipeline_name(preprocessing)
-        named = f"Pipeline named: {name}. " if name else ""
-        if version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":
-            ver = "Version inferred by AESPA, not reported by the paper."
+        # One heading, four lines: the finding is the same (the version is not reported) but
+        # the action differs. See DELTA_software_row_deferral.md §8. A deferring paper must
+        # NOT receive the bare "No version reported" line written for the unnamed case —
+        # _base_pipeline_name returns None when no PipelineRef resolves, so without this
+        # branch it would read exactly as a paper that named nothing at all.
+        base_row = next((r for r in rows if r.path == "base_pipeline"), None)
+        deferred_refs = (
+            base_row.deferral_refs
+            if base_row is not None and base_row.extraction_status == "DEFERRED_TO_CITATION"
+            else None
+        )
+        if deferred_refs:
+            # rstrip the terminator: refs are author-shaped strings and some already end
+            # in a period ("Glasser et al."), which would render as "et al..".
+            joined = ", ".join(deferred_refs).rstrip(".")
+            detail = f"Version not reported; pipeline identity deferred to {joined}."
         else:
-            ver = "No version reported by the paper."
+            name = _base_pipeline_name(preprocessing)
+            named = f"Pipeline named: {name}. " if name else ""
+            if version_row is not None and version_row.inference_status == "INFERRED_DEFAULT":
+                ver = "Version inferred by AESPA, not reported by the paper."
+            else:
+                ver = "No version reported by the paper."
+            detail = f"{named}{ver}"
         lines.append("### Not reported (mandatory, unconditional)")
         lines.append(
             "- Software: version and revision number NOT REPORTED — COBIDAS D.3 requires "
-            f"this for each software used. ({named}{ver})"
+            f"this for each software used. ({detail})"
         )
         lines.append("")
 

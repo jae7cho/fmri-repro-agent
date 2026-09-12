@@ -904,8 +904,9 @@ def test_software_violation_surfaces_agree_for_every_base_pipeline_state() -> No
         inference=LeftMissing(reason="no_base_pipeline_named"),
     )
     cases = (
-        # a cited pipeline IS reported -> no violation on either surface
-        ("deferred to a citation", deferred, False),
+        # a cited pipeline answers identity, not version -> a violation, worded as a
+        # deferral rather than as an unnamed-software report (DELTA §8)
+        ("deferred to a citation", deferred, True),
         # searched and nothing named -> a real, citable violation on both surfaces
         ("searched, none named", none_named, True),
         # NotApplicable carries two opposite meanings -> the tool cannot tell -> silence
@@ -918,6 +919,62 @@ def test_software_violation_surfaces_agree_for_every_base_pipeline_state() -> No
         in_body = "NOT REPORTED — COBIDAS D.3 requires" in out
         assert in_header == in_body, f"{label}: header says {in_header}, body says {in_body}"
         assert in_body is expect_violation, label
+
+
+def test_deferred_software_line_names_the_citation() -> None:
+    """The deferral line says identity was deferred, and names the ref.
+
+    Without this branch a deferring paper receives the bare "No version reported by the
+    paper." written for the unnamed-software case, because ``_base_pipeline_name`` returns
+    None when no ``PipelineRef`` resolves. Pins the fourth line of
+    docs/design/DELTA_software_row_deferral.md §8.
+    """
+    base_pipeline = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=DeferredToCitation(
+            deferrals=[
+                Deferral(
+                    ref="refs. 47 and 48",
+                    span=_span("as previously described in refs. 47 and 48"),
+                    target_kind="paper",
+                )
+            ],
+            searched_terms=["pipeline"],
+            sections_searched=["Methods"],
+        ),
+        inference=LeftMissing(reason="deferred_to_citation"),
+    )
+    prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[_one_step()])
+    out = render.to_cobidas_coverage(prep)
+    assert "### Not reported (mandatory, unconditional)" in out
+    assert "pipeline identity deferred to refs. 47 and 48." in out
+    assert "No version reported by the paper." not in out
+
+
+def test_deferred_software_line_does_not_double_the_terminator() -> None:
+    """A ref that already ends in a period must not render as "et al..".
+
+    viduarre_2017's real ref is "Glasser et al.", so this is corpus-shaped, not hypothetical.
+    """
+    base_pipeline = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=DeferredToCitation(
+            deferrals=[
+                Deferral(
+                    ref="Glasser et al.",
+                    span=_span("preprocessed as in Glasser et al."),
+                    target_kind="paper",
+                )
+            ],
+            searched_terms=["pipeline"],
+            sections_searched=["Methods"],
+        ),
+        inference=LeftMissing(reason="deferred_to_citation"),
+    )
+    prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[_one_step()])
+    out = render.to_cobidas_coverage(prep)
+    assert "deferred to Glasser et al.)" in out
+    assert "et al.." not in out
 
 
 def test_cobidas_coverage_deterministic() -> None:

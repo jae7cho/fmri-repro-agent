@@ -131,11 +131,14 @@ def test_software_coverage_over_every_base_pipeline_state() -> None:
             False,
         ),
         (
+            # Ruled 2026-09-07: a deferral answers pipeline identity, not version, and the
+            # row's mandatory content is version and revision number. Was True until the
+            # DELTA; see docs/design/DELTA_software_row_deferral.md.
             "D deferred to citation",
             _bp_row("DEFERRED_TO_CITATION", "deferred_to_citation"),
             None,
             True,
-            True,
+            False,
         ),
         (
             "E untargeted (unreachable today)",
@@ -152,19 +155,27 @@ def test_software_coverage_over_every_base_pipeline_state() -> None:
         assert rc.addressed is addressed, f"{label}: addressed"
 
 
-def test_deferred_pipeline_is_not_a_software_violation() -> None:
-    """A paper that CITES its pipeline has reported it — ``_ADDRESSING_STATUSES`` says so.
+def test_deferred_pipeline_addresses_identity_not_version() -> None:
+    """A citing paper answers pipeline IDENTITY; the Software row asks for the VERSION.
 
-    Regression guard for shipped behaviour: keying software coverage off the version row
-    alone left a deferral unaddressed, so the report accused a citing paper of an
+    SUPERSEDES ``test_deferred_pipeline_is_not_a_software_violation``, which asserted
+    ``addressed is True`` here. That test was correct under A3's ruling (``c9c2951``) and is
+    replaced rather than silently inverted — its name asserted the proposition now reversed,
+    so a successor under the old name would read as the old claim.
+
+    Its diagnosis still stands and is not what changed: keying software coverage off the
+    version row alone left a deferral unaddressed, so the report accused a citing paper of an
     unconditional COBIDAS violation. It fired on real corpus papers (braun_2015, whose span
     reads "preprocessed according to standard protocols as previously described in refs. 47
-    and 48"; also viduarre_2017).
+    and 48"; also viduarre_2017). What is superseded is the REPAIR: the false part was the
+    accusation's wording, not the finding. The row is unaddressed, and the line beneath the
+    heading now names the citation instead of reading as an unnamed-software report.
+    See docs/design/DELTA_software_row_deferral.md.
     """
     rc = _by_id(assess_coverage([_bp_row("DEFERRED_TO_CITATION", "deferred_to_citation")], None))[
         "software"
     ]
-    assert rc.addressed is True and rc.covered_by_extractor is True
+    assert rc.addressed is False and rc.covered_by_extractor is True
 
 
 def test_searched_but_none_named_is_covered_like_any_other_row() -> None:
