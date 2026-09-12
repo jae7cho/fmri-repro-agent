@@ -1,8 +1,9 @@
 # DELTA — a deferral does not address the Software row
 
 *Refinement of `cobidas._software_coverage` (design doc: `DESIGN_cobidas_coverage.md`;
-criterion: `docs/findings/cobidas-version-criterion.md`). Ratified 2026-09-07. Not implemented;
-this document is the record the implementation follows.*
+criterion: `docs/findings/cobidas-version-criterion.md`). Two rulings, ratified separately:
+the predicate (§1) on 2026-09-07, the wording (§8) on 2026-09-12. Neither is implemented; this
+document is the record the implementation follows.*
 
 ---
 
@@ -162,12 +163,48 @@ expected `addressed` flip from `True` to `False`. Rows A, B, C, E, and F are unc
 chen_2015 (B3b) and an `_assemble` output with a `MissingFromPaper` base (B4c), neither of which
 routes through B4b.
 
-## 8. Not settled here
+## 8. The wording, ruled 2026-09-12
 
-- The exact replacement wording for the deferral case, and whether it is reported under the
-  existing `### Not reported (mandatory, unconditional)` heading or a new one. The heading
-  currently carries a single sentence written for the unnamed-software case.
-- Whether `Pipeline named:` versus the bare `No version reported by the paper.` variant
-  should also diverge by author action. A paper that named no software at all is currently told
-  its version is missing, when the action it needs is to name the software. A separate wording
-  question recorded against Goal 1.
+The two items previously open here were one decision, not two, and are ruled together.
+
+**One heading, retained.** `### Not reported (mandatory, unconditional)` stays. All the cases
+below are the same COBIDAS finding, that the version is not reported, and a second heading
+would imply a deferral carries a different COBIDAS status, which §1 rules it does not.
+
+**Four lines, because Goal 1 is actionable guidance and the action differs.** The builder at
+`render.py:793-805` currently composes one sentence from a `named` prefix and a `ver` suffix,
+giving three reachable variants; the ruling adds a fourth and makes each say what the author
+should do.
+
+| Case | n in the 19-paper corpus | The line says |
+|---|---|---|
+| No software named | 5 | name the software, and give its version and revision number |
+| Named, version absent | 6 | give the version and revision number |
+| Named, version inferred by AESPA | 3 | give the version and revision number; AESPA inferred one, the paper did not report it |
+| Deferred to citation | 2 | version not reported; pipeline identity deferred to *ref* |
+
+**The inferred line is a disclosure, not guidance.** It is live on chen_2015,
+vanderwal_2016 and weber_2024 (`render.py:796-797`). Collapsing it into "give the version"
+would let a reader take an AESPA-inferred version for one the paper reported, which is the
+absence-of-evidence conflation this project exists to avoid, one field over. It survives the
+rewording unchanged in substance.
+
+**The deferral ref is available where the line is built.** `to_cobidas_coverage` already holds
+`rows` from `flatten` (`render.py:739`), and the `base_pipeline` row carries `deferral_refs`,
+set at `render.py:214-215`. Measured over the corpus: braun_2015 `['refs. 47 and 48']`,
+viduarre_2017 `['Glasser et al.']`, binder_1999 `None`. braun's report already renders
+`deferred to refs. 47 and 48` on its base-pipeline line.
+
+**Why the wording is part of this delta and not a follow-up.** The predicate change alone
+emits the WRONG sentence for both deferring papers. `_base_pipeline_name` returns `None` when
+no `PipelineRef` resolves, so `named` is empty and braun and viduarre receive binder_1999's
+bare variant, `(No version reported by the paper.)` — a paper that cited its pipeline told
+exactly what a paper that named nothing is told. That is A3's original complaint in a quieter
+register, so the deferral line ships with the predicate.
+
+**Sequencing, to keep each diff attributable.** The deferral line ships with the predicate; the
+other three lines are reworded separately. Doing all four at once moves 16 of 19 reports in one
+diff, in which no paper's change can be attributed to a cause. Split:
+
+- Predicate + deferral line → 2 reports change, braun_2015 and viduarre_2017.
+- The other three lines → 14 reports change, and braun and viduarre must NOT be among them.
