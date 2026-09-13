@@ -220,6 +220,39 @@ statement (:271-275) depends on it and is deferred with it.
 **The motion extraction arc** (build `motion_correction.method`, run the reachability probe, the stanza,
 K-draw, scoring). Track B, unchanged, off this critical path.
 
+**Tracking the demo reports, and the license question under it.** Deferred 2026-09-12. The 19
+per-paper reports live under the `*`-ignored `extractor_mvp/results/`, so the demo artifact has no
+tracked home. Tracking them was ruled on the premise that the `.md` are derived summaries while only
+the `.json` carry verbatim text. **That premise is false and the ruling is void:** both carry quotes.
+Measured over the corpus — `.json` 55 quotes / 1454 words / longest 86 words; `.md` 50 quotes / 574
+words / longest 17 words, every fragment hard-capped at 80 characters by `_SPAN_QUOTE_MAX`
+(`render.py:118`, truncated `:328-331`, emitted `:338` and `:580-581`). Three papers carry none.
+
+If the license question is taken up later, **frame it for the reports, not the JSONs** — they are
+different questions. The reports raise scholarly quotation of 80-character fragments with attribution
+adjacent, which may resolve favourably across the whole corpus; the JSONs raise verbatim sentences,
+which probably splits by publication year (the corpus spans 1999-2025, so older papers are likely
+all-rights-reserved). A partial track buys a partial guarantee, which is worse than a clearly-scoped
+one. Nothing built depends on this: `scripts/rerender_reports.py` regenerates the reports on demand
+and the identity gate works on any machine holding the run.
+
+**STANDING CONDITION, not a task: the stored reports are stale.** 16 of 19 under
+`extractor_mvp/results/batch_a1_acceptance/papers/` no longer match what HEAD's renderer produces —
+`59e732b` moved braun_2015 and viduarre_2017 (a coverage count, not wording) and `f44771a` moved the
+other 14. Only derosa_2025, liu_2013 and oconnor_2017 are current. Nothing regenerates them
+automatically, so anyone reaching for a demo report before 2026-10-31 gets output the tool no longer
+produces. Regeneration is free, deterministic, and makes no model call:
+
+```
+extractor_mvp/.venv/bin/python extractor_mvp/scripts/rerender_reports.py \
+  --results-dir "$PWD/extractor_mvp/results/batch_a1_acceptance" --emit-to <dir>
+```
+
+Regenerate by REPLAY, never by re-running `aespa-report`. Replay is deterministic from stored JSON;
+re-extraction is a different code path with model calls, and any nondeterminism would land in the
+artifact the identity gate depends on. That the tool is real and that the artifacts are reproducible
+are separate claims and the docs keep them apart.
+
 **The three stale-token defects in the instrument** — Glossary B20 still opens `(v1.4 — …)` while its tail
 records v1.5; Labels row 22 legend says `CALLs 1–8` (should be 1–10); CALL 10's body stamp reads
 `**Added v1.5.**` with no date where CALLs 6–9 all carry one. Cosmetic, but they are provenance claims in a
