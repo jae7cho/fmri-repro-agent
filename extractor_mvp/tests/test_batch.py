@@ -191,3 +191,60 @@ def test_run_batch_skips_and_records_excluded(monkeypatch, tmp_path: Path):
     assert "Corpus: 2 PDFs present · 1 excluded · N = 1" in summary
     assert "## Excluded papers" in summary
     assert "cabral_2017" in summary and "Review / modelling paper" in summary
+
+
+def test_tally_scope_is_step_fields_only() -> None:
+    """`_tally` walks preprocessing.steps and excludes base_pipeline — pinned, not incidental.
+
+    The exclusion is a real limitation with a live consequence: n_deferred reads 0 while a
+    paper whose base_pipeline is DEFERRED_TO_CITATION plainly defers. Pinning it here means a
+    future widening is a deliberate change to this test, not a silent shift in what
+    summary.csv means. See the _tally docstring for why widening is not a one-liner.
+    """
+    from extractor_mvp.batch import _tally
+    from extractor_mvp.render import flatten
+
+    prep = _assembled_with_deferred_base()
+    counts = _tally(prep)
+    assert counts["n_deferred"] == 0, "base_pipeline's deferral must not reach the step tally"
+
+    base = [r for r in flatten(prep) if r.path == "base_pipeline"]
+    assert base and base[0].extraction_status == "DEFERRED_TO_CITATION", (
+        "fixture must actually defer, or this test pins nothing"
+    )
+
+
+def _assembled_with_deferred_base() -> Any:
+    from fmri_repro.spec.preprocessing import Preprocessing
+    from fmri_repro.spec.provenance import (
+        Deferral,
+        DeferredToCitation,
+        LeftMissing,
+        ProvenancedField,
+        Span,
+    )
+    from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
+
+    bp = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=DeferredToCitation(
+            deferrals=[
+                Deferral(
+                    ref="Glasser 2013",
+                    span=Span(start=0, end=12, text="as in Glasser"),
+                    target_kind="paper",
+                )
+            ],
+            searched_terms=["pipeline"],
+            sections_searched=["Methods"],
+        ),
+        inference=LeftMissing(reason="deferred_to_citation"),
+    )
+    from tests.test_assemble_v0_3_0 import _assembled
+
+    steps = _assembled().steps
+    return Preprocessing(
+        applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
+        base_pipeline=bp,
+        steps=steps,
+    )

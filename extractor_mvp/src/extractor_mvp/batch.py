@@ -97,7 +97,24 @@ def _count_distinct_datasets(text: str) -> int:
 
 
 def _tally(preprocessing: Any) -> dict[str, int]:
-    """Bucket the targeted fields by outcome (untargeted fillers ignored)."""
+    """Bucket the targeted STEP fields by outcome (untargeted fillers ignored).
+
+    Scope is ``preprocessing.steps`` only. ``base_pipeline`` is a sibling field of ``steps``
+    on ``Preprocessing`` (``spec/preprocessing.py``), so it is outside this walk even though
+    it IS a targeted field — ``_build_base_pipeline`` runs on every paper. The consequence is
+    load-bearing and must not be read past: **``n_deferred`` counts deferred step fields, not
+    papers that defer.** On the 2026-09-07 corpus it reads 0 for all 19 while braun_2015 and
+    viduarre_2017 defer their base pipeline to a citation. Do not derive a corpus deferral
+    rate from ``summary.csv``.
+
+    Widening this to cover ``base_pipeline`` is NOT a one-line change and is deliberately not
+    done here: 14 of the 31 base-pipeline-family rows in that corpus carry reasons this
+    function does not map — 5 ``no_base_pipeline_named``, 6 ``version_deferred_to_kb``, and 3
+    version rows with no reason at all — so they would fall through and be counted nowhere.
+    Giving them buckets is a decision about what the summary columns mean, and belongs with
+    A5. A5 itself is unaffected: it aggregates ``RowCoverage``, which comes from
+    ``assess_coverage(flatten(...))`` and never touches this tally.
+    """
     counts = {
         "n_extracted": 0,
         "n_deferred": 0,
