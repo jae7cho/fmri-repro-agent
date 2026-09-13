@@ -128,7 +128,7 @@ def test_run_batch_writes_a_completeness_report_per_paper(monkeypatch, tmp_path:
 def test_render_failure_keeps_the_extraction(monkeypatch, tmp_path: Path):
     """A report failure must not discard a paid-for extraction.
 
-    to_report is pure and well-tested, but it runs inside _process_paper (the only place the
+    to_report is pure and well-tested, but it runs inside process_paper (the only place the
     live MethodsSlice exists), which is BEFORE run_batch writes the per-paper JSON. An escaping
     exception would throw away the LLM call. It is recorded and printed instead of swallowed.
     """

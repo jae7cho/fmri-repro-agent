@@ -29,6 +29,10 @@ dependencies = [
     "fmri-repro-agent",
 ]
 
+[project.scripts]
+# A4: one PDF in, one COBIDAS completeness report out. See src/extractor_mvp/report.py.
+aespa-report = "extractor_mvp.report:main"
+
 [tool.uv.sources]
 fmri-repro-agent = { path = "..", editable = true }
 

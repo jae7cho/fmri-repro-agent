@@ -160,9 +160,25 @@ def _translate_spans(prep_dump: dict[str, Any], start_offset: int) -> None:
                 span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
 
 
-def _process_paper(
+def process_paper(
     paper_id: str, path: Path, model: str, citation_resolver: CitationResolver | None = None
 ) -> PaperResult:
+    """One PDF in, one :class:`PaperResult` out — the whole chain for a single paper.
+
+    ``load_pdf_text`` → ``find_methods_section`` → ``ParsedPaper`` → ``extract`` →
+    ``to_report``. Public because it is the unit both runners share: ``run_batch`` calls it
+    per config entry, and ``extractor_mvp.report`` calls it once for a single PDF path.
+
+    Depends on nothing batch-shaped. ``BatchConfig``, the papers list, the exclusion gate and
+    the summary writers all live in :func:`run_batch`; ``citation_resolver`` is optional and
+    defaults to None, which is the configuration every tracked batch config has run under
+    (none sets ``citation_cache_dir``).
+
+    Never raises for a bad paper. A parse failure, an LLM error and a render failure each
+    come back as a populated field on the result — ``status``, ``error_message``,
+    ``render_error`` — so a batch can continue. A single-paper caller has no batch to protect
+    and should inspect ``report is None`` to decide its exit code.
+    """
     text, parser = load_pdf_text(path)
     if parser == "failed":
         return PaperResult(
@@ -301,7 +317,7 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
             excluded_present.append(paper.paper_id)
             print(f"  SKIP {paper.paper_id}: excluded from corpus statistics")
             continue
-        result = _process_paper(paper.paper_id, paper.path, config.model, citation_resolver)
+        result = process_paper(paper.paper_id, paper.path, config.model, citation_resolver)
         results.append(result)
         if result.extraction_json is not None:
             (papers_dir / f"{paper.paper_id}.json").write_text(
