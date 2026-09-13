@@ -18,6 +18,13 @@ dependencies = [
     # additions), not dev. litellm imports it lazily on the first Bedrock call.
     "boto3>=1.34",
     "pydantic>=2.13.4,<3",
+    # PDF text extraction. Runtime, not dev: load_pdf_text is on the only PDF-in path
+    # (batch.py, and the A4 entry point), and pdf_loader imports pypdf inside a try that
+    # returns ("", "failed"). Absent, every PDF fails with "pypdf returned no text" — a
+    # message that blames the PDF — and pdf_creation_date returns None, silently disabling
+    # KB version inference. command_survey and doi_date_resolver import it unguarded at
+    # module level and would fail at import instead.
+    "pypdf>=6.13.0",
     # extraction outputs are typed against the agent spec.
     "fmri-repro-agent",
 ]
@@ -26,7 +33,7 @@ dependencies = [
 fmri-repro-agent = { path = "..", editable = true }
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "pytest-cov", "pypdf", "types-PyYAML"]
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "types-PyYAML"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/extractor_mvp"]

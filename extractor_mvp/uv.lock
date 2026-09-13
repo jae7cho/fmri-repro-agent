@@ -436,12 +436,12 @@ dependencies = [
     { name = "instructor" },
     { name = "litellm" },
     { name = "pydantic" },
+    { name = "pypdf" },
 ]
 
 [package.optional-dependencies]
 dev = [
     { name = "mypy" },
-    { name = "pypdf" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
@@ -456,7 +456,7 @@ requires-dist = [
     { name = "litellm", specifier = ">=1.0" },
     { name = "mypy", marker = "extra == 'dev'" },
     { name = "pydantic", specifier = ">=2.13.4,<3" },
-    { name = "pypdf", marker = "extra == 'dev'" },
+    { name = "pypdf", specifier = ">=6.13.0" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-cov", marker = "extra == 'dev'" },
     { name = "ruff", marker = "extra == 'dev'" },
