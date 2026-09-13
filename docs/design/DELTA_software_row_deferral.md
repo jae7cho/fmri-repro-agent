@@ -141,10 +141,15 @@ two-paper diff after the change is not attributable to the change.
 
 ## 7. Superseded artifacts
 
-Both are in `extractor_mvp/tests/test_cobidas.py`. Neither was wrong when written; both were
-correct under A3's ruling.
+Three, not two. Each was correct under A3's ruling; none was wrong when written.
 
-**`test_deferred_pipeline_is_not_a_software_violation` (`test_cobidas.py:155`)** is superseded
+> **Correction, 2026-09-12.** This section originally listed two, both in `test_cobidas.py`.
+> It was written before anyone searched `test_render.py`, which holds the third. The omission
+> surfaced during implementation as a test failure rather than as a decision — the shape this
+> document exists to prevent. Line numbers below are as of the implementation
+> (`59e732b`, `f44771a`); the originals have shifted.
+
+**`test_deferred_pipeline_is_not_a_software_violation` (`test_cobidas.py:158`, renamed)** is superseded
 in full, including its name, which asserts the ruling being reversed. Its docstring records the
 diagnosis that still stands:
 
@@ -156,10 +161,17 @@ The successor states the ruling positively so it cannot be mistaken for the old 
 a new body: **`test_deferred_pipeline_addresses_identity_not_version`**.
 
 **`test_software_coverage_over_every_base_pipeline_state` (`test_cobidas.py:109`)** keeps its
-name and its six rows. Row D (`test_cobidas.py:135`), the `DEFERRED_TO_CITATION` case, has its
+name and its six rows. Row D (`test_cobidas.py:137`), the `DEFERRED_TO_CITATION` case, has its
 expected `addressed` flip from `True` to `False`. Rows A, B, C, E, and F are unchanged.
 
-`test_render.py:981` and `test_assemble_v0_3_0.py:73` are **not** affected: their fixtures are
+**`test_software_violation_surfaces_agree_for_every_base_pipeline_state`
+(`test_render.py:880`)** — the third, and the one this section missed. It keeps its name and
+its purpose: the property it pins is that the header and the body make the SAME claim about
+the Software row, which is orthogonal to which way the predicate rules. Only its expected
+value moves. Its `"deferred to a citation"` case (`test_render.py:909`) flips from
+`expect_violation=False` to `True`.
+
+`test_render.py:1075` and `test_assemble_v0_3_0.py:73` are **not** affected: their fixtures are
 chen_2015 (B3b) and an `_assemble` output with a `MissingFromPaper` base (B4c), neither of which
 routes through B4b.
 
