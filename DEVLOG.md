@@ -1571,3 +1571,128 @@ Commits: 814a1fc (re-render identity gate) · d8c97c6 (design — the Software-r
 · 59e732b (predicate — a deferral answers identity, not the version; deferral line) · f44771a
 (the other three lines state the action). All committed 2026-09-12. This DEVLOG entry committed
 separately, last.
+
+## 2026-09-12
+
+Hours: ~20:15 - 21:45 ET. `2990965` is also in this entry's footer: it landed at 01:30, in the
+tail of the 09-11 sitting but after that entry was already committed.
+
+**A4 shipped, and the premise it was scoped on had expired.** A4's "Why" claimed `batch.py` is
+PDF-in and never imports `render`. A1 (`214b55c`) had made that false months of reasoning ago in
+document time and five days ago in real time: `batch.py:34` imports `to_report`, and
+`_process_paper` already ran the whole chain. Re-estimated by building it — **small, not
+medium**, about 35 lines of body reusing eight functions untouched through one call. `2990965`
+corrects the scope doc; `815ec2f` is the entry point.
+
+`demo.py` is not the host, and the scope doc's reason was weaker than the real one: `demo.py:71`
+calls `extract_preprocessing` while `batch.py:30` calls `extract`, so it sits on the older entry
+point and was skipped by the migration that moved every other runner. `_process_paper` is
+promoted to `process_paper` — one caller, so two lines — and gains the docstring that promoting
+it to API required.
+
+**The command was run against a real PDF rather than declared correct.** One paper, one billed
+call, through the installed console script rather than the module fallback:
+
+    aespa-report .../Agtzidis_2020.pdf --paper-id agtzidis_2020 --output <path>
+    wrote <path>        exit=0        wall=12s
+
+That settles three things at once. A4 works end to end. **Bedrock authorization works** — the
+question recorded as untested is now tested, and the profile the record named (`bedrock-extractor`,
+`DEVLOG.md:533`) being gone did not matter. And 12 s confirms the 9-15 s band measured from the
+corpus run, against the scope doc's 30-90 s, which was wrong by 3-6x and was part of the stated
+case for pre-generated reports. The recommendation survives; that reason for it does not.
+
+**The report reproduced byte-identically, and that is an observation, not a stability claim.**
+The live extraction five days later rendered identical bytes to a replay of the stored
+2026-09-07 JSON. Under temp-0 that is the expected outcome; `docs/findings/variance.md` documents
+the nondeterminism, so the finding is that this paper did not hit it, not that the extractor is
+stable. One paper, one draw, one confirming direction — the same evidence shape as the three
+version strings, which cannot establish a rate either. It is not to be cited as stability.
+
+**`pypdf` was a dev extra, and that was a correctness bug rather than a packaging one.**
+`c76d60e`. `load_pdf_text` is on the only PDF-in path, and `pdf_loader.py:22-28` imports pypdf
+inside a `try` returning `("", "failed")`. Without the dev extras — which is what an install
+plus a console script produces — every PDF fails with `"pypdf returned no text"`, a message
+blaming the PDF rather than the install, and `pdf_creation_date` returns `None`, **silently
+disabling KB version inference**. That last part is the report saying something different, not
+an install failing. `command_survey.py:41` and `doi_date_resolver.py:48` import it unguarded and
+would fail at import instead.
+
+**The checker that actually runs has a blind spot, and it is its own corrective.** Moving pypdf staled
+`extractor_mvp/uv.lock`. `uv lock --check` reported it; `uv sync --all-extras --frozen`, which is
+what CI runs, did not — `--frozen` takes the lockfile as given, so it installs from the stale
+lock and stays green. Previous instances of this family were a LOCAL checker being weaker than
+the real one; this is the real one being structurally unable to detect the failure. `f1db6c6`
+adds a separate `uv lock --check` step to both jobs, separate on purpose because folding
+`--check` into the sync would change what CI installs. Verified by mutation rather than
+asserted: adding a dependency without relocking makes `--check` fail while `--frozen` still
+passes.
+
+The rule this yields is not "verify against the checker that will actually run" — that one
+assumes the real checker CAN detect the failure. **A checker that takes its input as given
+cannot validate that input.** `--frozen` is defined as trusting the lockfile, so no amount of
+running it more carefully would help; the fix has to sit beside it, not inside it. Filed
+separately from the 09-11 rule for that reason.
+
+**The ruling to track the demo reports was made on a distinction nobody had measured, and is
+void.** `d2864d5`. I ruled that the `.md` are derived summaries while the `.json` carry the
+verbatim quotes. Both carry quotes. Measured: `.json` 55 quotes / 1454 words / longest 86;
+`.md` 50 quotes / 574 words / longest 17, every fragment capped at 80 characters by
+`_SPAN_QUOTE_MAX` (`render.py:118`). The premise was one command from being checked and the
+licence question had already been raised. That one is mine — I stated the premise and the agent
+acted on it.
+
+Parked rather than resolved, and nothing built is lost: `scripts/rerender_reports.py` regenerates
+the reports on demand and the identity gate works on any machine holding the run. If the licence
+question is taken up, it should be framed **for the reports** — scholarly quotation of capped
+fragments with attribution adjacent, which may resolve across the whole corpus — and not as the
+JSON question, which is verbatim sentences and probably splits by publication year over a
+1999-2025 corpus.
+
+Recorded in the same commit as a **standing condition rather than a task**: 16 of 19 stored
+reports no longer match HEAD's renderer, nothing regenerates them automatically, and anyone
+reaching for a demo report before 2026-10-31 gets output the tool no longer produces. The free
+replay command is recorded with it, and was run as written before being recorded — a command in
+a deferred list is read six weeks later by someone who will not check it.
+
+**`#8` closed by scoping rather than widening** (`a0ba287`), and the widening priced. `_tally`'s
+docstring claimed it buckets "the targeted fields"; `base_pipeline` is targeted and is a sibling
+of `steps`, so the walk never reaches it. Widening is not a one-liner: 14 of the 31
+base-pipeline-family rows in the corpus carry reasons `_tally` does not map — 5
+`no_base_pipeline_named`, 6 `version_deferred_to_kb`, 3 version rows with no reason — and would
+fall through uncounted. Giving them buckets decides what the summary columns mean and belongs
+with A5. So the scope is made explicit, the consequence is stated where it will be read
+(**`n_deferred` counts deferred step fields, not papers that defer**), and a test pins the
+exclusion, verified by mutation to fire when the walk is widened.
+
+**`§7` of the DELTA listed two superseded artifacts; there were three** (`18b67e1`). The third,
+`test_software_violation_surfaces_agree_for_every_base_pipeline_state`, is in `test_render.py`,
+and §7 was written before anyone searched that file. It surfaced during implementation as a test
+failure rather than as a decision, which is the shape that document exists to prevent.
+
+**Check correctives, continued from 09-11.** The rule there was *a check must be able to fail for
+the reason it exists*. Three more this stretch, plus the `--frozen` rule above. Two from the
+agent's errors:
+
+- **A claim about what someone else can verify has to name what they hold.** Asserted twice on
+  the same footing: first that a hash manifest would make the identity gate verifiable by
+  anyone, then that tracking the reports would make it clone-checkable. Both wrong for one
+  reason — the inputs are under the same ignore rule as the outputs, so a clone holds neither.
+- **A fingerprint must be invariant to everything except what it fingerprints.** The
+  baseline-integrity check hashed `stat` output including the path as spelled, so calling it with
+  an absolute path instead of a relative one changed the hash with the data untouched. It read as
+  the baseline having been written to. Halting was still right: a false positive costs one
+  command, a false negative costs the baseline. A content-only hash is the fix.
+
+And a third, from the `.md`-versus-`.json` error above: **a property asserted of one artifact has
+to be measured on each artifact it is asserted of.**
+
+**Open.** A5 (SHOULD, not MUST). The demo reports' tracked home and the licence question under
+it. Their staleness, standing until someone regenerates. No labelling has started for
+`base_pipeline.version`. Target 2026-10-31, poster 2026-11-14.
+
+Commits: 2990965 (A4 re-estimated small; the pypdf blocker recorded) · c76d60e (pypdf to runtime)
+· 815ec2f (A4 — the PDF-to-report entry point) · d2864d5 (demo reports deferred; staleness
+recorded) · a0ba287 (_tally scoped, widening priced) · 18b67e1 (DELTA §7 — three artifacts, not
+two) · f1db6c6 (CI — lockfile currency). All committed 2026-09-12. This DEVLOG entry committed
+separately, last.
