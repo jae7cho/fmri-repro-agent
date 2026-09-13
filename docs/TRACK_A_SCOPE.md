@@ -253,6 +253,21 @@ re-extraction is a different code path with model calls, and any nondeterminism 
 artifact the identity gate depends on. That the tool is real and that the artifacts are reproducible
 are separate claims and the docs keep them apart.
 
+**The published configs carry 313 absolute paths, which makes their commit message's claim too
+strong.** `0982b84` tracked them on the grounds that "a config is the input that makes a run
+reproducible". With `/Users/cwook/...` on every `path:` and `output_dir:` line — 313 lines across
+21 files, now public — they make a run **identifiable, not reproducible**, which is the weaker
+claim. Worth fixing before a reader arrives expecting the stronger one.
+
+The fix is cheap and needs no new code: `load_batch_config` already resolves relative `path`,
+`output_dir` and `citation_cache_dir` against the config file's own directory
+(`batch_config.py:48`, `:52`, `:56-58`), so the paths can simply be relative.
+
+But it buys portability of the CONFIG, not of the RUN. Zero PDFs are tracked — `git ls-files`
+finds none — and the corpus lives outside the repository at `../tested_lit/`. A cloner with
+relative configs still cannot run one without supplying the papers, so the honest claim even
+after the fix is that the configs record which inputs a run used, not that anyone can repeat it.
+
 **The three stale-token defects in the instrument** — Glossary B20 still opens `(v1.4 — …)` while its tail
 records v1.5; Labels row 22 legend says `CALLs 1–8` (should be 1–10); CALL 10's body stamp reads
 `**Added v1.5.**` with no date where CALLs 6–9 all carry one. Cosmetic, but they are provenance claims in a
