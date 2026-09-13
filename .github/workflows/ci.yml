@@ -38,6 +38,13 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: fmri-repro-agent/uv.lock
+      # `uv sync --frozen` takes the lockfile as given, so it cannot detect a lockfile
+      # that has drifted from pyproject.toml — a dependency moved between groups installs
+      # from the stale lock and CI stays green. Separate step on purpose: folding --check
+      # into the sync would change what CI installs.
+      - name: Lockfile is current
+        working-directory: fmri-repro-agent
+        run: uv lock --check
       - name: Install dependencies
         working-directory: fmri-repro-agent
         run: uv sync --all-extras --frozen
@@ -72,6 +79,13 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: fmri-repro-agent/extractor_mvp/uv.lock
+      # `uv sync --frozen` takes the lockfile as given, so it cannot detect a lockfile
+      # that has drifted from pyproject.toml — a dependency moved between groups installs
+      # from the stale lock and CI stays green. Separate step on purpose: folding --check
+      # into the sync would change what CI installs.
+      - name: Lockfile is current
+        working-directory: fmri-repro-agent/extractor_mvp
+        run: uv lock --check
       - name: Install dependencies
         working-directory: fmri-repro-agent/extractor_mvp
         run: uv sync --all-extras --frozen
