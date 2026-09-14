@@ -280,11 +280,17 @@ def main() -> int:
     # sanity check anyone reaches for here is structurally blind to the thing it is checking;
     # the per-label state counts below are what make a vintage difference visible.
     print(f"  total          {len(correct)} correct / {len(errors)} error        (frozen: 11 / 8)")
+    # Each rate carries its qualifier ON ITS OWN LINE. A number leaves this terminal by being
+    # copied, and a copy takes the line the number sits on; a disclosure one line down does not
+    # travel with it.
     print(
-        f"  all blind      {len(blind_c)}/{len(blind)} = {pa:.1%} [{la:.0%},{ha:.0%}]  (frozen: 11/17 = 64.7%)"
+        f"  all blind      {len(blind_c)}/{len(blind)} = {pa:.1%} [{la:.0%},{ha:.0%}]"
+        f"   [VINTAGE 0.5.0 re-extraction — this is the presentable rate; frozen gives 11/17 = 64.7%]"
     )
     print(
-        f"  reachable-only {len(reach_c)}/{len(reach)} = {pb:.1%} [{lb:.0%},{hb:.0%}]  (frozen: 11/14 = 78.6%)"
+        f"  reachable-only {len(reach_c)}/{len(reach)} = {pb:.1%} [{lb:.0%},{hb:.0%}]"
+        f"   [DIAGNOSTIC ONLY, DO NOT PUBLISH — post-hoc exclusion identified after seeing the"
+        f" score, not pre-registered; retired from target_space_README.md. frozen: 11/14 = 78.6%]"
     )
     print(f"\n  wrote {OUT_CSV.relative_to(REPO)}")
     return 0

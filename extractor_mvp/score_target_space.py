@@ -242,10 +242,21 @@ def main() -> int:
     pa, la, ha = wilson(len(blind_c), len(blind))
     pb, lb, hb = wilson(len(reach_c), len(reach_blind))
     print("\n=== blind correct-rate (Wilson 95%) — both denominators ===")
-    print(f"  all blind        {len(blind_c)}/{len(blind)} = {pa:.1%}  [{la:.0%}, {ha:.0%}]")
+    # Each rate carries its qualifier ON ITS OWN LINE, not only in the NOTE below. A number
+    # leaves this terminal by being copied, and a copy takes the line the number sits on; a
+    # disclosure one line down does not travel with it. The README's headline was an unlabelled
+    # v040 figure for five weeks by exactly that route.
     print(
-        f"  reachable-only   {len(reach_c)}/{len(reach_blind)} = {pb:.1%}  [{lb:.0%}, {hb:.0%}]  "
-        f"(excludes {len(excl)}: {len(unreachable)} unreachable-leak + {len(demonstrated)} demonstrated-corruption; suspect stays IN)"
+        f"  all blind        {len(blind_c)}/{len(blind)} = {pa:.1%}  [{la:.0%}, {ha:.0%}]"
+        f"   [VINTAGE v040_frozen — the 0.5.0 re-extraction gives a DIFFERENT rate from these"
+        f" same labels and map; run score_v050_reextraction.py]"
+    )
+    print(
+        f"  reachable-only   {len(reach_c)}/{len(reach_blind)} = {pb:.1%}  [{lb:.0%}, {hb:.0%}]"
+        f"   [DIAGNOSTIC ONLY, DO NOT PUBLISH — post-hoc exclusion of {len(excl)}:"
+        f" {len(unreachable)} unreachable-leak + {len(demonstrated)} demonstrated-corruption"
+        f" (suspect stays IN), identified after seeing the score and not pre-registered;"
+        f" retired from target_space_README.md]"
     )
     print(
         "  NOTE: reachable-only is a scoring-policy exclusion IDENTIFIED POST-HOC (after seeing the score),"
