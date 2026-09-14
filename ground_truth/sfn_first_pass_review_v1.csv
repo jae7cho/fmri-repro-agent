@@ -1,0 +1,64 @@
+# First-pass hand review of EXTRACTOR OUTPUT — SfN batch, reviewed 2026-06-07.
+#
+# WHAT THIS IS NOT. Not ground truth, not a labels file, and not scoreable. Each row records one
+# reviewer's verdict on what the extractor produced for that field, not an independent reading of
+# the paper. The labels live in ground_truth/{target_space,base_pipeline,motion_correction}_labels_v1.*
+# and were written separately against a pre-registered protocol. Do not compute a rate from this file.
+#
+# SOURCE. extractor_mvp/sfn_review_first_pass_review.xlsx — an UNTRACKED workbook, dcterms:created
+# 2026-06-07T17:31:05Z, itself a Save-As of sfn_review.xlsx as emitted by generate_sfn_review.py.
+# The workbook stays untracked because its `notes` and `verbatim_quote` columns hold pasted paper
+# text (19 of 20 notes run to 12+ words, longest 532) — the licensing question that parked the
+# baselines. No CORPUS SPAN survives into this projection: the 19 corrections run to 11 words at
+# most and none is a quotation. Running the bare 12-word check over this file returns exactly one
+# hit — mueller_2021/resolution_mm `note`, 21 words — and that cell is the REVIEWER's own prose,
+# which is what the threshold is not aimed at. Named here so the hit is not mistaken for a miss.
+# A byte-identical copy of the workbook is held outside the repository.
+#
+# NO GENERATOR, AND THAT IS WHY THIS HEADER IS HAND-WRITTEN. The source is untracked, so nothing in
+# a clone can rebuild this file and no re-run can silently discard these lines. The opposite case is
+# ground_truth/target_space_predictions_v050.csv, whose header must be EMITTED because its generator
+# opens it with "w". The two files look alike and are not the same kind of artifact.
+#
+# LIFTED NOTES. The `notes` column is dropped except for three cells that are the reviewer's own
+# commentary rather than pasted paper text. They appear in `note`:
+#   liu_2005 / resolution_mm      — the commentary PREFIX only. The paper text that followed it in
+#                                   the same cell is deliberately not reproduced here.
+#   mueller_2021 / resolution_mm  — carried whole; a request for the extractor to distinguish
+#                                   "no resampling to target space" from "missing".
+#   poldrack_2015 / target_surface — "see above", carried whole. It pointed at the preceding
+#                                   poldrack note, which was paper text and is not here, so it is
+#                                   retained as a pointer that no longer resolves.
+#
+# COVERAGE. 27 rows: 25 carry a review verdict, 19 a correction. Only `target_space` among the
+# fields here has tracked ground truth; the 11 verdicts on resolution_mm, target_surface,
+# surface_registration, convention and value are the only accuracy judgements on those fields
+# anywhere in this repository. Readers must strip lines beginning with '#'.
+paper_id,step_kind,field,review,correction,note
+agtzidis_2020,spatial_normalization,resolution_mm,n,3.0,
+agtzidis_2020,spatial_normalization,target_space,n,MNI,
+binder_1999,spatial_normalization,target_space,y,,
+braun_2015,spatial_normalization,resolution_mm,n,defer to citation 47 or 48,
+chen_2015,intensity_normalization,convention,n,whatever CCS default is,
+chen_2015,surface_projection,surface_registration,n,whatever CCS default is,
+chen_2015,spatial_normalization,target_space,y,,
+chen_2015,surface_projection,target_surface,y,,
+chen_2015,intensity_normalization,value,y,,
+ciric_2017,spatial_normalization,resolution_mm,n,Not mentioned,
+derosa_2025,spatial_normalization,target_space,n,MNI-152,
+liu_2005,spatial_normalization,resolution_mm,n,,wrong quote (llm got lucky)
+liu_2013,spatial_normalization,target_space,n,MNI,
+mueller_2021,spatial_normalization,resolution_mm,?,,"Would be nice to have, something distinguishing ""no func resampling to target space"" vs. ""missing"" instead of deferring to acquisition params."
+mueller_2021,spatial_normalization,target_space,n,Subject-specific,
+oconnor_2017,spatial_normalization,target_space,n,MNI_152_T1_2mm,
+poldrack_2015,spatial_normalization,target_space,n,,
+poldrack_2015,surface_projection,target_surface,n,,see above
+power_2014,spatial_normalization,target_space,n,not mentioned,
+smith_2013,spatial_normalization,resolution_mm,,Let's take this out - not a real study with data,
+smith_2013,surface_projection,surface_registration,,Let's take this out - not a real study with data,
+tang_2025,spatial_normalization,target_space,n,MNI,
+vanderwal_2016,spatial_normalization,target_space,n,MNI,
+viduarre_2017,intensity_normalization,convention,n,mean 0 sd 1,
+weber_2024,spatial_normalization,target_space,n,MNI152,
+weber_2024,surface_projection,target_surface,n,Conte69,
+wheaton_2004,spatial_normalization,target_space,n,SPM MNI,
