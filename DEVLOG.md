@@ -1696,3 +1696,78 @@ Commits: 2990965 (A4 re-estimated small; the pypdf blocker recorded) · c76d60e 
 recorded) · a0ba287 (_tally scoped, widening priced) · 18b67e1 (DELTA §7 — three artifacts, not
 two) · f1db6c6 (CI — lockfile currency). All committed 2026-09-12. This DEVLOG entry committed
 separately, last.
+
+## 2026-09-12 (late)
+
+Two things after the 09-12 entry, whose own footer says it was committed last. It was not, and
+the convention that a `Commits:` footer is written before the sitting ends is what produced that
+— worth knowing rather than fixing, since the entry is pushed and a later entry correcting an
+earlier one is how this log handles it. It is also an argument about the footer's form: **a
+`Commits:` footer should state what it commits, not its position in the sequence.** "Committed
+separately, last" is a claim about the future, and the future gets two more commits in it.
+
+**Pushed.** `214b55c..dcc8e8a`, 21 commits across three sittings, and the first push in eleven
+days — `git reflog show origin/main` dates the previous one to 2026-09-01 21:57, thirteen seconds
+after `214b55c` was committed. Verified against the remote rather than the local ref: `git
+ls-remote origin main` returns `dcc8e8a`, matching local HEAD. For those eleven days the §4.3
+retraction, the deferral ruling and its implementation, the identity gate and A4 existed only on
+this machine. I had said twenty-five commits; it was twenty-one. The count came from
+adding up sittings rather than asking git, which is the same shape as every other number in this
+log that turned out to need checking.
+
+Worth holding as a fact about the cadence rather than about this stretch. Neither the §4.3
+retraction nor the deferral ruling was reconstructible from the conversation alone — both rest on
+measurements taken against the tree, and the reasoning that produced them lives in the commits and
+the design doc, not in anything recoverable elsewhere. Eleven days of that on one machine reads as
+fine until it is not.
+
+Before pushing, two things were checked because the session had just spent hours deciding what
+not to publish: that nothing under `results/` was in the push set (only its `.gitignore`, which
+is the rule and belongs there), and that no corpus span of 12 or more words appeared in any
+changed file. Neither found anything. The `/Users/cwook/` paths in the configs were already
+public at `214b55c` in 9 files, so the 313 new occurrences are volume, not disclosure.
+
+**`bcb763c` — the published configs overclaim.** `0982b84` tracked them because "a config is the
+input that makes a run reproducible". With an absolute path on every `path:` and `output_dir:`
+line they make a run identifiable rather than reproducible, which is the weaker claim, and it is
+now public. `load_batch_config` already resolves relative paths against the config file's own
+directory (`batch_config.py:48`, `:52`, `:56-58`), so the fix needs no new code. Recorded with
+its limit attached so the fix is not followed by a second overclaim: zero PDFs are tracked and
+the corpus lives outside the repository, so relative paths buy portability of the config, not of
+the run.
+
+**Which corrective is load-bearing, corrected.** The agent's closing read of the session was that
+the gate was specified three times, wrong three times, and that each correction came from reading
+the definition rather than the call site. That is the visible half and it is the wrong half to
+carry forward. Each correction arrived because something FIRED — the negative control, the 7-vs-2
+partition, the byte-level diff. Nobody re-read more carefully the second time.
+
+The distinction matters for what gets built. *Read the definition, not the call site* describes
+what the fix turned out to be, but it is not a method: under deadline nobody reads more carefully
+on request. **Make the check able to fail for the reason it exists** is a thing that can be built,
+and it keeps working when attention does not. The 09-11 entry already has the ordering right —
+that rule is its headline and predicate-from-consumer sits under it as a diagnosis — but the
+ordering was accidental there and is deliberate here.
+
+**A hedge is an assertion, and needs the same verification as the claim it replaces.** Writing
+the push paragraph, the agent asserted the previous push date, hedged it to "not recoverable from
+here", then checked and found `git reflog show origin/main` had it exactly — 2026-09-01 21:57,
+thirteen seconds after `214b55c` was committed. The hedge was not the safe version of the claim; it
+was a different claim, about the evidence, and it was false.
+
+This is the fourth corrective and the first that is not about a check. The other three are about
+checks that cannot fail. This is a claim that cannot fail: "not recoverable from here" is
+unfalsifiable as stated and reads as epistemic caution. The failure mode is **"I don't know" used
+to avoid a check rather than to report one** — and it is harder to catch than a bad assertion,
+because hedging looks like the careful choice.
+
+**Open, unchanged.** The poster-number hardening is next: `score_target_space.py` counts only
+error classes and writes no file, so every published rate was hand-transcribed with nothing
+checking it against a rerun, and those numbers reach a board on 2026-11-14. The two traps to
+encode as assertions are already recorded — read the 19-row CSV and not the 21-row XLSX, and name
+the prediction vintage on the face of any emitted rate. A5 is SHOULD, not MUST. The three parked
+items stand: the demo reports' tracked home and the licence question under it, their staleness,
+and the absolute paths above.
+
+Commits: bcb763c (the configs overclaim recorded, with its fix bounded), committed 2026-09-12.
+This DEVLOG entry committed separately, last, on 2026-09-13.
