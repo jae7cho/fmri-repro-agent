@@ -20,7 +20,12 @@ import json
 from pathlib import Path
 
 import pandas as pd
-from openpyxl.styles import Alignment, Font, PatternFill
+
+# openpyxl is imported lazily inside the two styling helpers, NOT here. It is declared in
+# neither pyproject and installed in neither venv, so a module-level import made even
+# `--help` raise ModuleNotFoundError and made refuse_to_clobber_hand_review untestable in
+# the environment this repo actually ships. Lazy keeps the module importable; it does NOT
+# make the generator runnable, and the guard runs before anything opens the output file.
 
 COLOURS = {
     "Extracted ✓": "C6EFCE",
@@ -465,6 +470,8 @@ def build_df(results_dir: Path) -> pd.DataFrame:
 
 
 def style_data_sheet(ws, df_sheet: pd.DataFrame):
+    from openpyxl.styles import Alignment, Font, PatternFill
+
     hdr_fill = PatternFill("solid", start_color="2F5496")
     hdr_font = Font(bold=True, color="FFFFFF", name="Arial", size=10)
     for cell in ws[1]:
@@ -491,6 +498,8 @@ def style_data_sheet(ws, df_sheet: pd.DataFrame):
 
 
 def write_glossary_sheet(ws):
+    from openpyxl.styles import Alignment, Font, PatternFill
+
     ws.append(["STATUS LEGEND", "", "", "", ""])
     ws.append(["Status", "Colour", "Meaning", "", ""])
     for status, _colour, meaning in STATUS_LEGEND:
@@ -528,7 +537,96 @@ def write_glossary_sheet(ws):
     ws.freeze_panes = "A7"
 
 
+#: Columns a human fills in by hand. ``build_df`` emits all three EMPTY, so any content in them
+#: on disk was typed by a person and this script cannot reproduce it.
+REVIEW_COLUMNS = ("review", "correction", "notes")
+
+
+def _hand_annotated_columns(output: Path) -> dict[str, int]:
+    """Count non-empty hand-review cells per column in an existing .xlsx.
+
+    Reads the SpreadsheetML with the standard library rather than openpyxl on purpose. The guard
+    has to work in the environment the repo actually ships, and openpyxl is declared in neither
+    pyproject and installed in neither venv -- the same shape as the pypdf packaging bug. A guard
+    that needs a missing dependency is a guard that is not there.
+
+    Fails CLOSED. If the workbook exists but cannot be parsed, this raises instead of returning
+    an empty dict, because "no annotations found" and "the detector did not work" must not
+    produce the same answer. Reporting a failed detection as a negative result is how the review
+    columns were first, wrongly, called empty.
+    """
+    import re
+    import zipfile
+    from xml.etree import ElementTree as ET
+
+    ns = "{http://schemas.openxmlformats.org/spreadsheetml/2006/main}"
+    counts: dict[str, int] = {}
+    with zipfile.ZipFile(output) as z:
+        names = z.namelist()
+        shared = (
+            [
+                "".join(t.text or "" for t in si.iter(f"{ns}t"))
+                for si in ET.fromstring(z.read("xl/sharedStrings.xml"))
+            ]
+            if "xl/sharedStrings.xml" in names
+            else []
+        )
+        for sheet in sorted(n for n in names if re.fullmatch(r"xl/worksheets/sheet\d+\.xml", n)):
+            rows = []
+            for row in ET.fromstring(z.read(sheet)).iter(f"{ns}row"):
+                cells: dict[str, str] = {}
+                for c in row.iter(f"{ns}c"):
+                    ref = re.match(r"[A-Z]+", c.get("r") or "A")
+                    v, inline = c.find(f"{ns}v"), c.find(f"{ns}is")
+                    if inline is not None:
+                        text = "".join(x.text or "" for x in inline.iter(f"{ns}t"))
+                    elif v is not None and v.text is not None:
+                        text = shared[int(v.text)] if c.get("t") == "s" else v.text
+                    else:
+                        continue
+                    if text.strip() and ref is not None:
+                        cells[ref.group()] = text.strip()
+                rows.append(cells)
+            if not rows:
+                continue
+            header = {col: name for col, name in rows[0].items() if name in REVIEW_COLUMNS}
+            for cells in rows[1:]:
+                for col, name in header.items():
+                    if cells.get(col):
+                        counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
+def refuse_to_clobber_hand_review(output: Path) -> None:
+    """Never overwrite a workbook a human has annotated.
+
+    ``pd.ExcelWriter`` opens with ``mode="w"``, which truncates on entry, and this generator
+    writes ``review``/``correction``/``notes`` empty. So a re-run aimed at an annotated workbook
+    destroys adjudication that nothing else holds: ``sfn_review_first_pass_review.xlsx`` carried
+    69 such cells (review=27, correction=21, notes=21 across its three data sheets; 64 distinct
+    paper/step/field adjudications, none conflicting), including the braun deferral call that a
+    week of rulings rests on -- protected by nothing but this module failing to import openpyxl.
+
+    Deliberately does NOT write a backup. A backup nobody knows exists is one more untracked
+    artifact with exactly this problem. Refuse, name the file and what is in it, and let a person
+    move it.
+    """
+    if not output.exists():
+        return
+    counts = _hand_annotated_columns(output)
+    if not counts:
+        return
+    filled = ", ".join(f"{name}={n}" for name, n in sorted(counts.items()))
+    raise SystemExit(
+        f"REFUSING to overwrite {output}: it holds hand-entered review data ({filled}).\n"
+        f"This generator writes those columns EMPTY, so the run would destroy them and nothing "
+        f"can regenerate them.\n"
+        f"Rename or move that file, or pass --output with a different name."
+    )
+
+
 def write_excel(df: pd.DataFrame, output: Path):
+    refuse_to_clobber_hand_review(output)
     priority_mask = df["status"].isin(["Extracted ✓", "Family-specified", "Quote unresolved"])
     ts_mask = df["field"] == "target_space"
 
