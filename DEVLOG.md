@@ -1771,3 +1771,205 @@ and the absolute paths above.
 
 Commits: bcb763c (the configs overclaim recorded, with its fix bounded), committed 2026-09-12.
 This DEVLOG entry committed separately, last, on 2026-09-13.
+
+## 2026-09-13
+
+Hours: 09:21 - 09:23, then 20:43 - 22:01 ET. Two blocks; the first was two minutes.
+
+**`abe7be1` — the v050 predictions carry their provenance, and it is emitted rather than written in.**
+The CSV had no header at all, so a rate computed from it could not say what produced it, and "name
+the prediction vintage on the face of any emitted rate" is one of the two traps `TRACK_A_SCOPE.md`
+already records against this work. The frozen CSV has a hand-maintained header and the v050 one
+cannot: `score_v050_reextraction.py` opens it with `"w"`, so a hand-added block would be silently
+lost on the next run. The two files look alike and are not the same kind of artifact.
+
+What the header claims is scoped to what it can support. The model pin is read from the tracked
+configs rather than hardcoded, so it cannot drift from them quietly. The load-bearing line is
+recomputed at every emit — `k3_status` against the on-disk draws, 19/19 today, with a
+content-derived fingerprint — and if the draws are absent it raises rather than emitting a line
+claiming a check that did not run. The frozen header is not thin — it runs thirteen lines — but its
+`Source commit of the batch: 70eed84` is hand-written and nothing recomputes it, which is the
+difference this one is drawing. And the claim names what its reader must hold: reproducible on a machine holding the run,
+not on a clone, because `results/` is ignored in full. 2619 bytes became 3570.
+
+**Verification must not be able to damage what it verifies.** The first draft called
+`_provenance_header` inside the `with OUT_CSV.open("w")` block. `open("w")` truncates on entry, so
+the verification meant to protect the artifact destroyed it: a deliberately-failed check left an
+empty file where the predictions had been, and the file came back from `git checkout`. This is a new
+shape and does not reduce to the earlier check correctives. Those are about checks that cannot fail;
+this one failed correctly and did damage on the way out. The fix is ordering — build the header
+before opening the file (`score_v050_reextraction.py:229-232`) — and the rule generalises past this
+file: a check must not sit inside the resource it is checking.
+
+**A determinism check that passed because both runs crashed.** Confirming the emit was deterministic,
+`cmp` compared the CSV to itself: both runs had died before writing, so the file was untouched and
+trivially identical. Same family as items 1 and 4 of the 09-11 list — the acceptance test satisfied
+by a global absence, and the heredoc `grep` that matched the wrong line and reported success — a
+check reporting success from the absence of the thing it measures. What makes this family hard is
+that the successful result and the no-op result are indistinguishable at the check's output. The
+check has to assert that the thing happened, not only that the result matches.
+
+The silent-strip hazard is handled by a test rather than a reader, because nothing reads the file
+yet: forgetting the `#`-strip parses 32 rows instead of 19 without erroring. That is a landmine with
+a known date — it fires when `score_target_space.py` moves to v050 — so its existing strip site now
+carries a forward pointer naming the test, on the argument that the comment belongs where the next
+person will be looking rather than where the hazard was found.
+
+**`ebf8fb2` — the README's headline rate had no vintage, and the vintage was the wrong one.** The
+0.5.0 re-extraction has been committed since 2026-08-06 and gives a different rate from the same
+labels under the same map. An unlabelled number there was not a stale number; it was a number with
+no vintage at all. The headline is now blind 10/17 = 58.8% [36, 78], named on its face, with the
+command that regenerates it printed in the section, and both scorers named because
+`score_target_space.py` still reads the frozen file.
+
+Reachable-only is retired rather than recomputed. The exclusion was identified after seeing the
+score and drops rows because of how they scored; a rationale found after the fact is not
+distinguishable from a tuned one, and the excluded leaks are real defects.
+
+**The totals are why this mattered.** Both vintages score 11 correct / 8 error over 19, and both
+partition 5 / 2 / 1. braun went correct to error and mueller error to correct; braun is blind and
+mueller is not, so the rate moved while every total held still. The sanity check anyone reaches for
+— did the numbers move? — is structurally blind to the thing it is checking. That trap is now
+written into the section rather than left in a scorer comment.
+
+**Changing a describing word to a grading word changes what the sentence asserts, and the old
+sentence's truth does not transfer.** The correct-list had read "the 8 bare-MNI-family papers
+(agtzidis, derosa, gordon, …) + cole (Talairach)". Rewriting it for the new vintage, the agent made
+it "the 8 `family_specified` papers … then cole (Talairach)", which is false: cole grades
+`family_specified` too. "Bare-MNI-family" described the verbatims; `family_specified` names the
+grade. They coincide on seven of the eight, which is why the edit read as a tidy-up rather than a
+claim change — and gordon is the eighth, family_specified on "EPI template" by the gesture test and
+not by anything MNI.
+
+It was caught by the derivation, not by rereading. Every figure in that section was recomputed from
+the committed CSVs rather than transcribed, and the recount came back 9 family / 1 absent / 1
+study_specific against a sentence that said 8 + 1 + 1. This is the argument for deriving numbers even
+when they are already known: the derivation catches the prose, not just the arithmetic. The same pass
+found `## The real defect` describing the `value_not_in_literal` false-absence in the present tense
+while the finding it links had recorded it fixed and demonstrated 11/12 five weeks earlier, and the
+deferral capability finding standing at 1-of-3 when braun's fresh K=3 makes it 0-of-3.
+
+**The disclosure has to be on the line.** `score_target_space.py` already printed a four-line NOTE
+under reachable-only saying it was a post-hoc exclusion, and the README's headline was still an
+unlabelled v040 figure. A number leaves a terminal by being copied, and a copy takes the line the
+number sits on; a disclosure one line down does not travel with it. Both scorers now put the
+qualifier inside the printed line — vintage on the presentable rate, `DIAGNOSTIC ONLY, DO NOT
+PUBLISH` on reachable-only — so a figure pasted anywhere arrives carrying its own warning. The
+diagnostic stays, because removing it would cost a working number to solve a transcription problem.
+
+**Five untracked spreadsheets, one of them annotated by hand.** `git status` has listed five
+`extractor_mvp/sfn_review*.xlsx` since June. I reported them as newly appeared, which was wrong and
+sent the session down a sharper alarm than the facts warranted. They are outputs of the tracked
+`generate_sfn_review.py`, never tracked, covered by no ignore rule, and four of the five carry
+nothing a person typed. The fifth, `sfn_review_first_pass_review.xlsx`, holds 69 non-empty cells in
+`review`/`correction`/`notes` — 64 distinct paper/step/field adjudications, none conflicting across
+sheets — and the generator emits those three columns EMPTY (`generate_sfn_review.py:459-461`), so
+nothing can regenerate them.
+
+The mtime evidence I gave for "old, not new" was weak. 2026-06-17 15:10 is shared by **489 files**;
+it is a bulk-copy stamp and says nothing about any one of them. The check that settles it was inside
+the file the whole time: `docProps/core.xml` gives `dcterms:created` = `2026-06-07T17:31:05Z`, and
+identically for `sfn_review.xlsx`, which makes the annotated copy a Save-As of it. The conclusion
+held; the evidence for it did not, and a stamp was presented as a fact about a file.
+
+That stamp also dates the review against the work it seems to have driven: the workbook was created
+13:31:05 ET on 2026-06-07, and `30eed0b` — *atlas-space resolution_mm scoping* — was committed at
+15:24:11 ET the same day. Ordering is consistent with the review having caused the fix and does not
+establish it.
+
+**A packaging bug is not a safeguard.** `pd.ExcelWriter` opens `mode="w"`, which truncates, so
+pointing `--output` at the annotated workbook destroys all 69 cells silently. Nothing automated runs
+the generator — no CI job, Makefile, hook or script invokes it, and both documented commands name a
+different output — but the only thing that made the file *unclobberable* was `openpyxl` being
+declared in neither pyproject and installed in neither venv, so the module died on import before
+reaching any file. Treating that as protection couples the data's survival to a bug's survival: one
+`uv sync` and one documented command and it is gone. The file was copied out of the repo before
+either was touched.
+
+`write_excel` now refuses when the target has non-empty review columns, naming the file and the
+counts. Three properties, each chosen against a failure this log already records. The detector is
+stdlib zipfile/ElementTree rather than openpyxl, because a guard that needs a missing dependency is
+a guard that is not there. It **fails closed** — an unreadable workbook raises instead of reporting
+"no annotations". And it runs before the truncating open, which is the provenance-header bug from
+this same entry, one file over.
+
+**A negative result requires evidence that the detector works.** Asked whether the other four
+workbooks held hand data, I ran a parser that returned *no columns at all* for those four and
+reported the answer as "no hand content". A failed detection was presented as a measured absence.
+Rewritten to find the header row and handle both string encodings, the answer came back the same —
+but that is luck, not method: the same output would have appeared if all five were full.
+
+This is the sharpest of the session's correctives because it is the project's own subject matter.
+AESPA exists to stop a system reporting absence when it has not looked, and the agent auditing it
+did exactly that. It is also why the guard's tests lead with a **positive control** rather than
+clean-workbook cases: neutering the detector to always return `{}` fails 3 of the 6 tests and leaves
+both negative controls passing. A suite of negative controls would have shipped a guard that never
+guards, green.
+
+**A number produced to support an accepted conclusion gets less scrutiny than the conclusion did.**
+Three invented numbers in three turns, between both of us: an untracked-file count of eleven that
+reconciles with nothing; a "third instance" of a packaging-bug series whose second member does not
+exist; and mine, "45 adjudication cells", which is not the sum of anything — the figure is 69, and
+the guard produced it.
+
+What they share is not carelessness. Each arrived *after* its conclusion was already settled and
+agreed, as decoration on it, and not one of them would have changed anybody's mind had it been
+right. A load-bearing number gets checked because the argument fails without it. A number that
+merely illustrates a point already accepted is never load-bearing, so nothing pushes back, and it
+goes in from memory. Hence the rule, which is the actionable form: **numbers that support what you
+already believe need deriving, not recalling** — the opposite of where scrutiny naturally goes. The
+one that was caught mechanically was caught because a tool computed it independently while reporting
+on something else; the guard printed 69 on its way to refusing a write.
+
+**The same shape in time claims, which read as observed and are not.** Today's Hours line is two
+blocks — 09:21-09:23 and 20:43-22:01 — because the session transcript says so; the single range
+09:21-22:01 would have been true at both ends and false about the 79 minutes between them. Two
+earlier instances are in this log, and both are hedges rather than fabrications. `DEVLOG.md:1754`
+records "not recoverable from here" about a push date that `git reflog show origin/main` had
+exactly. And `DEVLOG.md:1301` states the 09-07 start "is not recorded", offering a `.git` mtime of
+12:48 as mere circumstantial evidence — the session transcript's first event that day is **12:48**,
+so the start was recoverable and the hedge was unnecessary. That Hours line can be firmed up; it is
+left as written, with this as its correction, because that is how this log handles a superseded
+entry.
+
+**What the file is actually worth, checked rather than assumed.** A four-angle audit with an
+adversarial pass over each finding established that the judgement is largely *already tracked*:
+smith_2013's "not a real study with data" became the corpus drop recorded at
+`sfn_batch_v4_config.yaml:3-5`, and all ten target_space corrections are committed labels in
+`target_space_labels_v1.csv`. So "human judgement that exists nowhere else" was an overstatement I
+made and then built on. What is genuinely single-copy is the residue: eleven accuracy verdicts on
+fields with no answer key anywhere — `resolution_mm`, `target_surface`, `surface_registration`,
+intensity `convention` and `value`, none of which have a labels file — plus one correction
+(`agtzidis_2020 / resolution_mm = 3.0`) that sits only on sheet 3 and that I missed entirely.
+
+Tracking it is ruled but not done, because the check attached to the ruling found the exposure in a
+different column than expected. The corrections are clean against the repo's own 12-word threshold —
+18 values, longest 11 words, none over. `notes` is not: 19 of 20 are over, the longest 532 words, and
+they are hand-pasted paper text distinct from the tool's own spans. The generator's `verbatim_quote`
+adds 14 more. A `review + correction` projection carries the whole residue and crosses nothing; the
+cost is three notes that are commentary rather than quotation and would need lifting by hand.
+
+**A larger exposure, found while looking at a smaller one.** `extractor_mvp/results/` is ignored by
+a bare `*` and holds 57 analysis `.md` files, at least 26 of which are named in no tracked file. The
+one backup archive on disk contains **zero** `results/` entries. By contrast `blindness_pilot/`,
+flagged in the audit as single-copy, is fully backed up there — the investigator called one zip "the
+only backup archive present" and its refuter found the files inside it byte-identical. Not acted on;
+recorded because it is the same shape at ten times the size.
+
+**Open.** The `results/` backup
+question above. The tally with per-label state counts, then moving `score_target_space.py` to v050 —
+which is when the silent-strip landmine fires, and why its strip site now carries a forward pointer.
+A5 is still SHOULD, not MUST. The three parked items stand: the demo reports' tracked home and the
+licence question under it, their staleness, and the absolute paths in the configs. Target
+2026-10-31, poster 2026-11-14.
+
+The tracking call is made: the projection, not the workbook. `ground_truth/sfn_first_pass_review_v1.csv`
+carries 27 rows — 25 verdicts, 19 corrections — and three notes lifted by hand, liu_2005's truncated to
+its commentary prefix so the paper text appended to that cell is not reproduced. Its header states what
+the file is not, since a review of extractor output sitting in `ground_truth/` will otherwise be read as
+a labels file and scored.
+
+Commits: `abe7be1` (the v050 provenance emitter, its test, and the forward pointer) and `ebf8fb2` (the
+README on the 0.5.0 vintage), both 2026-09-13; then `43c2b7a` (the qualifier on the line that carries
+the number) and `55e3a2f` (the clobber guard and its six tests) on 2026-09-14. This DEVLOG entry and
+the review projection are committed after them, the day after the work they record.
