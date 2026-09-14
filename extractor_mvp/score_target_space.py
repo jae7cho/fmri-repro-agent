@@ -149,6 +149,11 @@ def main() -> int:
     labels = {r["paper_id"]: r["target_space_state"] for r in csv.DictReader(LABELS.open())}
     preds = {
         r["paper_id"]: r
+        # The strip is load-bearing and its omission is SILENT. Both prediction CSVs carry a
+        # provenance header; a DictReader without this filter parses those comment lines as
+        # data and returns ~32 rows instead of 19, with no error. Keep it when PREDS moves to
+        # target_space_predictions_v050.csv — pinned by
+        # extractor_mvp/tests/test_v050_provenance.py::test_forgetting_the_strip_fails_silently_not_loudly
         for r in csv.DictReader(ln for ln in PREDS.open() if not ln.startswith("#"))
     }
     member_tier = load_member_tier()
