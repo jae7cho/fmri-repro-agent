@@ -228,6 +228,16 @@ Measured over the corpus — `.json` 55 quotes / 1454 words / longest 86 words; 
 words / longest 17 words, every fragment hard-capped at 80 characters by `_SPAN_QUOTE_MAX`
 (`render.py:118`, truncated `:328-331`, emitted `:338` and `:580-581`). Three papers carry none.
 
+**Re-measured independently 2026-09-14, and it holds — do not re-derive this in October.** A
+different method, matching each report's text against every corpus string of 12+ words stored in
+`results/*.json`, finds spans in **15 of the 19** reports. That is confirmation by a second route,
+not a new number: it counts reference-string MATCHES, and one sentence stored with and without
+trailing punctuation matches twice, so its raw total of 58 is an upper bound and NOT a quote count.
+The 50 quotes / 574 words / longest 17 above remains the clean measurement. The question is settled
+as *the same licence question as the JSONs, in a narrower form* — narrower because of the 80-char
+cap, not different in kind. The 2026-09-12 premise that the reports were quote-free is void twice
+over now, by two methods.
+
 If the license question is taken up later, **frame it for the reports, not the JSONs** — they are
 different questions. The reports raise scholarly quotation of 80-character fragments with attribution
 adjacent, which may resolve favourably across the whole corpus; the JSONs raise verbatim sentences,
