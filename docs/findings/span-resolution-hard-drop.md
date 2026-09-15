@@ -136,3 +136,15 @@ fixes from the brief's base_pipeline-scoped framing.**
 > hallucination — this file's "genuine hallucination: **0** this snapshot" is not contradicted, and
 > the resolver's own note holds that the case is recoverable in principle and deliberately left
 > unrecovered. This file's hand adjudication distrusted that same auto-classifier by name.
+>
+> **The COUNT is method-independent; the PARTITION is not.** Worth separating, because it decides
+> how much of this supersession rests on a classifier this document overrode. `silent_drop` is set
+> at `hard_drop_audit.py:159` **before** `_classify_failure` runs at `:160`, and the headline counts
+> `len(drops)` (`:182`, `:192`) without reference to the bucket. So both **10** and **2** are
+> mechanical — raw extracted, span None, final MISSING — and the fix-landed conclusion above does
+> not depend on the classifier at all. What is classifier-derived is the re-measure's *reason*
+> partition, and there its "RECOVERABLE mangle: 0 · genuine-mismatch: 2" is contradicted twice:
+> by the hand adjudication above, and by `span_resolver.py:16-20`, which holds that those quotes
+> ARE in the source and that tier 5 declines to match them deliberately. Read the re-measure's
+> headline as **"2 drops, partitioned by the automated classifier this document overrode by
+> hand"**: the number stands; the reason bucket should not be taken at face value.
