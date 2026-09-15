@@ -12,7 +12,7 @@ A silent drop = the model returned `status=extracted` with a value and a quote, 
 `resolve_quote()` failed to ground the quote, so `_process_field` / `_build_base_pipeline`
 relabeled it `MISSING_FROM_PAPER`. This snapshot:
 
-- **10 silent drops across 6 papers and 6 different fields.**
+- **10 silent drops across 6 papers and 6 different fields.** *(Pre-fix. See the 2026-09-14 supersession block at the end of this file: 2 drops across 1 paper after v0.4.0.)*
 - By field: `base_pipeline_name ×4, target_space ×2, resolution_mm ×1, target_surface ×1,
   intensity_convention ×1, temporal_standardization_method ×1`.
 - base_pipeline is the plurality but **less than half**. The pathology is **corpus-wide**, and it
@@ -89,3 +89,50 @@ So the hand-adjudicated split of the 10 drops:
 **STOP — Phase 1 reported. Phase 2 (Fix A then Fix B) awaits go-ahead; the blast radius (corpus-wide,
 both builders, plus a value-support guard that is more than a hallucination check) reshapes both
 fixes from the brief's base_pipeline-scoped framing.**
+
+
+---
+
+> ## SUPERSESSION, added 2026-09-14 — the count above is pre-fix; the text above is retained
+>
+> **The headline no longer describes HEAD.** The same harness, the same model pin, the same
+> 19-paper corpus at N=1, re-run **the same day** after the tolerant resolver landed, gives
+> **2 silent drops across 1 paper**:
+> [`span-resolution-hard-drop-v0.4.0-remeasure.md`](span-resolution-hard-drop-v0.4.0-remeasure.md).
+> That re-measurement sat in the `*`-ignored `results/` for two months, so a reader of this file
+> alone believed a largely-fixed problem was still live.
+>
+> **Why the numbers differ: a fix landed between the two runs.** Not nondeterminism, and not a
+> measurement change. The denominators are comparable — 52 extracted fields then, 50 now — so it is
+> not a smaller sample either. The evidence is a timeline, to the hour, all on 2026-07-13:
+>
+> | time | event |
+> |---|---|
+> | 11:38 | the measurement above — 10 drops / 6 papers |
+> | 18:34 | `b9e8a42` — span-resolver tier 5, corrupted-source tolerant recovery, "shipped inert" |
+> | 21:05 | the re-measure — 2 drops / 1 paper |
+> | 22:09 | `2560bb1` — v0.4.0 consumes the recoveries honestly (`span_recovered` marker) |
+>
+> Tier 5 targets exactly the artifact classes named above: whitespace-DELETION, injected citation
+> markers, line-break hyphenation (`span_resolver.py:203-207`). "Shipped inert" describes the
+> CALLER not consuming the `recovered` marker until 22:09 — `resolve_quote` itself already grounded
+> those quotes from 18:34, and grounding is what this audit measures.
+>
+> **The two survivors confirm the mechanism rather than merely surviving it.** Both are
+> agtzidis_2020 (`target_space`, `resolution_mm`) — the `×`→`/C2` glyph mangle that tier 5
+> **deliberately excludes**, naming agtzidis at `span_resolver.py:16-20`, because `/C<digit>` maps
+> to different glyphs across papers and a global rule would risk a wrong match. The single class the
+> fix declines to handle is the single class still dropping.
+>
+> **What is NOT superseded.** Everything below the headline stands: corpus-wide across both
+> builders, the value-support guard being more than a hallucination check, and the variance caveat.
+> The re-measure is also N=1, and this document already records 9-vs-10 across two pre-fix runs, so
+> ±1 is expected — a 10→2 move is well outside it, which is why a fix and not variance is the
+> reading.
+>
+> **A classification disagreement that is not a reclassification.** The re-measure's automated
+> classifier labels agtzidis's two drops `genuine-mismatch (quote_not_found)`, where this document
+> hand-adjudicated them "recoverable pypdf-mangle". Both mean `resolve_quote` failed. Neither means
+> hallucination — this file's "genuine hallucination: **0** this snapshot" is not contradicted, and
+> the resolver's own note holds that the case is recoverable in principle and deliberately left
+> unrecovered. This file's hand adjudication distrusted that same auto-classifier by name.
