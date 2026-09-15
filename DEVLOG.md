@@ -1973,3 +1973,156 @@ Commits: `abe7be1` (the v050 provenance emitter, its test, and the forward point
 README on the 0.5.0 vintage), both 2026-09-13; then `43c2b7a` (the qualifier on the line that carries
 the number) and `55e3a2f` (the clobber guard and its six tests) on 2026-09-14. This DEVLOG entry and
 the review projection are committed after them, the day after the work they record.
+
+## 2026-09-14
+
+Hours: 17:00 - 17:06, 18:48 - 18:53, 20:01 - 20:38 ET. Three blocks, 48 minutes active, eight
+commits — four in the first block and four in the third. Track A's critical path has been finished
+since A4; everything here is hardening, and the remaining poster risk now sits in numbers rather
+than in code.
+
+**`43c2b7a` — the qualifier belongs on the line that carries the number.** `score_target_space.py`
+already printed a four-line NOTE under reachable-only saying it was a post-hoc exclusion, and the
+README's headline was an unlabelled v040 figure for five weeks anyway. The NOTE was not the fix
+because a number leaves a terminal by being copied, and a copy takes the line the number sits on. A
+disclosure one line down does not travel with it. Both rates now carry their qualifier inline —
+vintage on the presentable one, `DIAGNOSTIC ONLY, DO NOT PUBLISH` on reachable-only. The diagnostic
+stays: removing a working number to solve a transcription problem is the wrong trade when a label
+solves it.
+
+**`55e3a2f` — a packaging bug is not a safeguard.** `sfn_review_first_pass_review.xlsx` held 69
+hand-entered cells that `generate_sfn_review.py` writes empty, and `pd.ExcelWriter` opens `mode="w"`.
+Nothing automated runs the generator and neither documented command names that file, so the workbook
+was one deliberately-typed command from gone. What actually protected it was `openpyxl` being
+declared in no pyproject and installed in no venv, so the module died on import before touching a
+file. That is protection that ends the day someone runs `uv sync` — the data's survival coupled to a
+bug's survival. The file was copied outside the repository first, before either change, which cost
+one `cp` and removed the coupling in both directions.
+
+The guard refuses when the target carries non-empty review columns, naming the file and the counts.
+Its detector is stdlib `zipfile`/`ElementTree` rather than openpyxl, because a guard that needs a
+missing dependency is not a guard; it **fails closed**, so an unreadable workbook raises instead of
+reporting "no annotations"; and it runs before the truncating open, which is yesterday's provenance
+bug one file over. Six tests, led by a positive control: neutering the detector to return `{}` fails
+three of six and leaves both negative controls green. A suite of negative controls would have
+shipped a guard that never guards, passing.
+
+**`8f5c7b2` — the projection, not the workbook.** Most of the judgement in that workbook turned out
+to be tracked already: smith_2013's "not a real study with data" is the corpus drop recorded at
+`sfn_batch_v4_config.yaml:3-5`, and all ten target_space corrections are committed labels. What is
+single-copy is the residue — eleven verdicts on fields with no labels file anywhere, plus one
+correction that sits only on the All Fields sheet. So `review + correction` as a 27-row CSV, with
+three notes lifted by hand and liu_2005's truncated to its commentary prefix. Tracking the workbook
+would have committed roughly twenty pasted paper excerpts in order to preserve judgement that is
+mostly committed already.
+
+The header leads with what the file is **not**, because a review of extractor output sitting in
+`ground_truth/` will be read as a labels file and scored — which would be scoring the extractor
+against a reading of its own output. One cell clears the 12-word check: mueller's 21-word note, the
+reviewer's own prose. Named in the header, so the hit is not mistaken for a miss.
+
+**`7ea0cb8` — the tally, and per-label state counts.** The headline totals are invariant across
+prediction vintages: 11 correct / 8 error in both, partitioned 5 / 2 / 1 in both, while the blind
+rate moves six points. Anyone asking "did anything change?" of the totals sees nothing. The
+per-label breakdown does not cancel — `deferred` goes 1/3 correct to 0/3, `study_specific` 0/2 to
+1/2, and in v050 the `deferred` COLUMN disappears entirely because no paper is graded deferred at
+all. The deferral capability finding, previously a sentence, is now a table that regenerates. The
+label distribution regenerates too, instead of living only as inline prose, and `--out` writes the
+file so no rate reaches a document by hand.
+
+One reader strips the provenance headers, and **32** is the measured unstripped row count — the
+number the forward pointer at `score_target_space.py:152` already predicted. Three tests hold it,
+including an AST check that exactly one `DictReader` exists in the module and sits inside
+`read_rows`. Mutation-checked: removing the strip fails 7 of 12, pointing the labels at the
+22-data-row workbook fails 8 of 12.
+
+**Four of those twelve tests failed on first run, and all four were the assertions, not the module.**
+That is the right ratio to find. A suite where every assertion passes first try is usually pinning
+what the code does rather than what it should do. One of the four is worth naming: the AST check
+began as a regex and counted **two** `DictReader`s, the second being the module docstring's own
+warning about bare DictReaders — prose confounding a check about code. And one was a guessed **31**
+against a measured **32**, which is yesterday's rule firing again: a number produced to fill a slot
+in something already believed correct.
+
+**`b61a960` — six authored analyses out of an ignored directory.** `results/` is ignored by a bare
+`*` and holds 483 files: 360 paid JSON draws, 24 generated summaries, 19 generated reports. All of
+that is regenerable or licence-questionable and all of it stays ignored. Six files were neither —
+authored prose, 312 lines, and of 56 distinctive sentences across the four with testable prose,
+**none** appears in any tracked file. No backup archive on this machine holds a single `results/`
+entry.
+
+Two of them are why this outranked the workbook. `v7-attribution-diff-halted.md` records a
+pre-registered corpus re-derivation being WITHHELD because the chen canary failed.
+`sfn-v1-v2-delta-coercion.md` records that the v2 aggregate gains were largely coercion and states
+plainly that they are not all honest. Both are findings against this project's own numbers. **An
+untracked negative result is the shape that disappears quietly.** One corpus span was removed rather
+than parked — four cells quoting agtzidis's normalization sentence now read `[span withheld]` with a
+pointer — which dissolves the licence question instead of deferring it, the same move the projection
+made.
+
+**`c2627b5` and `83c0c61` — supersession, and saying which of three causes.** The tracked hard-drop
+finding reports 10 silent drops across 6 papers and reads as current; the re-measure gives 2 across
+1 at the same pin on the same corpus, and had sat in `results/` for two months. A dated block now
+points at it with the original text retained — 48 lines added, one deleted, and that deletion is the
+headline replaced in place with a pointer appended.
+
+"The numbers differ" is not a supersession, so the block says which cause. **A fix landed between the
+runs**, and the evidence is a same-day timeline to the hour: the measurement at 11:38, `b9e8a42`
+shipping span-resolver tier 5 at 18:34, the re-measure at 21:05, `2560bb1` consuming the recoveries
+at 22:09. The other two candidates were ruled out rather than dismissed — the file already records
+9-vs-10 across two pre-fix runs, so ±1 is the expected variance and 10-to-2 sits far outside it; and
+the denominators are comparable at 52 extracted fields against 50, so it is not a smaller sample.
+
+The two survivors confirm the mechanism instead of merely surviving it. Both are agtzidis_2020, the
+`×`→`/C2` glyph mangle that tier 5 **deliberately excludes**, naming agtzidis at
+`span_resolver.py:16-20`. The one class the fix declines to handle is the one class still dropping —
+the resolver's own source agreeing, not an inference from the counts.
+
+`83c0c61` separates the count from the classifier, because the re-measure's partition comes from an
+auto-classifier the older document overrode by hand. `silent_drop` is set at
+`hard_drop_audit.py:159` **before** `_classify_failure` runs at `:160`, and the headline counts
+`len(drops)` without reference to the bucket — so both 10 and 2 are mechanical and the fix-landed
+conclusion rests on nothing classified. What does rest on it is the reason partition, where
+"RECOVERABLE mangle: 0 · genuine-mismatch: 2" is contradicted twice: by the hand adjudication, and
+by the resolver's note holding that those quotes ARE in the source.
+
+**"Shipped inert" described the caller; the audit measures the callee.** The commit that landed tier
+5 says "SHIPPED INERT", and read as a claim about the system that means nothing changed — which
+would have made the 8-drop gap unexplained and pushed the reading toward nondeterminism. Inert
+described only the CALLER not consuming the `recovered` marker until three and a half hours later;
+`resolve_quote` itself grounded those quotes from 18:34, and grounding is precisely what the audit
+measures. Same shape as yesterday's describing-word-to-grading-word error: **a term accurate about
+one layer, read as a claim about the system.** It nearly hid the whole explanation.
+
+**When a check disagrees with what you expect, suspect the check before the subject.** This is the
+session's halt rule turned on the instrument rather than the belief, and it covers both directions
+now. Yesterday's instances were absences that were not: a parser returning no columns reported as
+"no hand content". Today's three were problems that were not. A corpus-span detector keyed on the
+wrong JSON field names returned an empty reference set, which would have made six clean-looking
+zeros meaningless — caught only because the check printed its own reference-set size. A
+line-comparison that dropped every `>` line stripped `delta_vs_v1.md`'s own blockquote along with my
+header and reported the COERCION warning as lost in the move. And a line-based `grep` reported the
+`[span withheld]` pointer's target missing, because the CSV field it points at wraps across lines.
+All three were the method being measured instead of the subject.
+
+**A property measured on one member, asserted of the set.** Distinct from the above, because here
+the detector worked and the sample did not represent. Checking whether the generated reports carry
+paper text, I read braun_2015's, found no quotes — correctly; its pipeline is deferred, so the
+report renders a deferral line rather than a quote — and stated it of all nineteen. Measured: spans
+in **15 of 19**. That settles the parked demo-reports item against the framing that made it look
+simple: the reports carry corpus text, so tracking them was always the same licence question as the
+JSONs, narrower only because of the 80-character cap. Recorded in `TRACK_A_SCOPE.md` with the raw
+total flagged as an upper bound on matches rather than a quote count, so October does not re-derive
+it and does not mistake 58 for 50.
+
+**Open.** A5 (SHOULD, not MUST) or the 12-of-14 COBIDAS rows, which are scoped after the report
+tool. Whether the hard-drop finding's Phase-2 design consequences need revisiting now that tier 5
+has landed. The three parked items stand: the demo reports' tracked home — now with a measured
+answer under it — their staleness, and the absolute paths in the configs. Target 2026-10-31, poster
+2026-11-14.
+
+Commits, all 2026-09-14: `43c2b7a` (the qualifier on the line that carries the number), `55e3a2f`
+(the clobber guard and its six tests), `8f5c7b2` (the review projection), `8871313` (the 2026-09-13
+DEVLOG entry), `7ea0cb8` (the tally with per-label state counts), `b61a960` (six authored analyses
+tracked out of `results/`), `c2627b5` (the hard-drop supersession) and `83c0c61` (count separated
+from classifier). This entry is committed after them.
