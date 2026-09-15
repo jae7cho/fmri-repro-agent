@@ -2126,3 +2126,77 @@ Commits, all 2026-09-14: `43c2b7a` (the qualifier on the line that carries the n
 DEVLOG entry), `7ea0cb8` (the tally with per-label state counts), `b61a960` (six authored analyses
 tracked out of `results/`), `c2627b5` (the hard-drop supersession) and `83c0c61` (count separated
 from classifier). This entry is committed after them.
+
+## 2026-09-14 (late)
+
+Hours: 20:38 - 20:45, then 21:12 - 21:17 ET. The 09-14 entry's third block is recorded there as
+closing at 20:38 because that is when the entry was committed; the block actually ran to 20:45.
+Same handling as the 09-12 (late) entry — a second entry rather than an edit to a pushed one.
+
+**Pushed, and the open item from the entry above is closed.** `c6cd3c2..59dfcc4`, eleven commits,
+verified against the remote with `git ls-remote` rather than the local ref. The push set contains
+zero files under `results/`. The cadence is now 09-12, 09-13, 09-14 — the eleven-day gap that
+prompted the rule has not recurred, and the rule this time was applied before anything else in the
+sitting rather than at the end of it.
+
+**Phase 2 is mostly done, and not in the form it was designed.** A seven-angle fan-out with an
+adversarial pass over each answer settled the question the supersession left open. Of the three
+Phase-2 consequences in `span-resolution-hard-drop.md`: consequence 2 (value-support rather than
+quote-presence) is DONE and wider than specified — unconditional on every extracted base_pipeline,
+not gated on `recovered`, via `efbe14a` on 2026-07-23, a commit none of the three docs-of-record
+names. Consequence 3 is done for three of its four artifacts, the `×`→`/C2` class being the
+deliberate exclusion. Consequence 1 was never built as written: `span_unresolved` appears in **zero**
+Python files, and the positive control on the same tool finds `span_recovered` in eight. v0.4.0 took
+the opposite route — resolve more spans, mark the recoveries — rather than keeping EXTRACTED on an
+unresolved one.
+
+Two gaps remain and both are cheap. `_build_base_pipeline` still has no diagnostic channel, which
+was the original finding's named "worst case": driven directly at HEAD, a base_pipeline whose name
+extracted but whose quote cannot be grounded returns a bare `MissingFromPaper` indistinguishable
+from the model having said nothing. And `span_recovered` has **no downstream consumer** — it rides
+on the extraction and is invisible in reports, batch summaries and coverage. Neither needs a paid
+re-extraction, which makes them the cheapest honest work available.
+
+**The 12 COBIDAS rows: scoped, and declined.** Not on schedule grounds. Three measurements decide it.
+
+`covered_by_extractor` **never reads the paper.** It is 0/19 or 19/19 on every row, because
+`_assemble` emits its seven steps unconditionally (`extractor.py:874-882`); a row flips for all 19
+papers the moment one field's targeting flag changes. Coverage is a property of the code, not of
+what any paper reported.
+
+Which means the cheap version makes the reports **less honest**, and that was verified by rendering
+rather than argued: flipping one `nuisance_regression` field strips "(no fields assessed by current
+extractor)" from derosa_2025 and moves "Artifact and structured noise removal" into the bare
+unaddressed-mandatory list — against a paper that wrote "motion correction via ICA-AROMA (version
+0.3 beta)". The distortion pair is worse: one spec kind serves **both** D.3 rows and
+`assess_coverage` never reads `DistortionSource`, so a paper reporting only susceptibility
+correction would be credited with gradient distortion correction. That is a decision to make before
+those rows are lit, not after.
+
+And all twelve are **conditional** — `software` is the only unconditional mandatory row and is
+already covered — so none of the twelve can yield a new citable violation. The poster's citable
+claim does not move.
+
+The poster premise was also partly false. The tool prints `Assessed by AESPA: N` and
+`Not assessed by AESPA: N` — counts, never a fraction. There is no "2 of 14" line to improve, and
+putting one on a poster would reinstate a form this repository removed twice.
+
+Cost, for the record, since it was measured. The twelve split unevenly: **three are targeting-only**
+(brain_extraction, segmentation, artifact_structured_noise_removal — their kinds are already emitted
+19/19), **nine need construction and wiring** as well. The dominant cost is not edits but a paid
+re-extraction, which does not multiply per kind because one call per paper carries the whole schema.
+The reason to refuse is that the call is demonstrably **not inert** under prompt changes — v1→v2
+coerced five of seven MNI terms — and that prompt currently drives the poster's headline
+`target_space` number on a model already measured as non-stationary at an identical pin.
+
+**Open, and first.** The supersession block committed in `c2627b5` **understates the current
+residue**. Its "2 drops across 1 paper" comes from a re-measure produced before `efbe14a`; the batch
+the repo treats as ground truth has three unresolved-quote diagnostics across two papers plus two
+undiagnosed base_pipeline drops. The causal claim in that block stands — a fix landed, and the
+excluded glyph class is still the residue's core — but the count is a stale vintage, stated in a
+pushed document, and should be corrected before it is quoted. Then the two Phase-2 gaps. A5 stays
+SHOULD-not-MUST; the twelve rows are declined rather than deferred, with the reasons above recorded
+so the decision is not re-litigated from scratch in October. Target 2026-10-31, poster 2026-11-14.
+
+Commits: none this sitting — the work was a push of the eleven already recorded above, and a
+read-only scoping pass that wrote nothing. This entry is committed on its own.
