@@ -538,6 +538,21 @@ satisfied by doing §5 and cannot be forgotten separately. Proposed lines:
 
 Neither may say "not reported in source". That is the defect.
 
+> **CORRECTION, 2026-10-01 — the B line above is superseded; §5 governs.** It is a leftover from
+> before the suffix reversal recorded in §5, written when B was going to take its own base. Under §5
+> as ruled, **B reuses `extraction_quote_unresolved` precisely because that base's existing sentence
+> is already true of it** — "value present in source but span unresolved (extractor limitation)"
+> (`render.py:477`). A custom B line is unreachable without the suffix-aware `_reason_detail` lookup
+> that the reversal made unnecessary, so proposing one contradicts the ruling two sections up.
+>
+> **Only C's line was authored.** It is implemented verbatim as the `_REASON_LINE` entry for
+> `base_pipeline_value_unsupported`, and the 4th condition inherits
+> `deferral_quote_unresolved`'s existing sentence, which fits it verbatim.
+>
+> Retained rather than deleted because the committed design doc had already disagreed with committed
+> code once this was built, and the doc is what the next reader trusts. The inconsistency was flagged
+> during implementation rather than resolved silently; this is the resolution.
+
 **§5's reversal removes the suffix-aware-lookup problem entirely.** Because case C takes its own base,
 `_reason_detail` keeps consulting `_REASON_LINE` by base only (`render.py:526` via
 `_reason_base:506-508`) and every condition still gets a true sentence. No change to the single source
