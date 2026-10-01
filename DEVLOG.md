@@ -2200,3 +2200,55 @@ so the decision is not re-litigated from scratch in October. Target 2026-10-31, 
 
 Commits: none this sitting — the work was a push of the eleven already recorded above, and a
 read-only scoping pass that wrote nothing. This entry is committed on its own.
+
+## 2026-09-30
+
+Hours: 19:26 - 19:39, then 20:43 - 20:44 ET. Sixteen days since the 09-14 entry, and nothing moved in
+between: HEAD was still `f3017ee` with the same six untracked files, 316 tests still passing, and
+both published rates still regenerating from committed data. Thirty-one days to the internal target,
+forty-five to the poster.
+
+**`3356d03` — the first open item, closed, and half of it withdrawn rather than fixed.** The
+supersession written on 09-14 reported the post-fix span-resolution residue as "2 silent drops across
+1 paper". That figure is a 2026-07-13 measurement and predates `efbe14a` (2026-07-23). Its own
+denominator table is the proof: it records `viduarre_2017 base_pipeline_name EXTRACTED`, where the
+current batch has viduarre `DEFERRED_TO_CITATION` with reason
+`citation_shaped_name_value_unsupported` — the efbe14a guard firing. The causal claim is unaffected;
+only the count was stale, and it was stale in the flattering direction.
+
+Measured over all 19 papers of the ground-truth batch: **three unresolved-quote diagnostics across
+two papers** — agtzidis_2020 on `target_space` and `resolution_mm`, liu_2005 on `resolution_mm`.
+`liu_2005` appears **nowhere** in the re-measure document, which is the single clearest sign the two
+are different vintages rather than two readings of one run.
+
+**A count withdrawn as unmeasurable, which is a shape this log has not recorded before.** Both the
+09-14 (late) entry and the first draft of this correction said "plus two undiagnosed base_pipeline
+drops". That number is not derivable and should never have been written. Five papers carry
+`base_pipeline` `MISSING_FROM_PAPER` and **all five carry the identical reason**
+`no_base_pipeline_named`, so how many are silent drops rather than genuine absences cannot be told
+from the output at all — which is precisely the missing diagnostic channel the original finding named
+as its worst case. Putting a count on it asserted a distinction the artifact does not make.
+
+The honest form is a bound, not a count: **the missing diagnostic hides the true state of up to 5 of
+19 papers' base_pipeline fields.** That is stronger than the withdrawn figure, not weaker, and it
+re-prices the second Phase-2 gap: adding a diagnostic channel to `_build_base_pipeline` would turn
+five indistinguishable rows into five readable ones.
+
+Where this came from matters for how the next agent output gets treated. The "two undiagnosed drops"
+figure originated in a workflow refuter's report on 09-14, was flagged in that entry as something to
+fix, and was carried into a pushed document without my ever having measured it. The rule it breaks is
+the one already in this log — **a number produced to support an accepted conclusion gets less
+scrutiny than the conclusion did** — with a new wrinkle: the conclusion here was itself a correction,
+and corrections arrive with their own air of rigour. The adversarial pass was right that the residue
+figure was stale, and wrong about what replaced it; being right about the first half bought the second
+half an unearned pass.
+
+**Open.** The two Phase-2 gaps, now priced: a diagnostic channel on `_build_base_pipeline` (worth up
+to 5 of 19 papers' base_pipeline states becoming readable) and `span_recovered` having no downstream
+consumer. Neither needs a paid re-extraction. A5 stays SHOULD-not-MUST and the twelve COBIDAS rows
+stay declined. The three parked items stand. And the question this sitting did not take up: with
+numbers settled and 31 days to the internal target, whether the 2026-08-26 "compute everything first,
+render once" deferral still holds or whether figures are now the critical path.
+
+Commits: `3356d03` (the residue correction). This entry is committed after it, and both are pushed
+with `f3017ee`, which had been sitting unpushed since 09-14.
