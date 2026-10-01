@@ -35,15 +35,34 @@ catch, so it proves nothing on its own. The control is the only check that disti
 working override from a broken one, and any future ref needs its own expected set derived
 BEFORE running it.
 
-    --against d31e8b7   ->   7 changed, 12 identical
+    --against d31e8b7   ->   16 changed, 3 identical      AT THIS HEAD (2026-10-01)
 
-d31e8b7 is ``c9c2951^``. The 7 are exactly the papers with no ``base_pipeline.version``
-row, the set that reaches cobidas.py:181 — binder_1999, braun_2015, cole_2013, liu_2005,
-poldrack_2015, power_2014, viduarre_2017. Note that 7 is right and 2 is wrong: c9c2951's
-*violation section* moved for the two deferrals only (braun 1->0, binder 1->1), but it
-changed ``covered`` as well as ``addressed``, so the Software row moved from "Not assessed
-by AESPA" into "Assessed by AESPA" in the header of all seven. A section-level prediction
-against a file-level instrument under-counts.
+THAT NUMBER DRIFTS, AND THE DRIFT IS THE DESIGN'S FAULT, NOT THE NUMBER'S. The control
+compares ONE fixed ref against the WORKING TREE, so its expected value is a function of
+whatever HEAD happens to be: every render-affecting commit changes it. It was ``7 changed,
+12 identical`` when written (measuring c9c2951 alone, d31e8b7 being ``c9c2951^``); it is
+16/3 now because ``59e732b`` and ``f44771a`` landed in between; the base_pipeline version
+arm will move it again. Keeping it current is a check that depends on somebody remembering
+to re-derive it — which is the shape of check this repository keeps finding broken.
+
+THE FIX, not yet built: take a SECOND ref argument so the control pins two FIXED refs
+against each other. ``d31e8b7`` against ``c9c2951`` is permanently 7, because neither end
+moves, and the expectation then never needs maintaining. Filed as its own small change.
+
+Derivation of 16/3, so it can be re-checked rather than re-measured on trust. Per
+``docs/design/DELTA_software_row_deferral.md`` §8: ``f44771a`` moved 14 reports (the three
+reworded Software lines, braun and viduarre excluded by construction) and ``59e732b`` moved
+exactly those 2. 14 + 2 = 16. The 3 identical are derosa_2025, liu_2013 and oconnor_2017 —
+the only papers whose ``base_pipeline.version`` is EXTRACTED, so the Software row is
+addressed and no violation section exists in them for any of those commits to move.
+
+On the ORIGINAL 7, retained because the reasoning still instructs: the 7 were exactly the
+papers with no ``base_pipeline.version`` row, the set reaching cobidas.py:181 — binder_1999,
+braun_2015, cole_2013, liu_2005, poldrack_2015, power_2014, viduarre_2017. 7 was right and 2
+was wrong: c9c2951's *violation section* moved for the two deferrals only (braun 1->0,
+binder 1->1), but it changed ``covered`` as well as ``addressed``, so the Software row moved
+from "Not assessed by AESPA" into "Assessed by AESPA" in the header of all seven. A
+section-level prediction against a file-level instrument under-counts.
 """
 
 from __future__ import annotations
