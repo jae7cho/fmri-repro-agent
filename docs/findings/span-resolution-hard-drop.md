@@ -148,3 +148,39 @@ fixes from the brief's base_pipeline-scoped framing.**
 > ARE in the source and that tier 5 declines to match them deliberately. Read the re-measure's
 > headline as **"2 drops, partitioned by the automated classifier this document overrode by
 > hand"**: the number stands; the reason bucket should not be taken at face value.
+>
+> ### CORRECTION, 2026-09-30 — the residue figure above is itself a stale vintage
+>
+> **"2 silent drops across 1 paper" is a 2026-07-13 measurement and does not describe the batch this
+> repository treats as ground truth.** It predates `efbe14a` (2026-07-23), and its own denominator
+> table proves it: `span-resolution-hard-drop-v0.4.0-remeasure.md:83` records
+> `viduarre_2017 | base_pipeline_name | True | EXTRACTED (ok)`, where the current batch has viduarre
+> `DEFERRED_TO_CITATION` with reason `citation_shaped_name_value_unsupported` — the efbe14a
+> value-support guard firing. **The causal claim of this supersession is unaffected**: a fix landed
+> between the two runs and the `×`→`/C2` class is still the core of what remains. Only the count was
+> stale, and it was stale in the direction of looking better than HEAD.
+>
+> **Measured on `results/batch_a1_acceptance/papers`, all 19 papers, 2026-09-30: three
+> unresolved-quote diagnostics across two papers.**
+>
+> | paper | field | raw value |
+> |---|---|---|
+> | agtzidis_2020 | `spatial_normalization.target_space` | `'MNI'` |
+> | agtzidis_2020 | `spatial_normalization.resolution_mm` | `'3.0'` |
+> | liu_2005 | `spatial_normalization.resolution_mm` | `'3.0'` |
+>
+> `liu_2005` appears **nowhere** in the re-measure document. That is the clearest single sign the two
+> are different vintages rather than two readings of one run.
+>
+> **The base_pipeline residue is not a number, and that is the finding.** Five of the 19 papers —
+> binder_1999, cole_2013, liu_2005, poldrack_2015, power_2014 — carry `base_pipeline`
+> `MISSING_FROM_PAPER`, and all five carry the **identical** reason `no_base_pipeline_named`. How
+> many are silent drops rather than genuine absences cannot be determined from the stored output at
+> all, because `_build_base_pipeline` has no diagnostic channel: the "worst case" named at the top of
+> this document. An earlier draft of this correction said "plus two undiagnosed base_pipeline drops";
+> **that figure is withdrawn as unmeasurable** — it put a count on something the output cannot
+> distinguish. The honest form is the bound: **the missing diagnostic hides the true state of up to 5
+> of 19 papers' base_pipeline fields.** So the asymmetry this document recorded survives verbatim —
+> `_process_field` still diagnoses, and the three rows above are what that looks like;
+> `_build_base_pipeline` still does not, and the five rows it affects are indistinguishable from
+> silence.
