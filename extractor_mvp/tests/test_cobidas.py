@@ -221,3 +221,73 @@ def test_targeted_missing_field_is_covered_by_extractor() -> None:
 def test_never_emitted_kind_row_is_not_covered() -> None:
     # No FieldRows at all for motion_correction (never emitted) -> not covered by extractor.
     assert _by_id(assess_coverage([], None))["motion_correction"].covered_by_extractor is False
+
+
+def test_software_coverage_is_silent_only_for_the_unverifiable_conditions():
+    """Ruled 2026-10-01 (DELTA_base_pipeline_diagnostic.md §4a): ``covered=False`` for the gaps where
+    the extractor LOOKED and could not verify what it found; ``covered=True`` for the gap where it
+    looked and found nothing.
+
+    Before this, every one of these reached ``covered=True, addressed=False`` and the report counted
+    the paper an unconditional COBIDAS violation — produced, for three of the four, by a span
+    resolver failing rather than by anything the author did or did not write.
+
+    The split is only possible because the reason lands. The rule READS the reason; it does not
+    re-derive the condition, which is the point of the diagnostic.
+    """
+    cases = [
+        # label, LeftMissing reason on the base_pipeline row, covered, unverifiable
+        ("A no name returned", "no_base_pipeline_named", True, False),
+        (
+            "B quote not found",
+            "extraction_quote_unresolved:base_pipeline_name:quote_not_found",
+            False,
+            True,
+        ),
+        (
+            "B quote ambiguous",
+            "extraction_quote_unresolved:base_pipeline_name:quote_ambiguous",
+            False,
+            True,
+        ),
+        ("C value unsupported", "base_pipeline_value_unsupported", False, True),
+        ("4th deferral unresolved", "deferral_quote_unresolved:base_pipeline_ref", False, True),
+    ]
+    for label, reason, covered, unverifiable in cases:
+        rc = _by_id(assess_coverage([_bp_row("MISSING_FROM_PAPER", reason)], None))["software"]
+        assert rc.covered_by_extractor is covered, f"{label}: covered_by_extractor"
+        assert rc.unverifiable is unverifiable, f"{label}: unverifiable"
+        # Never addressed in any of these: the paper did not give a version either way.
+        assert rc.addressed is False, f"{label}: addressed"
+        # The section is emitted iff covered and not addressed, so silence falls out of covered.
+        emitted = rc.covered_by_extractor and not rc.addressed
+        assert emitted is covered, f"{label}: violation section emitted"
+
+
+def test_the_version_arm_is_untouched_by_the_unverifiable_rule():
+    """§10 scope line, pinned. A version row exists only when the outer arm resolved a PipelineRef,
+    so base_pipeline is EXTRACTED and carries no gap reason — the unverifiable branch must not be
+    reachable through the version arm. _build_version_pf's own four-way collapse is the larger half
+    of this defect and ships separately; this test fails if that work is started here by accident.
+    """
+    for version_status in ("EXTRACTED", "MISSING_FROM_PAPER"):
+        rc = _by_id(assess_coverage([_bp_row("EXTRACTED")], version_status))["software"]
+        assert rc.covered_by_extractor is True, version_status
+        assert rc.unverifiable is False, version_status
+        assert rc.addressed is (version_status == "EXTRACTED"), version_status
+
+
+def test_only_the_software_row_can_be_unverifiable():
+    """Every other row's coverage is pure targeting — a code property, not a per-paper outcome — so
+    nothing else may set the flag. If a future change makes another row unverifiable, the coverage
+    header's wording (which names the Software row) stops being true and this fails first.
+    """
+    rows = [
+        _bp_row("MISSING_FROM_PAPER", "base_pipeline_value_unsupported"),
+        _fr(
+            "motion_correction", "MISSING_FROM_PAPER", "extraction_quote_unresolved:quote_not_found"
+        ),
+        _fr("spatial_smoothing", "MISSING_FROM_PAPER", "not_targeted_by_mvp"),
+    ]
+    flagged = [rc.row.row_id for rc in assess_coverage(rows, None) if rc.unverifiable]
+    assert flagged == ["software"], flagged

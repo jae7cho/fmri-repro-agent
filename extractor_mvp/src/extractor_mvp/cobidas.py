@@ -120,6 +120,33 @@ EXCLUDED_D3_ROWS: tuple[str, ...] = (
 _ADDRESSING_STATUSES = frozenset({"EXTRACTED", "DEFERRED_TO_CITATION"})
 _UNTARGETED_REASON = "not_targeted_by_mvp"
 
+#: Base gap reasons meaning "the extractor LOOKED, found something, and could not verify it" — as
+#: opposed to "looked and found nothing". Ruled 2026-10-01
+#: (docs/design/DELTA_base_pipeline_diagnostic.md §4a): these make the Software row NOT covered, on
+#: the same reasoning :func:`_software_coverage` already applies to ``NotApplicable`` below — the
+#: tool cannot say what the paper reported, so silence is the honest output rather than an
+#: unconditional accusation produced by a span resolver.
+#:
+#: Compared on the BASE (prefix before the first ``:``), so a suffixed reason carrying the
+#: resolver's own failure_reason matches. Deliberately NOT a check on the condition: the reason is
+#: read, never re-derived, which is the whole payoff of the diagnostic landing.
+_UNVERIFIABLE_GAP_BASES = frozenset(
+    {
+        "extraction_quote_unresolved",
+        "base_pipeline_value_unsupported",
+        "deferral_quote_unresolved",
+    }
+)
+
+
+def _gap_base(reason: str | None) -> str:
+    """The base of a LeftMissing reason — the prefix before the first ``:``.
+
+    Mirrors ``render._reason_base`` but takes the string, not a FieldRow: this module must not
+    import render (render imports it), and the suffix convention is shared.
+    """
+    return (reason or "").split(":", 1)[0]
+
 
 # ---------------------------------------------------------------------------
 # Predicate
@@ -131,6 +158,11 @@ class RowCoverage:
     row: CobidasRow
     addressed: bool  # >=1 field on a mapped kind is EXTRACTED or DEFERRED_TO_CITATION
     covered_by_extractor: bool  # the extractor targets >=1 field on a mapped kind
+    #: NOT covered because the extractor looked and could not VERIFY what it found — as distinct
+    #: from never having targeted the row. Two different facts, and the coverage header must not
+    #: collapse them (DELTA_base_pipeline_diagnostic.md §4a). Defaulted so the only construction
+    #: site stays the only thing that has to know about it.
+    unverifiable: bool = False
 
 
 def _row_covered_by_extractor(field_rows: list[Any]) -> bool:  # list[render.FieldRow]
@@ -139,8 +171,10 @@ def _row_covered_by_extractor(field_rows: list[Any]) -> bool:  # list[render.Fie
     return any(r.left_missing_reason != _UNTARGETED_REASON for r in field_rows)
 
 
-def _software_coverage(base_row: Any, version_extraction_status: str | None) -> tuple[bool, bool]:
-    """``(addressed, covered_by_extractor)`` for the unconditional Software row.
+def _software_coverage(
+    base_row: Any, version_extraction_status: str | None
+) -> tuple[bool, bool, bool]:
+    """``(addressed, covered_by_extractor, unverifiable)`` for the unconditional Software row.
 
     The Software row maps to ``base_pipeline`` rather than a step kind, so it cannot use
     :func:`_row_covered_by_extractor`. It must still obey the SAME rule as the other 15 rows:
@@ -183,12 +217,21 @@ def _software_coverage(base_row: Any, version_extraction_status: str | None) -> 
     the two producers is filed as deferred work.
     """
     if base_row is None or base_row.extraction_status is None:
-        return False, False  # NotApplicable (or no base_pipeline row at all)
+        return False, False, False  # NotApplicable (or no base_pipeline row at all)
     if base_row.left_missing_reason == _UNTARGETED_REASON:
-        return False, False  # unreachable today; kept so the rule reads completely
+        return False, False, False  # unreachable today; kept so the rule reads completely
     if version_extraction_status is not None:
-        return version_extraction_status == "EXTRACTED", True
-    return base_row.extraction_status == "EXTRACTED", True
+        # The VERSION arm. Untouched by the 2026-10-01 ruling: a version row exists only when the
+        # outer arm resolved a PipelineRef, so base_pipeline is EXTRACTED and carries no gap reason.
+        # _build_version_pf collapses four conditions of its own onto version_deferred_to_kb and is
+        # the LARGER half of this defect — DELTA_base_pipeline_diagnostic.md §10, its own commit.
+        return version_extraction_status == "EXTRACTED", True, False
+    if _gap_base(base_row.left_missing_reason) in _UNVERIFIABLE_GAP_BASES:
+        # The extractor looked, found something, and could not verify it. Not addressed, and NOT
+        # covered: claiming an unconditional COBIDAS violation here would accuse an author on the
+        # strength of a span resolver failing. Silence, for the same reason NotApplicable is silent.
+        return False, False, True
+    return base_row.extraction_status == "EXTRACTED", True, False
 
 
 def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> list[RowCoverage]:
@@ -209,10 +252,22 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
     out: list[RowCoverage] = []
     for cr in COBIDAS_D3_ROWS:
         if cr.row_id == "software":
-            addressed, covered = _software_coverage(base_row, version_extraction_status)
+            addressed, covered, unverifiable = _software_coverage(
+                base_row, version_extraction_status
+            )
         else:
             mapped = [r for k in cr.spec_kinds for r in by_kind.get(k, [])]
             addressed = any(r.extraction_status in _ADDRESSING_STATUSES for r in mapped)
             covered = _row_covered_by_extractor(mapped)
-        out.append(RowCoverage(row=cr, addressed=addressed, covered_by_extractor=covered))
+            # Only the Software row can be unverifiable today: every other row's coverage is pure
+            # targeting (_row_covered_by_extractor), which is a code property, not a per-paper one.
+            unverifiable = False
+        out.append(
+            RowCoverage(
+                row=cr,
+                addressed=addressed,
+                covered_by_extractor=covered,
+                unverifiable=unverifiable,
+            )
+        )
     return out

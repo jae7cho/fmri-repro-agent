@@ -60,7 +60,7 @@ from pydantic import BaseModel, Field
 
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.span_resolver import quote_supports_value, resolve_quote
+from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
 
 
@@ -711,6 +711,10 @@ def _build_base_pipeline(
     ref_span = None
     ref_record: DeferralRecord | None = None
     deferred_pipeline_field: ProvenancedField[PipelineRef] | None = None
+    # A reported deferral whose sentence will not ground is the FOURTH collapsing condition. It used
+    # to fall through indistinguishably into the no-name gap, so a paper that named a citation was
+    # told "no base pipeline named in source".
+    ref_deferral_unresolved = False
     if ref_result.status == "deferred" and ref_result.ref_string and ref_result.deferral_sentence:
         ref_string = ref_result.ref_string
         ref_sentence = ref_result.deferral_sentence
@@ -733,6 +737,8 @@ def _build_base_pipeline(
                 ),
                 inference=LeftMissing(reason="deferred_to_citation"),
             )
+        else:
+            ref_deferral_unresolved = True
 
     # Case A/B: pipeline NAME is extracted and its quote resolves -> base_pipeline EXTRACTED,
     # guarded (Option A, value-support). The model can INFER a pipeline name from a citation rather
@@ -746,6 +752,9 @@ def _build_base_pipeline(
     # set: every correct clean-span extraction has its value in its quote, so none is demoted; the two
     # that flip (viduarre, poldrack) were wrong EXTRACTEDs that reclassify to their correct DEFERRED.
     # Scope: base_pipeline only (step-field recoveries stay span_recovered-only, not value-guarded).
+    # Hoisted: ``name_res is None`` is the test for "the guard was never entered", which the gap
+    # reason needs AFTER the guard. Scoped inside it, the no-name branch could not see it.
+    name_res: SpanResolution | None = None
     if name_result.status == "extracted" and name_result.value and name_result.verbatim_quote:
         name_res = resolve_quote(name_result.verbatim_quote, text)
         if name_res.span is not None:
@@ -790,14 +799,66 @@ def _build_base_pipeline(
     if deferred_pipeline_field is not None:
         return deferred_pipeline_field, ref_record
 
-    # Case D: both missing (or unresolved) -> bare MissingFromPaper; caller wraps it.
-    return (
-        MissingFromPaper(
-            searched_terms=name_result.searched_terms or ["base pipeline"],
-            sections_searched=name_result.sections_searched or ["full_text"],
-        ),
-        None,
+    # Case D: a gap. WHICH gap now lands on the inference arm instead of collapsing onto one
+    # caller-side constant. MissingFromPaper carries no reason field (provenance.py:59-62), so a
+    # reason-bearing gap must return the WRAPPED ProvenancedField the way the two deferral branches
+    # above already do; the no-name gap keeps returning bare so _assemble's isinstance branch (and
+    # every case-A paper's bytes) is untouched.
+    missing = MissingFromPaper(
+        searched_terms=name_result.searched_terms or ["base pipeline"],
+        sections_searched=name_result.sections_searched or ["full_text"],
     )
+
+    # Each reason is written INLINE at its own LeftMissing site, and the branches are spelled out
+    # rather than funnelled through one construction. Two reasons for that, both about the AST guard
+    # in tests/test_render.py:
+    #   * a local bound to a FUNCTION RETURN is unresolvable, so the guard refuses it loudly (it did:
+    #     "reason argument(s) this scan cannot resolve");
+    #   * a local bound to a literal in each of three branches is WORSE — the scan's `consts` map is
+    #     last-write-wins (test_render.py:669-671), so it would resolve one base, register only that
+    #     one, and PASS while two producers went unenumerated. A silent false negative in the one
+    #     guard that keeps raw reason tokens out of author-facing output.
+    # Verbose beats either. ``name_res is None`` is the "guard never entered" test; PRECEDENCE is name
+    # over ref, because the name is this field's own value.
+    if name_res is not None and name_res.span is None:
+        # Quote did not ground. Mirrors _process_field's form, carrying the resolver's own
+        # failure_reason — which does NOT decide tool-vs-model, and the state says so by staying
+        # MISSING_FROM_PAPER rather than claiming a determination (DELTA §4 ruling).
+        return (
+            ProvenancedField[PipelineRef](
+                field_id=bp_id,
+                extraction=missing,
+                inference=LeftMissing(
+                    reason=f"extraction_quote_unresolved:base_pipeline_name:{name_res.failure_reason}"
+                ),
+            ),
+            None,
+        )
+    if name_res is not None:
+        # Quote GROUNDED and does not state the value, and did not parse as an attribution. No
+        # existing reason's sentence is true of this, which is why it is the one new base.
+        return (
+            ProvenancedField[PipelineRef](
+                field_id=bp_id,
+                extraction=missing,
+                inference=LeftMissing(reason="base_pipeline_value_unsupported"),
+            ),
+            None,
+        )
+    if ref_deferral_unresolved:
+        # A reported deferral whose sentence would not ground. The existing base's sentence is true
+        # of this verbatim, so it reuses it.
+        return (
+            ProvenancedField[PipelineRef](
+                field_id=bp_id,
+                extraction=missing,
+                inference=LeftMissing(reason="deferral_quote_unresolved:base_pipeline_ref"),
+            ),
+            None,
+        )
+    # Genuine no-name gap: bare, so _assemble stamps no_base_pipeline_named and every case-A paper's
+    # bytes are untouched. The one case where that sentence is true.
+    return missing, None
 
 
 def _assemble(

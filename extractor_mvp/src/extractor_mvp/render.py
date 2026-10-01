@@ -463,6 +463,11 @@ _REASON_BUCKET: dict[str, str] = {
     "value_not_numeric": "unmappable",  # same shape as value_not_in_literal: uncoercible to type
     "extraction_quote_missing": "not_covered",
     "deferral_quote_unresolved": "not_covered",
+    # The one new base from DELTA_base_pipeline_diagnostic.md §5: a base_pipeline name whose quote
+    # GROUNDED but does not state the value. Every other reason's sentence is false of it — the span
+    # resolved — so it cannot reuse one. not_covered because the tool could not verify what the paper
+    # said, which is the same judgement cobidas._software_coverage expresses as covered=False.
+    "base_pipeline_value_unsupported": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -491,6 +496,12 @@ _REASON_LINE: dict[str, str] = {
     "deferral_quote_unresolved": (
         "extractor reported a deferral to another source but could not locate the "
         "deferring sentence — check the source yourself"
+    ),
+    # Must NOT say "not reported in source": the source WAS quoted and the quote grounded. The
+    # paper named something; the sentence the model cited does not state it. That is a statement
+    # about the extractor's evidence, not about the manuscript.
+    "base_pipeline_value_unsupported": (
+        "a pipeline was named but the quoted sentence does not state it — check the source yourself"
     ),
 }
 
@@ -752,6 +763,12 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     mand_addressed = [rc for rc in mand_assessed if rc.addressed]
     mand_not_reported = [rc for rc in mand_assessed if not rc.addressed]
     mand_not_assessed = [rc for rc in mandatory if not rc.covered_by_extractor]
+    # Two different facts, kept apart (DELTA_base_pipeline_diagnostic.md §4a). "Never targeted" is a
+    # code property — the extractor assesses fields on only a few rows. "Targeted but unverifiable"
+    # is a per-paper outcome — it looked and could not verify what it found. Collapsing them under a
+    # header describing only the first is the defect this project is about.
+    mand_unverifiable = [rc for rc in mand_not_assessed if rc.unverifiable]
+    mand_untargeted = [rc for rc in mand_not_assessed if not rc.unverifiable]
     non_mandatory = [rc for rc in coverage if not rc.row.mandatory]
     non_mand_addressed = [rc for rc in non_mandatory if rc.addressed]
     divergence_present = [s.kind for s in preprocessing.steps if s.kind in DIVERGENCE_KINDS]
@@ -766,16 +783,53 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
         f"  Assessed by AESPA: {len(mand_assessed)}  →  "
         f"addressed {len(mand_addressed)} · not reported {len(mand_not_reported)}{violation}"
     )
-    lines.append(f"  Not assessed by AESPA: {len(mand_not_assessed)}")
+    # The breakdown is emitted ONLY when the second fact is present, the way _BUCKET_HEADER emits
+    # non-zero segments only. A report with nothing unverifiable is byte-identical to before this
+    # change, which is what the re-render identity gate checks.
+    #
+    # RECORDED TRADE, not an oversight: that byte-identity means a report with ZERO unverifiable
+    # fields is indistinguishable from a report produced before this feature existed. Nothing on the
+    # page says the distinction was even available. Accepted because the gate's attributability is
+    # worth more than self-description while the stored demo reports are regenerated anyway (they are
+    # already 16/19 stale — TRACK_A_SCOPE's standing condition). If those reports ever become a
+    # durable artifact rather than a regenerable one, revisit this: the honest alternative is to emit
+    # the breakdown always and accept that all 19 move once, deliberately, in one attributable diff.
+    if mand_unverifiable:
+        lines.append(
+            f"  Not assessed by AESPA: {len(mand_not_assessed)}  →  "
+            f"never targeted {len(mand_untargeted)} · "
+            f"targeted but unverifiable {len(mand_unverifiable)}"
+        )
+    else:
+        lines.append(f"  Not assessed by AESPA: {len(mand_not_assessed)}")
     lines.append(
         f"Non-mandatory rows: {len(non_mandatory)} ({len(non_mand_addressed)} addressed)  ·  "
         f"Beyond COBIDAS: {len(divergence_present)} steps"
     )
-    lines.append(
-        "  (The 'not assessed' count is a TOOL gap — the extractor targets fields on only a "
-        "few rows — not a statement about the paper. Silence on the rest is not measurable "
-        "from text. The one unconditional, citable COBIDAS claim here is the Software row.)"
-    )
+    # Both clauses of the original go FALSE once a row can be targeted-but-unverifiable: "targets
+    # fields on only a few rows" is not why Software is unassessed, and an unverifiable Software row
+    # means the paper has no citable claim at all. Variant, not a rewrite, so the common case stays
+    # byte-identical.
+    software_unverifiable = any(rc.row.row_id == "software" for rc in mand_unverifiable)
+    if mand_unverifiable:
+        claim = (
+            "The Software row is unverifiable here, so this paper carries no unconditional, "
+            "citable COBIDAS claim."
+            if software_unverifiable
+            else "The one unconditional, citable COBIDAS claim here is the Software row."
+        )
+        lines.append(
+            "  (Two different tool gaps, kept apart: 'never targeted' means the extractor "
+            "assesses fields on only a few rows; 'targeted but unverifiable' means it looked "
+            "and could not verify what it found. Neither is a statement about the paper. "
+            f"Silence on the rest is not measurable from text. {claim})"
+        )
+    else:
+        lines.append(
+            "  (The 'not assessed' count is a TOOL gap — the extractor targets fields on only a "
+            "few rows — not a statement about the paper. Silence on the rest is not measurable "
+            "from text. The one unconditional, citable COBIDAS claim here is the Software row.)"
+        )
     lines.append("")
 
     def _tag(rc: RowCoverage) -> str:

@@ -89,3 +89,37 @@ See [`target_space-design-resolution.md`](target_space-design-resolution.md).
 
 Related: [`extraction-specificity-flattening.md`](extraction-specificity-flattening.md);
 `ground_truth/target_space_README.md` (the map correction + score).
+
+---
+
+> ## RECONCILIATION, 2026-10-01 — "remains open" is reclassified, not resolved; text above retained
+>
+> This document calls the `quote_not_found` → `MissingFromPaper` path a **false missing** and records
+> it as remaining open (`:17-18`, retained above). Under the ruling in
+> [`docs/design/DELTA_base_pipeline_diagnostic.md`](../design/DELTA_base_pipeline_diagnostic.md) §4,
+> that classification is **narrowed: the RECORD is not false; the rendered SENTENCE was.**
+>
+> The reasoning is that `quote_not_found` is irreducibly ambiguous at the site that produces it. It
+> means *either* the model fabricated a sentence that is not in the paper *or* the resolver cannot
+> locate one that is — the `×`→`/C2` class this document names, which `span_resolver.py:16-20`
+> excludes deliberately. **Nothing there distinguishes them.** `MISSING_FROM_PAPER` under the frozen
+> spec's own definition — "we looked and found nothing" (`provenance.py:76`) — is therefore an
+> accurate record of what happened. A "could not determine" state would have asserted the resolver
+> was at fault, which the evidence does not support, so Arm 2 was declined.
+>
+> What WAS false is the sentence the record produced. A base_pipeline whose quote did not ground
+> printed "no base pipeline named in source — you must specify", asserting an absence nobody measured.
+> As of this change that condition carries
+> `extraction_quote_unresolved:base_pipeline_name:{failure_reason}` and renders "value present in
+> source but span unresolved (extractor limitation)" — which names the extractor, not the manuscript.
+>
+> **Scope, so this is not read as more than it is.** The reclassification is argued generally and
+> implemented for `base_pipeline` only. The step-field path already behaved this way
+> (`extractor.py:546-568`). `_build_version_pf` does **not** — it collapses four conditions onto
+> `version_deferred_to_kb`, which still renders "version not reported in source", and it is the larger
+> half: it decides the Software row for 9 of 19 corpus papers against base_pipeline's 5. That arm is
+> §10 of the DELTA and ships separately, so **for `base_pipeline.version` the "remains open" above is
+> still literally true.**
+>
+> The agtzidis case itself is unchanged: `target_space` is a step field, its diagnostic already
+> existed, and its score still holds via the diagnostic raw fallback rather than via any fix.

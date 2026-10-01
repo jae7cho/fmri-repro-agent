@@ -608,6 +608,12 @@ def test_protocol_each_base_reason_renders_its_line():
             "extractor reported a deferral to another source but could not locate the "
             "deferring sentence — check the source yourself"
         ),
+        # The one new base from DELTA_base_pipeline_diagnostic.md §5. Its line must NOT claim
+        # source-absence: the quote GROUNDED, so the source was read and does not state the value.
+        "base_pipeline_value_unsupported": (
+            "a pipeline was named but the quoted sentence does not state it — "
+            "check the source yourself"
+        ),
     }
     for reason, line in expected.items():
         out = render.to_protocol(_one_field_spec(_missing_reason("space", reason)))
@@ -647,6 +653,24 @@ def _producible_reason_bases(path: Path) -> tuple[set[str], list[str]]:
     Resolves the two ways a reason reaches a ProvenancedField — the 3rd positional argument
     of ``_missing_pf(...)`` and the ``reason=`` keyword of ``LeftMissing(...)`` — through
     string constants, f-string prefixes, and module/function locals bound to either.
+
+    KNOWN BLIND SPOT, recorded 2026-10-01 — ``consts`` is LAST-WRITE-WINS. A producer that binds the
+    reason to ONE local in several branches::
+
+        if ...:   gap_reason = "base_a"
+        elif ...: gap_reason = "base_b"
+        LeftMissing(reason=gap_reason)
+
+    resolves to whichever literal ``ast.walk`` reached last, registers only that base, reports NO
+    dynamic argument, and so PASSES while every other base goes unenumerated. The guard then green-
+    lights exactly the leak it exists to prevent. This is structural, not a bug in a branch: the scan
+    cannot see a case it has no representation for — the same shape as ``uv sync --frozen`` being
+    blind to lockfile staleness.
+
+    A local bound to a FUNCTION RETURN is refused loudly, so the dangerous refactor is the one that
+    looks tidier. ``_build_base_pipeline`` writes three inline returns instead for this reason
+    (``extractor.py``, and the comment there says so). Fixing the scan — one base per ASSIGNMENT
+    rather than per name, or refusing re-assigned names outright — is a separate item.
     """
     tree = ast.parse(path.read_text(encoding="utf-8"))
 
@@ -1114,3 +1138,99 @@ def test_cobidas_coverage_chen_fixture() -> None:
     assert "Connectome Computation System (CCS)" in out  # pipeline named in the violation
     # divergence step (temporal_standardization) is beyond COBIDAS, never in the denominator
     assert "### Beyond COBIDAS (AESPA extensions)" in out
+
+
+def _base_gap_spec(reason: str) -> Preprocessing:
+    """A Preprocessing whose base_pipeline is a MISSING field carrying ``reason``."""
+    return Preprocessing(
+        applies_to=_applies_to(),
+        base_pipeline=_missing_reason("base_pipeline", reason),
+        steps=[_one_step()],
+    )
+
+
+def test_coverage_header_keeps_never_targeted_and_unverifiable_apart():
+    """Ruled 2026-10-01 (DELTA_base_pipeline_diagnostic.md §4a): the 'Not assessed' count must not
+    span two different facts under a header describing only one.
+
+    'never targeted' is a code property — the extractor assesses fields on a few rows. 'targeted but
+    unverifiable' is a per-paper outcome — it looked and could not verify what it found. Collapsing
+    them is the defect this project is about, which is why accepting the collapse was refused.
+    """
+    out = render.to_cobidas_coverage(_base_gap_spec("base_pipeline_value_unsupported"))
+
+    assert "targeted but unverifiable 1" in out
+    assert "never targeted" in out
+    # The two sub-counts must SUM to the total, or the partition is lying about its own arithmetic.
+    import re
+
+    total = int(re.search(r"Not assessed by AESPA: (\d+)", out).group(1))
+    never = int(re.search(r"never targeted (\d+)", out).group(1))
+    unver = int(re.search(r"targeted but unverifiable (\d+)", out).group(1))
+    assert never + unver == total, out
+
+    # And both false clauses of the original parenthetical are gone.
+    assert "the extractor targets fields on only a few rows" not in out
+    assert "The one unconditional, citable COBIDAS claim here is the Software row." not in out
+    assert "carries no unconditional, citable COBIDAS claim" in out
+    # Silence means silence: no unconditional-violation section at all.
+    assert "### Not reported (mandatory, unconditional)" not in out
+
+
+def test_coverage_header_is_unchanged_when_nothing_is_unverifiable():
+    """The breakdown is emitted only when the second fact is present.
+
+    Every committed corpus JSON carries ``no_base_pipeline_named``, so this is the shape the
+    re-render identity gate sees. If the breakdown were unconditional, all 19 reports would move and
+    the gate could no longer distinguish a leak from an intended change.
+    """
+    out = render.to_cobidas_coverage(_base_gap_spec("no_base_pipeline_named"))
+    assert "targeted but unverifiable" not in out
+    assert "never targeted" not in out
+    assert "  Not assessed by AESPA: " in out
+    assert "the extractor targets fields on only a few rows" in out
+    # covered stays True for the no-name gap, so the violation section is still emitted.
+    assert "### Not reported (mandatory, unconditional)" in out
+
+
+def test_no_unverifiable_reason_renders_a_source_absence_claim():
+    """The truth-of-the-line rule (DELTA_base_pipeline_diagnostic.md §5), as a test.
+
+    Each of the three unverifiable reasons describes the EXTRACTOR's evidence. None may render a
+    sentence asserting the manuscript is silent — that was the original defect, and reusing a base
+    whose sentence is false of a condition would reinstate it one reason over.
+    """
+    forbidden = ("not reported in source", "no base pipeline named in source")
+    for reason in (
+        "extraction_quote_unresolved:base_pipeline_name:quote_not_found",
+        "base_pipeline_value_unsupported",
+        "deferral_quote_unresolved:base_pipeline_ref",
+    ):
+        line = render._reason_detail(
+            render.FieldRow(
+                path="base_pipeline",
+                group="base_pipeline",
+                state="MISSING_FROM_PAPER",
+                extraction_status="MISSING_FROM_PAPER",
+                left_missing_reason=reason,
+            )
+        )
+        assert line, reason
+        assert "unspecified (reason:" not in line, f"{reason} leaked a raw token"
+        for bad in forbidden:
+            assert bad not in line, f"{reason} claims source-absence: {line!r}"
+
+    # Narrower, and the reason case C needed its own base at all: its span RESOLVED, so a line
+    # saying "span unresolved" is false of it. Reusing extraction_quote_unresolved here would be
+    # cheaper by two dict entries and would ship a false sentence — the trade the truth-of-the-line
+    # rule exists to refuse. Without this assertion that reuse passes every other test in this file.
+    c_line = render._reason_detail(
+        render.FieldRow(
+            path="base_pipeline",
+            group="base_pipeline",
+            state="MISSING_FROM_PAPER",
+            extraction_status="MISSING_FROM_PAPER",
+            left_missing_reason="base_pipeline_value_unsupported",
+        )
+    )
+    assert "span unresolved" not in c_line, c_line

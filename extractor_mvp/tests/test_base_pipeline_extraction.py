@@ -175,17 +175,30 @@ def test_guard_recovered_viduarre_reclassified_as_deferral():
     assert deferral is None  # no separate ref field -> no DeferralRecord
 
 
-def test_guard_recovered_unsupported_unparseable_falls_to_bare_missing():
-    # Third guard sub-case: recovered span, value NOT in the quote, AND the quote is not a bare
-    # citation attribution (nothing to defer to) -> fall through to bare MissingFromPaper. Never
-    # a fabricated EXTRACTED, and no invented DeferralRecord.
+def test_guard_recovered_unsupported_unparseable_records_value_unsupported():
+    """Third guard sub-case: span resolved, value NOT in the quote, quote not a bare citation
+    attribution -> MISSING_FROM_PAPER carrying ``base_pipeline_value_unsupported``.
+
+    SUPERSEDES ``test_guard_recovered_unsupported_unparseable_falls_to_bare_missing``, whose name
+    asserted the behaviour ruled against on 2026-10-01: this case used to return a BARE
+    MissingFromPaper, byte-identical to a paper that named nothing, so the report told it "no base
+    pipeline named in source" — false, because the span resolved. Renamed rather than re-bodied so
+    the old assertion cannot survive under a new name
+    (docs/design/DELTA_base_pipeline_diagnostic.md §5; precedent: DELTA_software_row_deferral §7).
+
+    The original diagnosis is unchanged and still pinned below: never a fabricated EXTRACTED, and no
+    invented DeferralRecord. Only the carrier moved — the state stays MISSING_FROM_PAPER, because
+    whether the model or the resolver was at fault is not decidable here (§4 ruling).
+    """
     value = "SPM12"
     quote = "the data were collected on a Siemens Trio scanner"
     text = "acquisition: thedatawerecollectedonaSiemensTrioscanner at the center."
     field, deferral = _build_base_pipeline(
         _extracted(value, quote), FieldExtractionResult(status="missing"), text
     )
-    assert isinstance(field, MissingFromPaper)  # not EXTRACTED, not DEFERRED_TO_CITATION
+    assert not isinstance(field, MissingFromPaper), "the reason must have a carrier"
+    assert isinstance(field.extraction, MissingFromPaper)  # not EXTRACTED, not DEFERRED_TO_CITATION
+    assert field.inference.reason == "base_pipeline_value_unsupported"
     assert deferral is None
 
 
@@ -337,3 +350,63 @@ def test_cho_2021_full_pdf_base_pipeline_defers_to_glasser():
             if fname == "kind":
                 continue
             assert getattr(step, fname).extraction.status in valid
+
+
+def test_every_collapsing_condition_returns_a_distinguishable_record():
+    """The defect this change exists to fix: four conditions used to return ONE byte-identical
+    record, so the report told all four "no base pipeline named in source" — true of exactly one.
+
+    Driven directly with constructed inputs, no model call — the method the investigation used to
+    establish the collapse in the first place. The assertion is on DISTINGUISHABILITY, not on the
+    specific strings, because the defect was that two records compared equal: a test pinning only
+    the reasons would still pass if two of them collapsed again.
+    """
+    text = (
+        "Methods. The fMRI data analysis was performed with FSL version 6.0. "
+        "Spatial preprocessing was applied using the procedure described by Glasser et al. 40. "
+        "Data were then smoothed."
+    )
+    missing = FieldExtractionResult(status="missing")
+    deferral_ungrounded = FieldExtractionResult(
+        status="deferred",
+        ref_string="Smith et al. (2013)",
+        deferral_sentence="a deferring sentence that appears nowhere in this paper",
+    )
+
+    def signature(name_result, ref_result):
+        field, _ = _build_base_pipeline(name_result, ref_result, text)
+        if isinstance(field, MissingFromPaper):
+            return ("bare", None)
+        return (type(field.extraction).__name__, field.inference.reason)
+
+    sigs = {
+        "A no name returned": signature(missing, missing),
+        "B quote did not ground": signature(
+            _extracted("FSL", "a quote that appears nowhere in this paper"), missing
+        ),
+        "C quote ground, value unsupported": signature(
+            _extracted("FSL", "Data were then smoothed."), missing
+        ),
+        "4th deferral sentence did not ground": signature(missing, deferral_ungrounded),
+    }
+    assert len(set(sigs.values())) == 4, f"conditions collapsed again: {sigs}"
+
+    # And every one of the four stays MISSING_FROM_PAPER: the 2026-10-01 ruling is a reason change,
+    # NOT a new state. Recording "could not determine" would assert the resolver was at fault, which
+    # case B cannot establish (DELTA_base_pipeline_diagnostic.md §4).
+    for label, (extraction, _) in sigs.items():
+        assert extraction in ("bare", "MissingFromPaper"), f"{label} changed state, not just reason"
+
+
+def test_case_a_still_returns_bare_so_committed_reports_do_not_move():
+    """The no-name condition must keep returning a BARE MissingFromPaper.
+
+    It is the one case whose current sentence is true, and the re-render identity gate depends on
+    it: every stored corpus JSON carries ``no_base_pipeline_named``, stamped by _assemble from a bare
+    return. If this case started carrying its own reason, five committed papers' reports would move
+    and the gate could no longer tell a leak from an intended change.
+    """
+    missing = FieldExtractionResult(status="missing")
+    field, deferral = _build_base_pipeline(missing, missing, "Methods. Nothing relevant here.")
+    assert isinstance(field, MissingFromPaper)
+    assert deferral is None
