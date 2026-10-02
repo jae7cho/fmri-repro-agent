@@ -16,6 +16,13 @@ runs is the Bedrock call. Model, temperature (0.0), and input bytes are held fix
 3 of the 24 field-cells flipped across byte-identical input. All three are on chen (the
 paper whose extraction the whole thesis leans on):
 
+> **CORRECTION, 2026-10-01 — the count is 2, not 3.** Retained as written. From the raw table
+> (`extractor_mvp/results/VARIANCE_PROBE.md`): chen has two fields marked unstable,
+> `base_pipeline` and `temporal_standardization.method`; oconnor and weber have none. **2 of 24
+> flipped, 22 stable.** `variance.md` carries the same error and the same correction, including why
+> the motion pre-registration's `K = 10` does not depend on it. The finding — temperature 0 is not
+> deterministic here — is unchanged.
+
 | paper | field | outcome across 15 identical runs | kind of flip |
 |---|---|---|---|
 | chen | temporal_standardization.method | EXTRACTED x10 / **MISSING x5** | **state flip — 33% false-absence** |

@@ -196,10 +196,17 @@ Two small items that remove a class of embarrassment where the repo and the pres
 commit everything first, render once. Nothing in this document produces a figure.
 
 **A6 — uncertainty machinery (K-draw / self-consistency).** No K-draw, voting, or resampling exists
-anywhere; `_CONFIDENCE = 0.8` (extractor.py:74) is a hardcoded MVP placeholder that never reaches output;
+anywhere; `_CONFIDENCE = 0.8` (extractor.py:74) is a hardcoded MVP placeholder that never reaches
+*rendered* output — it IS on all 601 EXTRACTED arms in the stored per-paper JSON, measured 2026-10-01,
+and A7 below correctly lists it as dropped in rendering;
 temp-0 nondeterminism is documented in `docs/findings/variance.md`. This is the **trust question** and the
-first thing an outside user will hit. It is deferred because it is the *same machinery* as Track B's
-pre-registered K-draw variance step, and should be built once, for both. If Track A finishes early, this
+first thing an outside user will hit. It is deferred because it **shares machinery with** Track B's
+pre-registered K-draw reachability probe, and should be built once, for both. (Corrected 2026-10-01:
+this previously said "the *same machinery* as Track B's pre-registered K-draw **variance step**". The
+pre-registration contains no variance step — 0 hits for `stability`, `flip` and `K-draw` against a
+control of 4 for `variance` in `variance.md`. What it binds is a K=10 reachability probe with no
+accuracy figure, so a stability number reported for motion is an amendment, not an implementation. See
+`docs/design/DESIGN_kdraw_stability.md` §1.) If Track A finishes early, this
 is the highest-value addition — and measuring stability on **attestation** judgements specifically is the
 open empirical question, since attestation may be far more stable than value extraction.
 

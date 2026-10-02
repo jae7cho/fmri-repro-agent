@@ -24,6 +24,26 @@ them can run a batch.
 resolves as a namespace package with `__file__` set to `None`, so nothing fails at import and a
 batch run instead dies at the first model call.
 
+### The shell's `grep` can hide `results/` from you
+
+A second environment fact that silently changes a result, the same class as the interpreter trap
+above: in some shells here `grep` is a **function** that filters git-ignored paths on a recursive
+search from a directory. Measured:
+
+```
+grep -rl 'no_base_pipeline_named' .            ->   0 hits under results/
+/usr/bin/grep -rl 'no_base_pipeline_named' .   -> 106 hits under results/
+```
+
+An **explicit** path (`grep -r pattern extractor_mvp/results/...`) is not filtered, which is why this
+goes unnoticed: most probes work. It bites a *recursive* search used to establish an absence — the
+result is a clean zero with no error, and `results/` holds the paid draws, the stored reports and every
+diagnostic.
+
+Use `/usr/bin/grep` when the question is "is this anywhere under `results/`", or `git grep` when the
+question is about tracked files (it is tracked-only by design, which is correct for that question and
+wrong for this one). And state a positive control beside any zero — that is what caught this.
+
 Run a batch with the extractor's own interpreter:
 
 ```bash

@@ -17,6 +17,25 @@ and any corpus statistic reported from one run carries uncharacterized run-to-ru
 
 3 of 24 field-cells flipped across identical input; all three were on chen:
 
+> **CORRECTION, 2026-10-01 — the count is 2, not 3.** The sentence above and "the other 21 cells" below
+> are retained as written and are both off by one. Counted from the raw table this file points at
+> (`extractor_mvp/results/VARIANCE_PROBE.md`, gitignored): chen has exactly **two** fields marked
+> unstable — `base_pipeline` (2 distinct outcomes) and `temporal_standardization.method` (2) — and
+> oconnor and weber have **none**. So **2 of 24 flipped and 22 were stable**. The summary table below
+> lists `surface_projection.surface_registration` as a third chen row, but marks it `stable` ×15; it
+> looks like the third flip and is not one.
+>
+> **Nothing binding depends on this.** The motion pre-registration's `K = 10`
+> (`motion-method-reachability-prereg.md:7-8`) cites this file for the *existence* of temp-0
+> nondeterminism — which the raw table establishes, and which 2 flips establish as well as 3 would —
+> and separately cites "the temporal finding's fixed→fixed 4/10 → 0/10", an independent K=10
+> observation (`subject-validator.md:30`, `temporal-firewall-fix.md:24`, `:68`). The justification
+> rests on neither 2 nor 3.
+>
+> The finding is unchanged: at least one field flips across byte-identical input, so temperature 0 is
+> not deterministic in this stack. The count was never load-bearing for that; it is corrected because
+> a number in a findings document gets quoted.
+
 | field | outcome across 15 identical runs | kind |
 |---|---|---|
 | chen · temporal_standardization.method | EXTRACTED ×10 / MISSING ×5 | **state flip (EXTRACTED↔MISSING)** |
