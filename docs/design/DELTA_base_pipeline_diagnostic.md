@@ -712,6 +712,26 @@ own first draft (§0), and a two-commit split is the same hazard with a schedule
 The same §4a question applies here and is not decided: a version row whose quote did not ground
 currently produces an unconditional COBIDAS accusation against the author.
 
+#### Where the version arm sits in the queue — RULED 2026-10-01: behind K-draw stability
+
+The ratified order is **stability first, then the version arm** (`DESIGN_kdraw_stability.md` §6,
+`056369e`: "stability before further labelled rows — motion's extraction side, then smoothing"). Two
+reasons, and both are about what the version arm *cannot* buy by being done sooner:
+
+1. **It does not block labelling.** Labelling reads papers, not reason strings. Nothing in the
+   motion/smoothing label queue waits on this arm, so pulling it forward displaces work that *is*
+   on the critical path to the freeze without shortening anything.
+2. **It cannot move a committed number.** Same replay constraint as the base arm
+   (`docs/TRACK_A_SCOPE.md`, the 2026-10-01 record): reports are regenerated from stored per-paper
+   JSON, and both arms change only what a NEW extraction records. The 9 version-arm papers' stored
+   JSONs carry the old reasons, so shipping the arm today leaves every already-published figure and
+   every replayed report reading exactly as it does now. The arm's value is realised on the next paid
+   re-extraction, whenever that happens — the arm being in place by then is what matters, not its
+   landing date.
+
+What this does **not** license: §10's "complete is not claimable until the version arm lands" still
+holds in full. Deferred is not fixed, and the 9 papers keep their false line until the arm ships.
+
 ---
 
 ## 11. A note on how this document was produced
@@ -747,6 +767,10 @@ Untouched, in the order they were queued:
    numbers were moving. The numbers have since settled and regenerate on demand
    (`ground_truth/target_space_tally.md`). **That deferral is now standing by default rather than by
    decision**, with 31 days to the internal freeze.
+
+   *Resolved the same day this was written, after it was written: see `docs/TRACK_A_SCOPE.md`'s
+   2026-10-01 record. Rendering happens in November from whatever state exists then. Left standing
+   above because the queue entry is what prompted the ruling.*
 
 **Ruled 2026-10-01: look at the render decision before the version arm, not after.** The version arm
 (§10) is the larger half of this defect and will still be there; the render deferral is the only open
