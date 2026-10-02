@@ -2252,3 +2252,125 @@ render once" deferral still holds or whether figures are now the critical path.
 
 Commits: `3356d03` (the residue correction). This entry is committed after it, and both are pushed
 with `f3017ee`, which had been sitting unpushed since 09-14.
+
+## 2026-10-01
+
+Hours: 00:28-00:35, 02:45-03:50, 06:27-06:30, 10:52-11:12, 11:48-11:52, 16:34-16:35, 16:57-17:22,
+17:44-18:03, 19:58-20:05, 21:18-21:29 ET. Ten blocks, 163 minutes active, nine commits. The long block
+is the base-arm implementation; the short ones are rulings arriving between other work.
+
+**The day's finding is not any of the nine commits. It is that both published accuracy rates are
+K=3 plurality collapses, and the entire vintage difference rests on one 2-1 vote.**
+
+It surfaced from a question that looked procedural. The K-draw stability design doc asserted, as the
+consequence of its opt-in ruling, that the SfN figures "are computed from single-draw artifacts". That
+was checked rather than taken, and it is false. `score_target_space.py:173` reads `extractor_status`,
+which the frozen CSV's own header line 4 calls `status = K=3 MAJORITY`;
+`score_v050_reextraction.py:183-185` takes `Counter(statuses).most_common(1)`, resolves a three-way tie
+toward `draw_1` by insertion order, and lets the **winning draw supply the value that is graded**. Both
+rates are aggregates and neither said so.
+
+Then the margin. **braun_2015 is the only paper in either vintage whose three draws disagreed** —
+frozen `DEFERRED/MISSING/DEFERRED`, collapsed to `DEFERRED_TO_CITATION`, which is exactly what makes it
+*correct* at 11/17. Its v050 draws are `MISSING` 3/3. Re-score the frozen vintage with that one
+plurality the other way and it reads 10/17 — identical to v050. braun is blind, so a six-point
+difference written into the README, the tally, the DEVLOG and a pre-registration turns on a single
+vote with a margin of one draw.
+
+**`20bbd2a` — the disclosure.** Every rate in the tally and the README now carries its aggregation
+rule beside its vintage, pinned by a test that fails if a rate line is not followed by an aggregation
+line. Naming the rule says a vote happened; it does not say where the margin was, so the tally also
+emits a *Where the plurality vote actually decided something* section listing the contested cell, what
+it collapsed to, and whether it is blind. The argument is the vintage rule's own, one layer in: a rate
+stated without the step that produced it hides that step.
+
+**`215de21` — and the correction to my own correction.** The prereg amendment narrowed the
+non-stationarity attribution on braun and then overclaimed on the other mover, saying the finding
+"survives" there. mueller's 0/3→3/3 gives Fisher **p = 0.100** — which is **the floor K=3 can reach**.
+A measurement whose best possible outcome is non-significant cannot establish anything; it can only
+fail to rule something out. And mueller was *selected as the most extreme of 19 papers*, so the nominal
+0.100 overstates it.
+
+**The multiplicity penalty cannot be quantified, and that is the same limit biting twice.** Correcting
+0.100 for having looked at 19 papers needs the per-paper per-draw flip probability — which is precisely
+what K=3 cannot bound (rule of three: zero flips in 3 draws bounds it at 3/3 = 1.0). Real,
+unquantifiable from this data, and in the direction of weaker. The supportable statement: non-stationarity
+is **suggested** by one paper at the maximum strength K=3 allows and **established by neither**.
+
+Two things were being conflated and the record now separates them: **nondeterminism** is sampling
+varying within a fixed distribution; **non-stationarity** is the distribution itself shifting between
+dates. braun's frozen draws already contained one MISSING in three, so 1/3 vs 3/3 (p = 0.400) is fully
+consistent with a stationary distribution. Neither "non-stationarity moved the rate" nor "nothing
+moved" is supportable — **the two vintages are not distinguishable at K=3**.
+
+**`c299c2e`, `2018bd3`, `fd8570e` — the base_pipeline diagnostic.** Four conditions reached one
+byte-identical bare `MissingFromPaper`, so the report told all four "no base pipeline named in source",
+true of exactly one. The fourth was hiding inside the first: a deferral whose sentence would not ground,
+told it had named nothing while it had named a citation. Ruled Arm 1 — a reason, not a new state — on
+the ground that case B is irreducibly ambiguous: `quote_not_found` means either the model fabricated a
+sentence or the resolver cannot find one that is there, and nothing at that site distinguishes them, so
+a "could not determine" state would assert a determination the evidence does not support.
+
+The blocking condition was verified rather than assumed and held worse than stated: `cobidas.py:191`
+reads the *status*, so a case B/C paper was counted an unconditional COBIDAS violation **and** told "No
+software named in the source" — two false statements, on the project's only citable claim. Ruled
+`covered=False` scoped to the unverifiable conditions, on `cobidas.py:166-173`'s own NotApplicable
+reasoning. That created a new collapse and the ruling refused it: a third count, because
+"never targeted" and "targeted but unverifiable" are two facts the tool can distinguish, and accepting
+their collapse inside the fix for the same defect would turn an inherited bug into a stated position.
+
+**A rule, for any future reason-base decision: enumerate by truth of the rendered line, not by table
+economy.** A reason base exists to select a sentence an author reads. Reusing one because it costs
+fewer dict entries ships a false sentence to save a key, which inverts the only thing the reason is
+for. It earned itself immediately — it is what surfaced that the fourth condition's existing sentence
+was already true of it verbatim, which table-economy reasoning had missed in both directions. The
+author's own suffix ruling was reversed the same day under it.
+
+**`20f3694` — a drifting expectation, fixed at the root rather than the number.** The re-render gate's
+negative control disagreed with its recorded "7 changed", returning 16/3. The reconciliation was exact
+(f44771a moved 14, 59e732b moved 2; the 3 identical are the three papers with version `EXTRACTED` and
+so no Software section), but updating the number would have left the real problem: the control compares
+one fixed ref against the **working tree**, so its expected value is a function of whatever HEAD is. The
+docstring now says 16/3 *at this HEAD* with the derivation, names the drift as structural, and flags the
+fix — a second ref argument pinning two fixed refs, where `d31e8b7` against `c9c2951` is permanently 7.
+
+**`90dd9ee` — a miscount that touched nothing binding, which was the point of checking.** Both variance
+documents say 3 of 24 field-cells flipped; the raw table shows **2 of 24, 22 stable**. The prereg's
+`K = 10` cites that file — so the question was whether a committed pre-registration rests on a wrong
+count. It does not: `motion-method-reachability-prereg.md:7-8` cites `variance.md` for the *existence*
+of nondeterminism, which 2 flips establish as well as 3, and separately cites an independent K=10
+observation. No amendment needed. The likely source of the 3 is a summary table that lists
+`surface_registration` among the chen rows while marking it `stable ×15` — the kind of error a table
+invites when it mixes headers with outcomes.
+
+**`7307491` — a broad catch that converted code bugs into data.** `batch.py` recorded every exception
+from `extract` as that paper's `extraction_failed`. Two kinds of failure want opposite handling: a
+data failure is one paper's property and should be absorbed; a code defect affects every paper
+identically, and recording it as a paper status misattributes a tool failure to the corpus **and** lets
+a batch finish green with every row corrupted. Re-raise the defects rather than enumerate the data
+failures, for two measured reasons — `batch.py` imports neither `instructor` nor `litellm` and
+`instructor.exceptions` is already deprecated, and `issubclass(litellm.exceptions.AuthenticationError,
+litellm.exceptions.APIError)` is **False** because two classes of that name sit in one MRO, so a
+data-failure base list would silently miss siblings.
+
+**A success message that is not downstream of the success.** A script of mine printed "added and wired
+in" while its replacement never ran: the first anchor matched, so the `if` skipped the branch doing the
+work, and the `print` was unconditional. Caught by reading the rendered artifact rather than the
+script's account of it. Same family as the determinism check that passed because both runs crashed —
+**a print that is not downstream of the work reports intent, not outcome.**
+
+**And an environment fact that silently changes a result**, now in CONTRIBUTING beside the interpreter
+trap: the shell's `grep` is a function that filters git-ignored paths on a recursive search from a
+directory. `grep -rl X .` returns 0 under `results/` where `/usr/bin/grep` returns 106. Explicit paths
+are not filtered, which is why it goes unnoticed — it bites a recursive search used to establish an
+absence, and returns a clean zero with no error. Found by an agent whose positive controls came back 0.
+
+**Open.** The version arm of the base_pipeline diagnostic (§10 — nine papers against the base arm's
+five, and "complete" is not claimable until it lands). `multi_acquisition_batch.py:109`, the same broad
+catch, untested and left for its own change. The two-fixed-ref argument on the re-render control.
+`span_recovered` still has no downstream consumer. And the render question, still standing by default
+with thirty days to the internal target — the only open item with a date attached.
+
+Commits, all 2026-10-01 and all pushed through `215de21`: `c299c2e`, `2018bd3`, `fd8570e`, `20f3694`,
+`20bbd2a`, `056369e`, `215de21`, then `90dd9ee` and `7307491` after the push. This entry is committed
+after them.
