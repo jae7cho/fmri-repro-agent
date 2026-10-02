@@ -60,6 +60,21 @@ VINTAGE_NOTE = {
     "v050": "real 0.5.0 extractor output, K=3, batch_v050_labelset draws 1/2/3",
 }
 
+#: EVERY rate carries its aggregation rule as well as its vintage. Both vintages are K=3 runs
+#: collapsed to one status per paper BEFORE grading, so a rate stated without its rule hides the
+#: step that produced it — exactly the defect the vintage label was added to prevent, one layer in.
+#: Verified from the code, not the column names: the frozen CSV's own header says "status = K=3
+#: MAJORITY" and score_target_space.py:173 reads that collapsed column; for v050,
+#: score_v050_reextraction.py:183-185 takes Counter(statuses).most_common(1), breaks a three-way tie
+#: toward draw_1 by insertion order, and lets the WINNING DRAW supply the value that is graded.
+AGGREGATION = {
+    "v040_frozen": "K=3, plurality on status (`extractor_status`; per-draw record in `status_k3`)",
+    "v050": "K=3, plurality on status, winning draw supplies the value (`maj_status`; per-draw in `k3_status`)",
+}
+
+#: Per-vintage column holding the "/"-joined per-draw statuses, so disagreement is recoverable.
+DRAW_COLUMN = {"v040_frozen": "status_k3", "v050": "k3_status"}
+
 
 def read_rows(path: Path) -> list[dict[str, str]]:
     """THE reader. Strips `#` provenance headers; nothing else in this module opens a CSV.
@@ -157,7 +172,8 @@ def _vintage_section(vintage: str, labels: dict[str, str]) -> list[str]:
         "",
         f"Source: `{VINTAGES[vintage].name}` — {VINTAGE_NOTE[vintage]}.",
         "",
-        f"**Blind correct-rate: {k}/{n} = {p:.1%} [{lo:.0%}, {hi:.0%}]**, vintage `{vintage}`.",
+        f"**Blind correct-rate: {k}/{n} = {p:.1%} [{lo:.0%}, {hi:.0%}]**, vintage `{vintage}`,",
+        f"aggregation **{AGGREGATION[vintage]}**.",
         f"Denominator is the {len(labels)} scored papers minus the {len(NON_BLIND)} non-blind",
         f"({', '.join(sorted(NON_BLIND))}), who appear as worked-example rows as well as their own.",
         "",
@@ -175,6 +191,52 @@ def _vintage_section(vintage: str, labels: dict[str, str]) -> list[str]:
         cells = " | ".join(str(row.get(s, 0)) if row.get(s, 0) else "·" for s in states)
         lines.append(f"| `{label}` | {cells} | {row.get(label, 0)} / {total} |")
     lines.append("")
+    return lines
+
+
+def _disagreement_section(vintages: list[str], labels: dict[str, str]) -> list[str]:
+    """Papers whose K=3 draws did NOT agree, per vintage — the cells the plurality vote decided.
+
+    Surfaced because the published vintage difference is carried entirely by one of them. A rate
+    whose aggregation rule is named but whose contested cells are hidden still cannot be audited:
+    the rule tells you a vote happened, this tells you where the margin was.
+    """
+    lines = [
+        "## Where the plurality vote actually decided something",
+        "",
+        "Papers whose three draws did not agree on status. These are the only cells where the",
+        "aggregation rule changed the input to grading; everywhere else the draws were unanimous and",
+        "the collapse was a no-op.",
+        "",
+    ]
+    any_dis = False
+    for vintage in vintages:
+        col = DRAW_COLUMN[vintage]
+        rows = {r["paper_id"]: r for r in read_rows(VINTAGES[vintage])}
+        dis = {p_: r[col] for p_, r in rows.items() if len(set(r[col].split("/"))) > 1}
+        lines.append(f"**`{vintage}`** — {len(dis)} of {len(rows)} papers disagreed.")
+        lines.append("")
+        if dis:
+            any_dis = True
+            lines += [
+                "| paper | per-draw statuses | collapsed to | label | blind? |",
+                "|---|---|---|---|---|",
+            ]
+            for p_, k3 in sorted(dis.items()):
+                from collections import Counter
+
+                maj = Counter(k3.split("/")).most_common(1)[0][0]
+                blind = "no (worked example)" if p_ in NON_BLIND else "**yes**"
+                lines.append(f"| {p_} | `{k3}` | `{maj}` | `{labels.get(p_, '?')}` | {blind} |")
+            lines.append("")
+    if any_dis:
+        lines += [
+            "**Read the margin, not just the winner.** Where a blind paper's draws split 2-1, the",
+            "published rate moves by one paper on one vote. `status_k3` / `k3_status` keep the record,",
+            "which is why those columns exist and why a stability feature must not replace them with a",
+            "winner (`docs/design/DESIGN_kdraw_stability.md`, fork 3).",
+            "",
+        ]
     return lines
 
 
@@ -196,6 +258,7 @@ def render(vintages: list[str]) -> str:
     out += _distribution_section(labels)
     for vintage in vintages:
         out += _vintage_section(vintage, labels)
+    out += _disagreement_section(vintages, labels)
     if len(vintages) > 1:
         out += _comparison_section(labels, vintages)
     return "\n".join(out).rstrip() + "\n"

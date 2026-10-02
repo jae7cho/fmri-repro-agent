@@ -152,3 +152,53 @@ attributable to the fix.
 **Phase 2 (span-resolution) — open.** agtzidis is the lone target_space `quote_not_found`; the broader
 hard-drop is corpus-wide across 6 fields (`span-resolution-hard-drop.md`). Whether to build Fix A/B is a
 separate decision; the retype (commit `382795a`) is demonstrated as far as it claims.
+
+---
+
+## AMENDMENT 2 — 2026-10-01: the blind-rate attribution is narrowed. Append-only; §:143-150 retained.
+
+**What is narrowed.** `:145` says "the blind-rate drop is **model non-stationarity on braun**, not a
+translation error and not the retype", and `:149` calls it "a separate, orthogonal non-stationarity
+signal on braun". The second half of each — not the translation, not the retype — **stands**. The
+attribution of the drop to non-stationarity does not, because the evidence for it is one paper at K=3
+and does not reach the claim.
+
+**Two things were being conflated, and the record should separate them.**
+
+- **Nondeterminism** — sampling varies within a *fixed* distribution. Documented at temperature 0 in
+  `variance.md`.
+- **Non-stationarity** — the distribution itself shifted between dates.
+
+**What the draws actually show.** braun's frozen record is `DEFERRED/MISSING/DEFERRED` — *one MISSING
+in three*. Its v050 record is `MISSING` 3/3. A two-sided Fisher exact on 1-of-3 versus 3-of-3 gives
+**p = 0.400**. That is fully consistent with nondeterminism at a stationary distribution: braun's
+frozen draws **already contained the outcome v050 landed on**.
+
+**The supportable statement, replacing the attribution:** *the two vintages are not distinguishable at
+K=3. The difference sits inside one paper's sampling variance, and that paper's frozen draws already
+contained the outcome the later vintage produced.*
+
+It is also **not** "nothing moved", which would overclaim in the other direction. K=3 cannot settle it
+either way: with three draws a side the smallest attainable two-sided p is **0.100**, so no K=3
+comparison can reach significance. That is a property of the design, not of these papers.
+
+**The non-stationarity finding itself survives, on the other mover.** mueller went `MISSING` 0/3 →
+`EXTRACTED` 3/3, Fisher **p = 0.100** — the floor, and a clean separation rather than braun's overlap.
+So the corpus's best evidence for a distribution shift is **mueller**, which is non-blind and therefore
+moves no published rate. The attribution was strongest on the paper that changes nothing and weakest on
+the paper that changes the headline. `:134`'s "two NON-STATIONARITY movers" is left standing for
+mueller and narrowed for braun.
+
+**Why this surfaced now.** It was found by the design pass for the K-draw stability feature
+(`docs/design/DESIGN_kdraw_stability.md`), tracing which column the published rates read. Both read a
+plurality-collapsed status: the frozen CSV's own header says `status = K=3 MAJORITY` and
+`score_target_space.py:173` reads it; `score_v050_reextraction.py:183-185` takes the plurality,
+resolves a three-way tie toward `draw_1`, and lets the winning draw supply the graded value. braun is
+the only paper in either vintage whose draws disagreed, so the entire published 11/17-vs-10/17
+difference turns on that single 2-1 vote.
+
+**What changed elsewhere as a result:** every rate in `target_space_README.md` and
+`ground_truth/target_space_tally.md` now carries its aggregation rule alongside its vintage, and the
+tally surfaces the contested cells. Nothing in this pre-registration's design, predictions or
+pre-committed expectations is altered — this amendment narrows one attribution made in its outcome
+section, and that is all.

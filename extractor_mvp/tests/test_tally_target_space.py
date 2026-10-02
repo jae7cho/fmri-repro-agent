@@ -160,3 +160,44 @@ def test_the_report_is_rendered_before_the_output_file_is_opened() -> None:
     (score_v050_reextraction.py:229); the ordering is asserted rather than remembered."""
     body = MODULE_SOURCE[MODULE_SOURCE.index("def main(") :]
     assert body.index("text = render(") < body.index("write_text("), "render must precede the open"
+
+
+def test_every_emitted_rate_names_its_aggregation_as_well_as_its_vintage() -> None:
+    """Same argument as the vintage rule, one layer in.
+
+    Both published rates are K=3 runs collapsed to one status per paper BEFORE grading — the frozen
+    CSV's own header says "status = K=3 MAJORITY" and score_target_space.py reads that column;
+    score_v050_reextraction.py:183-185 takes the plurality, breaks a three-way tie toward draw_1, and
+    lets the winning draw supply the graded value. A rate stated without that rule hides the step
+    that produced it.
+    """
+    text = tally.render(list(tally.VINTAGES))
+    assert "aggregation **K=3, plurality on status" in text
+    for vintage in tally.VINTAGES:
+        assert vintage in tally.AGGREGATION, vintage
+        assert "K=3" in tally.AGGREGATION[vintage], vintage
+    # every rate line must be followed by an aggregation line
+    lines = text.splitlines()
+    for i, line in enumerate(lines):
+        if "correct-rate" in line:
+            assert any(v in line for v in tally.VINTAGES), f"unlabelled vintage: {line}"
+            assert "aggregation" in lines[i + 1], f"rate with no aggregation rule: {line}"
+
+
+def test_contested_cells_are_surfaced_not_just_the_rule() -> None:
+    """Naming the rule says a vote happened; this says where the margin was.
+
+    braun_2015's frozen draws are DEFERRED/MISSING/DEFERRED — the only disagreement in either
+    vintage, and it is a BLIND paper, so the whole published 11/17-vs-10/17 difference turns on that
+    one 2-1 vote. A tally that named the rule but hid the contested cell still could not be audited.
+    """
+    text = tally.render(list(tally.VINTAGES))
+    assert "Where the plurality vote actually decided something" in text
+    assert "braun_2015" in text
+    assert "DEFERRED/MISSING/DEFERRED" in text
+    # and it must say braun is blind, since that is what makes the vote move the headline
+    seg = text.split("Where the plurality vote actually decided something")[1]
+    braun_row = next(ln for ln in seg.splitlines() if ln.startswith("| braun_2015"))
+    assert "**yes**" in braun_row, braun_row
+    # v050 had no disagreement; the section must say so rather than omitting the vintage
+    assert "**`v050`** — 0 of 19 papers disagreed." in text

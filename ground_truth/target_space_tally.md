@@ -28,7 +28,8 @@ the labels, not predictions, and they do not move when the extractor does.
 
 Source: `target_space_predictions_v040_frozen.csv` — frozen pre-0.5.0 output, translated into the v3 map's shape by reconstruct_struct.
 
-**Blind correct-rate: 11/17 = 64.7% [41%, 83%]**, vintage `v040_frozen`.
+**Blind correct-rate: 11/17 = 64.7% [41%, 83%]**, vintage `v040_frozen`,
+aggregation **K=3, plurality on status (`extractor_status`; per-draw record in `status_k3`)**.
 Denominator is the 19 scored papers minus the 2 non-blind
 (mueller_2021, oconnor_2017), who appear as worked-example rows as well as their own.
 
@@ -50,7 +51,8 @@ This table is here because the totals are invariant across vintages and this is 
 
 Source: `target_space_predictions_v050.csv` — real 0.5.0 extractor output, K=3, batch_v050_labelset draws 1/2/3.
 
-**Blind correct-rate: 10/17 = 58.8% [36%, 78%]**, vintage `v050`.
+**Blind correct-rate: 10/17 = 58.8% [36%, 78%]**, vintage `v050`,
+aggregation **K=3, plurality on status, winning draw supplies the value (`maj_status`; per-draw in `k3_status`)**.
 Denominator is the 19 scored papers minus the 2 non-blind
 (mueller_2021, oconnor_2017), who appear as worked-example rows as well as their own.
 
@@ -67,6 +69,25 @@ This table is here because the totals are invariant across vintages and this is 
 | `family_specified` | 1 | 9 | · | 9 / 10 |
 | `native_volume` | · | 2 | · | 0 / 2 |
 | `study_specific` | 1 | · | 1 | 1 / 2 |
+
+## Where the plurality vote actually decided something
+
+Papers whose three draws did not agree on status. These are the only cells where the
+aggregation rule changed the input to grading; everywhere else the draws were unanimous and
+the collapse was a no-op.
+
+**`v040_frozen`** — 1 of 19 papers disagreed.
+
+| paper | per-draw statuses | collapsed to | label | blind? |
+|---|---|---|---|---|
+| braun_2015 | `DEFERRED/MISSING/DEFERRED` | `DEFERRED` | `deferred` | **yes** |
+
+**`v050`** — 0 of 19 papers disagreed.
+
+**Read the margin, not just the winner.** Where a blind paper's draws split 2-1, the
+published rate moves by one paper on one vote. `status_k3` / `k3_status` keep the record,
+which is why those columns exist and why a stability feature must not replace them with a
+winner (`docs/design/DESIGN_kdraw_stability.md`, fork 3).
 
 ## What moved between vintages
 

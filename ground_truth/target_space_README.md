@@ -147,14 +147,38 @@ under map v3. Regenerate them with:
 The `v040_frozen` vintage gives **different** numbers from the same labels and the same map; it is quoted
 below only as a prior. `score_target_space.py` still reads the frozen file and still prints the frozen rate.
 
-**Blind correct-rate (Wilson 95%): 10/17 = 58.8% [36, 78].** One denominator, the pre-registered one: the
+**Blind correct-rate (Wilson 95%): 10/17 = 58.8% [36, 78]**, vintage `v050`, aggregation **K=3,
+plurality on status, winning draw supplies the value**. One denominator, the pre-registered one: the
 19 scored papers minus the 2 non-blind (oconnor, mueller).
+
+**Why the aggregation is on the face of the rate, not in a footnote.** Both vintages are K=3 runs
+collapsed to ONE status per paper *before* grading. The frozen CSV's own header says `status = K=3
+MAJORITY` and `score_target_space.py:173` reads that collapsed column; for v050,
+`score_v050_reextraction.py:183-185` takes `Counter(statuses).most_common(1)`, resolves a three-way
+tie toward `draw_1` by insertion order, and lets the **winning draw supply the value that is graded**.
+A rate stated without that rule hides the step that produced it — the same argument that put the
+vintage on the face of every rate, one layer in. Both per-draw records are kept
+(`status_k3`, `k3_status`) and `ground_truth/target_space_tally.md` now surfaces the papers whose
+draws disagreed.
 
 **Read the rate, not the total — the totals are invariant and the rate is not.** Both vintages score
 **11 correct / 8 error** over all 19, and both partition **5 / 2 / 1**. Nothing about the totals reveals
 that two papers swapped sides. braun went correct → error and mueller error → correct; braun is blind and
 mueller is not, so the blind rate fell **11/17 → 10/17 (64.7% → 58.8%)** while every total held still. A
 reader checking "did the numbers move?" against the totals would conclude nothing changed.
+
+**And the whole six-point difference rests on one 2-1 plurality vote.** braun is the ONLY paper in
+either vintage whose three draws disagreed: frozen `DEFERRED/MISSING/DEFERRED`, collapsed to
+`DEFERRED_TO_CITATION`, which is what makes it correct at 11/17. Its v050 draws are `MISSING` 3/3.
+Re-score the frozen vintage with braun's plurality going the other way and it reads 10/17 = 58.8% —
+identical to v050. So the two vintages are **not distinguishable at K=3**: the difference sits inside
+one paper's sampling variance, and that paper's frozen draws already contained the outcome v050
+landed on (one MISSING in three).
+
+That is not a reason to distrust either number. It is the reason both carry their aggregation rule,
+and the reason the earlier attribution of the drop to *model non-stationarity on braun* is narrowed —
+see the amendment appended to
+[`target_space-0.5.0-reextraction-prereg.md`](../docs/findings/target_space-0.5.0-reextraction-prereg.md).
 
 **Reachable-only is retired.** Earlier drafts quoted a second denominator dropping the 2 unreachable leaks
 and the 1 demonstrated corruption (v050: 10/14 = 71.4%). That exclusion was identified POST-HOC, after
