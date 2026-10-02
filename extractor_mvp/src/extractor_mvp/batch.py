@@ -41,6 +41,38 @@ if TYPE_CHECKING:
 _DATASET_NAMES = ("HCP", "HNU", "MSC", "ABIDE", "UKBB")
 _IGNORE_REASON = "not_targeted_by_mvp"  # the untargeted filler fields
 
+#: Exceptions that are NEVER a property of one paper, and so must NOT be recorded as a paper's
+#: status. A batch has two kinds of per-paper failure and they want opposite handling:
+#:
+#:   * DATA failures — an unparseable PDF, a model refusal, a validation error the extractor cannot
+#:     recover from. These ARE properties of one paper. Recording ``extraction_failed`` and
+#:     continuing is correct, and is what the broad catches below exist for.
+#:   * CODE defects — an AttributeError from a removed field, a TypeError from a changed signature.
+#:     These affect EVERY paper identically. Recording one as a paper status is wrong twice: it
+#:     misattributes a tool failure to the paper, and it lets a batch finish green with every row
+#:     corrupted. The motivating case is real — ``citation_resolver.py:124`` reads
+#:     ``pf.extraction.confidence``, so removing that field would turn a programming error into 19
+#:     papers' ``extraction_failed``, and only the live test reaches those lines.
+#:
+#: RE-RAISED rather than enumerating the data failures, for two measured reasons. First, this module
+#: imports neither ``instructor`` nor ``litellm`` — ``extractor.build_client`` imports them lazily on
+#: purpose — and ``instructor.exceptions`` is already deprecated in favour of ``instructor.core``, so
+#: naming their types here would add heavy module-level imports on a moving path. Second, the obvious
+#: base class does not hold: ``issubclass(litellm.exceptions.AuthenticationError,
+#: litellm.exceptions.APIError)`` is **False**, because two different classes named
+#: ``AuthenticationError`` sit in that MRO. A list of data-failure bases would silently miss siblings;
+#: this list is stdlib and stable.
+#:
+#: Deliberately NOT included: ``IndexError`` and ``KeyError``. Both can be data-shaped — a model
+#: returning an unexpected key or an empty sequence — so re-raising them would convert a data failure
+#: into an aborted batch, which is this defect's mirror image.
+_CODE_DEFECTS: tuple[type[BaseException], ...] = (
+    AttributeError,
+    TypeError,
+    NameError,
+    ImportError,
+)
+
 SUMMARY_COLUMNS = [
     "paper_id",
     "path",
@@ -233,6 +265,10 @@ def process_paper(
             paper_date=paper.pdf_date,
             resolutions=resolutions,
         )
+    except _CODE_DEFECTS:
+        # A tool defect, not this paper's problem. Let it abort the run loudly rather than write 19
+        # rows of extraction_failed that blame the corpus for a bug. See _CODE_DEFECTS.
+        raise
     except Exception as exc:  # LLM/transport/validation error -> recorded, batch continues
         return PaperResult(
             paper_id,
@@ -266,6 +302,10 @@ def process_paper(
     render_error: str | None = None
     try:
         report = to_report(preprocessing, source=paper_id, methods_slice=methods)
+    except _CODE_DEFECTS:
+        # Same split, and sharper here: the comment above argues to_report is pure and
+        # deterministic, so a code defect in it is identical on every paper by construction.
+        raise
     except Exception as exc:
         render_error = f"{type(exc).__name__}: {exc}"
 

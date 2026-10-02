@@ -6,7 +6,12 @@ import csv
 import json
 from pathlib import Path
 from types import SimpleNamespace
-from typing import Any
+from typing import TYPE_CHECKING, Any, cast
+
+import pytest
+
+if TYPE_CHECKING:
+    from extractor_mvp.citation_resolver import CitationResolver
 
 import extractor_mvp.batch as batch
 from extractor_mvp.batch_config import BatchConfig, PdfPaper
@@ -248,3 +253,132 @@ def _assembled_with_deferred_base() -> Any:
         base_pipeline=bp,
         steps=steps,
     )
+
+
+# --- the failure-kind split (batch._CODE_DEFECTS) ----------------------------------------------
+#
+# A batch must absorb DATA failures (one paper's problem) and must NOT absorb CODE defects (every
+# paper's problem, identically). Before this split, batch.py:236's `except Exception` recorded both as
+# extraction_failed, so a removed field would finish a run green with 19 corrupted rows while blaming
+# the corpus. See batch._CODE_DEFECTS for why the fix re-raises defects rather than enumerating the
+# data failures.
+
+
+def test_a_data_failure_is_still_recorded_and_the_batch_continues(
+    monkeypatch: Any, tmp_path
+) -> None:
+    """The behaviour the broad catch exists for, pinned so the split does not take it away."""
+    _patch(monkeypatch)
+
+    def boom(*_a: Any, **_k: Any) -> Any:
+        raise RuntimeError("bedrock said no")
+
+    monkeypatch.setattr(batch, "extract", boom)
+    pdf = tmp_path / "chen_2015.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    result = batch.process_paper("chen_2015", pdf, "model")
+    assert result.status == "extraction_failed"
+    assert "RuntimeError: bedrock said no" in (result.error_message or "")
+
+
+@pytest.mark.parametrize(
+    "exc", [AttributeError("no attribute 'confidence'"), TypeError("bad signature"), NameError("x")]
+)
+def test_a_code_defect_aborts_the_run_instead_of_blaming_the_paper(
+    monkeypatch: Any, tmp_path, exc: BaseException
+) -> None:
+    """A tool defect must propagate. Recording it as a paper status is wrong twice over: it
+    misattributes a tool failure to the paper, and it lets the batch finish green."""
+    _patch(monkeypatch)
+
+    def boom(*_a: Any, **_k: Any) -> Any:
+        raise exc
+
+    monkeypatch.setattr(batch, "extract", boom)
+    pdf = tmp_path / "chen_2015.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    with pytest.raises(type(exc)):
+        batch.process_paper("chen_2015", pdf, "model")
+
+
+def test_the_citation_resolver_attributeerror_propagates_through_the_real_extract_path(
+    monkeypatch: Any, tmp_path
+) -> None:
+    """Closes a test gap: citation_resolver.py:124 reads ``pf.extraction.confidence`` and is
+    reachable ONLY by the live test, so the defect that motivated this split had no CI coverage.
+
+    This drives the REAL orchestrator (extractor.py:1190 calls ``resolve_all``) with a stub resolver
+    that raises the exact error a removed field produces. The stub stands in for the resolver's
+    internals because ``Extracted.confidence`` is a required field and so cannot be removed in a
+    fixture; what is under test is the BATCH's handling, which is what the split changed.
+    """
+    # A DEFERRED step field, so extractor.py:1187-1188's `per_field` is non-empty and resolve_all is
+    # actually reached. The deferring sentence must be groundable in the slice, or _process_deferred
+    # records deferral_quote_unresolved instead and no DeferralRecord is produced.
+    text = "Methods\nData were normalized as described in Smith et al. 2013.\nResults\nFindings."
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _path: (text, "pypdf"))
+    none = FieldExtractionResult(status="missing")
+    payload = PreprocessingExtraction(
+        target_space=FieldExtractionResult(
+            status="deferred",
+            ref_string="Smith et al. 2013",
+            deferral_sentence="Data were normalized as described in Smith et al. 2013.",
+        ),
+        resolution_mm=none,
+        surface_registration=none,
+        target_surface=none,
+        intensity_convention=none,
+        intensity_value=none,
+    )
+    fake_client = SimpleNamespace(
+        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
+    )
+    monkeypatch.setattr(
+        batch,
+        "extract",
+        lambda paper, model, **kwargs: extract(
+            paper, model, client=fake_client, citation_resolver=kwargs.get("citation_resolver")
+        ),
+    )
+
+    class BrokenResolver:
+        def resolve_all(self, _per_field: Any) -> Any:
+            raise AttributeError("'Extracted' object has no attribute 'confidence'")
+
+        def resolve_base_pipeline_deferral(self, *_a: Any, **_k: Any) -> Any:
+            raise AssertionError("should not be reached")
+
+    pdf = tmp_path / "chen_2015.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    with pytest.raises(AttributeError, match="confidence"):
+        # cast, not ignore: CitationResolver is a concrete class (citation_resolver.py:61), and the
+        # point of the stub is to raise from resolve_all without constructing the real resolver's
+        # cache and fetcher. The duck-typed surface used here is resolve_all alone.
+        batch.process_paper(
+            "chen_2015", pdf, "model", citation_resolver=cast("CitationResolver", BrokenResolver())
+        )
+
+
+def test_a_code_defect_in_to_report_also_propagates(monkeypatch: Any, tmp_path) -> None:
+    """The same split on the render catch. Sharper there: its own comment argues to_report is pure
+    and deterministic, so a code defect in it is identical on every paper by construction."""
+    _patch(monkeypatch)
+    monkeypatch.setattr(
+        batch, "to_report", lambda *_a, **_k: (_ for _ in ()).throw(AttributeError("gone"))
+    )
+    pdf = tmp_path / "chen_2015.pdf"
+    pdf.write_bytes(b"%PDF-1.4\n")
+    with pytest.raises(AttributeError):
+        batch.process_paper("chen_2015", pdf, "model")
+
+
+def test_data_shaped_exceptions_are_deliberately_not_re_raised() -> None:
+    """IndexError and KeyError are excluded from _CODE_DEFECTS on purpose: a model returning an
+    unexpected key or an empty sequence is a DATA failure, and re-raising it would abort a batch over
+    one paper — this defect's mirror image. Pinned so the list is not 'tidied' into including them."""
+    assert AttributeError in batch._CODE_DEFECTS
+    assert TypeError in batch._CODE_DEFECTS
+    assert NameError in batch._CODE_DEFECTS
+    assert ImportError in batch._CODE_DEFECTS
+    assert IndexError not in batch._CODE_DEFECTS
+    assert KeyError not in batch._CODE_DEFECTS
