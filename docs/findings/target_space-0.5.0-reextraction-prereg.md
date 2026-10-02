@@ -182,12 +182,34 @@ It is also **not** "nothing moved", which would overclaim in the other direction
 either way: with three draws a side the smallest attainable two-sided p is **0.100**, so no K=3
 comparison can reach significance. That is a property of the design, not of these papers.
 
-**The non-stationarity finding itself survives, on the other mover.** mueller went `MISSING` 0/3 →
-`EXTRACTED` 3/3, Fisher **p = 0.100** — the floor, and a clean separation rather than braun's overlap.
-So the corpus's best evidence for a distribution shift is **mueller**, which is non-blind and therefore
-moves no published rate. The attribution was strongest on the paper that changes nothing and weakest on
-the paper that changes the headline. `:134`'s "two NON-STATIONARITY movers" is left standing for
-mueller and narrowed for braun.
+**On the other mover — and this sentence is itself tightened, same day.** As first written this
+paragraph said "the non-stationarity finding itself **survives**, on the other mover". That overclaims,
+and the overclaim is the same kind the amendment exists to remove, so it is corrected here rather than
+left standing.
+
+mueller went `MISSING` 0/3 → `EXTRACTED` 3/3, Fisher **p = 0.100**. That is the strongest available
+signal and not an established one, for two reasons that compound:
+
+1. **0.100 is the FLOOR K=3 can reach.** It is the most extreme outcome the design can express — a
+   perfect 0-of-3 against 3-of-3 — and it still does not reach 0.05. A measurement whose best possible
+   result is non-significant cannot establish anything; it can only fail to rule something out.
+2. **mueller was SELECTED as the most extreme of 19 papers.** Its p is a post-hoc maximum over the
+   corpus, so the nominal 0.100 overstates it further. Under temp-0 nondeterminism alone you would
+   expect *some* paper to land an extreme split by chance, and this one was found by looking at all
+   nineteen.
+
+**It cannot be quantified, and the reason is the same limit biting twice.** Correcting 0.100 for having
+looked at 19 papers needs the per-paper per-draw flip probability — which is exactly what K=3 cannot
+bound (rule of three: zero flips in 3 draws bounds it at 3/3 = 1.0). So the multiplicity penalty is
+real, unquantifiable from this data, and in the direction of weaker.
+
+**The supportable statement:** non-stationarity is **suggested** by one paper at the maximum strength
+K=3 allows, and **established by neither** paper. `:134`'s "two NON-STATIONARITY movers" is narrowed for
+both — for braun because its draws already contained the later outcome (p = 0.400), and for mueller
+because the design cannot reach significance even at its own extreme.
+
+The asymmetry stands and is the useful part: the attribution was strongest on the paper that changes
+nothing and weakest on the paper that changes the headline.
 
 **Why this surfaced now.** It was found by the design pass for the K-draw stability feature
 (`docs/design/DESIGN_kdraw_stability.md`), tracing which column the published rates read. Both read a
