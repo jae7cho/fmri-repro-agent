@@ -2525,3 +2525,65 @@ a pipe into `tail` — the same shape as the print that was not downstream of th
 Commits: `f59609a` (the three records and the DEVLOG forward correction), `ac63ada` (the CI fix), and
 `252ea37` (the count correction above). `ac63ada` is the first green `extractor-mvp` since
 `214b55c2` on 2026-09-02 — run `37098275269`, both jobs `success`. This entry is committed after them.
+
+---
+
+## 2026-10-03
+
+**The hook now runs what CI runs, and the diagnosis is a tool asymmetry the old hook inherited
+silently.** `76bd8bc` replaces the `mirrors-mypy` hook with two `repo: local` hooks that are
+literally `ci.yml`'s lines — `uv run mypy src` from the repository root (`ci.yml:57-59`) and
+`cd extractor_mvp && uv run mypy src` from `extractor_mvp/` (`:98-100`). Verified identical to CI on
+the same tree: clean, both report `Success: no issues found in 17 source files` / `26 source files`,
+matching CI's own commands; with `return "not an int"` appended to
+`extractor_mvp/src/extractor_mvp/report.py`, hook and CI both report
+`src/extractor_mvp/report.py:93: error: Incompatible return value type (got "str", expected "int")`
+and `Found 1 error in 1 file (checked 26 source files)`, and the hook blocks a real commit — checked
+by staging the mutation and confirming HEAD did not move. Repeated against the root package at
+`src/fmri_repro/spec/preprocessing.py`.
+
+**ruff needed no change, and the reason is the whole finding: one tool resolves configuration per
+file and the other does not.** ruff discovers the nearest `pyproject.toml` for each file, so the
+existing ruff hooks already honour `extractor_mvp/pyproject.toml`'s own `line-length` and its
+`per-file-ignores` for `span_resolver.py` — verified on exactly that file. mypy has no equivalent
+discovery: run from the repository root it takes the root `[tool.mypy]`, under which `extractor_mvp`
+resolves to the **directory** rather than to `extractor_mvp/src/extractor_mvp`. A hook configuration
+that treated the two tools the same therefore inherited the difference without stating it, and the
+inherited failure — `Module "extractor_mvp" has no attribute "report"` — had been rejecting every
+extractor_mvp test that imports a submodule by attribute since `815ec2f` on 2026-09-12. Which means
+it was being bypassed or ignored, and a check in that state is not a check: `ac63ada` and `252ea37`
+each needed `SKIP=mypy`; `76bd8bc` needed none.
+
+**Two sub-decisions for K-draw stability are recorded before any code**, in
+`DESIGN_kdraw_stability.md` §4b, with acceptance items 8 and 9. They arrived in an implementation
+prompt rather than from the design doc, which is the same gap that let the render ruling sit
+unrecorded while `DEVLOG.md:2371` said the opposite — so they are written down first. **Value
+agreement is exact equality** of `Extracted.value` serialized with no normalisation, excluding
+`spans` (span agreement is a separate unit, and `SpecifiedTerm.verbatim` is value content while the
+quote is `Extracted.spans`, so this does not collapse the two), `confidence` (the uncalibrated
+placeholder), and `span_recovered` (absent on 299 of 601 stored arms, so including it would read
+absence as disagreement). Strictness is free because fork 2 keeps the full per-draw record, so every
+looser rule stays computable without a re-run; between two numbers computable from one record, the
+one that cannot understate movement is the one to publish.
+
+**The artifact is run output, gitignored, beside its draws — and the premise for that needed
+correcting.** "Stability is a property of a run, not a label" does not by itself exclude
+`ground_truth/`, because that directory is **not labels-only**:
+`ground_truth/predictions_v040_frozen.csv` is tracked and is not a label, its emitted header calling
+it "a durable snapshot of a NON-reproducible run … the record the first Tier-A/Tier-B number was
+computed against", while the run's own `predictions_v040.csv` sits untracked under `results/`
+(`results/.gitignore:7` matches `*`) with a bare column row. So fork 4's prediction-CSV precedent is
+**two-stage**: emit into ignored `results/`, promote to a tracked snapshot when a number is computed
+against it. The ruling stands on the narrower ground that the default artifact of an opt-in mode
+never yet run is run output — and it now carries the condition that **no stability number may be
+published from a gitignored artifact**, plus a refinement that the provenance header is written at
+emit time rather than only on promotion.
+
+**Also recorded**, beside the 313-absolute-paths item in `TRACK_A_SCOPE.md`:
+`test_methods_finder.py:12` hardcodes the corpus directory, so its five tests run on one machine
+rather than on any machine holding a corpus. Their never running in CI is fine and is now stated in
+CONTRIBUTING; the machine-lock is the defect, and an env var skipped when unset removes it while
+keeping the CI skip.
+
+Commits: `76bd8bc` (the hook) and this entry. CI green on both jobs at `76bd8bc`, run
+`37099247685` — which is also Phase 2's gate, met.

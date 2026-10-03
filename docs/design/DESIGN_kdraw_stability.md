@@ -369,6 +369,73 @@ whoever implements it first.
 
 ---
 
+## 4b. Two sub-decisions the forks left open — RULED 2026-10-03
+
+Both arrived in the implementation prompt rather than from this document, which is why they are
+written here before any code: a decision that lives only in a prompt is one the code embodies and
+the record does not, and this project has had that exact gap once already — the render ruling sat
+unrecorded while `DEVLOG.md:2371` asserted the opposite. Ruled by the author in conversation;
+recorded 2026-10-03, the day they became checkable, not backdated.
+
+### Sub-decision 1 — value agreement is EXACT equality of the serialized value
+
+§4a's fork 2 left this open in as many words: value-level comparison "requires a comparison rule for
+structured values (`SpecifiedTerm`, `PipelineRef`) and a decision about whether a differing
+`verbatim` with the same `resolved` counts as a flip." **It counts.**
+
+*Why exact.* Fork 2 keeps the full per-draw field, so every looser rule — `resolved`-only,
+case-insensitive, whitespace-normalised — stays computable later from the stored record with no
+re-run. Strictness is therefore free in optionality and costly only in the direction of reporting
+*more* disagreement than a looser rule would. Between two numbers computable from the same record,
+the one that cannot understate movement is the one to publish. Every normalisation is itself a
+looseness ruling, and applying one inside a comparison applies it invisibly.
+
+*What "serialized value" means, scoped precisely.* The comparison is over `Extracted.value` **only**,
+as `model_dump(mode="json")` with deterministic key order, and with **no** normalisation of any kind.
+Three fields of `Extracted` are deliberately excluded, and each exclusion is a ruling:
+
+| excluded | why |
+|---|---|
+| `spans` | span agreement is a **separate unit** (§4a, fork 2), and folding it into value agreement would be the collapse this document is most alert to. `SpecifiedTerm.verbatim` is *inside* the value and is not the quote; the quote is `Extracted.spans`. So exact value equality does **not** collapse value into span. |
+| `confidence` | it is the uncalibrated placeholder of §3a and fork 5. A stability number that moved when it changed would be a stability number partly about a non-quantity. |
+| `span_recovered` | not comparable across vintages: **299 of 601** stored EXTRACTED arms lack it (§4a, fork 4's closing note), so including it would read absence as disagreement. |
+
+`SpecifiedTerm` is `{verbatim, resolved, resolution}` and `PipelineRef` is `{name, version}` — all
+value content, all compared. Two draws returning the same `resolved` under different `verbatim`
+therefore register as a **value** disagreement and a **status** agreement, which is exactly the
+status/value split fork 2 ruled for.
+
+### Sub-decision 2 — the artifact is run output, gitignored, beside its draws
+
+Not `ground_truth/`. Stability is a property of a run, not of a label, and the per-run artifact
+belongs with the draws it was computed from.
+
+**The stated reason needs one correction, because `ground_truth/` is not labels-only.** Measured:
+`ground_truth/predictions_v040_frozen.csv` is **tracked** and is not a label — its own emitted header
+calls it a "durable snapshot of a NON-reproducible run … the record the first Tier-A/Tier-B number was
+computed against", while `extractor_mvp/results/batch_v040_labelset/predictions_v040.csv` is the
+untracked run output (`extractor_mvp/results/.gitignore:7` matches `*`), carrying a bare column row
+and no provenance block. So the directory already holds run-derived tracked artifacts, and "not a
+label" does not by itself exclude it. The ruling stands on the narrower ground: *the default artifact
+of an opt-in mode that has never been run is run output.*
+
+**And the precedent fork 4 cites is two-stage, which adds a condition.** Emit into gitignored
+`results/`; promote to a tracked snapshot with its emitted header when a number is computed against
+it. That is precisely what makes 11/17 and 10/17 auditable today. Therefore:
+
+> **No stability number may be published from a gitignored artifact.** Reporting one anywhere a
+> reader can meet it — poster, abstract, README, findings doc — requires first promoting that
+> specific artifact to a tracked snapshot carrying its emitted provenance header, in the manner of
+> `predictions_v040_frozen.csv`. Publishing a figure whose only record is in an ignored directory
+> would repeat, with stability, what `20bbd2a` had to repair for the aggregation rule.
+
+One refinement to fork 4 as ruled: the provenance header goes on the artifact **at emit time**, not
+only on promotion. The frozen CSV shows this project writes the header at the point a number is
+computed against the file; writing it when the file is created is strictly better, costs nothing, and
+means the gitignored copy is self-describing if anyone finds one on disk.
+
+---
+
 ## 5. Acceptance, stated now so it cannot drift
 
 Any later implementation must show all of these:
@@ -394,6 +461,13 @@ Any later implementation must show all of these:
 6. **Every rate the repo publishes names its aggregation**, not only its vintage. Already true as of
    `20bbd2a`; the acceptance records it so a later rate cannot be added without it.
 7. **K is passed explicitly.** A run with the mode on and no K is an error, not a default.
+8. **Value agreement is exact and scoped.** The comparison reads `Extracted.value` only, with no
+   normalisation, and excludes `spans`, `confidence` and `span_recovered` — §4b, sub-decision 1. A
+   test must show that two draws agreeing on `resolved` under differing `verbatim` register as value
+   disagreement with status agreement, or the split is not implemented.
+9. **No stability number is published from a gitignored artifact** — §4b, sub-decision 2. The emitted
+   provenance header is written at emit time, so the check is that the artifact in `results/` already
+   carries it.
 
 ---
 
