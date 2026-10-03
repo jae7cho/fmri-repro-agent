@@ -63,10 +63,26 @@ cd extractor_mvp && uv run pytest -m "not live" --cov=extractor_mvp --cov-report
 That is the `extractor-mvp` job's own command, verbatim from `.github/workflows/ci.yml`. Use it. A
 green result from any other invocation is not evidence that CI is green.
 
-Expect `331 passed, 2 skipped, 2 deselected`. The two skips are the render tests that need gitignored
-batch output; the two deselections are the `live` tests. A local run that reports **333 passed** is
-also correct — it has `results/` on disk and skips the `live` pair by marker instead of deselecting it
-— but it is 333 under a *different* population, not a better number.
+**The pass count is environment-dependent, so compare like with like.** All three of these are the
+same 335 collected tests:
+
+| where | result | why |
+|---|---|---|
+| CI, or any machine without the local corpus | `326 passed, 7 skipped, 2 deselected` | 5 corpus tests + 2 render tests skip |
+| this laptop, same command | `331 passed, 2 skipped, 2 deselected` | corpus and `results/` are on disk |
+| `python -m pytest tests` with no `-m` | `333 passed, 2 skipped` | the `live` pair skips by marker instead of being deselected |
+
+Two guards make the difference, and both key on paths outside the checkout, so a git worktree or a
+fresh clone on this machine does **not** reproduce CI:
+
+- `tests/test_methods_finder.py:12` skips on `Path("/Users/cwook/.../tested_lit/sfn_batch")` — an
+  absolute path, so it resolves the same from any checkout on this machine.
+- `tests/test_render.py:1083`, `:1110` skip when gitignored batch output under `results/` is absent.
+
+**`326 passed, 7 skipped, 2 deselected` is the number to check CI against.** The first version of this
+table said 331 was the expectation, measured in a scratchpad worktree that was reaching the laptop's
+corpus through that absolute path — stating a local count as CI's, in the section that exists to stop
+exactly that.
 
 **Why this is stated as a rule rather than a preference.** An earlier version of this section
 prescribed `../.venv/bin/python -m pytest tests -q` and listed two "wrong" invocations whose failures
