@@ -15,8 +15,39 @@ repos:
         args: [--fix]
       - id: ruff-format
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.1.0
+  # mypy, exactly as CI runs it: once per package, from that package's own directory, on `src`
+  # only, in that package's own environment and under its own [tool.mypy].
+  #
+  # The mirrors-mypy hook that stood here ran from the REPOSITORY ROOT in an isolated env, so
+  # `extractor_mvp` resolved to the directory rather than to extractor_mvp/src/extractor_mvp, and
+  # it rejected every extractor_mvp test importing a submodule by attribute --
+  # `Module "extractor_mvp" has no attribute "report"`. Failing for the wrong reason, continuously,
+  # from 815ec2f (2026-09-12) until it was replaced; which means it was being bypassed or ignored,
+  # and a check in that state is not a check.
+  #
+  # The rule it now follows: a hook is a faithful preview of CI and nothing more. One that checks
+  # what CI does not -- or checks it from a different working directory -- recreates the
+  # local-green/CI-red divergence that kept the extractor-mvp job red for twenty days. See
+  # CONTRIBUTING.md, "Run the tests the way CI runs them".
+  #
+  # Only mypy needed this. ruff resolves configuration per file hierarchically, so the ruff hooks
+  # above already honour extractor_mvp/pyproject.toml's own line-length and per-file-ignores.
+  #
+  # CI type-checks `src` only in both jobs, so these do too. extractor_mvp/tests is therefore
+  # type-checked by nothing -- deliberately, and recorded: the seven errors a truncated mypy run
+  # had been hiding there are listed in the 2026-10-02 DEVLOG entry. Whether tests should be
+  # type-checked is a real decision and it belongs in CI and here together, not in one alone.
+  - repo: local
     hooks:
-      - id: mypy
-        additional_dependencies: []
+      - id: mypy-root
+        name: mypy (root package - mirrors CI's lint-and-test job)
+        language: system
+        entry: uv run mypy src
+        pass_filenames: false
+        files: ^(src/.*\.py|pyproject\.toml)$
+      - id: mypy-extractor-mvp
+        name: mypy (extractor_mvp - mirrors CI's extractor-mvp job)
+        language: system
+        entry: bash -c 'cd extractor_mvp && uv run mypy src'
+        pass_filenames: false
+        files: ^extractor_mvp/(src/.*\.py|pyproject\.toml)$

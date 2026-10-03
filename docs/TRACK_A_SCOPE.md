@@ -319,6 +319,22 @@ finds none — and the corpus lives outside the repository at `../tested_lit/`. 
 relative configs still cannot run one without supplying the papers, so the honest claim even
 after the fix is that the configs record which inputs a run used, not that anyone can repeat it.
 
+**The same fact from the test side: five tests can run on exactly one machine.**
+`extractor_mvp/tests/test_methods_finder.py:12` is
+`_CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")`, with a `skipif` on
+`_CORPUS.exists()`. That those five never run in CI is **fine and is now stated** — the corpus is
+not in the repository, on the licensing grounds already ruled on, and `CONTRIBUTING.md` tabulates
+CI's `326 passed, 7 skipped, 2 deselected` against this laptop's `331 passed, 2 skipped`. What is
+not fine is the hardcoded path: it makes the tests unrunnable by anyone *who holds a corpus*, which
+is a different and larger set than "nobody". An environment variable naming the corpus directory,
+skipped when unset, fixes it and keeps the CI skip exactly as it is.
+
+Grouped with the config item above because it is one fact seen twice. Absolute paths put state
+outside anything a checkout controls, so a `git worktree` isolates nothing from them — which is why
+a scratchpad reproduction of CI matched its *collection* output character-for-character and its
+*pass counts* wrongly (`2026-10-02` DEVLOG, `252ea37`). **A sandbox is isolated only with respect to
+the paths it controls.**
+
 **The three stale-token defects in the instrument** — Glossary B20 still opens `(v1.4 — …)` while its tail
 records v1.5; Labels row 22 legend says `CALLs 1–8` (should be 1–10); CALL 10's body stamp reads
 `**Added v1.5.**` with no date where CALLs 6–9 all carry one. Cosmetic, but they are provenance claims in a
