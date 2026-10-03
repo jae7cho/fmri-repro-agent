@@ -1,7 +1,7 @@
 """The single-PDF entry point (A4). No network, no spend: the client is canned.
 
-Reuses ``test_batch._patch``, so the orchestrator, the span resolver and the renderer are all
-real and only the PDF loader and the model call are stubbed. A test that stubbed ``to_report``
+Uses the ``canned_batch`` fixture, so the orchestrator, the span resolver and the renderer are
+all real and only the PDF loader and the model call are stubbed. A test that stubbed ``to_report``
 would assert nothing about the artifact the command exists to produce.
 """
 
@@ -11,7 +11,6 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-from tests.test_batch import _patch
 
 from extractor_mvp import report
 
@@ -24,16 +23,14 @@ def pdf(tmp_path: Path) -> Path:
     return p
 
 
-def test_writes_a_report_to_stdout(monkeypatch: Any, capsys: Any, pdf: Path) -> None:
-    _patch(monkeypatch)
+def test_writes_a_report_to_stdout(canned_batch: None, capsys: Any, pdf: Path) -> None:
     assert report.main([str(pdf)]) == 0
     out = capsys.readouterr().out
     assert out.startswith("# Replication Protocol — schwartz_2018")
     assert "## COBIDAS D.3 coverage (preprocessing)" in out
 
 
-def test_writes_a_report_to_output_path(monkeypatch: Any, tmp_path: Path, pdf: Path) -> None:
-    _patch(monkeypatch)
+def test_writes_a_report_to_output_path(canned_batch: None, tmp_path: Path, pdf: Path) -> None:
     dest = tmp_path / "nested" / "out.md"
     assert report.main([str(pdf), "--output", str(dest)]) == 0
     assert dest.is_file(), "parent directories should be created"
@@ -41,9 +38,8 @@ def test_writes_a_report_to_output_path(monkeypatch: Any, tmp_path: Path, pdf: P
 
 
 def test_paper_id_defaults_to_the_filename_stem_and_is_overridable(
-    monkeypatch: Any, capsys: Any, pdf: Path
+    canned_batch: None, capsys: Any, pdf: Path
 ) -> None:
-    _patch(monkeypatch)
     report.main([str(pdf), "--paper-id", "chosen_id"])
     assert capsys.readouterr().out.startswith("# Replication Protocol — chosen_id")
 

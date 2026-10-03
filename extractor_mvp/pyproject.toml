@@ -37,7 +37,26 @@ aespa-report = "extractor_mvp.report:main"
 fmri-repro-agent = { path = "..", editable = true }
 
 [project.optional-dependencies]
-dev = ["ruff", "mypy", "pytest", "pytest-cov", "types-PyYAML"]
+# pandas is a real dependency of this package, not of the repository root. It is imported at
+# module level by generate_sfn_review.py, which tests/test_sfn_review_clobber_guard.py imports,
+# so an undeclared pandas is a COLLECTION failure, not a runtime one. It was declared only in
+# the root pyproject's [dependency-groups] dev — and a dependency-group is not installed through
+# a path/editable dependency, so `uv sync --all-extras` here never saw it. This is the SECOND of two
+# collection failures that kept the extractor-mvp job red; it entered with 55e3a2f on 2026-09-14, two
+# days after 815ec2f started the red run. Dev, not runtime: nothing under src/ imports it.
+#
+# openpyxl is NOT declared here, and the reason is scope: it is not part of a CI fix. The job does not
+# need it — generate_sfn_review imports it lazily (:473, :501) and the clobber guard reads SpreadsheetML
+# with the standard library on purpose — so declaring it would be an unrelated change riding along in a
+# commit whose diff is meant to be attributable. It is a real gap and belongs in its own change.
+#
+# It is NOT withheld as a safeguard. "The generator cannot overwrite the adjudication cells because it
+# crashes on a missing import" is the reasoning this repo already rejected, in tests/
+# test_sfn_review_clobber_guard.py:6 ("A packaging bug is not a safeguard") and in the decision to copy
+# the workbook out of the repo. What protects those cells is the backup outside the repository, the
+# tracked review+correction projection, and the mutation-tested refuse_to_clobber_hand_review guard.
+# Three deliberate protections; a packaging accident is not a fourth, and must not be recorded as one.
+dev = ["ruff", "mypy", "pytest", "pytest-cov", "types-PyYAML", "pandas>=3.0.3"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/extractor_mvp"]

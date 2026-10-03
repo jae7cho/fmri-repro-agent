@@ -54,4 +54,46 @@ cd extractor_mvp
 Batch configs live in `extractor_mvp/configs/` and are tracked. Run output goes to
 `extractor_mvp/results/`, which is ignored in full; see that directory's `.gitignore`.
 
+## Run the tests the way CI runs them
+
+```bash
+cd extractor_mvp && uv run pytest -m "not live" --cov=extractor_mvp --cov-report=term-missing --cov-fail-under=70
+```
+
+That is the `extractor-mvp` job's own command, verbatim from `.github/workflows/ci.yml`. Use it. A
+green result from any other invocation is not evidence that CI is green.
+
+Expect `331 passed, 2 skipped, 2 deselected`. The two skips are the render tests that need gitignored
+batch output; the two deselections are the `live` tests. A local run that reports **333 passed** is
+also correct — it has `results/` on disk and skips the `live` pair by marker instead of deselecting it
+— but it is 333 under a *different* population, not a better number.
+
+**Why this is stated as a rule rather than a preference.** An earlier version of this section
+prescribed `../.venv/bin/python -m pytest tests -q` and listed two "wrong" invocations whose failures
+were `No module named 'pandas'` and `No module named 'tests'`. Those were not local quirks. They were,
+verbatim, the two collection errors that had been failing the `extractor-mvp` job since 2026-09-12 —
+documented here as environment trivia, with the one invocation that hides them written down as the
+procedure. `python -m pytest` puts the cwd on `sys.path` and the root env happened to carry `pandas`,
+so the masking was complete and the suite reported a clean count for three weeks.
+
+The generalisation, which is the point: **verify against the checker that will actually run.** A
+number produced by a harness nobody else uses certifies the harness, not the code.
+
+## Before and after a push
+
+`git ls-remote origin main` confirms what arrived; it does not confirm the arrival was good. The
+remote runs the checks, so read the remote's verdict — both jobs, on the pushed head:
+
+```bash
+gh run list --workflow=ci.yml --branch=main --limit=1
+gh run view <run-id>
+```
+
+Both `lint-and-test` and `extractor-mvp` must read `success`. A job that is merely *queued* is not a
+pass, and the overall conclusion can be `failure` with one job green — which is exactly how a red job
+stayed unnoticed across 6 pushes and 32 commits. CI runs per **push**, not per commit, so only the
+pushed head is ever tested: in one case 21 commits went out together and 15 of them rode in on an
+already-broken suite without being tested on their own. Small pushes, checked, or the bisect is yours
+to do later.
+
 All contributors are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).

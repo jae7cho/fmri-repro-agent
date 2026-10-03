@@ -3,38 +3,27 @@ protocol emitter renders them generically (no emitter change)."""
 
 from __future__ import annotations
 
-from fmri_repro.spec.provenance import MissingFromPaper
+from typing import TYPE_CHECKING
 
-from extractor_mvp.extractor import _assemble, _missing_pf
 from extractor_mvp.render import to_protocol
 
-# pf dict keys are the extractor's names; each value's field_id is the STEP attribute name.
-_PF_FIELD_IDS = {
-    "target_space": "target_space",
-    "resolution_mm": "resolution_mm",
-    "target_surface": "target_surface",
-    "surface_registration": "surface_registration",
-    "intensity_convention": "convention",
-    "intensity_value": "value",
-    "temporal_standardization_method": "method",
-}
+if TYPE_CHECKING:
+    from fmri_repro.spec.preprocessing import Preprocessing
+
+# The builder and its pf map now live in tests/conftest.py as the `assembled` fixture, because
+# test_batch.py needs it too and test modules must not import each other.
 
 
-def _assembled():
-    pf = {k: _missing_pf(fid, str, "not_stated_in_text") for k, fid in _PF_FIELD_IDS.items()}
-    return _assemble(pf, MissingFromPaper(searched_terms=[], sections_searched=["M"]))
-
-
-def test_assemble_includes_anatomical_steps_before_spatial():
-    prep = _assembled()
+def test_assemble_includes_anatomical_steps_before_spatial(assembled: Preprocessing):
+    prep = assembled
     kinds = [s.kind for s in prep.steps]
     assert kinds[:3] == ["brain_extraction", "segmentation", "spatial_normalization"]
 
 
-def test_assemble_step_list_unchanged():
+def test_assemble_step_list_unchanged(assembled: Preprocessing):
     # The COBIDAS coverage work is emitter-side only: _assemble still emits exactly these
     # 7 kinds in this order. If this changes, the coverage denominator reasoning is affected.
-    assert [s.kind for s in _assembled().steps] == [
+    assert [s.kind for s in assembled.steps] == [
         "brain_extraction",
         "segmentation",
         "spatial_normalization",
@@ -45,8 +34,8 @@ def test_assemble_step_list_unchanged():
     ]
 
 
-def test_assemble_new_steps_fields_are_untargeted():
-    prep = _assembled()
+def test_assemble_new_steps_fields_are_untargeted(assembled: Preprocessing):
+    prep = assembled
     by_kind = {s.kind: s for s in prep.steps}
     # brain_extraction + segmentation (v0.3.0 anatomical) and nuisance_regression (emitted as
     # a COBIDAS-mandatory decision point) all present with every field untargeted.
@@ -60,10 +49,10 @@ def test_assemble_new_steps_fields_are_untargeted():
             assert field.inference.reason == "not_targeted_by_mvp"
 
 
-def test_protocol_renders_new_steps_generically():
+def test_protocol_renders_new_steps_generically(assembled: Preprocessing):
     # No emitter change: to_protocol walks steps generically, so the new steps render
     # with their cobidas_row group tags and the "not examined by the extractor" line.
-    out = to_protocol(_assembled())
+    out = to_protocol(assembled)
     for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
         assert kind in out
     # Field-level callouts use "not examined by the extractor"; the COBIDAS section uses

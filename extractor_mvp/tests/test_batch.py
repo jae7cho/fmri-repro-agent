@@ -21,43 +21,8 @@ from extractor_mvp.extractor import (
     extract,
 )
 
-FULL_TEXT = "Methods\nData were normalized to MNI152NLin6Asym at 2 mm.\nResults\nFindings."
 
-
-def _canned_payload() -> PreprocessingExtraction:
-    none = FieldExtractionResult(status="missing")
-    return PreprocessingExtraction(
-        target_space=FieldExtractionResult(
-            status="extracted",
-            value="MNI152NLin6Asym",
-            verbatim_quote="normalized to MNI152NLin6Asym",
-        ),
-        resolution_mm=FieldExtractionResult(
-            status="extracted", value="2", verbatim_quote="at 2 mm"
-        ),
-        surface_registration=none,
-        target_surface=none,
-        intensity_convention=none,
-        intensity_value=none,
-    )
-
-
-def _patch(monkeypatch: Any) -> None:
-    monkeypatch.setattr(batch, "load_pdf_text", lambda _path: (FULL_TEXT, "pypdf"))
-    payload = _canned_payload()
-    fake_client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
-    # real orchestrator, but driven by the canned client (so spans resolve on the real slice)
-    monkeypatch.setattr(
-        batch,
-        "extract",
-        lambda paper, model, **kwargs: extract(paper, model, client=fake_client),
-    )
-
-
-def test_run_batch_end_to_end(monkeypatch, tmp_path: Path):
-    _patch(monkeypatch)
+def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     config = BatchConfig(
         model="m",
         output_dir=tmp_path / "out",
@@ -98,7 +63,7 @@ def test_run_batch_end_to_end(monkeypatch, tmp_path: Path):
         assert "span_in_slice" in sp and "span_in_full_paper" in sp
 
 
-def test_run_batch_writes_a_completeness_report_per_paper(monkeypatch, tmp_path: Path):
+def test_run_batch_writes_a_completeness_report_per_paper(canned_batch: None, tmp_path: Path):
     """A1: run_batch writes a rendered report alongside papers/{paper_id}.json.
 
     Pins the two properties that make the report safe rather than merely present: it is a
@@ -106,7 +71,6 @@ def test_run_batch_writes_a_completeness_report_per_paper(monkeypatch, tmp_path:
     on and the D.3 denominator comes from the standard, not the steps present), and its
     per-row wording characterises absence rather than labelling every gap "not reported".
     """
-    _patch(monkeypatch)
     config = BatchConfig(
         model="m",
         output_dir=tmp_path / "out",
@@ -130,14 +94,13 @@ def test_run_batch_writes_a_completeness_report_per_paper(monkeypatch, tmp_path:
     assert ": not reported\n" not in report
 
 
-def test_render_failure_keeps_the_extraction(monkeypatch, tmp_path: Path):
+def test_render_failure_keeps_the_extraction(canned_batch: None, monkeypatch, tmp_path: Path):
     """A report failure must not discard a paid-for extraction.
 
     to_report is pure and well-tested, but it runs inside process_paper (the only place the
     live MethodsSlice exists), which is BEFORE run_batch writes the per-paper JSON. An escaping
     exception would throw away the LLM call. It is recorded and printed instead of swallowed.
     """
-    _patch(monkeypatch)
 
     def _boom(*_args: Any, **_kwargs: Any) -> str:
         raise RuntimeError("render exploded")
@@ -177,8 +140,7 @@ def test_run_batch_pdf_parse_failure(monkeypatch, tmp_path: Path):
     assert results[0].extraction_json is None
 
 
-def test_run_batch_skips_and_records_excluded(monkeypatch, tmp_path: Path):
-    _patch(monkeypatch)
+def test_run_batch_skips_and_records_excluded(canned_batch: None, tmp_path: Path):
     config = BatchConfig(
         model="m",
         output_dir=tmp_path / "out",
@@ -198,7 +160,7 @@ def test_run_batch_skips_and_records_excluded(monkeypatch, tmp_path: Path):
     assert "cabral_2017" in summary and "Review / modelling paper" in summary
 
 
-def test_tally_scope_is_step_fields_only() -> None:
+def test_tally_scope_is_step_fields_only(assembled_with_deferred_base: Any) -> None:
     """`_tally` walks preprocessing.steps and excludes base_pipeline — pinned, not incidental.
 
     The exclusion is a real limitation with a live consequence: n_deferred reads 0 while a
@@ -209,7 +171,7 @@ def test_tally_scope_is_step_fields_only() -> None:
     from extractor_mvp.batch import _tally
     from extractor_mvp.render import flatten
 
-    prep = _assembled_with_deferred_base()
+    prep = assembled_with_deferred_base
     counts = _tally(prep)
     assert counts["n_deferred"] == 0, "base_pipeline's deferral must not reach the step tally"
 
@@ -219,7 +181,8 @@ def test_tally_scope_is_step_fields_only() -> None:
     )
 
 
-def _assembled_with_deferred_base() -> Any:
+@pytest.fixture
+def assembled_with_deferred_base(assembled: Any) -> Any:
     from fmri_repro.spec.preprocessing import Preprocessing
     from fmri_repro.spec.provenance import (
         Deferral,
@@ -230,7 +193,7 @@ def _assembled_with_deferred_base() -> Any:
     )
     from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 
-    bp = ProvenancedField(
+    bp: Any = ProvenancedField(
         field_id="base_pipeline",
         extraction=DeferredToCitation(
             deferrals=[
@@ -245,9 +208,7 @@ def _assembled_with_deferred_base() -> Any:
         ),
         inference=LeftMissing(reason="deferred_to_citation"),
     )
-    from tests.test_assemble_v0_3_0 import _assembled
-
-    steps = _assembled().steps
+    steps = assembled.steps
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=bp,
@@ -265,10 +226,9 @@ def _assembled_with_deferred_base() -> Any:
 
 
 def test_a_data_failure_is_still_recorded_and_the_batch_continues(
-    monkeypatch: Any, tmp_path
+    canned_batch: None, monkeypatch: Any, tmp_path
 ) -> None:
     """The behaviour the broad catch exists for, pinned so the split does not take it away."""
-    _patch(monkeypatch)
 
     def boom(*_a: Any, **_k: Any) -> Any:
         raise RuntimeError("bedrock said no")
@@ -285,11 +245,10 @@ def test_a_data_failure_is_still_recorded_and_the_batch_continues(
     "exc", [AttributeError("no attribute 'confidence'"), TypeError("bad signature"), NameError("x")]
 )
 def test_a_code_defect_aborts_the_run_instead_of_blaming_the_paper(
-    monkeypatch: Any, tmp_path, exc: BaseException
+    canned_batch: None, monkeypatch: Any, tmp_path, exc: BaseException
 ) -> None:
     """A tool defect must propagate. Recording it as a paper status is wrong twice over: it
     misattributes a tool failure to the paper, and it lets the batch finish green."""
-    _patch(monkeypatch)
 
     def boom(*_a: Any, **_k: Any) -> Any:
         raise exc
@@ -359,10 +318,11 @@ def test_the_citation_resolver_attributeerror_propagates_through_the_real_extrac
         )
 
 
-def test_a_code_defect_in_to_report_also_propagates(monkeypatch: Any, tmp_path) -> None:
+def test_a_code_defect_in_to_report_also_propagates(
+    canned_batch: None, monkeypatch: Any, tmp_path
+) -> None:
     """The same split on the render catch. Sharper there: its own comment argues to_report is pure
     and deterministic, so a code defect in it is identical on every paper by construction."""
-    _patch(monkeypatch)
     monkeypatch.setattr(
         batch, "to_report", lambda *_a, **_k: (_ for _ in ()).throw(AttributeError("gone"))
     )
