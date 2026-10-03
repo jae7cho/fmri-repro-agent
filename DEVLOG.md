@@ -2424,3 +2424,104 @@ a meaningful claim with the invocation attached to it.
 
 No code in this entry: four documents, five records — `TRACK_A_SCOPE.md` carries both the render
 ruling and the replay constraint. Follows `e769541`.
+
+---
+
+## 2026-10-02
+
+**CI had been red for twenty days and nothing in the record said so.** The `extractor-mvp` job
+failed every run from 2026-09-13 to 2026-10-02 — six runs, 32 commits, six pushes. Last green run
+`33581368897` @ `214b55c2`; first red `34731990637` @ `dcc8e8a5`; failing step `#10 Pytest (offline)`
+in both the first red and the latest, the latest completing in 32s. Two independent collection
+errors, `tests/test_report_cli.py:14` (`No module named 'tests'`, from `815ec2f`) and
+`tests/test_sfn_review_clobber_guard.py:34` → `generate_sfn_review.py:22` (`No module named
+'pandas'`, from `55e3a2f`). Fixed in `ac63ada`.
+
+**One import, three checkers blinded — and each blindness looked like a different local problem.**
+`from tests.test_batch import _patch` broke CI collection; it hid the outcome of
+`test_tally_scope_is_step_fields_only`, which was added in `a0ba2872` *into an already-red suite*
+and had therefore never run anywhere but a laptop; and it truncated mypy across the entire
+repository with `Source file found twice under different module names: "test_assemble_v0_3_0" and
+"tests.test_assemble_v0_3_0"`. A full pre-commit mypy run at `f59609a` stopped at that one error;
+with the import gone it reaches **109 source files**. Three checkers, one cause, three unrelated-
+looking symptoms.
+
+**The fix is structural, not a path setting**, and the reason is a second package. `pythonpath =
+["src", "."]` would have worked and was staged for a day; it was the symptom fix, and worse, it was
+load-bearing for a *test outcome* rather than only for collection, because the second cross-test
+import sat in a function body (`test_batch.py:248`) where no collection-time check could reach it.
+Making `extractor_mvp/tests` a package was the other tempting option and is worse still: the
+repository root has its own `tests/` package, with `__init__.py`. Measured — from the root,
+`import tests` resolves to `/fmri-repro-agent/tests/__init__.py` and `tests.test_batch` then fails,
+which is exactly the `No module named 'tests.test_batch'` that the CONTRIBUTING section written the
+night before had filed as an interpreter quirk. Two importable packages with one name, resolution
+decided by `sys.path` order, permanently. So: `_patch` and `_assembled` moved into
+`tests/conftest.py` as the `canned_batch` and `assembled` fixtures, both imports deleted,
+`pythonpath` unchanged at `["src"]`, collected count unchanged at 335.
+
+**Mutation results.** `canned_batch` (12 dependent items): body made a no-op → 11 fail. The
+survivor is `test_run_batch_skips_and_records_excluded`, legitimately — exclusion happens before any
+PDF load, so its assertion never needed the stub; it declared the same dependency before the move.
+`assembled` (4): returns a step-less `Preprocessing` → 4 fail. `assembled_with_deferred_base` (1):
+extraction arm stops deferring → fails on the test's own guard, *"fixture must actually defer, or
+this test pins nothing"*. **My first attempt at that third mutation passed**, and the fixture was
+not at fault: I mutated `inference`, and `extraction_status` reads the `extraction` arm. A mutation
+that fails to kill is a claim about the test only once you have checked it is actually a mutation.
+
+**The exposure, which is the part that outlives the fix.** `DEVLOG.md:2207` (`28b9d35`, 2026-09-30)
+states "316 tests still passing" — true of a laptop, not of CI, 18 days into the red window. Worse,
+`CONTRIBUTING.md` as committed in `f59609a` *prescribed* the invocation that hid both errors and
+listed CI's two failures as the symptoms of using the wrong one. That section was written the night
+before, after measuring both errors by hand. The invocation was validated by the fact that it
+produced a green number. Replaced in `ac63ada` with CI's own command, and the generalisation is now
+a rule in that file: **verify against the checker that will actually run.** A number produced by a
+harness nobody else uses certifies the harness, not the code.
+
+**Push verification is now a step, not a principle.** `git ls-remote` confirms what arrived and says
+nothing about whether it was good. CONTRIBUTING now requires reading the remote's verdict on the
+pushed head — both jobs, by `gh run view` — and records that CI runs per push, not per commit: the
+push that went red carried 21 commits, of which 15 rode in on an already-broken suite without ever
+being tested on their own. The bisect that found `815ec2f` was work the run history could not do.
+
+**Recorded, deliberately not fixed here.** Seven mypy errors are now visible that the truncation hid:
+six `var-annotated` in `extractor_mvp/tests/test_render.py` (`:916`, `:925`, `:956`, `:988`, `:997`,
+`:1020`) and `extractor_mvp/tests/test_report_cli.py:15` `Module "extractor_mvp" has no attribute
+"report"`. The last one is why `ac63ada` was committed with **`SKIP=mypy`** — the narrow bypass, not
+`--no-verify`; every other hook ran and passed. That rejection predates the change: identical at
+`f59609a` at `:16`, the one-line offset being the import `ac63ada` deletes, and it has been failing
+or bypassed since `815ec2f` added the file. The cause is a hook–CI mismatch: the hook runs mypy from
+the repository root under the root `pyproject.toml`, where `extractor_mvp` resolves to the directory
+instead of `extractor_mvp/src/extractor_mvp`, and four test files import a submodule by attribute.
+`MYPYPATH` does not fix it; the hook's env is isolated.
+
+**Next change: the hook runs what CI runs, and nothing more.** A hook that checks something CI does
+not — or checks it from a different working directory — recreates precisely the local-green /
+CI-red divergence this entry is about. Excluding `extractor_mvp/tests` and calling it a policy was
+rejected: it would write the gap into config as though it were a choice. Whether `extractor_mvp`'s
+tests should be type-checked at all is a real decision, and it goes into CI and the hook together,
+after the seven errors above are addressed — not into either one alone.
+
+**And the lesson landed a third time, inside the fix for it.** The green run reports `326 passed, 7
+skipped, 2 deselected`; my reproduction had reported `331 passed, 2 skipped`, and I had written 331
+into CONTRIBUTING as the expectation to check CI against. Cause: `tests/test_methods_finder.py:12`
+skips on `Path("/Users/cwook/.../tested_lit/sfn_batch")` — an **absolute** path, so those five corpus
+tests resolve the laptop's corpus from *any* checkout on this machine, and a git worktree gives no
+isolation from them. The reproduction was faithful on the question it was built to answer — it matched
+CI's collection output character-for-character at `dcc8e8a5` (`291 items / 1 error / 2 deselected /
+289 selected`) and at `e769541` (`323 / 2 errors / 2 deselected / 321`) — and unfaithful on pass
+counts, which I did not re-check before writing one down. Corrected in `252ea37`. A sandbox is only
+isolated with respect to the paths it actually controls, and absolute paths in tests are outside all
+of them.
+
+**Also mine, this stretch.** I called the `pythonpath` change "the minimal root-cause fix" when it
+was the symptom fix. I argued openpyxl should stay undeclared because its absence protects the 69
+adjudication cells — the reasoning this repo had already rejected in
+`tests/test_sfn_review_clobber_guard.py:6` ("A packaging bug is not a safeguard"), in a file I had
+read that day; it stays out because it is outside a CI fix's attributable diff, and the real
+protections are the backup outside the repository, the tracked projection, and the mutation-tested
+guard. And I reported a commit as succeeding when `git log` had not moved, because I read `$?` after
+a pipe into `tail` — the same shape as the print that was not downstream of the work.
+
+Commits: `f59609a` (the three records and the DEVLOG forward correction), `ac63ada` (the CI fix), and
+`252ea37` (the count correction above). `ac63ada` is the first green `extractor-mvp` since
+`214b55c2` on 2026-09-02 — run `37098275269`, both jobs `success`. This entry is committed after them.
