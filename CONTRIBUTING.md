@@ -57,11 +57,18 @@ Batch configs live in `extractor_mvp/configs/` and are tracked. Run output goes 
 ## Run the tests the way CI runs them
 
 ```bash
-cd extractor_mvp && uv run pytest -m "not live" --cov=extractor_mvp --cov-report=term-missing --cov-fail-under=70
+cd extractor_mvp && uv sync --all-extras --frozen && uv run pytest -m "not live" --cov=extractor_mvp --cov-report=term-missing --cov-fail-under=70
 ```
 
-That is the `extractor-mvp` job's own command, verbatim from `.github/workflows/ci.yml`. Use it. A
-green result from any other invocation is not evidence that CI is green.
+Those are the `extractor-mvp` job's own two steps, verbatim from `.github/workflows/ci.yml:89-91` and
+`:102-104`. Use both. A green result from any other invocation is not evidence that CI is green.
+
+**The `uv sync --all-extras` step is not optional, and leaving it out reproduces the bug this section
+was written about.** `pandas` is declared in `[project.optional-dependencies] dev` — an *extra*. A bare
+`uv run pytest` syncs the project's default groups and **not** extras, so on a venv that has not had
+extras installed it fails at collection with `ModuleNotFoundError: No module named 'pandas'` — the
+same error that kept CI red for twenty days, from the same cause, produced by a command this file
+previously gave as CI's. Measured 2026-10-19.
 
 **The pass count is environment-dependent, so compare like with like.** All three of these are the
 same 335 collected tests:
@@ -69,8 +76,12 @@ same 335 collected tests:
 | where | result | why |
 |---|---|---|
 | CI, or any machine without the local corpus | `326 passed, 7 skipped, 2 deselected` | 5 corpus tests + 2 render tests skip |
-| this laptop, same command | `331 passed, 2 skipped, 2 deselected` | corpus and `results/` are on disk |
+| **this working checkout**, CI's two steps | `333 passed, 2 deselected` (0 skipped) | corpus *and* `results/` on disk, so all 333 selected tests run |
+| a fresh clone or `git worktree` **on this machine** | `331 passed, 2 skipped, 2 deselected` | the corpus is still reachable through an absolute path, but `results/` is not copied |
 | `python -m pytest tests` with no `-m` | `333 passed, 2 skipped` | the `live` pair skips by marker instead of being deselected |
+
+All four are the same 335 collected tests. The second and third rows differ only in whether gitignored
+`results/` is present, which is why a worktree is not a stand-in for CI.
 
 Two guards make the difference, and both key on paths outside the checkout, so a git worktree or a
 fresh clone on this machine does **not** reproduce CI:
@@ -79,10 +90,12 @@ fresh clone on this machine does **not** reproduce CI:
   absolute path, so it resolves the same from any checkout on this machine.
 - `tests/test_render.py:1083`, `:1110` skip when gitignored batch output under `results/` is absent.
 
-**`326 passed, 7 skipped, 2 deselected` is the number to check CI against.** The first version of this
-table said 331 was the expectation, measured in a scratchpad worktree that was reaching the laptop's
-corpus through that absolute path — stating a local count as CI's, in the section that exists to stop
-exactly that.
+**`326 passed, 7 skipped, 2 deselected` is the number to check CI against**, and it is the only row
+here that CI produces. This table has now been wrong twice, both times by reporting a local count as
+CI's: first 331, measured in a scratchpad worktree that reached the laptop's corpus through that
+absolute path; then again by listing 331 as *this checkout's* figure when this checkout has `results/`
+and gives 333. Each correction was found by running the command rather than reasoning about it, which
+is the only method that has worked on this section.
 
 **Why this is stated as a rule rather than a preference.** An earlier version of this section
 prescribed `../.venv/bin/python -m pytest tests -q` and listed two "wrong" invocations whose failures
