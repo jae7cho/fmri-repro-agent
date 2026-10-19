@@ -48,7 +48,8 @@ def _corpus_papers() -> list[tuple[str, Path]]:
     return [(p.paper_id, p.path) for p in cfg.papers if not is_excluded(p.paper_id)]
 
 
-# The 7 targeted response-model fields whose first->final we care about.
+# The 8 response-model fields whose first->final we care about: the 7 targeted step fields of
+# _FIELD_SPECS, plus base_pipeline_name (Layer 1, not a step field). Counted 2026-10-19.
 _FIELDS = [
     "target_space",
     "resolution_mm",

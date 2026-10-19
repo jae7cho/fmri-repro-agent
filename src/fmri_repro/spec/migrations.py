@@ -181,13 +181,19 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # 0.5.0 -> 0.5.1 (PATCH, pure re-stamp — NO doc transform): MotionCorrection gains a bool field
     # (transforms_combined) and retypes its four closed Literals to SpecifiedTerm[X]. VERSION-CONFLICT
     # NOTE: the convention's enumeration lists "changes a field type" under STRUCTURAL, but its governing
-    # TEST is "does every prior document remain valid, unchanged?" — and it does: NO committed document
-    # contains a motion_correction step (MotionCorrection is never instantiated in _assemble), so
-    # retyping fields that appear in zero documents, and adding one to that step, breaks none. The
-    # additive test (the substance) governs over the field-type enumeration (a proxy for "makes existing
-    # documents invalid") when the two conflict on a never-emitted step. Hence patch + re-stamp: there is
-    # nothing to transform. (If motion_correction is ever emitted, a future doc-transform hop must lift
-    # its literal_type fields like the 0.5.0 block above.)
+    # TEST is "does every prior document remain valid, unchanged?" — and it does. CORRECTED 2026-10-19:
+    # this comment previously said "NO committed document contains a motion_correction step". That was
+    # false when written — examples/spec.json has held TWO motion_correction steps since before this hop
+    # landed, built by scripts/make_example_spec.py (MotionCorrection constructed at :705 and :843), and
+    # that file is byte-compared by test_examples_reproducible. What is true, and is what the argument
+    # actually needs, is narrower: the EXTRACTOR never emits the step (MotionCorrection is not
+    # instantiated in _assemble), so no document produced from a real run carries it, and the two
+    # example steps are regenerated from this spec rather than migrated into it. Retyping fields that no
+    # migrated document carries, and adding one to that step, breaks none. The additive test (the
+    # substance) governs over the field-type enumeration (a proxy for "makes existing documents
+    # invalid") when the two conflict on a step no run emits. Hence patch + re-stamp: there is nothing
+    # to transform. (If motion_correction is ever emitted by the extractor, a future doc-transform hop
+    # must lift its literal_type fields like the 0.5.0 block above.)
     #
     # Both re-stamp hops and the 0.5.0 transform fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
