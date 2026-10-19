@@ -476,6 +476,38 @@ Any later implementation must show all of these:
 Recorded order: **stability before further labelled rows** — motion's extraction side, then
 smoothing.
 
+> ### AMENDED 2026-10-19 — the order narrows; the reason below is untouched
+>
+> **Extraction and the reachability probe may precede this runner. Scores may not.**
+>
+> *Why it narrows.* The order above was read as implying that motion's probe needed this runner. It
+> does not. Measured: the pre-registration
+> (`docs/findings/motion-method-reachability-prereg.md`) contains **0** hits for `stability`, `flip`,
+> `K-draw`, `runner`, `harness` and `variance_probe`; its 2 `variance` hits are the `variance.md`
+> citation (`:7`) and a word inside binder's quote (`:114`). The probe's actual dependency is
+> `motion_correction.method` extraction, which does not exist
+> (`PreprocessingExtraction`, `extractor.py:77-108`, has no motion field; `_assemble` emits no
+> `MotionCorrection`). The repeat pattern it needs already exists twice: `variance_probe.py --n`, and
+> `chen_fix_ab.py --paper/--pdf/--k` writing per-draw JSONL — the latter being the script that
+> produced the K=10 temporal finding the prereg itself cites (`temporal-firewall-fix.md:3`).
+>
+> *What is untouched.* The paragraph below (`:479-485`) is the reason for the order and it still
+> holds in full: a score computed from one draw of an unstable field is a sample reported as a value.
+> That argument is about trusting motion's numbers, not about being able to produce them, so it binds
+> **scores** and nothing earlier.
+>
+> *Built once, for both.* `variance_probe.py` is to be extended to meet prereg `:8` — `verbatim`,
+> `resolved`, `resolution` and span **per draw** — and to write those records in **this runner's
+> record format**, which §4b sub-decision 1 and fork 2 already specify even though the runner is
+> unbuilt: the comparison reads `Extracted.value` only, with no normalisation, excluding `spans`,
+> `confidence` and `span_recovered`; and the full per-draw field is kept, with status agreement and
+> value agreement as separate counts. That satisfies `TRACK_A_SCOPE.md:237-238`'s "should be built
+> once, for both" without waiting for the runner.
+>
+> *Source and date.* Ruled by the author in conversation, written down 2026-10-19, not backdated.
+> Recorded in parallel in `docs/design/DESIGN_motion_correction_extraction.md` §4, ruling E. The
+> superseded reading is retained above rather than edited.
+
 The reason is that an unstable field's labels are fine and its *scores* are not. Labelling is a
 one-time cost against the papers; scoring is a measurement against the extractor, and a score
 computed from one draw of an unstable field is a sample reported as a value. The corpus has already

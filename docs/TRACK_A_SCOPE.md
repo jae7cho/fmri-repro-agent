@@ -229,6 +229,49 @@ commit everything first, render once. Nothing in this document produces a figure
 > project has measured as non-stationary, so it is not free — which is why the first option is the
 > default and this constraint is recorded before panel selection rather than discovered during it.
 
+> ## RULED 2026-10-19 — committed numbers stand as history under their vintages
+>
+> **Committed numbers stand as history under their named vintages, and the poster reports them
+> alongside the progress made since.** A prompt change that alters future extraction is therefore
+> acceptable — provided every number keeps its vintage on its face.
+>
+> *Source and date.* Ruled by the author in conversation and written down here on 2026-10-19;
+> **not backdated**, for the reason the ruling above gives. Recorded beside the render ruling because
+> the two decide the same November question from opposite ends: that one says rendering happens from
+> whatever state exists then, and this one says the earlier states keep their names when it does.
+>
+> **What it unblocks.** `EXTRACTION_PROMPT` (`extractor_mvp/src/extractor_mvp/extractor.py:111-334`)
+> is a single shared string literal covering every field in one call, so adding a stanza for a new
+> row changes the prompt every existing field is extracted under — making the next `target_space`
+> numbers a new vintage. That cost is real and measured: the v1→v2 prompt change coerced **5 of 7**
+> MNI terms at the shipped `EXTRACTED` level (6 of 7 at the raw LLM value level; oconnor_2017's raw
+> v2 value was `MNI152NLin6Asym` but failed span resolution). This ruling makes that a labelling
+> obligation rather than a veto on adding rows.
+>
+> **What it does not relax.** The standing requirement that every published rate names its
+> **aggregation** as well as its vintage (`20bbd2a`). This ruling depends on that rule holding, since
+> "keeps its vintage on its face" is only auditable if the aggregation is on the face too. See
+> `docs/design/DESIGN_motion_correction_extraction.md` §2 and §4.1.
+
+> ## RULED 2026-10-19 — October 31 no longer gates building
+>
+> **Work proceeds without a compute freeze.** The 2026-10-31 target at the top of this document
+> stands as the date it was scoped under and is retained there; it no longer gates building, and no
+> freeze is declared.
+>
+> **The poster is printed and finalized the week of November 9**, from whatever state exists then,
+> under the two rulings above — rendering happens in November from the state of the day
+> (2026-10-01), and every number carries its vintage on its face (2026-10-19).
+>
+> *Source and date.* Ruled by the author in conversation and written down here on 2026-10-19;
+> **not backdated**, for the reason the 2026-10-01 ruling gives.
+>
+> *What this changes in practice.* The three rulings now compose into one schedule with no gate in
+> it: build until the print week, render from whatever is built, and label each number with the
+> vintage and aggregation it came from. Nothing is deferred *to* 2026-10-31, and nothing waits *for*
+> it. A statement elsewhere in the record that work is blocked on the freeze is stale as of this date
+> and is corrected forward, not edited.
+
 **A6 — uncertainty machinery (K-draw / self-consistency).** No K-draw, voting, or resampling exists
 anywhere; `_CONFIDENCE = 0.8` (extractor.py:74) is a hardcoded MVP placeholder that never reaches
 *rendered* output — it IS on all 601 EXTRACTED arms in the stored per-paper JSON, measured 2026-10-01,
@@ -243,6 +286,15 @@ accuracy figure, so a stability number reported for motion is an amendment, not 
 `docs/design/DESIGN_kdraw_stability.md` §1.) If Track A finishes early, this
 is the highest-value addition — and measuring stability on **attestation** judgements specifically is the
 open empirical question, since attestation may be far more stable than value extraction.
+
+**A7a — the spec has no slot for a KB "not applicable" verdict, so it travels in the gap arm.**
+Recorded 2026-10-19. `couple_stages` (`provenance.py:191-201`) permits five pairs and none of them is
+Missing/Deferred + `NotApplicable`, so when the knowledge base records that a pipeline does not perform
+a step, `kb_client/base_pipeline.py:310-316` encodes that verdict as `LeftMissing` — the gap arm. The
+producer's own comment says so. The consequence is that a not-applicable fact is indistinguishable, by
+arm, from a reporting gap, and every downstream rule that keys on "is this a gap reason" has to
+special-case it by name. See `docs/design/DELTA_conditional_row_unverifiable.md` §3g, which measures
+what it currently prints. Not a defect of that producer; a missing slot in the spec.
 
 **A7 — sub-fields dropped in rendering.** `Deferral.target_kind`, `Extracted.span_recovered`,
 `Extracted.confidence`, `InferredDefault.alternative_inferences`, and every span after `spans[0]`
