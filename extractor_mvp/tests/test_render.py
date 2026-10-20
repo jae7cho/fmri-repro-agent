@@ -17,6 +17,7 @@ from fmri_repro.spec.preprocessing import (
     DistortionCorrection,
     PipelineRef,
     Preprocessing,
+    SpatialNormalization,
     SpatialSmoothing,
 )
 from fmri_repro.spec.provenance import (
@@ -42,7 +43,7 @@ from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from fmri_repro.spec.v0_4_0 import StudySpec  # current root; examples/spec.json is a 0.4.0 doc
 
 from extractor_mvp import render
-from extractor_mvp.cobidas import COBIDAS_D3_ROWS
+from extractor_mvp.cobidas import COBIDAS_D3_ROWS, RowCoverage
 
 # ---------------------------------------------------------------------------
 # Locating the example spec (repo_root/examples/spec.json)
@@ -723,11 +724,17 @@ def test_every_producible_reason_base_is_mapped() -> None:
     header. Enumerating the producers, rather than pinning a hand-written list, means a newly
     added reason fails here until it is either mapped or documented as unreachable.
     """
+    from fmri_repro.kb_client import base_pipeline as kb_base_pipeline
     from fmri_repro.spec import migrations
 
     sources = [
         Path(render.__file__).with_name("extractor.py"),
         Path(migrations.__file__),
+        # WIDENED 2026-10-19: kb_client produces two reasons reached from extractor.py:1183-1203.
+        # They were free text until ruling 6 gave them stable prefixes, so this scan could not see
+        # them and the guard's docstring ("No reason this codebase produces may fall through")
+        # was an overclaim. It is now true of three files instead of two.
+        Path(kb_base_pipeline.__file__),
     ]
     bases: set[str] = set()
     dynamic: list[str] = []
@@ -1036,6 +1043,147 @@ def test_deferred_software_line_does_not_double_the_terminator() -> None:
     out = render.to_cobidas_coverage(prep)
     assert "deferred to Glasser et al.)" in out
     assert "et al.." not in out
+
+
+def test_an_unverifiable_row_gets_its_own_tag_not_the_never_targeted_one() -> None:
+    """Ruling 3. Three row states, not two.
+
+    Before this, an unverifiable row inherited "(no fields assessed by current extractor)", whose
+    own comment says it means "no field on any mapping kind is targeted" — FALSE of a row where a
+    field was targeted and its quote failed. The two tags must be distinguishable in the output,
+    which is what a reader actually sees.
+    """
+    prep = Preprocessing(
+        applies_to=_applies_to(),
+        base_pipeline=NotApplicable(),
+        steps=[
+            SpatialNormalization(
+                target_space=_missing_reason(
+                    "target_space", "extraction_quote_unresolved:quote_not_found"
+                ),
+                resolution_mm=_missing_reason(
+                    "resolution_mm", "extraction_quote_unresolved:quote_not_found"
+                ),
+                # the untargeted remainder, as _assemble emits them
+                **{
+                    f: _missing_reason(f, "not_targeted_by_mvp")
+                    for f in (
+                        "method",
+                        "warp",
+                        "transform_type",
+                        "interpolation",
+                        "regularization",
+                    )
+                },
+            )
+        ],
+    )
+    out = render.to_cobidas_coverage(prep)
+    assert (
+        "- Intersubject registration  (examined; the extractor could not verify what it found)"
+        in out
+    )
+    # the never-targeted tag must NOT be the one it got
+    assert "- Intersubject registration  (no fields assessed by current extractor)" not in out
+    # a genuinely never-targeted row still gets the other tag, in the same report
+    assert "- Motion correction  (no fields assessed by current extractor)" in out
+    # and the third header counter fires
+    assert "targeted but unverifiable 1" in out
+
+
+def test_the_kb_reasons_render_without_internal_tokens() -> None:
+    """Ruling 6 + the KB not-applicable ruling.
+
+    The un-prefixed free-text reason matched neither reason table, fell through to
+    ``unspecified (reason: ...)`` and printed "couple_stages forbids" to the author. Both bases
+    are now mapped, and neither sentence may contain an internal token.
+    """
+    for base, must_contain in (
+        ("kb_ambiguous", "could not determine which version applies"),
+        ("kb_not_applicable", "does not apply to the named pipeline"),
+    ):
+        line = render._REASON_LINE[base]
+        assert must_contain in line, base
+        for token in ("couple_stages", "LeftMissing", "NotApplicable", "KB-marked", "_pf", "::"):
+            assert token not in line, f"{base} leaks {token!r}"
+        assert base in render._REASON_BUCKET, base
+    # the not-applicable line says where it came from AND that the paper did not report it
+    na = render._REASON_LINE["kb_not_applicable"]
+    assert "AESPA's knowledge base" in na and "the paper did not report it" in na
+    # suffixed, as the producer emits it, it still resolves to the mapped sentence
+    row = render.FieldRow(
+        path="x.f",
+        group="x",
+        state="MISSING_FROM_PAPER",
+        extraction_status="MISSING_FROM_PAPER",
+        left_missing_reason="kb_not_applicable:CCS 1.0.0",
+    )
+    assert render._reason_detail(row) == na
+    assert "unspecified (reason:" not in render._reason_detail(row)
+
+
+@pytest.mark.parametrize(
+    ("software_unverifiable", "isr_unverifiable", "expect_two_gaps", "expect_software_claim"),
+    [
+        (False, False, False, True),
+        (False, True, True, True),  # the case this change puts into real output
+        (True, False, True, False),
+        (True, True, True, False),
+    ],
+    ids=["neither", "isr_only", "software_only", "both"],
+)
+def test_the_two_header_clauses_are_gated_on_independent_facts(
+    monkeypatch: pytest.MonkeyPatch,
+    software_unverifiable: bool,
+    isr_unverifiable: bool,
+    expect_two_gaps: bool,
+    expect_software_claim: bool,
+) -> None:
+    """The two-gaps wording and the citable-claim clause answer DIFFERENT questions.
+
+    ``2018bd3`` introduced the two-gaps variant for the case where SOFTWARE is unverifiable, where
+    both clauses of the original go false. The 2026-10-19 conditional-row change makes a NON-Software
+    row unverifiable in real output for the first time (agtzidis_2020 and liu_2005, on
+    intersubject_registration), and in that case the Software clause must SURVIVE — the same report
+    still carries "(incl. Software — unconditional violation)" and its violation section.
+
+    render.py gates them separately already: the wording on ``mand_unverifiable`` (any row), the
+    clause on ``software_unverifiable`` (Software specifically). Nothing pinned that, so an edit
+    tying the clause to ``mand_unverifiable`` would pass every other test while dropping a true
+    sentence from two real reports. The ``isr_only`` row is the one that catches it.
+    """
+    sw = next(r for r in COBIDAS_D3_ROWS if r.row_id == "software")
+    isr = next(r for r in COBIDAS_D3_ROWS if r.row_id == "intersubject_registration")
+    coverage = [
+        RowCoverage(
+            row=sw,
+            addressed=False,
+            covered_by_extractor=not software_unverifiable,
+            unverifiable=software_unverifiable,
+        ),
+        RowCoverage(
+            row=isr,
+            addressed=False,
+            covered_by_extractor=not isr_unverifiable,
+            unverifiable=isr_unverifiable,
+        ),
+    ]
+    # Drive the REAL render path: render.py imports assess_coverage by name, so substituting it
+    # exercises to_cobidas_coverage itself rather than a helper extracted to be testable.
+    monkeypatch.setattr(render, "assess_coverage", lambda rows, version_status: coverage)
+    text = render.to_cobidas_coverage(_synthetic_preprocessing())
+
+    two_gaps = "Two different tool gaps, kept apart" in text
+    plain = "The 'not assessed' count is a TOOL gap" in text
+    assert two_gaps is expect_two_gaps, text
+    assert plain is (not expect_two_gaps), text
+
+    kept = "The one unconditional, citable COBIDAS claim here is the Software row." in text
+    dropped = "so this paper carries no unconditional, citable COBIDAS claim" in text
+    assert kept is expect_software_claim, text
+    assert dropped is (not expect_software_claim), text
+    # exactly one of the two claim sentences, never both and never neither
+    assert kept != dropped, text
 
 
 def test_cobidas_coverage_deterministic() -> None:

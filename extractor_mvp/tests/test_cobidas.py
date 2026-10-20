@@ -277,10 +277,13 @@ def test_the_version_arm_is_untouched_by_the_unverifiable_rule():
         assert rc.addressed is (version_status == "EXTRACTED"), version_status
 
 
-def test_only_the_software_row_can_be_unverifiable():
-    """Every other row's coverage is pure targeting — a code property, not a per-paper outcome — so
-    nothing else may set the flag. If a future change makes another row unverifiable, the coverage
-    header's wording (which names the Software row) stops being true and this fails first.
+def test_any_row_mapping_spec_kinds_can_now_be_unverifiable():
+    """REPLACES ``test_only_the_software_row_can_be_unverifiable``, which asserted the opposite.
+
+    That test was SUPERSEDED by the 2026-10-19 ruling, not deleted: its input already carried
+    ``extraction_quote_unresolved`` on a non-Software row, and its own docstring said it would fail
+    first if another row became unverifiable. It has, so the same input now pins the new rule — a
+    superseded guard that merely disappears leaves the property it protected unguarded.
     """
     rows = [
         _bp_row("MISSING_FROM_PAPER", "base_pipeline_value_unsupported"),
@@ -289,5 +292,157 @@ def test_only_the_software_row_can_be_unverifiable():
         ),
         _fr("spatial_smoothing", "MISSING_FROM_PAPER", "not_targeted_by_mvp"),
     ]
-    flagged = [rc.row.row_id for rc in assess_coverage(rows, None) if rc.unverifiable]
-    assert flagged == ["software"], flagged
+    flagged = sorted(rc.row.row_id for rc in assess_coverage(rows, None) if rc.unverifiable)
+    assert flagged == ["motion_correction", "software"], flagged
+    # and the untargeted row is NOT swept in with them
+    by = _by_id(assess_coverage(rows, None))
+    assert by["spatial_smoothing"].unverifiable is False
+    assert by["spatial_smoothing"].covered_by_extractor is False
+
+
+# ---------------------------------------------------------------------------
+# The precedence, ruled 2026-10-19 (DELTA_conditional_row_unverifiable.md §2).
+# One test per level, so a mutation to one level fails exactly one test.
+# ---------------------------------------------------------------------------
+def test_precedence_level_1_addressed_beats_everything():
+    """An EXTRACTED or DEFERRED field addresses the row, whatever else is on it."""
+    for status in ("EXTRACTED", "DEFERRED_TO_CITATION"):
+        rows = [
+            _bp_row(None),
+            _fr("spatial_normalization", status),
+            _fr(
+                "surface_projection",
+                "MISSING_FROM_PAPER",
+                "extraction_quote_unresolved:quote_not_found",
+            ),
+        ]
+        rc = _by_id(assess_coverage(rows, None))["intersubject_registration"]
+        assert rc.addressed is True, status
+        assert rc.unverifiable is False, status
+        assert rc.covered_by_extractor is True, status
+
+
+def test_precedence_level_2_unverifiable_beats_not_reported():
+    """The reason §2 gives: the failed quote may be exactly where the paper reported the step, so
+    "not reported" would be a false statement rather than a cautious one."""
+    rows = [
+        _bp_row(None),
+        _fr(
+            "spatial_normalization",
+            "MISSING_FROM_PAPER",
+            "extraction_quote_unresolved:quote_not_found",
+        ),
+    ]
+    rc = _by_id(assess_coverage(rows, None))["intersubject_registration"]
+    assert rc.addressed is False
+    assert rc.unverifiable is True
+    assert rc.covered_by_extractor is False
+
+
+def test_precedence_level_3_a_plain_absence_is_still_not_reported():
+    """The negative control for level 2: a gap reason that is NOT in the set leaves the row
+    exactly as it was, so level 2 is shown to discriminate rather than to flag everything."""
+    rows = [_bp_row(None), _fr("spatial_normalization", "MISSING_FROM_PAPER", "not_stated_in_text")]
+    rc = _by_id(assess_coverage(rows, None))["intersubject_registration"]
+    assert (rc.addressed, rc.covered_by_extractor, rc.unverifiable) == (False, True, False)
+
+
+def test_precedence_ordering_is_level_1_then_level_2():
+    """Mixing one addressing field with one unverifiable field must give ADDRESSED.
+
+    Reversing the two levels would read this row as unverifiable and silence a row the paper
+    actually reported — the inverse of the defect the ruling fixes.
+    """
+    rows = [
+        _bp_row(None),
+        _fr("spatial_normalization", "EXTRACTED"),
+        _fr(
+            "spatial_normalization",
+            "MISSING_FROM_PAPER",
+            "extraction_quote_unresolved:quote_not_found",
+        ),
+    ]
+    rc = _by_id(assess_coverage(rows, None))["intersubject_registration"]
+    assert (rc.addressed, rc.unverifiable) == (True, False)
+
+
+def test_optional_rows_follow_the_same_rule():
+    """Ruling 5: one rule for every row that maps to spec kinds. intensity_normalization is the
+    only non-mandatory row the extractor targets, and it is the real case —
+    batch_sfn_v5/papers/mueller_2021.json carries quote_not_found on both its fields."""
+    rows = [
+        _bp_row(None),
+        _fr(
+            "intensity_normalization",
+            "MISSING_FROM_PAPER",
+            "extraction_quote_unresolved:quote_not_found",
+        ),
+    ]
+    rc = _by_id(assess_coverage(rows, None))["intensity_normalization"]
+    assert rc.row.mandatory is False
+    assert (rc.addressed, rc.covered_by_extractor, rc.unverifiable) == (False, False, True)
+
+
+def test_unverifiable_implies_not_covered():
+    """Ruling 4. The both-true state is SILENT, not loud: render builds its unverifiable list from
+    ``mand_not_assessed``, so such a row would count as assessed, skip the third counter and
+    render as a bare line. Nothing would have failed."""
+    import pytest
+
+    with pytest.raises(ValueError, match="unverifiable implies not covered_by_extractor"):
+        RowCoverage(
+            row=COBIDAS_D3_ROWS[0], addressed=False, covered_by_extractor=True, unverifiable=True
+        )
+    # the legal states all still construct
+    for cov, unv in ((True, False), (False, True), (False, False)):
+        RowCoverage(
+            row=COBIDAS_D3_ROWS[0], addressed=False, covered_by_extractor=cov, unverifiable=unv
+        )
+
+
+def test_the_software_deferral_rule_is_unchanged():
+    """Positive re-test, required by the DELTA's acceptance because one rejected reading of the
+    ruling (R2) would have overturned DELTA_software_row_deferral.md silently.
+
+    A DEFERRED_TO_CITATION base_pipeline does NOT address the Software row, and a version row
+    answers it when one exists. Both are re-asserted here rather than merely left unbroken.
+    """
+    deferred = _bp_row("DEFERRED_TO_CITATION", "deferred_to_citation")
+    rc = _by_id(assess_coverage([deferred], None))["software"]
+    assert rc.addressed is False, "a deferral must not address the Software row"
+    assert rc.unverifiable is False, "deferred_to_citation is not a gap reason"
+    # the version arm still answers when a version row exists
+    extracted_bp = _bp_row("EXTRACTED")
+    assert _by_id(assess_coverage([extracted_bp], "EXTRACTED"))["software"].addressed is True
+    assert _by_id(assess_coverage([extracted_bp], "MISSING_FROM_PAPER"))["software"].addressed is (
+        False
+    )
+
+
+def test_every_gap_base_in_the_set_is_matched_by_gap_base():
+    """Acceptance item 8: a base cannot be silently reclassified by editing one frozenset, and the
+    two KB bases must be REACHABLE — ruling 6 exists so they are no longer free text."""
+    from extractor_mvp.cobidas import _UNVERIFIABLE_GAP_BASES, _gap_base
+
+    assert _UNVERIFIABLE_GAP_BASES == frozenset(
+        {
+            "extraction_quote_unresolved",
+            "base_pipeline_value_unsupported",
+            "deferral_quote_unresolved",
+            "extraction_quote_missing",
+            "kb_ambiguous",
+        }
+    )
+    # every member matches through _gap_base, suffixed as the producers emit them
+    for base in _UNVERIFIABLE_GAP_BASES:
+        assert _gap_base(f"{base}:some_suffix") in _UNVERIFIABLE_GAP_BASES, base
+    # and the deliberately-excluded bases stay out, each for its recorded reason
+    for excluded in (
+        "deferred_to_citation",  # sits on a DEFERRED_TO_CITATION field
+        "citation_shaped_name_value_unsupported",  # ditto
+        "field_not_in_schema_version",  # the extractor never looked
+        "not_targeted_by_mvp",  # the untargeted case itself
+        "kb_not_applicable",  # a NotApplicable verdict, not a gap
+        "not_stated_in_text",  # a claim about the paper
+    ):
+        assert excluded not in _UNVERIFIABLE_GAP_BASES, excluded

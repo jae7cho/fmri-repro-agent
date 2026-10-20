@@ -130,11 +130,34 @@ _UNTARGETED_REASON = "not_targeted_by_mvp"
 #: Compared on the BASE (prefix before the first ``:``), so a suffixed reason carrying the
 #: resolver's own failure_reason matches. Deliberately NOT a check on the condition: the reason is
 #: read, never re-derived, which is the whole payoff of the diagnostic landing.
+#: MEMBERSHIP CRITERION, ruled 2026-10-19 (docs/design/DELTA_conditional_row_unverifiable.md):
+#: this set holds GAP reasons only — reasons that sit on a field whose ``extraction_status`` is
+#: neither ``EXTRACTED`` nor ``DEFERRED_TO_CITATION``. Everything else is out, however it reads in
+#: prose. Two consequences worth keeping in view:
+#:
+#: * For a step row the criterion is self-enforcing: step 1 of the precedence in
+#:   :func:`assess_coverage` consumes every EXTRACTED/DEFERRED field, so a deferral-only base can
+#:   never be consulted at step 2. Admitting one would add a member that cannot fire.
+#: * :func:`_software_coverage` has NO such guard — it reads ``base_pipeline``'s reason on a row
+#:   that may be DEFERRED_TO_CITATION. Admitting a deferral-only base there DOES change output:
+#:   measured, it would move viduarre_2017, whose base_pipeline is DEFERRED_TO_CITATION with reason
+#:   ``citation_shaped_name_value_unsupported``. That base and ``deferred_to_citation`` are therefore
+#:   excluded; both are already in ``test_render._UNREACHABLE_REASON_BASES``.
+#:
+#: ``field_not_in_schema_version`` is excluded for the opposite reason: migrations.py builds it with
+#: empty ``searched_terms`` and ``sections_searched``, i.e. the extractor never looked, so it is the
+#: UNTARGETED case and "unverifiable" would be false of it.
 _UNVERIFIABLE_GAP_BASES = frozenset(
     {
         "extraction_quote_unresolved",
         "base_pipeline_value_unsupported",
         "deferral_quote_unresolved",
+        # The extractor returned a value with no supporting quote at all — nothing was validated.
+        "extraction_quote_missing",
+        # The KB could not resolve which version applies (kb_client/base_pipeline.py). Reaches only
+        # base_pipeline.VERSION and step fields, never the base_pipeline field, so it cannot alter
+        # _software_coverage — by construction, not by corpus.
+        "kb_ambiguous",
     }
 )
 
@@ -163,6 +186,20 @@ class RowCoverage:
     #: collapse them (DELTA_base_pipeline_diagnostic.md §4a). Defaulted so the only construction
     #: site stays the only thing that has to know about it.
     unverifiable: bool = False
+
+    def __post_init__(self) -> None:
+        """``unverifiable`` implies NOT ``covered_by_extractor``.
+
+        Enforced rather than assumed because the both-true state is SILENT, not loud:
+        ``render.py`` builds its unverifiable list from ``mand_not_assessed``, so a row marked
+        covered AND unverifiable is counted as assessed, never reaches the third counter, and
+        renders as a bare line. Nothing would have failed. A frozen dataclass can still validate.
+        """
+        if self.unverifiable and self.covered_by_extractor:
+            raise ValueError(
+                f"RowCoverage({self.row.row_id!r}): unverifiable implies not covered_by_extractor, "
+                "got both True — see DELTA_conditional_row_unverifiable.md ruling 4"
+            )
 
 
 def _row_covered_by_extractor(field_rows: list[Any]) -> bool:  # list[render.FieldRow]
@@ -257,11 +294,22 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
             )
         else:
             mapped = [r for k in cr.spec_kinds for r in by_kind.get(k, [])]
+            # PRECEDENCE, ruled 2026-10-19 (DELTA_conditional_row_unverifiable.md §2): addressed,
+            # then unverifiable, then not reported. Unverifiable outranks not-reported because the
+            # failed quote may be exactly where the paper reported the step — so claiming the paper
+            # did not report it would be a false statement, not a cautious one.
+            #
+            # Applies to every row that maps to spec kinds, mandatory or optional alike (ruling 5).
+            # Software maps to none and keeps its own rule above (ruling 2).
             addressed = any(r.extraction_status in _ADDRESSING_STATUSES for r in mapped)
             covered = _row_covered_by_extractor(mapped)
-            # Only the Software row can be unverifiable today: every other row's coverage is pure
-            # targeting (_row_covered_by_extractor), which is a code property, not a per-paper one.
             unverifiable = False
+            if not addressed and any(
+                _gap_base(r.left_missing_reason) in _UNVERIFIABLE_GAP_BASES for r in mapped
+            ):
+                # Reaching here means NO mapped field is EXTRACTED or DEFERRED_TO_CITATION, which
+                # is what makes the membership criterion on _UNVERIFIABLE_GAP_BASES self-enforcing.
+                covered, unverifiable = False, True
         out.append(
             RowCoverage(
                 row=cr,

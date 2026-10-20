@@ -468,6 +468,11 @@ _REASON_BUCKET: dict[str, str] = {
     # resolved — so it cannot reuse one. not_covered because the tool could not verify what the paper
     # said, which is the same judgement cobidas._software_coverage expresses as covered=False.
     "base_pipeline_value_unsupported": "not_covered",
+    # The two KB bases, given stable prefixes by ruling 6 so _gap_base can match them and the
+    # reason scan can see them. kb_ambiguous is a tool gap; kb_not_applicable is NEITHER a gap nor
+    # a paper claim — the KB says the step does not apply — so it must not land in not_reported.
+    "kb_ambiguous": "not_covered",
+    "kb_not_applicable": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -484,10 +489,12 @@ _REASON_LINE: dict[str, str] = {
         "field did not exist in the schema version this document was written under "
         "(added by a later version; forward-migrated)"
     ),
-    # These three fire BEFORE (or instead of) quote validation, so nothing has confirmed the
-    # value is grounded in the source. They therefore describe what the EXTRACTOR did, and
-    # assert nothing about what the manuscript reports. See the semantics note in
-    # tests/test_render.py::test_every_producible_reason_base_is_mapped.
+    # The reasons below describe what the EXTRACTOR did and assert nothing about what the
+    # manuscript reports. REWORDED 2026-10-19: this comment used to enumerate "these three",
+    # which read as a second classification list competing with cobidas._UNVERIFIABLE_GAP_BASES.
+    # There is ONE classification source and it is that frozenset — see its membership criterion,
+    # and DELTA_conditional_row_unverifiable.md ruling 1. This table decides WORDING only; it
+    # decides nothing about coverage.
     "value_not_numeric": "extractor returned a non-numeric value for this field — enter manually",
     "extraction_quote_missing": (
         "extractor returned a value with no supporting quote — unverifiable, "
@@ -502,6 +509,18 @@ _REASON_LINE: dict[str, str] = {
     # about the extractor's evidence, not about the manuscript.
     "base_pipeline_value_unsupported": (
         "a pipeline was named but the quoted sentence does not state it — check the source yourself"
+    ),
+    "kb_ambiguous": (
+        "AESPA's knowledge base could not determine which version applies — check the source "
+        "yourself"
+    ),
+    # RULED 2026-10-19. Says where it came from and that the paper did not report it, in the same
+    # form as the inferred-version line below. Names no internal token: the raw producer message
+    # carried "couple_stages forbids ..." and leaked it into author-facing output, because the
+    # un-prefixed free text matched neither table and fell to "unspecified (reason: ...)".
+    "kb_not_applicable": (
+        "AESPA's knowledge base records that this step does not apply to the named pipeline; "
+        "the paper did not report it"
     ),
 }
 
@@ -834,7 +853,12 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
 
     def _tag(rc: RowCoverage) -> str:
         # Distinct wording from the field-level "not assessed by current extractor" callout:
-        # this is the ROW-level statement (no field on any mapping kind is targeted).
+        # this is the ROW-level statement. THREE states, not two (ruled 2026-10-19,
+        # DELTA_conditional_row_unverifiable.md ruling 3): a row the extractor could not verify is
+        # not the same as one it never targeted, and the never-targeted tag is FALSE of it — it
+        # says "no field on any mapping kind is targeted" when a field was targeted and failed.
+        if rc.unverifiable:
+            return "  (examined; the extractor could not verify what it found)"
         return "" if rc.covered_by_extractor else "  (no fields assessed by current extractor)"
 
     # 1. Unconditional violation: only the Software row can appear here.
