@@ -2587,3 +2587,101 @@ keeping the CI skip.
 
 Commits: `76bd8bc` (the hook) and this entry. CI green on both jobs at `76bd8bc`, run
 `37099247685` — which is also Phase 2's gate, met.
+
+---
+
+## 2026-10-19 / 2026-10-20
+
+**A row the extractor could not verify is no longer reported as unreported.** `b5ae9c5` extends
+`DELTA_base_pipeline_diagnostic.md` §4a's rule from the Software row to every row that maps to spec
+kinds. Gate: **17 identical, 2 changed** — agtzidis_2020 and liu_2005, `intersubject_registration`
+only. In both, `- Intersubject registration` became `- Intersubject registration  (examined; the
+extractor could not verify what it found)`. The bare line it replaces asserted that the paper had not
+reported intersubject registration, when in fact only the quote had failed to resolve. Design
+`18de05f`, the KB reason prefixes `ee9b57a`, both preceding it.
+
+**The identity gate shows WHICH reports changed, not whether the changed lines are TRUE. That is a
+separate check and it now gets its own step.** This round is the argument for it. The gate was green
+at 17/2 — the right two papers, the right single row — while an open question remained about whether
+the new header parenthetical had kept a true sentence. `2018bd3`'s two-gaps variant was written for
+the case where SOFTWARE is unverifiable, where it *replaced* the clause "The one unconditional,
+citable COBIDAS claim here is the Software row" because that claim disappears. Here it fires on a
+non-Software row for the first time, while the same report still carries "(incl. Software —
+unconditional violation)" and its violation section. Reading the rendered line showed the clause
+correctly survives: `render.py:832` gates it on `software_unverifiable` while the wording is gated on
+`mand_unverifiable`. **But nothing pinned that split.** Tying both to `mand_unverifiable` passes all
+343 other tests while silently dropping a true sentence from two real reports — measured by doing it.
+Now parametrized over all four combinations, and the `isr_only` case is the one that fails.
+
+**The prediction went 0 → 2 → 3 → 2 changed, and each move was a finding.** As first analysed the
+precedence moved **0 of 304** rows, because step 1 is already the code and none of the three bases
+that could be defended without a ruling occurs in the corpus. That predicted `19 identical, 0
+changed` — which is also exactly what a silently failed `PYTHONPATH` override prints
+(`rerender_reports.py:31-36`), so the acceptance criterion could not have failed for the right reason.
+Classifying `extraction_quote_unresolved` made it 17/2 with two named papers, converting an untestable
+criterion into a testable one; that is a stronger argument for the ruling than the classification
+question alone. A first implementation attempt then measured **16/3**, because two rulings interact
+through a shared frozenset: `_software_coverage:229` reads `_UNVERIFIABLE_GAP_BASES`, so growing the
+set moves the Software row for viduarre_2017 **without touching one byte of that function**. "Byte-
+unchanged" and "behaviour-unchanged" are not the same property, and the prompt asked for the first
+while the prediction depended on the second.
+
+**The resolution was a membership criterion, not a second list**, and it is better than the three
+options the implementation offered. `_UNVERIFIABLE_GAP_BASES` holds **gap reasons only** — reasons on
+a field whose status is neither `EXTRACTED` nor `DEFERRED_TO_CITATION`. That excludes
+`deferred_to_citation` and `citation_shaped_name_value_unsupported`, both of which sit on deferrals
+and both of which were **already** in `test_render._UNREACHABLE_REASON_BASES` — a set this entry's
+author had classified past without reading. It also excludes `field_not_in_schema_version`, which
+`migrations.py:97-104` builds with empty `searched_terms` and `sections_searched`: the extractor never
+looked, so "unverifiable" is false of it. For step rows the criterion is self-enforcing, since step 1
+consumes every addressing field; for Software it is load-bearing, since `:229` has no such guard.
+
+**Software is unchanged by construction, not by corpus** — checked rather than assumed, because the
+corpus-only version of that claim would have left the prediction hostage to the corpus.
+`extraction_quote_missing` is produced only inside `_process_field` (`extractor.py:548`), and an AST
+walk of `_build_base_pipeline` finds its reason literals to be exactly four, none of them that one.
+`kb_ambiguous` writes to `pipeline_ref.version`, never to the `base_pipeline` field `:229` reads.
+
+**A live leak, found by a classification question rather than by a bug report.** The KB
+not-applicable reason had no colon before its prose, so `_gap_base` returned the whole string, which
+matched neither reason table, fell through to `unclassified` and rendered as `unspecified (reason: CCS
+1.0.0 does not apply this step (KB-marked not_applicable; couple_stages forbids Missing/Deferred +
+NotApplicable so encoded as LeftMissing))` — implementation prose, in author-facing output. The AST
+guard could not see it because the reason was free text, so `test_render.py:717`'s "No reason this
+codebase produces may fall through" was an overclaim for two live producers. `ee9b57a` gives both
+stable prefixes and the scan is widened to the third file. **0 of 360 stored JSONs contain the old
+string** (positive control: `not_targeted_by_mvp` in 355, `extraction_quote_unresolved` in 67), so
+replay cannot resurrect it and no demo paper is affected — the question that mattered, since demo
+reports are replayed.
+
+**And the verdict was wrong in both directions before it was right.** Classified first as a claim
+about the paper, which would land it at "not reported" and tell an author they omitted something the
+KB says does not apply. It is neither a gap nor a paper claim: it is `NotApplicable`, travelling in
+the gap arm only because `couple_stages` permits no Missing/Deferred + NotApplicable pair. Recorded as
+`TRACK_A_SCOPE` A7a — a missing slot in the spec, not a defect of the producer.
+
+**`RowCoverage.__post_init__` now raises on `unverifiable` AND `covered`**, a state that was
+previously **silent**: `render.py:770-771` build the unverifiable list from `mand_not_assessed`, so
+such a row counted as assessed, never reached the third counter, and rendered as a bare line. Nothing
+would have failed. Twelve tests added or rewritten, each mutation-checked — three precedence levels
+plus their ordering, the invariant, the tag wording, both prefix matches — and the Software deferral
+rule re-tested **positively**, because one rejected reading of the ruling would have overturned
+`DELTA_software_row_deferral.md` silently. `test_only_the_software_row_can_be_unverifiable` is
+replaced rather than deleted: its input already carried the reason on a motion row and its docstring
+predicted it would fail first. It did.
+
+**Also mine, and the worst of the day.** I asserted for two days that a local hook mechanically
+enforced the commit window. Asked whether permission could override it, I searched `.git/hooks` and
+`.pre-commit-config.yaml`, found no time check, and announced **"there is no hook"** as a correction.
+There is: `.local/check_offhours.py`, allowlisted at `.claude/settings.local.json:45`, which exits 0
+on `ALLOW_WORKHOURS_COMMIT=1` and whose own stderr documents that override. **The mechanism and the
+flag were both recorded in my project memory for this repository**, which I did not read before
+contradicting it. The first claim was right by luck and the correction was confidently wrong — a
+negative from a search whose scope I never justified, which is the same uncontrolled-detector error as
+the `git grep "not a report"` miss earlier the same day, twice in one session. Two files, two
+greps, no positive control either time.
+
+Commits: `18de05f` (the DELTA), `ee9b57a` (the KB prefixes), `b5ae9c5` (coverage and render), after
+`4145d44`, `248e9a3` and `507263e` earlier in the queue. All six committed blobs verified against
+disk; the gate reproduces 17/2 from the committed state; 347 passed / 2 deselected in extractor_mvp
+and 235 in the root package. This entry is committed after them.
