@@ -146,8 +146,12 @@ def infer_base_pipeline_version(
     try:
         resolution = resolve_version(pipeline_id, paper_date)
     except KbAmbiguousError as exc:
+        # STABLE PREFIX, ruled 2026-10-19 (docs/design/DELTA_conditional_row_unverifiable.md
+        # ruling 6). A bare str(exc) is free text: cobidas._gap_base splits on the first ":" and
+        # so cannot extract a base, the classification in _UNVERIFIABLE_GAP_BASES cannot match it,
+        # and the AST reason scan cannot enumerate it. The prefix makes all three work.
         pipeline_ref.version = _rebuild_provenanced_field(
-            version_pf, inference=LeftMissing(reason=str(exc))
+            version_pf, inference=LeftMissing(reason=f"kb_ambiguous:{exc}")
         )
         return preprocessing
 
@@ -307,13 +311,16 @@ def _apply_param_result(
 
     new_inference: LeftMissing | InferredDefault
     if result.value is KbNotApplicable:
-        new_inference = LeftMissing(
-            reason=(
-                f"{pipeline_id} {version} does not apply this step "
-                "(KB-marked not_applicable; couple_stages forbids "
-                "Missing/Deferred + NotApplicable so encoded as LeftMissing)"
-            )
-        )
+        # STABLE PREFIX, ruled 2026-10-19 (ruling 6). The old reason was free text AND leaked
+        # implementation prose into author-facing output: unprefixed, it matched neither render
+        # table, fell through to "unspecified (reason: ...)", and printed "couple_stages forbids"
+        # to the reader. The suffix keeps the pipeline and version for diagnostics; the rendered
+        # sentence now comes from render._REASON_LINE["kb_not_applicable"].
+        #
+        # Why this travels in the gap arm at all: couple_stages permits no Missing/Deferred +
+        # NotApplicable pair, so a not-applicable verdict has no slot of its own. See
+        # TRACK_A_SCOPE.md A7a — a missing slot in the spec, not a defect of this function.
+        new_inference = LeftMissing(reason=f"kb_not_applicable:{pipeline_id} {version}")
     else:
         basis = VersionDefaultBasis(tool=pipeline_id, version=version)
         confidence = min(result.proposed_confidence, BASIS_CEILINGS["version_default"])
