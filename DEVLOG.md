@@ -2685,3 +2685,98 @@ Commits: `18de05f` (the DELTA), `ee9b57a` (the KB prefixes), `b5ae9c5` (coverage
 `4145d44`, `248e9a3` and `507263e` earlier in the queue. All six committed blobs verified against
 disk; the gate reproduces 17/2 from the committed state; 347 passed / 2 deselected in extractor_mvp
 and 235 in the root package. This entry is committed after them.
+
+---
+
+## 2026-10-21
+
+**`motion_correction.method` is extracted by its own call, and the stanza was wrong four ways before
+it ran.** `649c31c` pins every prompt constant sent to the model; `cb6b7c4` adds the call, the
+stanza and the assembly; `b624c2a` adds the probe recorder, built and not run. Rulings A, B, C and E
+of 2026-10-19 govern, and `DESIGN_motion_correction_extraction.md` records them.
+
+**The premise that reframed the work: `MotionCorrection` already existed in the spec**
+(`preprocessing.py:692-717`, ten fields, all four closed Literals retyped at 0.5.1). This was never
+a schema change — only extraction was missing. The protocol's own `:66` locator and its `:75`/`:78-79`
+claim that `transforms_combined` "does not exist in the spec today" were both stale.
+
+**Separate call, not a stanza in the shared prompt** — ruling A. `EXTRACTION_PROMPT` is now
+hash-pinned, so changing it is a deliberate vintage event rather than a side effect of adding a row;
+the measured reason is the v1→v2 change coercing 5 of 7 MNI terms. Both constants are pinned, which
+is not redundant: the composite is `prefix + EXTRACTION_PROMPT`, so a prefix-only edit moves one hash
+and not the other, and mutation-testing all three directions shows which.
+
+**Four corrections to the stanza, each found before a single draw ran.** The one that matters most:
+the no-bound-tool rule emitted the fixed token `"other"`, and run through the pre-registration's own
+frozen heuristic (`:97-111`) that token returns **undecided** — so every `described_only` cell would
+have landed in the exact bucket whose count `:107-108` uses to judge whether ruling (b) is adequate.
+The probe would have measured the stanza's choice of word instead of the thing it was pre-registered
+to measure. It also made binder's pre-declared reading unobservable, since that turns on whether the
+value is the algorithm description or the word "coregistered" — and `"coregistered"` returns
+`operation_phrase`. The value is now the paper's own words. The other three: the subject gate halted
+the whole extraction at the first anatomical alignment, which produces false `missing` on any paper
+describing both realignment and EPI-to-T1 coregistration — the error class
+`DESIGN_methods_finder.md:23` records as undetectable by any honesty check; `STEP 0` told the model to
+"say so in the quote", contradicting the exact-copy rule that makes a quote resolvable; and `STEP 3`'s
+example was derosa's own case, which would have made a probe paper's result circular.
+
+**A reverse collision I had reasoned past.** `method` is now the bare `field_id` of TWO targeted
+fields, and `SYNONYMS_BY_FIELD` is keyed on bare ids. I had kept motion out of the bare-id maps
+because an entry added *for motion* would also hit `temporal_standardization.method` — and stopped
+there. The other direction is the live one: a synonym written for temporal would silently resolve a
+motion value, and nothing prevented it except `"method"` not being a key, which is a fact about the
+map's contents rather than a property of the code. `extract_motion_method` now opts out explicitly,
+and a structural test generalises it — no bare-id map may key on an id more than one targeted field
+shares — so the next row built as its own call meets a failing test instead of a silent collision.
+
+**And the test I wrote for it was worthless until a mutation said so.** The first version called
+`_process_field(use_synonym_table=False)` directly, so it pinned that the parameter works rather than
+that production uses it: deleting the opt-out from the call site left it green. Rewritten to drive
+`extract_preprocessing`, it fails on that mutation, with the temporal field's successful resolution
+as the positive control that the injection was live. Second time this month a guard of mine passed
+the mutation that was supposed to kill it.
+
+**A borrowed measurement, retracted.** The cost record gave the motion call "the measured mean of
+11.87 s". That figure is `DESIGN_kdraw_stability.md` §3g's and it times the SHARED call — a
+13,480-character prompt returning seven fields. This prompt is 3,887 characters and returns one
+field, so its latency is **unmeasured**, and borrowing the number would both assert a measurement
+nobody took and almost certainly overstate it. What the cost actually asserts is the call COUNT,
+which doubles. Corrected in the code and corrected forward in the design doc with the original
+retained, and `motion_probe.py` now logs per-draw `wall_seconds` so the first run measures it.
+
+**The recorder makes only the motion call**, which is a scope decision and not an optimisation: a
+full extraction would take incidental `target_space` draws on six papers that are part of no
+pre-registered question, and those draws would exist, be stored, and invite later use. It records
+both the raw `FieldExtractionResult` and the processed `SpecifiedTerm` layer, because the prereg asks
+for the processed fields (`:8`) while Amendment 1 states the schema is the raw one (`:45-46`) and
+never says how `verbatim=None` maps between them — so the run survives either ruling without a
+re-run. A first version left the raw fields `None` with a comment saying the caller filled them; the
+caller could not, because the function did not return them.
+
+**It also records both deferral `target_kind`s**, because the extractor narrows `supplement` →
+`paper` when building the frozen `Deferral` and keeps the original only on the `DeferralRecord` —
+reading the stored one alone would make state-map row 5 (`supplement` → `unread`) unobservable.
+
+**The provenance header carries the stanza's hash**, which is what turns prereg C2 ("committed BEFORE
+the run") and C21 ("the vocabulary may not be extended after seeing output") from remembered
+discipline into a checkable property: every draw names the stanza it ran under, and C11's licence to
+iterate the wording on the six contaminated papers changes that hash, so an iteration appears in the
+record rather than vanishing.
+
+**Reask is counted, not inferred.** The probe's client wraps `litellm.completion` and counts raw
+completions, so `reask_occurred = attempts > 1` per draw. `max_retries=2` means a draw is one or two
+completions, and fork 1's mixture is only decomposable if that is recorded rather than derived.
+
+Test sites moved with derivations beside each: the step list 7 → 8 kinds, the untargeted-callout count
+19 → 29 (ten MotionCorrection fields, all untargeted in a fixture that makes no model call — a real
+run gives 28), the batch's `n_missing_not_stated` 5 → 6. Identity gate **19 identical, 0 changed**;
+negative control against `d31e8b7` **3 identical, 16 changed**, the value its docstring records
+rather than the 19-identical signature of a broken override. 362 passed / 2 deselected in
+extractor_mvp, 235 in the root package.
+
+Open, and recorded rather than resolved: the four pre-run rulings the author is drafting; whether a
+deferral the `extractor.py:792` guard infers should count as a deferral; whether the KB producer may
+rewrite a field the extractor never targeted. The probe has not run.
+
+Commits: `649c31c` (the pins), `cb6b7c4` (the call), `b624c2a` (the recorder). This entry is
+committed after them.
