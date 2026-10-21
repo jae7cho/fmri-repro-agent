@@ -160,3 +160,149 @@ or cited out of the probe run; one `verbatim=None` draw on power or binder demon
 40 clean draws are evidence and not proof; K=10; all six probe papers are already contaminated so iterating
 stanza wording on probe results adds no new contamination, and that licence does not extend to liu_2005,
 tang_2025 or wheaton_2004.
+
+---
+
+## Amendment 2 (2026-10-21) — five pre-run rulings, and three defects in the heuristic
+
+**Append-only. Nothing above is edited; every superseded reading is quoted here and marked.** Ruled
+by the author in conversation and written down 2026-10-21, before the probe runs. The run has still
+not happened.
+
+Four of these were raised as "tensions in the document" by a design pass; the fifth was added on
+review, because the heuristic decides how the other four read and so had to be fixed first.
+
+### Ruling 1 — the 40 clean draws cover **power and binder only**, so the number is **20**
+
+v1 (`:22-24`) says: *"a single `verbatim=None` draw on power or binder demonstrates unreachability,
+while 40 clean draws are evidence *for* reachability and not proof of it"*. The arithmetic does not
+close: power + binder at K=10 is **20** draws. 40 is the four `described_only` papers × 10
+(derosa_2025, liu_2013, power_2014, binder_1999 — `:120-121`), and v1 never says which set the 40
+spans.
+
+**Ruled: the symmetric claim covers power and binder only, and the number is 20.** derosa and
+liu_2013 are reported **separately**, not pooled into it.
+
+*Reason.* Draws counted as evidence *for* reachability must also be able to count *against* it, or
+the test is one-sided. The unreachability trigger names power and binder; those are the two papers
+where a single bad draw is decisive, so they are the two whose clean draws mean anything symmetric.
+derosa has four pre-declared readings of its own and cannot contribute to a single bound, and
+liu_2013 is the paper CALL 10's role axis was fitted to — its clean draws partly measure the fit.
+
+### Ruling 2 — `verbatim=None` is mapped onto the raw layer, and three causes are reported apart
+
+v1's trigger is `verbatim=None`; Amendment 1 (`:45-46`) states the LLM schema is
+`FieldExtractionResult`, which has no `verbatim`. The mapping was never stated.
+
+**Ruled.** The unreachability **trigger** is: the raw `status` is `missing`. A **clean** draw is:
+raw `status` is `extracted`, its quote resolves against the text, and the heuristic returns
+`operation_phrase`. Everything else is **neither**, and is reported as its own named line.
+
+*Reason.* The processed `verbatim` is `None` in three different situations and only one of them is
+about expressibility: (a) the model returned nothing — the real trigger; (b) the model returned a
+value whose quote failed to match the text, which is a span-resolution failure, i.e. a TOOL failure;
+(c) the model deferred, which is a different state, not an absent one. Folding (b) and (c) into the
+trigger would let a tool failure read as "the state cannot be expressed". Each is a separate line in
+the decomposition.
+
+### Ruling 3 — every outcome the readings do not cover is declared **now**
+
+v1 names binder as `undecided` only conditionally (`:113-118`) and derosa's four readings do not
+cover a deferral. Any outcome not declared before the run is an outcome interpreted after it.
+
+**binder_1999**
+| raw output | outcome |
+|---|---|
+| value contains `coregist…` | **the target** — `operation_phrase` → `described_only`, matching its committed label |
+| value is the algorithm description without the operation word | **`undecided`**, and expected: a closed vocabulary cannot recognise an algorithm described in prose (`:113-118`) |
+| `status="deferred"` to Cox 1996b | **citation-routing error.** CALL 7: the Cox reference *supports* a described algorithm, it does not substitute for one, so this row is not deferred |
+| a tool name absent from binder's own text | **extraction error** — a value the paper does not contain |
+
+**derosa_2025** — in addition to v1's four readings: `status="deferred"` is an **error**, by the same
+CALL 7 test (FSL is named as governing a procedure set, which is CALL 1's NOT BOUND case, not a
+substitution). And if STEP 0's "use the main one" selects a stream CALL 9 marks **unread**, the
+outcome is `unread` — excluded from numerator and denominator like row 5, reported as a named line.
+
+### Ruling 4 — "high" is **≥ 6 of 10 draws undecided on any `described_only` paper**
+
+`:107-108` makes the `undecided` count "the empirical measure of whether ruling (b) was adequate: a
+high count is the argument for revisiting (c)" — and never defines high. A threshold chosen after
+seeing the count is not pre-registered.
+
+**Ruled: if any `described_only` paper is `undecided` on 6 or more of its 10 draws, option (c) — a
+model-emitted `value_kind` — is revisited.** binder counts, because `:117-118` makes it the test of
+whether `undecided` is rare.
+
+*Reason.* If the map cannot classify a paper's output on most of its draws, the map has failed that
+paper, whatever the corpus-wide average says.
+
+### Ruling 5 — the heuristic's semantics, and three defects in its prose
+
+`:94-111` as written has three problems. All three are fixed, and the fixed version is implemented
+at `extractor_mvp/scripts/motion_value_kind.py` and calibrated below.
+
+**Defect 1 — it contradicts itself.** `:101` requires `tool_name` to match when `value` *"contains
+none of the above"* **and** is tool-shaped. That makes a both-lists match impossible. But `:110-111`
+says *"Both sides are checked, and a `value` matching both is `undecided`, not a precedence
+winner"*, and gives `"motion correction via ICA-AROMA"` as the string that must halt. Under the
+prose as written that string returns `operation_phrase` and never halts.
+**Ruled: the two tests are INDEPENDENT, and a double match is `undecided`.**
+
+**Defect 2 — the version pattern catches plain numbers.** `\w+\s*v?\d+(\.\d+)*` — `\w` includes
+digits, so any run of two or more digits is tool-shaped, including the `1996` inside binder's own
+citation. **Ruled: restrict to letters followed by digits.** The pattern the implementation runs, quoted
+exactly: `[A-Za-z]+\s*v?\d+(?:\.\d+)*`. (`(?:…)` is a non-capturing group; it matches identically to
+`(…)` under `re.search`, and is written here in the form the code uses so the two cannot drift.)
+
+**Defect 3 — common imaging acronyms read as tools.** "an initialism of ≥2 capitals" matches `EPI`
+and `BOLD`, so any phrase mentioning either is tool-shaped. **Ruled: they are not tool-shaped.**
+Implemented as a named exclusion set — `EPI, BOLD, MNI, TR, FD, RMS, ROI, FOV, SNR, CSF, GM, WM` —
+rather than a narrower pattern, because the exclusions are the part a later reader needs to see and
+argue with. `FD` and `RMS` are there on CALL 10's authority: they are CONSUME statistics, never the
+value.
+
+**This defect was load-bearing, not cosmetic.** Without the exclusion, binder's committed quote is
+*both* an operation phrase and tool-shaped — because it opens "All EPI images…" — so it would halt
+as `undecided`, on the one paper `:117-118` designates as the test of whether `undecided` is rare. A
+heuristic that halts on its own test case cannot measure it.
+
+### Calibration — inputs and outputs, recorded before the run
+
+Run against the implementation at `scripts/motion_value_kind.py`; pinned as tests in
+`extractor_mvp/tests/test_motion_value_kind.py`. **The implementation was fixed until each string
+landed where this document says, not the reverse.** Every string is from this pre-registration or
+from a probe paper's committed quote; no text from any paper outside the six was used.
+
+| input | output | authority |
+|---|---|---|
+| `motion correction via ICA-AROMA` | **undecided** | `:110-111`, the string this document says must halt |
+| `coregistered` | **operation_phrase** | `:98` (`coregist`) |
+| binder's algorithm description *without* the operation word | **undecided** | `:113-118`, the known limitation |
+| `SPM12` | **tool_name** | `:103` |
+| `FSL` | **tool_name** | `:102` |
+| `ICA-AROMA` | **tool_name** | `:103` |
+| `applywarp` | **tool_name** | `:103` |
+| `motion correction` | **operation_phrase** | `:98`; derosa reading 4's target |
+
+**binder_1999's FULL committed quote returns `operation_phrase`** — `is_operation_phrase=True`,
+`is_tool_shaped=False` — and therefore state-map row 1, `described_only`, which **matches its
+committed label**. Reported because it was not obvious, and because both of ruling 5's fixes are
+load-bearing in reaching it: defect 3's exclusion keeps `EPI` from making the quote tool-shaped, and
+defect 2's restriction keeps `(Cox, 1996b)`'s year from doing the same. So the `undecided` branch
+`:113-118` anticipates requires the value to be the algorithm description *without* the operation
+word — the row above — not the full sentence.
+
+### Unchanged by this amendment
+
+Everything in v1 and Amendment 1 except as superseded above: the probe tests reachability, not
+accuracy, and no accuracy figure may be computed from or cited out of it; K=10; the six papers and
+their two controls; the frozen vocabulary may not be extended after seeing output, and an extension
+is an amendment with both numbers reported; the iteration licence covers the six contaminated probe
+papers and does not extend to liu_2005, tang_2025 or wheaton_2004.
+
+**One addition to C2/C21's enforcement.** The stanza is hash-pinned
+(`extractor_mvp/tests/test_prompt_pin.py`) and the probe writes that hash into its provenance
+header, so every draw names the stanza it ran under and a mid-probe edit cannot be passed off as the
+pre-registered one. The stanza was revised twice on review before any run — six defects in total,
+recorded at the constant and in the pin's dated note — and its hash at the time of this amendment is
+`56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a`.

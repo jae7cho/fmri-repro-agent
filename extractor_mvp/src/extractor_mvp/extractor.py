@@ -1040,6 +1040,19 @@ value for this acquisition — use status="missing" for that field.
 #   4. STEP 3's example was derosa's own case, and derosa is one of the six probe papers. Naming it
 #      in the stanza would have made its probe result circular.
 #
+# FIFTH AND SIXTH CORRECTIONS, 2026-10-21, also before any run:
+#   5. STEP 4's deferral arm was unscoped -- it fired whenever the estimate was "attributed to" a
+#      citation or an unnamed-internals package. That catches two probe papers whose COMMITTED label
+#      is described_only, and neither "deferred" outcome is among the pre-declared readings: binder,
+#      whose quote describes the procedure and cites Cox (1996b) FOR it, and derosa, where FSL is
+#      named as the governing package (reading 1). CALL 7 draws the line the arm was missing --
+#      "does the citation SUBSTITUTE for a description of that row, or SUPPORT one that is present?
+#      Substitutes -> deferred. Supports -> not a deferral" -- and names binder as the support case:
+#      "the Cox (1996b) reference supports a described algorithm -> described_only". CALL 7 also says
+#      "a citation's scope does not extend to rows the paper describes itself". The arm now carries
+#      that limit, with the NOT BOUND case routed to the paper's-own-words rule instead.
+#   6. STEP 2 said "the surviving passage" while STEP 1 can keep several. Now "the kept passages".
+#
 # ORDERED STEPS, not prose exclusions, because the protocol says so in as many words
 # (protocol:526): "the axes are to be **emitted as discrete steps**, not offered as prose
 # guidance." Its reason is docs/findings/temporal-firewall-fix.md, which found the model
@@ -1072,7 +1085,7 @@ Then:
   output status "missing".
 - If the text states the step was NOT performed, output status "missing".
 
-## STEP 2 -- ROLE (for every tool named in the surviving passage, assign exactly one)
+## STEP 2 -- ROLE (for every tool named in the kept passages, assign exactly one)
 - ESTIMATE: computes the rigid-body transform between functional volumes. ONLY this role can
   supply the value.
 - APPLY: resamples data using a transform estimated elsewhere. Supplies NOTHING here, EVEN WHEN
@@ -1100,10 +1113,20 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing
   those words. Do NOT substitute a word of your own, and do NOT invent a category. Tools named
-  elsewhere in the passage do NOT license a value.
-- The ESTIMATE role is attributed to a citation, or to a pipeline or wrapper whose internal tool
-  is never named -> status "deferred"; ref_string = the pipeline name if the text gives one, else
-  the citation as written; deferral_sentence = the sentence that defers.
+  elsewhere in the kept passages do NOT license a value.
+- The citation or pipeline REPLACES the description -> status "deferred". This arm applies ONLY
+  when the text does not describe the operation itself and instead points elsewhere for it:
+  "preprocessed as previously described in [ref]", or "we used the <pipeline> minimally
+  preprocessed data", where the estimate is credited to that source. Then ref_string = the
+  pipeline name if the text gives one, else the citation as written; deferral_sentence = the
+  sentence that defers.
+  A citation or package that merely SUPPORTS or accompanies a description is NOT a deferral:
+  - if the text describes the operation and cites a reference FOR that algorithm, the citation
+    supports the description -- use the rule above (the paper's own words), not this one;
+  - if a package is named as governing a whole set of procedures while this step is described in
+    the text's own voice, that is step 3's NOT BOUND case -- again the rule above, not this one.
+  The question is what the citation or package DOES in the sentence: replace the description, or
+  stand behind one that is already there.
 - Nothing about between-volume alignment, or the step is stated as not performed -> status
   "missing".
 

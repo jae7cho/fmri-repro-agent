@@ -38,7 +38,23 @@ _PINNED = {
     #: C11 DOES license iterating this wording on the six already-contaminated probe papers. Such
     #: an iteration is a deliberate update here plus a new header hash on the draws that follow —
     #: not a silent edit. It does NOT license iterating on liu_2005, tang_2025 or wheaton_2004.
-    "MOTION_METHOD_PROMPT": ("5242bc5f73261c2230b2453f7173f32a0594c7ceb30f49d2c7fd38532a6bb80d"),
+    #: UPDATED 2026-10-21, before any run, by author review of the stanza. Superseded value was
+    #: 5242bc5f73261c2230b2453f7173f32a0594c7ceb30f49d2c7fd38532a6bb80d. Two defects, both of which
+    #: would have corrupted the probe rather than merely degraded it:
+    #:
+    #:   * STEP 4's deferral arm was unscoped. It fired whenever the estimate was "attributed to" a
+    #:     citation or a package with unnamed internals, which catches TWO probe papers whose
+    #:     committed label is `described_only` -- binder, whose quote describes the procedure and
+    #:     cites Cox (1996b) FOR it, and derosa, where FSL is named as the governing package.
+    #:     Neither "deferred" outcome is among the pre-declared readings, so either would have
+    #:     produced an outcome interpreted after the fact. CALL 7 supplies the missing limit --
+    #:     "does the citation SUBSTITUTE for a description of that row, or SUPPORT one that is
+    #:     present?" -- and names binder as the support case.
+    #:   * STEP 2 said "the surviving passage" while STEP 1 can keep several.
+    #:
+    #: This is what a pin update looks like: deliberate, dated, superseded hash retained, reason
+    #: recorded. It is NOT a licence to edit the stanza to make a test pass.
+    "MOTION_METHOD_PROMPT": ("56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a"),
 }
 
 _VINTAGE_NOTE = (
