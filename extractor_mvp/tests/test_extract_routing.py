@@ -5,7 +5,6 @@ so these test the *routing*, not real KB resolution or live extraction."""
 from __future__ import annotations
 
 from datetime import date
-from types import SimpleNamespace
 from typing import Any
 
 import fmri_repro.kb_client.base_pipeline as kb_mod
@@ -31,6 +30,7 @@ from fmri_repro.spec.provenance import (
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 
+from conftest import stub_client  # tests/ is on sys.path via pytest rootdir insertion
 from extractor_mvp.citation_resolver import CitationResolver, _iter_fields
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
@@ -57,9 +57,7 @@ TEXT_FULL = (
 
 
 def _fake_client(payload: PreprocessingExtraction) -> Any:
-    return SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
+    return stub_client(payload)
 
 
 def _missing() -> FieldExtractionResult:

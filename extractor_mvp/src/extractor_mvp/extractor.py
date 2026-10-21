@@ -33,6 +33,11 @@ from fmri_repro.spec.preprocessing import (
     BrainExtraction,
     IntensityNormalization,
     IntensityNormalizationConvention,
+    MotionCorrection,
+    MotionCorrectionMethod,
+    MotionInterpolation,
+    MotionReferenceScan,
+    MotionSimilarityMetric,
     NuisanceRegression,
     PipelineRef,
     Preprocessing,
@@ -481,6 +486,7 @@ def _process_field(
     t: Any,
     text: str,
     value_context: float | None = None,
+    use_synonym_table: bool = True,
 ) -> tuple[ProvenancedField, ExtractionDiagnostic | None, DeferralRecord | None]:
     """Turn one LLM FieldExtractionResult into a ProvenancedField.
 
@@ -512,7 +518,17 @@ def _process_field(
         verbatim = str(fe.value)
         resolved: Any
         res_status: Literal["resolved", "underspecified", "unrecognized"]
-        synonyms_entry = SYNONYMS_BY_FIELD.get(field_id)
+        # SYNONYMS_BY_FIELD is keyed on the BARE field_id, and ``method`` is now the bare id of
+        # TWO fields: temporal_standardization.method and motion_correction.method. One entry
+        # added under "method" would silently serve both, in either direction. Today neither has
+        # an entry and the lookup is inert -- but that is a fact about the map's CONTENTS, not a
+        # property of this code. ``use_synonym_table=False`` lets a caller make its exclusion
+        # explicit rather than depend on that absence continuing.
+        #
+        # Re-keying the map on (step kind, field) was the alternative. It would change the
+        # resolution path the SHARED call runs for four existing fields -- a larger change than
+        # the collision warrants while exactly one caller needs to opt out.
+        synonyms_entry = SYNONYMS_BY_FIELD.get(field_id) if use_synonym_table else None
         if synonyms_entry is not None:
             syns, under = synonyms_entry
             res = resolve_to_literal(verbatim, syns, under, value_context)
@@ -864,6 +880,7 @@ def _build_base_pipeline(
 def _assemble(
     pf: dict[str, ProvenancedField],
     base_pipeline: ProvenancedField[PipelineRef] | MissingFromPaper,
+    motion_method: ProvenancedField | None = None,
 ) -> Preprocessing:
     """Wrap the extracted/missing fields into a schema-valid Preprocessing block.
 
@@ -929,12 +946,39 @@ def _assemble(
         )
     else:
         base_pipeline_field = base_pipeline
+    # motion_correction. ``method`` comes from its OWN call (ruling A); the other nine fields are
+    # untargeted, exactly as every other partially-targeted step here. When no motion call was made
+    # -- the per-acquisition path, which reuses the shared prompt and so cannot carry this field --
+    # ``method`` is ``not_targeted_by_mvp`` too, NEVER ``not_stated_in_text``: the extractor did not
+    # look, and a source-absence reason there would be a claim about the paper. Ruling A records
+    # that omission as a cost of the separate call, not as an oversight.
+    motion_correction = MotionCorrection(
+        method=(
+            motion_method
+            if motion_method is not None
+            else _missing_pf("method", SpecifiedTerm[MotionCorrectionMethod], untargeted)
+        ),
+        reference_scan=_missing_pf(
+            "reference_scan", SpecifiedTerm[MotionReferenceScan], untargeted
+        ),
+        similarity_metric=_missing_pf(
+            "similarity_metric", SpecifiedTerm[MotionSimilarityMetric], untargeted
+        ),
+        interpolation=_missing_pf("interpolation", SpecifiedTerm[MotionInterpolation], untargeted),
+        transforms_combined=_missing_pf("transforms_combined", bool, untargeted),
+        nonrigid=_missing_pf("nonrigid", bool, untargeted),
+        transform_type=_missing_pf("transform_type", str, untargeted),
+        fieldmap_unwarping=_missing_pf("fieldmap_unwarping", bool, untargeted),
+        unwarping_method=_missing_pf("unwarping_method", str, untargeted),
+        slice_to_volume=_missing_pf("slice_to_volume", bool, untargeted),
+    )
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
         steps=[
             brain_extraction,
             segmentation,
+            motion_correction,
             spatial,
             surface,
             nuisance_regression,
@@ -967,12 +1011,203 @@ value for this acquisition — use status="missing" for that field.
 )
 
 
+# ---------------------------------------------------------------------------------------------
+# motion_correction.method — its OWN call and its OWN prompt (ruling A, 2026-10-19).
+#
+# NOT a stanza in EXTRACTION_PROMPT. That constant is hash-pinned by tests/test_prompt_pin.py
+# because a change to it re-vintages every field already validated under it; the v1->v2 change
+# coerced 5 of 7 MNI terms at the shipped level. A separate call keeps each row's validation
+# intact when the next row lands.
+#
+# Written FROM docs/ground-truth-protocol-motion_correction.md v1.5, not from any paper's text.
+# Three papers -- liu_2005, tang_2025, wheaton_2004 -- are the only uncontaminated cells left in
+# the motion corpus (prereg C11, C26) and were not read while writing this.
+#
+# FOUR CORRECTIONS, 2026-10-21, before this ever ran:
+#   1. the no-bound-tool rule emitted a FIXED token ("other"). Run through the prereg's own frozen
+#      heuristic (:97-111) that token returns **undecided** -- so every described_only cell would
+#      land in the bucket whose count :107-108 uses to judge whether ruling (b) is adequate. The
+#      probe would have measured this stanza's choice of word instead of the heuristic. It also
+#      makes binder's pre-declared reading unobservable, since that reading turns on whether the
+#      value is the algorithm description or the word "coregistered" -- and "coregistered" returns
+#      operation_phrase. The value is now the paper's own words.
+#   2. the subject gate stopped the whole extraction at the first anatomical/atlas/surface
+#      alignment. Most methods sections describe realignment AND EPI-to-T1 coregistration (COBIDAS
+#      gives them separate rows), so that produced false "missing" -- the class of error no honesty
+#      check detects (DESIGN_methods_finder.md:23). The gate is now per passage.
+#   3. STEP 0 said "say so in the quote", which contradicts the exact-copy requirement that makes a
+#      quote resolvable at all.
+#   4. STEP 3's example was derosa's own case, and derosa is one of the six probe papers. Naming it
+#      in the stanza would have made its probe result circular.
+#
+# ORDERED STEPS, not prose exclusions, because the protocol says so in as many words
+# (protocol:526): "the axes are to be **emitted as discrete steps**, not offered as prose
+# guidance." Its reason is docs/findings/temporal-firewall-fix.md, which found the model
+# OVERRODE an explicit, near-identical prose exclusion and followed a mandatory subject-first
+# decision instead. That finding bounds itself: it converted ONE derived-subject shape and left
+# TWO untouched (:173-179), so it is evidence for the STRUCTURE, not proof it generalises.
+# ---------------------------------------------------------------------------------------------
+MOTION_METHOD_PROMPT = """\
+You are extracting ONE field from an fMRI methods text: the method used for MOTION CORRECTION
+(between-volume realignment of the functional time series).
+
+Work through the steps IN ORDER. Do not start from a tool name. A tool name is never the entry
+point.
+
+## STEP 0 -- what is being labelled
+The unit is the PREPROCESSING applied to an acquisition, not an analysis run on it. One
+preprocessing feeding two analyses is one unit. If the text describes two separately preprocessed
+pipelines, use the main one.
+
+## STEP 1 -- SUBJECT (a gate, applied to EACH alignment passage separately)
+Most methods sections describe several alignments. Find every passage describing an alignment, and
+ask of EACH ONE: what is aligned to what?
+- Functional-to-functional: EPI to EPI, or EPI to a within-run or within-session reference volume
+  or mean image -> KEEP this passage and carry it to step 2.
+- EPI to an anatomical image, EPI to an atlas or template, or surface registration -> SET THIS
+  PASSAGE ASIDE. It belongs to a different field. Do NOT stop; keep reading.
+Then:
+- If at least one passage was kept, continue to step 2 using only the kept passages.
+- Only if NO passage was kept -- the text describes no functional-to-functional alignment at all --
+  output status "missing".
+- If the text states the step was NOT performed, output status "missing".
+
+## STEP 2 -- ROLE (for every tool named in the surviving passage, assign exactly one)
+- ESTIMATE: computes the rigid-body transform between functional volumes. ONLY this role can
+  supply the value.
+- APPLY: resamples data using a transform estimated elsewhere. Supplies NOTHING here, EVEN WHEN
+  the phrase "head motion correction" appears in the same sentence.
+- CONSUME: takes already-estimated motion parameters as input to something else -- nuisance
+  regressors, censoring, exclusion criteria, or a summary statistic such as FD or RMS
+  displacement. Supplies nothing here.
+- HOST: a language or environment the estimator runs in, such as MATLAB or Python. Never the
+  value.
+
+## STEP 3 -- BINDING (apply to the tool you placed in ESTIMATE)
+Does the text attribute that tool to THIS step, or only to the enclosing set of procedures?
+- BOUND: the step is described in the paper's own voice and the named package governs it. The
+  tool supplies the value.
+- NOT BOUND: a package named as governing a procedure set supplies nothing. It is NOT enough that
+  the package is named, named with a version, or named in the same sentence as the step.
+- BOUND BUT ROUTED ELSEWHERE: if the only tool bound to this step performs an operation that
+  belongs to a different field, then the assertion that motion correction was performed still
+  stands, but no tool name survives.
+
+## STEP 4 -- OUTPUT
+- Exactly one tool in ESTIMATE and BOUND -> status "extracted"; value = that tool; verbatim_quote
+  = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of the same tool.
+- The subject gate passed and the operation is described, but no bound tool is in ESTIMATE ->
+  status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
+  example the phrase it uses to name what was done); verbatim_quote = the sentence containing
+  those words. Do NOT substitute a word of your own, and do NOT invent a category. Tools named
+  elsewhere in the passage do NOT license a value.
+- The ESTIMATE role is attributed to a citation, or to a pipeline or wrapper whose internal tool
+  is never named -> status "deferred"; ref_string = the pipeline name if the text gives one, else
+  the citation as written; deferral_sentence = the sentence that defers.
+- Nothing about between-volume alignment, or the step is stated as not performed -> status
+  "missing".
+
+verbatim_quote and deferral_sentence must be copied EXACTLY from the text below, character for
+character, or the field is discarded.
+
+Text:
+\"\"\"
+{text}
+\"\"\"
+"""
+
+
+class MotionMethodExtraction(BaseModel):
+    """LLM output schema for the one-field motion call.
+
+    Separate from :class:`PreprocessingExtraction` so that adding this row could not alter the
+    hash-pinned shared prompt or the response model every other field is extracted under. The
+    precedent is ``acquisition_discovery._LLMAcquisitionList``: a private one-purpose schema with
+    its own prompt constant and the same create() settings.
+    """
+
+    motion_correction_method: FieldExtractionResult
+
+
+#: The ``_FIELD_SPECS`` row for the motion call, kept beside it rather than in that list: the
+#: list drives the SHARED call's loop, and an entry there would make the shared response model
+#: require a field it does not have.
+_MOTION_FIELD_SPEC: tuple[str, str, str, Any, Any] = (
+    "motion_correction_method",
+    "method",
+    "motion_correction.method",
+    MotionCorrectionMethod,
+    SpecifiedTerm[MotionCorrectionMethod],
+)
+
+
+def extract_motion_method(
+    parsed_paper: ParsedPaper,
+    model: str,
+    *,
+    client: Any | None = None,
+    raw_out: list[FieldExtractionResult] | None = None,
+) -> tuple[ProvenancedField, ExtractionDiagnostic | None, DeferralRecord | None]:
+    """One extra ``create()`` per paper, on the SAME slice as the main call.
+
+    Same ParsedPaper, same model, same temperature and max_retries, and the same
+    ``_process_field`` span-resolution path -- so its gap reasons are the standard ones
+    (``extraction_quote_missing``, ``extraction_quote_unresolved:*``, ``deferral_quote_unresolved:*``,
+    ``not_stated_in_text``) that the conditional-row rule already handles, rather than a private
+    vocabulary this call would have to teach every downstream reader.
+
+    Cost, recorded honestly: one additional model call per paper on the single-acquisition path,
+    and it doubles the reask surface because ``max_retries`` applies per call.
+
+    **This call's latency is UNMEASURED.** An earlier version of this docstring gave it "the
+    measured mean of 11.87 s per paper" — that figure is `DESIGN_kdraw_stability.md` §3g's, and it
+    measures the SHARED call: a 13,480-character prompt returning seven fields, timed from
+    per-paper JSON mtimes. This prompt is 3,887 characters and returns one field, so borrowing that
+    number would assert a measurement nobody has taken, and would almost certainly overstate it.
+    What is known is the call COUNT, which doubles; the wall-clock cost is not known until a run
+    reports it. `scripts/motion_probe.py` logs per-draw wall time for exactly that reason, so the
+    first probe run measures this instead of inheriting it.
+    """
+    client = client or build_client()
+    extraction: MotionMethodExtraction = client.chat.completions.create(
+        model=model,
+        messages=[{"role": "user", "content": MOTION_METHOD_PROMPT.format(text=parsed_paper.text)}],
+        response_model=MotionMethodExtraction,
+        temperature=0.0,
+        max_retries=2,
+    )
+    # ``raw_out``: pass a list to capture the model's OWN FieldExtractionResult before
+    # _process_field turns it into a SpecifiedTerm. Same idiom as extract_preprocessing's
+    # ``resolutions`` — diagnostic capture only, and the default None is a no-op that changes
+    # nothing. The reachability probe needs it because the pre-registration asks for the processed
+    # layer (verbatim/resolved/resolution/span, :8) while Amendment 1 states the LLM schema is
+    # FieldExtractionResult (:45-46), and how its ``verbatim=None`` trigger maps between the two is
+    # NOT yet ruled. Recording both layers means the run survives either ruling without a re-run.
+    if raw_out is not None:
+        raw_out.append(extraction.motion_correction_method)
+    _attr, field_id, dotted, literal_type, t = _MOTION_FIELD_SPEC
+    return _process_field(
+        field_id,
+        dotted,
+        extraction.motion_correction_method,
+        literal_type,
+        t,
+        parsed_paper.text,
+        None,
+        # Opt OUT of the bare-id synonym lookup: "method" is shared with
+        # temporal_standardization.method, and a synonym written for that field must never resolve
+        # a motion value. Asserted in tests/test_motion_method.py.
+        use_synonym_table=False,
+    )
+
+
 def _extract_from_prompt(
     parsed_paper: ParsedPaper,
     model: str,
     prompt_text: str,
     client: Any | None,
     resolutions: list[ResolutionRecord] | None = None,
+    motion_method: ProvenancedField | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Run one LLM extraction call + the shared post-processing pipeline.
 
@@ -1053,7 +1288,7 @@ def _extract_from_prompt(
     if bp_deferral is not None:
         deferrals.append(bp_deferral)
 
-    return _assemble(pf, base_pipeline), diagnostics, deferrals
+    return _assemble(pf, base_pipeline, motion_method), diagnostics, deferrals
 
 
 def extract_preprocessing(
@@ -1069,13 +1304,30 @@ def extract_preprocessing(
     :class:`ResolutionRecord`s for successfully-extracted targeted fields (raw LLM
     value + resolved value/alias). Diagnostic capture only; default ``None`` is a
     no-op that preserves existing behavior and the 3-tuple return."""
-    return _extract_from_prompt(
+    # Ruling A: motion_correction.method is its OWN call, on the SAME ParsedPaper and slice.
+    # Reached only here, on the single-acquisition path. The per-acquisition path below reuses the
+    # shared prompt and so gets no motion call -- a cost ruling A records, and the reason _assemble
+    # leaves ``method`` untargeted rather than not-stated when this is None.
+    #
+    # One client for both calls, so a caller's stub serves both and a real run opens one connection:
+    # the same shape extract_multi_acquisition uses for its discovery + per-acquisition calls.
+    client = client or build_client()
+    motion_method, motion_diag, motion_deferral = extract_motion_method(
+        parsed_paper, model, client=client
+    )
+    prep, diagnostics, deferrals = _extract_from_prompt(
         parsed_paper,
         model,
         EXTRACTION_PROMPT.format(text=parsed_paper.text),
         client,
         resolutions,
+        motion_method,
     )
+    if motion_diag is not None:
+        diagnostics.append(motion_diag)
+    if motion_deferral is not None:
+        deferrals.append(motion_deferral)
+    return prep, diagnostics, deferrals
 
 
 def extract_preprocessing_for_acquisition(

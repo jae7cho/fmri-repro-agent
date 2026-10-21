@@ -13,9 +13,9 @@ LLM's extraction as given.
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any
 
+from conftest import stub_client  # tests/ is on sys.path via pytest rootdir insertion
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import PreprocessingExtraction, extract_preprocessing
 from extractor_mvp.parsed_paper import ParsedPaper
@@ -30,9 +30,7 @@ TEXT = (
 
 
 def _fake_client(payload: PreprocessingExtraction) -> Any:
-    return SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
+    return stub_client(payload)
 
 
 def _missing() -> FieldExtractionResult:

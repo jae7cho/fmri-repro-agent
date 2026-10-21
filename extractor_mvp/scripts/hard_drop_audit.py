@@ -46,6 +46,13 @@ _STEP_MAP: dict[str, tuple[str, str]] = {
     "intensity_convention": ("intensity_normalization", "convention"),
     "intensity_value": ("intensity_normalization", "value"),
     "temporal_standardization_method": ("temporal_standardization", "method"),
+    # Added 2026-10-19 with the motion call (ruling A). This map reads prep.steps by
+    # (kind, attr), so it works whichever response model produced the value — unlike
+    # scripts/retry_audit.py, which does getattr(final, field) on the response object and would
+    # therefore read N/A forever for a field that lives on MotionMethodExtraction. That script is
+    # deliberately NOT extended until it makes the motion call itself; a field it can never
+    # populate would report a silent zero rather than a finding.
+    "motion_correction_method": ("motion_correction", "method"),
 }
 _FIELDS = ["base_pipeline_name", *_STEP_MAP.keys()]
 

@@ -5,7 +5,6 @@ from __future__ import annotations
 import csv
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, cast
 
 import pytest
@@ -14,6 +13,7 @@ if TYPE_CHECKING:
     from extractor_mvp.citation_resolver import CitationResolver
 
 import extractor_mvp.batch as batch
+from conftest import stub_client  # tests/ is on sys.path via pytest rootdir insertion
 from extractor_mvp.batch_config import BatchConfig, PdfPaper
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
@@ -38,7 +38,11 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     assert r.n_extracted == 2  # target_space + resolution_mm resolved
     # 5 targeted fields land MISSING: was 4, +1 for temporal_standardization.method
     # (Build 2 added it as a targeted field; the mock LLM doesn't provide it).
-    assert r.n_missing_not_stated == 5
+    # 5 -> 6, 2026-10-19: motion_correction.method now comes from its own call, and the canned
+    # stub answers it status="missing" -> not_stated_in_text, which is correct for FULL_TEXT (it
+    # says nothing about realignment). The other nine motion fields are untargeted and are NOT
+    # counted here — this column counts source absences, not coverage gaps.
+    assert r.n_missing_not_stated == 6
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 
@@ -289,9 +293,7 @@ def test_the_citation_resolver_attributeerror_propagates_through_the_real_extrac
         intensity_convention=none,
         intensity_value=none,
     )
-    fake_client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
+    fake_client = stub_client(payload)
     monkeypatch.setattr(
         batch,
         "extract",

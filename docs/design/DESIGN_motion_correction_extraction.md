@@ -484,6 +484,14 @@ and the hash pin turns a new vintage into a deliberate act rather than a side ef
 1. One extra call per paper per row. At the measured mean of **11.87 s** per call (§4.1), that is one
    more unit of that cost per row, not a rounding error — and it doubles the reask surface, since
    `max_retries=2` applies per call.
+
+   > **CORRECTED 2026-10-21.** The sentence above borrows §4.1's 11.87 s, and that figure measures
+   > the SHARED call — a 13,480-character prompt returning seven fields, timed from per-paper JSON
+   > mtimes (`DESIGN_kdraw_stability.md` §3g). The motion call's prompt is **3,887 characters** and
+   > returns **one** field, so its latency is **unmeasured** and 11.87 s would almost certainly
+   > overstate it. What this ruling's cost actually asserts is the call COUNT, which doubles; the
+   > wall-clock cost is unknown until a run reports it. `scripts/motion_probe.py` logs per-draw wall
+   > time so the first probe run measures it rather than inheriting it. Original text retained.
 2. **The per-acquisition path gets no motion unless it is wired separately.**
    `PER_ACQUISITION_EXTRACTION_PROMPT` is built as `prefix + EXTRACTION_PROMPT` (`extractor.py:966`),
    verified at HEAD: `PER_ACQUISITION_EXTRACTION_PROMPT.endswith(EXTRACTION_PROMPT)` is `True`. A

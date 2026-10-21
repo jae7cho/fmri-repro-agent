@@ -78,6 +78,50 @@ def _canned_payload() -> PreprocessingExtraction:
     )
 
 
+def motion_missing() -> object:
+    """A ``MotionMethodExtraction`` with the field missing — the default for every stub.
+
+    ``motion_correction.method`` is its own call (ruling A), so a stub that returns only a
+    ``PreprocessingExtraction`` raises AttributeError on the motion call. Tests that do not care
+    about motion get this: status "missing" -> ``not_stated_in_text``, which is what a paper
+    silent on realignment should produce.
+    """
+    from extractor_mvp.extraction_result import FieldExtractionResult
+    from extractor_mvp.extractor import MotionMethodExtraction
+
+    return MotionMethodExtraction(motion_correction_method=FieldExtractionResult(status="missing"))
+
+
+def stub_client(payload: object, *, motion: object | None = None, counter: dict | None = None):
+    """A fake client that serves BOTH calls by dispatching on ``response_model``.
+
+    The suite's stubs were all ``lambda **_: payload`` — they ignored ``response_model`` and so
+    answered every call with the same object. That was invisible while there was one call per
+    paper. With two, dispatching is the only way a stub can be correct, and ignoring the argument
+    is how a second call silently consumes the first call's payload (which is exactly what
+    ``_MultiPassClient`` in test_multi_acquisition_extractor.py would do).
+
+    ``counter``, if given, counts calls per response-model name, so a test can assert HOW MANY
+    motion calls happened. Nothing in the suite counted create() calls before this.
+    """
+    from types import SimpleNamespace
+
+    from extractor_mvp.extractor import MotionMethodExtraction
+
+    motion_payload = motion if motion is not None else motion_missing()
+
+    def create(*, response_model=None, **_):
+        if counter is not None:
+            counter[getattr(response_model, "__name__", str(response_model))] = (
+                counter.get(getattr(response_model, "__name__", str(response_model)), 0) + 1
+            )
+        if response_model is MotionMethodExtraction:
+            return motion_payload
+        return payload
+
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
 @pytest.fixture
 def canned_batch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Stub only the PDF loader and the model call; everything else stays real.
@@ -90,16 +134,13 @@ def canned_batch(monkeypatch: pytest.MonkeyPatch) -> None:
     failure mode overrides it in its own body with ``monkeypatch`` as usual, because fixtures run
     first. Four tests in test_batch.py depend on that ordering.
     """
-    from types import SimpleNamespace
 
     import extractor_mvp.batch as batch
     from extractor_mvp.extractor import extract
 
     monkeypatch.setattr(batch, "load_pdf_text", lambda _path: (FULL_TEXT, "pypdf"))
     payload = _canned_payload()
-    fake_client = SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
+    fake_client = stub_client(payload)
     monkeypatch.setattr(
         batch,
         "extract",

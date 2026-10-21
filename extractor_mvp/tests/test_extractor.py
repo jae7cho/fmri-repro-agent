@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from pydantic import ValidationError
 
+from conftest import stub_client  # tests/ is on sys.path via pytest rootdir insertion
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     PreprocessingExtraction,
@@ -26,9 +26,10 @@ def _paper(text: str = TEXT) -> ParsedPaper:
     return ParsedPaper(text=text, source="test", parser="manual")
 
 
-def _fake_client(payload: PreprocessingExtraction) -> Any:
-    completions = SimpleNamespace(create=lambda **_: payload)
-    return SimpleNamespace(chat=SimpleNamespace(completions=completions))
+def _fake_client(payload: PreprocessingExtraction, *, motion: Any | None = None) -> Any:
+    # Dispatches on response_model: motion_correction.method is its own call (ruling A), so a
+    # single-payload stub would answer it with a PreprocessingExtraction and raise AttributeError.
+    return stub_client(payload, motion=motion)
 
 
 def _extracted(value: str, quote: str) -> FieldExtractionResult:

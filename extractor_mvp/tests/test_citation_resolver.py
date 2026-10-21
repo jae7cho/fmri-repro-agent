@@ -8,13 +8,13 @@ import os
 from datetime import date
 from functools import partial
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Any
 
 import pytest
 from fmri_repro.spec.preprocessing import SpecifiedTerm
 from fmri_repro.spec.provenance import InferredDefault, PriorPublicationBasis
 
+from conftest import stub_client  # tests/ is on sys.path via pytest rootdir insertion
 from extractor_mvp.citation_resolver import (
     CITATION_CONFIDENCE_PENALTY,
     CitationResolver,
@@ -63,9 +63,7 @@ def _rec(field: str, ref: str = "Glasser et al. 2013") -> DeferralRecord:
 
 
 def _fake_client(payload: PreprocessingExtraction) -> Any:
-    return SimpleNamespace(
-        chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **_: payload))
-    )
+    return stub_client(payload)
 
 
 # --- 6d: cycle detection -------------------------------------------------------
