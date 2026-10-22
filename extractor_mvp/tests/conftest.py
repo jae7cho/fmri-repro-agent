@@ -92,7 +92,13 @@ def motion_missing() -> object:
     return MotionMethodExtraction(motion_correction_method=FieldExtractionResult(status="missing"))
 
 
-def stub_client(payload: object, *, motion: object | None = None, counter: dict | None = None):
+def stub_client(
+    payload: object,
+    *,
+    motion: object | None = None,
+    counter: dict | None = None,
+    calls: list | None = None,
+):
     """A fake client that serves BOTH calls by dispatching on ``response_model``.
 
     The suite's stubs were all ``lambda **_: payload`` — they ignored ``response_model`` and so
@@ -103,6 +109,12 @@ def stub_client(payload: object, *, motion: object | None = None, counter: dict 
 
     ``counter``, if given, counts calls per response-model name, so a test can assert HOW MANY
     motion calls happened. Nothing in the suite counted create() calls before this.
+
+    ``calls``, if given, records each call's SETTINGS -- response model, temperature, max_retries --
+    so a test can assert that a second call did not quietly get different sampling parameters from
+    the first. A separate call is only comparable to the main one if it is made the same way, and
+    nothing else checks that: the response model is asserted by dispatch, but temperature is a
+    keyword nobody reads.
     """
     from types import SimpleNamespace
 
@@ -110,10 +122,20 @@ def stub_client(payload: object, *, motion: object | None = None, counter: dict 
 
     motion_payload = motion if motion is not None else motion_missing()
 
-    def create(*, response_model=None, **_):
+    def create(*, response_model=None, **kwargs):
+        name = getattr(response_model, "__name__", str(response_model))
         if counter is not None:
-            counter[getattr(response_model, "__name__", str(response_model))] = (
-                counter.get(getattr(response_model, "__name__", str(response_model)), 0) + 1
+            counter[name] = counter.get(name, 0) + 1
+        if calls is not None:
+            calls.append(
+                {
+                    "response_model": name,
+                    # sentinel, not a default: a MISSING temperature must be distinguishable from
+                    # an explicit 0.0, or the assertion below would pass on an omitted argument.
+                    "temperature": kwargs.get("temperature", "<<absent>>"),
+                    "max_retries": kwargs.get("max_retries", "<<absent>>"),
+                    "model": kwargs.get("model", "<<absent>>"),
+                }
             )
         if response_model is MotionMethodExtraction:
             return motion_payload

@@ -86,6 +86,46 @@ def test_exactly_one_motion_call_per_paper_on_the_single_acquisition_path() -> N
     assert counter == {"PreprocessingExtraction": 1, "MotionMethodExtraction": 1}, counter
 
 
+def test_both_calls_are_made_with_the_same_sampling_settings() -> None:
+    """A separate call is only comparable to the main one if it is made the SAME way.
+
+    ``extractor.py:1199-1200`` (motion) and ``:1246-1247`` (main) both pass ``temperature=0.0`` and
+    ``max_retries=2``. Nothing asserted it: the response model is checked by dispatch, but
+    temperature is a keyword no test reads, so the motion call could have been given a different
+    value -- or none, inheriting whatever the provider defaults to -- and every other test would
+    still pass. The probe's whole premise is non-determinism AT TEMPERATURE 0 (``variance.md``), so
+    a motion call sampling at a provider default would measure a different quantity than the one
+    pre-registered, and the draws would look like instability.
+
+    The absent case is distinguished from an explicit 0.0 by a sentinel, because ``kwargs.get(
+    "temperature", 0.0)`` would make a removed argument pass.
+    """
+    calls: list[dict] = []
+    extract_preprocessing(
+        _paper(),
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            motion=_motion(
+                "extracted",
+                value="spm_realign",
+                verbatim_quote="realigned to the mean image of each session using SPM12",
+            ),
+            calls=calls,
+        ),
+    )
+    assert [c["response_model"] for c in calls] == [
+        "MotionMethodExtraction",
+        "PreprocessingExtraction",
+    ], calls
+    for c in calls:
+        assert c["temperature"] == 0.0, f"{c['response_model']}: temperature={c['temperature']!r}"
+        assert c["max_retries"] == 2, f"{c['response_model']}: max_retries={c['max_retries']!r}"
+        assert c["model"] == "m", c
+    # and both are floats, not ints: a 0 would also == 0.0 but is a different literal in the source
+    assert all(isinstance(c["temperature"], float) for c in calls), calls
+
+
 def test_the_multi_acquisition_path_makes_no_motion_call() -> None:
     """Ruling A's recorded cost, asserted rather than trusted.
 
