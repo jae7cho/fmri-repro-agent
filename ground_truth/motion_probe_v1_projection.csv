@@ -1,0 +1,83 @@
+# PROJECTION of the motion_correction.method reachability probe, run 2026-10-21.
+# Emitted by extractor_mvp/scripts/ -- do not hand-edit. Regenerate from results/motion_probe/*.jsonl.
+#
+# WHY A PROJECTION AND NOT THE RUN. The per-draw records under extractor_mvp/results/motion_probe/
+# carry the model's returned value and quote, which are SENTENCES FROM THE PAPERS. The corpus is
+# not in this repository for licensing reasons, so tracking those strings would redistribute what
+# the corpus deliberately withholds. This projection therefore carries NO quote text and NO value
+# text: only the status, the derived heuristic class, the state-map row, and the span OFFSETS.
+# Anyone holding the corpus can recover the text from the offsets; anyone who does not, cannot.
+#
+# DIAGNOSTIC, NOT EVALUATIVE. No rate, fraction or accuracy figure is computed here or may be
+# computed from it (prereg :9-10, :158-159). The probe tests whether a state is EXPRESSIBLE.
+# Counts only. See docs/findings/motion-probe-v1-results.md for the outcome against the
+# pre-declared readings, and the pre-registration for what may and may not be concluded.
+#
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0, temperature 0.0, max_retries 2
+# K                          : 10 per paper, 6 papers, 60 draws
+# motion_method_prompt_sha256: 56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a
+# heuristic                  : extractor_mvp/scripts/motion_value_kind.py (prereg Amendment 2 ruling 5)
+# state map                  : prereg Amendment 1, six rows
+# generated_utc              : 2026-10-22T01:41:29+00:00
+#
+paper_id,draw,raw_status,heuristic_class,state_map_row,predicted_label_state,span_resolved,span_start,span_end,left_missing_reason,deferral_target_kind,completion_attempts,reask_occurred,wall_seconds
+power_2014,1,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.393
+power_2014,2,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.504
+power_2014,3,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.393
+power_2014,4,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.597
+power_2014,5,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.457
+power_2014,6,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.276
+power_2014,7,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.426
+power_2014,8,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.434
+power_2014,9,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,3.359
+power_2014,10,extracted,operation_phrase,1,described_only,yes,3282,3356,,,1,no,6.777
+binder_1999,1,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.545
+binder_1999,2,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.43
+binder_1999,3,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.532
+binder_1999,4,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.866
+binder_1999,5,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.827
+binder_1999,6,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.981
+binder_1999,7,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,4.005
+binder_1999,8,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.982
+binder_1999,9,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.296
+binder_1999,10,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,12.048
+liu_2013,1,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,10.373
+liu_2013,2,extracted,operation_phrase,1,described_only,yes,3440,3487,,,1,no,12.414
+liu_2013,3,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,11.99
+liu_2013,4,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,10.242
+liu_2013,5,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,13.841
+liu_2013,6,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,13.86
+liu_2013,7,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,12.399
+liu_2013,8,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,13.541
+liu_2013,9,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,11.841
+liu_2013,10,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,11.882
+derosa_2025,1,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,6.358
+derosa_2025,2,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.166
+derosa_2025,3,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.669
+derosa_2025,4,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,6.067
+derosa_2025,5,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,6.037
+derosa_2025,6,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,4.924
+derosa_2025,7,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.629
+derosa_2025,8,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.206
+derosa_2025,9,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.034
+derosa_2025,10,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,5.895
+agtzidis_2020,1,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.364
+agtzidis_2020,2,extracted,operation_phrase,1,described_only,yes,7188,7308,,,1,no,9.323
+agtzidis_2020,3,extracted,operation_phrase,1,described_only,yes,7188,7308,,,1,no,3.685
+agtzidis_2020,4,extracted,tool_name,2,named_tool,no,,,extraction_quote_unresolved:quote_not_found,,1,no,13.995
+agtzidis_2020,5,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,3.998
+agtzidis_2020,6,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,3.962
+agtzidis_2020,7,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.104
+agtzidis_2020,8,extracted,operation_phrase,1,described_only,yes,7188,7308,,,1,no,3.872
+agtzidis_2020,9,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.001
+agtzidis_2020,10,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,3.992
+poldrack_2015,1,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,18.836
+poldrack_2015,2,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,17.301
+poldrack_2015,3,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,17.719
+poldrack_2015,4,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,18.33
+poldrack_2015,5,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,17.4
+poldrack_2015,6,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,18.118
+poldrack_2015,7,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.955
+poldrack_2015,8,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,17.176
+poldrack_2015,9,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,17.924
+poldrack_2015,10,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,19.831
