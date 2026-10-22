@@ -2780,3 +2780,63 @@ rewrite a field the extractor never targeted. The probe has not run.
 
 Commits: `649c31c` (the pins), `cb6b7c4` (the call), `b624c2a` (the recorder). This entry is
 committed after them.
+
+## 2026-10-21 (late)
+
+**The probe ran, and the positive control failed for two reasons, only one of which is the stanza's.**
+60 draws, K=10 on six papers, 0 reasks and 0 retries, 8.07 s mean per draw. Five of six readings
+matched what Amendment 2 declared: power_2014 and liu_2013 on state-map row 1, binder_1999 on row 3
+`undecided`, derosa_2025 on reading 2 (`ICA-AROMA`) across all ten draws, and poldrack_2015 never
+returning `applywarp`, which is the APPLY control's criterion. `described_only` is expressible — rows
+1, 2 and 3 were all produced and the `verbatim=None` trigger never fired — which prereg `:158-159`
+makes evidence and not proof.
+
+**I reported the agtzidis failure wrongly, and the correction changed what it means.** I wrote "the one
+`SPM12` draw discarded on a span failure". Seven of ten draws were discarded. Separating the causes
+split one failure into two unrelated ones: 9 of 10 draws returned an operation phrase where the paper
+names a tool, which is the stanza behaviour the control exists to detect; and 7 of 10 were discarded at
+quote resolution because the PDF text layer carries `/C2` — a raw glyph name leaking from a
+non-standard font encoding — where the page prints `×`. The model transcribed the page correctly, and
+character-exact matching cannot accept a faithful reading of a corrupt text layer. All ten draws quote
+the *same* passage, so the stanza located the right sentence every time; the three that resolved simply
+returned a shorter quote that stops before the corrupt region, and were not better in any other way.
+
+**The second cause deleted the only draw that would have passed.** `SPM12` carried the long quote, so
+the pre-declared correct answer was thrown away by a matcher artifact. The control therefore cannot be
+scored as a clean value failure, and iterating the stanza on its strength would be fixing the wrong
+thing. The stanza is not being iterated, pending the author's ruling.
+
+**The glyph leak is latent, not a property of agtzidis.** Scanning the six probe papers' methods text:
+four have no leaks and no span failures, agtzidis has 5 leaks and 7 failures, and poldrack has 21
+leaks and no failures — because its quotes did not happen to cross one. The defect discards a correct
+extraction whenever a quote crosses a leaked glyph, silently, as `quote_not_found`. It needs its own
+fix and its own regression test and is not a stanza change; whether it has been discarding extractions
+in `base_pipeline` or `target_space` is an open question this probe did not ask. The scan covered the
+six probe papers only — the three held-out papers were not loaded, not even to count characters
+(C11/C26).
+
+**Ruling 4's trigger fired and the decision it gates is held.** binder is `undecided` on 10 of 10
+against a threshold of 6. Both readings are recorded rather than one chosen: the threshold is met as
+written, and binder's ten values are identical, so one adjudication covers all ten and the count is ten
+draws of one case. Revisiting option (c) — a model-emitted `value_kind` — on the strength of a positive
+control that failed partly through a defect unrelated to `value_kind` would be premature, so it waits.
+
+**A keyword no test read.** `extractor.py:1199-1200` and `:1246-1247` both pass `temperature=0.0` and
+`max_retries=2`, and nothing asserted it: the response model is checked by dispatch, but the motion
+call could have sampled at a provider default and every test would still have passed. The probe's whole
+premise is non-determinism *at temperature 0*, so that would have measured a different quantity and its
+draws would have read as instability — a wrong finding rather than a crash. An absent argument is now
+recorded as a `"<<absent>>"` sentinel rather than defaulted, because `kwargs.get("temperature", 0.0)`
+would make a *removed* argument pass, and omission is the likely failure. Mutation-checked three ways
+on the motion call, each naming the offending value. Confirmed against the run: `git diff HEAD --
+src scripts` was empty, so the probe ran the committed code at 0.0.
+
+**The outcome is recorded, not just the run.** `motion-probe-v1-results.md` states the six results
+against their declared readings and is labelled diagnostic: no rate, fraction or accuracy figure, per
+`:9-10`. It is backed by a tracked projection of all 60 draws carrying status, heuristic class, row and
+span offsets and **no quote or value text** — the corpus is absent from this repository for licensing
+reasons, and tracking the returned sentences would redistribute exactly what the corpus withholds.
+Verified by seven needles absent from the CSV and present in the run records. 376 passed, 2 skipped.
+
+Commits: `8803ae5` (the sampling-settings tests), `7dfbceb` (the findings doc and the projection).
+This entry is committed after them.
