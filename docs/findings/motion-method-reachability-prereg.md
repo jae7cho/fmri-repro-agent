@@ -616,3 +616,39 @@ put while the value moves: whether each arm quotes the same clause as its earlie
 Labels as Amendment 4 reads them. No stanza edit and no label change accompany this run. agtzidis and
 binder are probe papers already inside the contaminated union; this spends no clean cell. The
 held-out three are not touched. No accuracy figure may be computed from or cited out of this run.
+
+---
+
+## Amendment 6 (2026-10-26) — the replacement control under the restored stanza
+
+**Written BEFORE the run it governs.** Amendment 5's same-day control attributed the agtzidis and binder
+movement to the 2026-10-22 stanza edit, and the edit had fixed nothing it was made for (derosa:
+`ICA-AROMA` on all 20 draws across both stanzas). The author therefore ruled on 2026-10-26 that the
+stanza is **reverted to `56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a`** — a version
+already measured on six papers, so no new vintage is created by the revert. One gap remains: ciric_2017,
+the post hoc replacement control, has run only under `378a294f…` (Amendment 4; v2: `MCFLIRT` on 10 of
+10 with the ESTIMATE span). It does not count as a control for the restored stanza until it has run
+under it.
+
+### Design
+
+- ciric_2017, **K = 10**, under `56bc6305…`, from the working tree **after** the revert commit; same
+  model, `temperature=0.0`, `max_retries=2`. Ten calls.
+- **Gate, before any per-draw record is read:** the run's `manifest.json` carries `56bc6305…` in
+  `motion_method_prompt_sha256`. A manifest carrying any other hash voids the run.
+- Projection and results document as for v2: `ground_truth/motion_probe_ciric_2026-10-26_56bc_projection.csv`
+  (no quote or value text) and `docs/findings/motion-probe-ciric-56bc.md`. Counts only; no rate.
+
+### Pre-declared reading
+
+**The control passes if every one of the 10 draws returns `MCFLIRT` with the ESTIMATE span, as under
+`378a`.** "The ESTIMATE span" is a resolved span that contains the ESTIMATE mention of MCFLIRT (offset
+4475–4482 of the methods slice as the probe loads it; the v2 span was 4410–4507) and none of the three
+CONSUME mentions (5533, 6360, 9296). **Anything else is reported as found** — a CONSUME span, an operation
+phrase, a deferral to Jenkinson 2002, another tool, `missing`, a both-lists `undecided`, or an unresolved
+quote — as its own named line, against Amendment 4 §1's table, and not classified into pass.
+
+### Unchanged
+
+ciric_2017 is post hoc and already contaminated (Amendment 4 §1); every report of its count says so in
+the same sentence. Labels unchanged. The held-out three untouched. No accuracy figure.
