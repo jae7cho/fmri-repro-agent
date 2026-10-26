@@ -800,3 +800,59 @@ the frozen heuristic's class, disagreements counted (Amendment 7). **No rates.**
 The probe tests reachability, not accuracy, and no accuracy figure may be computed from or cited out of
 it. The post-checks run on the processed layer; the raw layer and the state-map rows are computed as
 before. The run follows the author's review of version 4; no call is made before it.
+
+---
+
+## Amendment 9 (2026-10-26) — version 5 against version 4, same day, with an adoption rule; then freeze
+
+**Written BEFORE any edit to the stanza and before any call.** Ruled by the author on 2026-10-26 after
+the version-4 run (Amendment 8).
+
+### What version 4 settled, and what it left
+
+`deferred` is reachable on the motion row: four papers return it on all ten draws (braun, viduarre,
+vanderwal, and liu_2013 on 7 of 10), after 0 of 180 draws before version 3. Edit (a) did not reach
+poldrack, so its shape is now exact: **an unnamed pipeline cited by a bare number, in the sentence that
+introduces the procedure set, followed by an operation sentence STEP 1 keeps** — the model reads the
+operation sentence alone. That shape is the standard numbered-reference form ("were preprocessed as
+previously described12, followed by a step list"), and the tool currently credits such a paper with
+describing its method when it deferred, which is the wrong direction for a compliance auditor.
+
+### Design — one more iteration, controlled, then freeze
+
+- **Same-day A/B, all ten papers, K = 10 per arm — 200 calls, back to back in one session.** Arm 1:
+  version 4, `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`, run from a git
+  worktree at the last commit that pins it (`d1292f6` as this is written) with that commit's recorder.
+  Arm 2: version 5, from the working tree. **Each arm's manifest is gated on its own hash before any
+  record of either arm is read**; a mismatch voids the arm.
+- **Version 5 is one general edit** in STEP 4, from CALL 6 and CALL 11, naming no paper: read each kept
+  passage together with the sentence that introduces the procedure set it belongs to; a citation or a
+  pipeline in that introducing sentence, named or unnamed, governs the operation sentences that follow
+  it until the text begins a new procedure set; the four-detail rule and STEP 3 still decide first — a
+  bound tool or any stated detail wins. The nine other papers short-circuit before the edit applies.
+- **The `ea7b0084…` arm is not run**: version 3 is superseded, and the question is what version 4
+  costs, not why.
+
+### Pre-declared
+
+- **Adoption rule.** Version 5 is adopted if **poldrack returns `deferred` to ref 45 on at least 6 of
+  10** and **no other paper loses more than 2 matching draws against its same-day version-4 arm**;
+  otherwise version 4 freezes and poldrack's shape is recorded as unreached. "Matching" is against the
+  paper's label as Amendment 8 reads it; a draw matches on its state-map row (and, for ciric, its span).
+- **liu_2013.** Its version-4 arm today decides whether 7 of 10 was version 4's cost or within-run
+  variation at temperature 0: 10 of 10 today means variation; 7 again means version 4's cost, and
+  version 5 is judged against that number.
+- **All other readings as Amendment 8**, including the vanderwal risk and agtzidis's check-failure rule.
+- **Anything else is reported as found.** Model binding against the heuristic reported per arm;
+  disagreements counted. **No rates.**
+
+### Then freeze
+
+The adopted version is **the frozen stanza under prereg C11**, with no further iteration before the
+full-corpus run. Its hash is the one the full-corpus run's manifest must carry.
+
+### Unchanged
+
+Reachability, not accuracy; no accuracy figure may be computed from or cited out of either arm. The
+contaminated union is 16 of 19 (Amendment 8); the clean three are not touched. The run follows the
+author's review of version 5; no call is made before it.
