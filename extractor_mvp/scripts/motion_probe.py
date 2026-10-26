@@ -11,6 +11,11 @@ Run history (each run is its own vintage, named by the stanza hash in its manife
   ``docs/findings/motion-probe-v1-results.md``.
 * 2026-10-22 -- seven papers, K=10, stanza ``378a294f...``: ciric_2017 added as the REPLACEMENT
   positive control (Amendment 4), chosen after the first run and therefore post hoc by construction.
+* 2026-10-25 -- the same-day control, agtzidis and binder under both stanzas (Amendment 5); the
+  stanza was then reverted to ``56bc6305...`` and ciric_2017 run under it (Amendment 6).
+* version 3 (Amendment 7): stanza rewritten from protocol v1.7 (CALL 11) with option (c) -- the
+  model states the binding in ``motion_correction_binding``; recorded here as ``raw_binding`` beside
+  the frozen heuristic's class, so the projection can count their disagreements.
 
 **It makes ONLY the motion call.** Not ``extract``, not ``extract_preprocessing`` — just
 ``extract_motion_method``. Two reasons, both deliberate:
@@ -116,6 +121,10 @@ class DrawRecord:
     raw_verbatim_quote: str | None
     raw_ref_string: str | None
     raw_deferral_sentence: str | None
+    #: option (c): the CALL 1 binding the MODEL states ("named_tool" / "described_only"), set only
+    #: on an extracted draw. The heuristic's class is derived at projection time from raw_value and
+    #: is the independent control; this field is what it is compared against.
+    raw_binding: str | None
 
     # --- processed layer: what the prereg :8 names ---
     verbatim: str | None
@@ -202,6 +211,9 @@ def _record(
 ) -> DrawRecord:
     ext = pf.extraction
     arm = type(ext).__name__
+    # raw is the whole MotionMethodExtraction since version 3; the field result sits inside it.
+    binding = getattr(raw, "motion_correction_binding", None)
+    raw = getattr(raw, "motion_correction_method", raw)
     val = getattr(ext, "value", None)
     term = val if isinstance(val, SpecifiedTerm) else None
     span = (getattr(ext, "spans", None) or [None])[0] if isinstance(ext, Extracted) else None
@@ -218,6 +230,7 @@ def _record(
         raw_verbatim_quote=getattr(raw, "verbatim_quote", None),
         raw_ref_string=getattr(raw, "ref_string", None),
         raw_deferral_sentence=getattr(raw, "deferral_sentence", None),
+        raw_binding=binding,
         verbatim=term.verbatim if term else None,
         resolved=term.resolved if term else None,
         resolution=term.resolution if term else None,
@@ -248,7 +261,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
         "pre_registration": (
-            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-4)"
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-7)"
         ),
         "model": _MODEL,
         "k": k,
@@ -351,13 +364,24 @@ def main(argv: list[str] | None = None) -> int:
                     # keep whatever raw arrived before the failure: a draw that failed AFTER the
                     # model answered is a different event from one that failed before it, and the
                     # distinction is only recoverable here.
-                    raw_status=getattr(raw_capture[0] if raw_capture else None, "status", None),
+                    raw_status=getattr(
+                        getattr(raw_capture[0], "motion_correction_method", None)
+                        if raw_capture
+                        else None,
+                        "status",
+                        None,
+                    ),
                     raw_value=None,
                     raw_verbatim_quote=getattr(
-                        raw_capture[0] if raw_capture else None, "verbatim_quote", None
+                        getattr(raw_capture[0], "motion_correction_method", None)
+                        if raw_capture
+                        else None,
+                        "verbatim_quote",
+                        None,
                     ),
                     raw_ref_string=None,
                     raw_deferral_sentence=None,
+                    raw_binding=None,
                     verbatim=None,
                     resolved=None,
                     resolution=None,

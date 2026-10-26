@@ -53,6 +53,11 @@ _ORDER = (
     "ciric_2017",
 )
 
+#: Added for version-3 runs (Amendment 7): the binding the MODEL stated, and whether it agrees with
+#: the frozen heuristic's class. Emitted only when the run's records carry ``raw_binding``, so the
+#: v1/v2/A-B/ciric projections regenerate byte-for-byte as before.
+_V3_COLUMNS = ("model_state", "model_vs_heuristic")
+
 _COLUMNS = (
     "paper_id",
     "draw",
@@ -94,6 +99,16 @@ def _row(rec: dict[str, Any]) -> dict[str, Any]:
     elif status == "missing":
         row, state = 6, "absent"
     resolved = rec["span_start"] is not None
+    model_state = rec.get("raw_binding")
+    if status == "extracted" and model_state is not None:
+        expected = {"operation_phrase": "described_only", "tool_name": "named_tool"}.get(heuristic)
+        agreement = (
+            "undecided"
+            if expected is None
+            else ("agree" if expected == model_state else "disagree")
+        )
+    else:
+        agreement = ""
     return {
         "paper_id": rec["paper_id"],
         "draw": rec["draw"],
@@ -109,6 +124,8 @@ def _row(rec: dict[str, Any]) -> dict[str, Any]:
         "completion_attempts": rec["completion_attempts"],
         "reask_occurred": "yes" if rec["reask_occurred"] else "no",
         "wall_seconds": rec["wall_seconds"],
+        "model_state": model_state or "",
+        "model_vs_heuristic": agreement,
     }
 
 
@@ -179,6 +196,7 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = args.results_dir / "motion_probe"
     manifest = json.loads((run_dir / "manifest.json").read_text(encoding="utf-8"))
     rows: list[dict[str, Any]] = []
+    raw_records: list[dict[str, Any]] = []
     papers: list[str] = []
     for paper_id in _ORDER:
         src = run_dir / f"{paper_id}.jsonl"
@@ -186,17 +204,29 @@ def main(argv: list[str] | None = None) -> int:
             continue
         papers.append(paper_id)
         with src.open(encoding="utf-8") as f:
-            rows.extend(_row(json.loads(line)) for line in f if line.strip())
+            for line in f:
+                if line.strip():
+                    rec = json.loads(line)
+                    raw_records.append(rec)
+                    rows.append(_row(rec))
     unordered = sorted(set(manifest["papers"]) - set(papers))
     if unordered:
         raise SystemExit(f"papers in the manifest but not in _ORDER or on disk: {unordered}")
 
+    v3 = any("raw_binding" in r for r in raw_records)
+    columns = _COLUMNS + _V3_COLUMNS if v3 else _COLUMNS
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", encoding="utf-8", newline="") as f:
         f.write(_header(manifest, args.run_date, len(papers), len(rows)))
-        w = csv.DictWriter(f, fieldnames=_COLUMNS)  # csv default CRLF rows, as the v1 file has
+        w = csv.DictWriter(f, fieldnames=columns, extrasaction="ignore")  # CRLF rows, as v1
         w.writeheader()
         w.writerows(rows)
+    if v3:
+        n = sum(1 for r in rows if r["model_vs_heuristic"] == "disagree")
+        u = sum(1 for r in rows if r["model_vs_heuristic"] == "undecided")
+        print(
+            f"model vs heuristic: {n} disagree, {u} heuristic-undecided, over the extracted draws"
+        )
     print(f"{len(rows)} draws over {len(papers)} papers -> {args.out}")
     return 0
 

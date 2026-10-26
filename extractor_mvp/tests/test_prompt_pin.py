@@ -87,7 +87,17 @@ _PINNED = {
     #: artifact of the 2026-10-22 run and of the A/B's 378a arm. The restored stanza is a version
     #: already measured (2026-10-21; the A/B's 56bc arm), so this is not a new vintage. ciric_2017
     #: runs under it next (Amendment 6).
-    "MOTION_METHOD_PROMPT": ("56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a"),
+    #:
+    #: VERSION 3, 2026-10-26 (later), by the author's ruling: rule A and option (c) together, as ONE
+    #: new version (prereg Amendment 7; protocol v1.7 CALL 11). Superseded value
+    #: 56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a, which stays on the
+    #: 2026-10-21 run, the A/B's 56bc arm and the ciric control of 2026-10-26; 378a294f... stays on
+    #: the 2026-10-22 run and the A/B's 378a arm. Written from the protocol, not from any paper's
+    #: text: STEP 4 carries CALL 11's deferral line as ordered steps, and STEP 5 sets the new
+    #: response-model field `motion_correction_binding` on every extracted draw. A NEW VINTAGE: its
+    #: draws are never pooled with any earlier run's. Pre-declared readings are in Amendment 7,
+    #: written before the first draw.
+    "MOTION_METHOD_PROMPT": ("ea7b0084255454fd38a6de566a5cccf2936b67b09910f6ffa15a79d01c5734a7"),
 }
 
 _VINTAGE_NOTE = (

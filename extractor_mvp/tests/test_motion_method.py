@@ -64,8 +64,12 @@ def _prep_payload() -> PreprocessingExtraction:
 
 
 def _motion(status: str, **kw: Any) -> MotionMethodExtraction:
+    # version 3 (2026-10-26): an extracted payload must state its binding; these fixtures are the
+    # paper's-own-words shape, so "described_only" unless a test says otherwise.
+    binding = kw.pop("binding", "described_only" if status == "extracted" else None)
     return MotionMethodExtraction(
-        motion_correction_method=FieldExtractionResult(status=status, **kw)
+        motion_correction_method=FieldExtractionResult(status=status, **kw),
+        motion_correction_binding=binding,
     )
 
 
@@ -372,3 +376,60 @@ def test_no_bare_id_map_may_key_on_an_id_shared_by_two_targeted_fields() -> None
             "behaviour. Either re-key this map on (step kind, field), or have the affected "
             "caller opt out explicitly the way extract_motion_method does."
         )
+
+
+# ---------------------------------------------------------------------------
+# Option (c), 2026-10-26 — the model states the binding; the schema enforces when
+# ---------------------------------------------------------------------------
+def test_binding_is_required_when_extracted_and_forbidden_otherwise() -> None:
+    """Amendment 7: ``motion_correction_binding`` is set ONLY on an extracted draw, and then always.
+    A violation is a validation error -- under instructor, a reask the probe counts -- never a
+    silent default that would make the heuristic's control vacuous."""
+    import pytest
+
+    ok = MotionMethodExtraction(
+        motion_correction_method=FieldExtractionResult(
+            status="extracted", value="realigned", verbatim_quote="volumes were realigned"
+        ),
+        motion_correction_binding="named_tool",
+    )
+    assert ok.motion_correction_binding == "named_tool"
+    with pytest.raises(ValueError, match="requires motion_correction_binding"):
+        MotionMethodExtraction(
+            motion_correction_method=FieldExtractionResult(
+                status="extracted", value="realigned", verbatim_quote="volumes were realigned"
+            )
+        )
+    for status, kw in (
+        ("missing", {}),
+        ("deferred", {"deferral_sentence": "as described in ref", "ref_string": "ref"}),
+    ):
+        with pytest.raises(ValueError, match="set only when status='extracted'"):
+            MotionMethodExtraction(
+                motion_correction_method=FieldExtractionResult(status=status, **kw),
+                motion_correction_binding="described_only",
+            )
+        # and the status path itself is untouched: no binding is fine
+        MotionMethodExtraction(motion_correction_method=FieldExtractionResult(status=status, **kw))
+
+
+def test_raw_out_carries_the_binding_beside_the_field_result() -> None:
+    from extractor_mvp.extractor import extract_motion_method
+
+    raw_out: list[MotionMethodExtraction] = []
+    extract_motion_method(
+        _paper(),
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            motion=_motion(
+                "extracted",
+                value="realigned to the mean image of each session",
+                verbatim_quote="realigned to the mean image of each session using SPM12",
+                binding="described_only",
+            ),
+        ),
+        raw_out=raw_out,
+    )
+    assert raw_out[0].motion_correction_binding == "described_only"
+    assert raw_out[0].motion_correction_method.status == "extracted"

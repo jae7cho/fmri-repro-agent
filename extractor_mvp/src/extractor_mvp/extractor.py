@@ -61,7 +61,7 @@ from fmri_repro.spec.provenance import (
     ProvenancedField,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.motion_guard import motion_post_check
@@ -1090,6 +1090,23 @@ value for this acquisition — use status="missing" for that field.
 #      separate the two anchors on the axis it names; the conflict is reported in Amendment 4,
 #      not resolved here.
 #
+# VERSION 3, 2026-10-26 (later): written from protocol v1.7 (CALL 11, rule A) and option (c) of
+# prereg Amendment 1 -- not from any paper's text. Two changes to the 56bc6305... stanza:
+#   * a CITATION step (STEP 4) carrying CALL 11 as ordered steps: with no bound ESTIMATE tool, the
+#     method is DEFERRED to a citation only when the text states none of the algorithm, the transform
+#     type, the reference image or the cost function; stating any one makes it described in the
+#     paper's own words, whatever it cites. The 56bc deferral arm had carried CALL 7's
+#     substitute-or-support test, which left poldrack on row 1 on 20 of 20 draws against a
+#     `deferred` label (Amendment 4 §3). The model has returned "deferred" on 0 of 180 draws; this
+#     version is the first test of whether that state is reachable.
+#   * option (c): the model states the CALL 1 binding itself in a new response-model field,
+#     `motion_correction_binding`, set only when status is "extracted". The frozen heuristic
+#     (scripts/motion_value_kind.py) keeps running as the independent control; the projection
+#     carries both and counts disagreements. This supersedes Amendment 2 ruling 4 (Amendment 7).
+# The structured-noise routing and the value-in-quote check stay in code (motion_guard.py); the
+# stanza does not name those tools. Pinned in tests/test_prompt_pin.py with a dated note; 56bc6305...
+# and 378a294f... retained there.
+#
 # REVERTED 2026-10-26, by the author's ruling, to the stanza as it stood before correction 7 (sha256
 # 56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a, restored verbatim from the parent
 # of the commit that made the correction). The same-day control of 2026-10-25
@@ -1154,29 +1171,41 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   belongs to a different field, then the assertion that motion correction was performed still
   stands, but no tool name survives.
 
-## STEP 4 -- OUTPUT
-- Exactly one tool in ESTIMATE and BOUND -> status "extracted"; value = that tool; verbatim_quote
-  = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of the same tool.
-- The subject gate passed and the operation is described, but no bound tool is in ESTIMATE ->
+## STEP 4 -- CITATION (only when step 3 found NO bound tool in ESTIMATE)
+If a tool is BOUND in ESTIMATE, skip this step: the tool is the method.
+Otherwise decide between "deferred" and the paper's own words by what the text itself states
+about HOW the motion was estimated. Exactly four details count:
+  (a) the algorithm, (b) the transform type (for example rigid body), (c) the reference image the
+  volumes are aligned to, (d) the cost function.
+- The operation is named under a cited pipeline, a cited method or a cited paper, and the text
+  states NONE of the four details -> the method is DEFERRED to that citation.
+- The text states ANY of the four details -> the method is DESCRIBED in the paper's own words,
+  whatever it cites. A citation beside a stated detail supports the description; it does not
+  replace it.
+- The text cites nothing for the operation -> the method is DESCRIBED in the paper's own words,
+  on the paper's own assertion.
+A package name alone is neither a statement of how the motion was estimated nor a citation.
+Listing the step among others under a citation is a description ONLY when the listing carries
+one of the four details.
+
+## STEP 5 -- OUTPUT
+- Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
+  that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY (never a CONSUME mention of the
+  same tool); motion_correction_binding = "named_tool".
+- The subject gate passed and the method is DESCRIBED (step 4), with no bound tool in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing
-  those words. Do NOT substitute a word of your own, and do NOT invent a category. Tools named
-  elsewhere in the kept passages do NOT license a value.
-- The citation or pipeline REPLACES the description -> status "deferred". This arm applies ONLY
-  when the text does not describe the operation itself and instead points elsewhere for it:
-  "preprocessed as previously described in [ref]", or "we used the <pipeline> minimally
-  preprocessed data", where the estimate is credited to that source. Then ref_string = the
-  pipeline name if the text gives one, else the citation as written; deferral_sentence = the
-  sentence that defers.
-  A citation or package that merely SUPPORTS or accompanies a description is NOT a deferral:
-  - if the text describes the operation and cites a reference FOR that algorithm, the citation
-    supports the description -- use the rule above (the paper's own words), not this one;
-  - if a package is named as governing a whole set of procedures while this step is described in
-    the text's own voice, that is step 3's NOT BOUND case -- again the rule above, not this one.
-  The question is what the citation or package DOES in the sentence: replace the description, or
-  stand behind one that is already there.
+  those words; motion_correction_binding = "described_only". Do NOT substitute a word of your
+  own, and do NOT invent a category. Tools named elsewhere in the kept passages do NOT license a
+  value.
+- The method is DEFERRED (step 4) -> status "deferred"; ref_string = the pipeline name if the
+  text gives one, else the citation as written; deferral_sentence = the sentence that names the
+  operation under the citation; leave motion_correction_binding unset.
 - Nothing about between-volume alignment, or the step is stated as not performed -> status
-  "missing".
+  "missing"; leave motion_correction_binding unset.
+
+motion_correction_binding is set ONLY when status is "extracted", and then it is ALWAYS set:
+"named_tool" when step 3 found a bound tool, "described_only" otherwise.
 
 verbatim_quote and deferral_sentence must be copied EXACTLY from the text below, character for
 character, or the field is discarded.
@@ -1195,9 +1224,33 @@ class MotionMethodExtraction(BaseModel):
     hash-pinned shared prompt or the response model every other field is extracted under. The
     precedent is ``acquisition_discovery._LLMAcquisitionList``: a private one-purpose schema with
     its own prompt constant and the same create() settings.
+
+    ``motion_correction_binding`` — option (c) of prereg Amendment 1, adopted 2026-10-26 (Amendment
+    7): the model states the CALL 1 binding itself. Set ONLY when ``status == "extracted"``, and then
+    always: ``"named_tool"`` when a tool is bound to the step, ``"described_only"`` when the value is
+    the paper's own words. Deferred and missing keep the existing status path and leave it unset.
+    The frozen heuristic (``scripts/motion_value_kind.py``) still classifies the value independently;
+    the probe's projection carries both and counts the disagreements. Enforced by a validator, so a
+    missing or stray binding is a reask the probe counts, not a silent default.
     """
 
     motion_correction_method: FieldExtractionResult
+    motion_correction_binding: Literal["named_tool", "described_only"] | None = None
+
+    @model_validator(mode="after")
+    def enforce_binding_constraints(self) -> MotionMethodExtraction:
+        status = self.motion_correction_method.status
+        if status == "extracted" and self.motion_correction_binding is None:
+            raise ValueError(
+                "status='extracted' requires motion_correction_binding: 'named_tool' when a tool is "
+                "BOUND to this step (STEP 3), 'described_only' when the value is the paper's own words."
+            )
+        if status != "extracted" and self.motion_correction_binding is not None:
+            raise ValueError(
+                "motion_correction_binding is set only when status='extracted'; leave it unset for "
+                "'deferred' and 'missing'."
+            )
+        return self
 
 
 #: The ``_FIELD_SPECS`` row for the motion call, kept beside it rather than in that list: the
@@ -1217,7 +1270,7 @@ def extract_motion_method(
     model: str,
     *,
     client: Any | None = None,
-    raw_out: list[FieldExtractionResult] | None = None,
+    raw_out: list[MotionMethodExtraction] | None = None,
 ) -> tuple[ProvenancedField, ExtractionDiagnostic | None, DeferralRecord | None]:
     """One extra ``create()`` per paper, on the SAME slice as the main call.
 
@@ -1247,7 +1300,8 @@ def extract_motion_method(
         temperature=0.0,
         max_retries=2,
     )
-    # ``raw_out``: pass a list to capture the model's OWN FieldExtractionResult before
+    # ``raw_out``: pass a list to capture the model's OWN response (the FieldExtractionResult and
+    # the binding it states) before
     # _process_field turns it into a SpecifiedTerm. Same idiom as extract_preprocessing's
     # ``resolutions`` — diagnostic capture only, and the default None is a no-op that changes
     # nothing. The reachability probe needs it because the pre-registration asks for the processed
@@ -1255,7 +1309,9 @@ def extract_motion_method(
     # FieldExtractionResult (:45-46), and how its ``verbatim=None`` trigger maps between the two is
     # NOT yet ruled. Recording both layers means the run survives either ruling without a re-run.
     if raw_out is not None:
-        raw_out.append(extraction.motion_correction_method)
+        # the WHOLE response, since 2026-10-26: the binding the model states travels with the
+        # FieldExtractionResult it qualifies (the probe records both; Amendment 7).
+        raw_out.append(extraction)
     _attr, field_id, dotted, literal_type, t = _MOTION_FIELD_SPEC
     raw = extraction.motion_correction_method
     pf, diag, deferral = _process_field(

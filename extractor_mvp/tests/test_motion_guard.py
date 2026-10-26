@@ -68,8 +68,12 @@ def _prep_payload() -> PreprocessingExtraction:
 
 
 def _motion(status: str, **kw: Any) -> MotionMethodExtraction:
+    # version 3 (2026-10-26): an extracted payload must state its binding; these fixtures are the
+    # paper's-own-words shape, so "described_only" unless a test says otherwise.
+    binding = kw.pop("binding", "described_only" if status == "extracted" else None)
     return MotionMethodExtraction(
-        motion_correction_method=FieldExtractionResult(status=status, **kw)
+        motion_correction_method=FieldExtractionResult(status=status, **kw),
+        motion_correction_binding=binding,
     )
 
 
@@ -178,7 +182,10 @@ def test_unsupported_value_is_demoted_after_resolution_with_one_completion() -> 
         raw_out=raw_out,
     )
     assert counter == {"MotionMethodExtraction": 1}, counter  # no reask
-    assert raw_out[0].value == "ToolKit 9"  # the raw layer is the model's own
+    assert (
+        raw_out[0].motion_correction_method.value == "ToolKit 9"
+    )  # the raw layer is the model's own
+    assert raw_out[0].motion_correction_binding == "described_only"
     assert pf.extraction.status == "MISSING_FROM_PAPER"
     assert pf.inference.reason == MOTION_VALUE_UNSUPPORTED
     assert diag is not None and diag.failure_reason == MOTION_VALUE_UNSUPPORTED
