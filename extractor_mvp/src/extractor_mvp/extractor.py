@@ -1068,6 +1068,17 @@ value for this acquisition — use status="missing" for that field.
 #      separate the two anchors on the axis it names; the conflict is reported in Amendment 4,
 #      not resolved here.
 #
+# REVERTED 2026-10-26, by the author's ruling, to the stanza as it stood before correction 7 (sha256
+# 56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a, restored verbatim from the parent
+# of the commit that made the correction). The same-day control of 2026-10-25
+# (docs/findings/motion-probe-ab-stanza-vs-day.md, prereg Amendment 5) showed that correction 7 is
+# what moved agtzidis to `SPM12` on 10 of 10 and binder to `AFNI` on 8 of 10 -- both values pulled
+# from a sentence other than the one quoted -- while derosa, the paper it was written for, returned
+# `ICA-AROMA` on all 20 draws across both versions. Restoring a measured version creates no new
+# vintage. The routing of CompCor / ICA-FIX / ICA-AROMA moves to code
+# (docs/design/DELTA_value_in_quote_motion.md, ruling 4); the comment block above is kept as the
+# record of what was tried.
+#
 # ORDERED STEPS, not prose exclusions, because the protocol says so in as many words
 # (protocol:526): "the axes are to be **emitted as discrete steps**, not offered as prose
 # guidance." Its reason is docs/findings/temporal-firewall-fix.md, which found the model
@@ -1119,15 +1130,11 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   the package is named, named with a version, or named in the same sentence as the step.
 - BOUND BUT ROUTED ELSEWHERE: if the only tool bound to this step performs an operation that
   belongs to a different field, then the assertion that motion correction was performed still
-  stands, but no tool name survives. In particular, the tools COBIDAS D.3 lists under "Artifact
-  and structured noise removal" -- CompCor, ICA-FIX, ICA-AROMA -- belong to THAT row, not to this
-  one, EVEN WHEN the text says "motion correction via" one of them. Here they supply nothing:
-  the value is the paper's own phrase for the operation (step 4, second rule), never the tool.
+  stands, but no tool name survives.
 
 ## STEP 4 -- OUTPUT
-- Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
-  that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of
-  the same tool.
+- Exactly one tool in ESTIMATE and BOUND -> status "extracted"; value = that tool; verbatim_quote
+  = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of the same tool.
 - The subject gate passed and the operation is described, but no bound tool is in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing

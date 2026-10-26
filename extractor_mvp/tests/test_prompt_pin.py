@@ -77,7 +77,17 @@ _PINNED = {
     #:
     #: Every draw after this date names 378a294f...; any draw naming 56bc6305... ran the superseded
     #: stanza. The two are different vintages and are never pooled.
-    "MOTION_METHOD_PROMPT": ("378a294f94ca9f0fc6bd45bd42caf4646a007c7d705d05c8b5f584dd66ca8cab"),
+    #:
+    #: REVERTED 2026-10-26 to 56bc6305..., by the author's ruling. The 2026-10-25 same-day control
+    #: (docs/findings/motion-probe-ab-stanza-vs-day.md; prereg Amendment 5) ran both stanzas on
+    #: agtzidis_2020 and binder_1999 back to back: each reproduced its own earlier run, so the
+    #: 2026-10-22 edit, not the day, moved agtzidis to `SPM12` (10 of 10) and binder to `AFNI`
+    #: (8 of 10) -- tool names from sentences other than the quoted one -- and it left derosa
+    #: unchanged (`ICA-AROMA` on all 20 draws across both stanzas). 378a294f... stays on every
+    #: artifact of the 2026-10-22 run and of the A/B's 378a arm. The restored stanza is a version
+    #: already measured (2026-10-21; the A/B's 56bc arm), so this is not a new vintage. ciric_2017
+    #: runs under it next (Amendment 6).
+    "MOTION_METHOD_PROMPT": ("56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a"),
 }
 
 _VINTAGE_NOTE = (
