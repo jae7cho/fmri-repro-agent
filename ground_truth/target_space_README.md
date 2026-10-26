@@ -151,6 +151,17 @@ below only as a prior. `score_target_space.py` still reads the frozen file and s
 plurality on status, winning draw supplies the value**. One denominator, the pre-registered one: the
 19 scored papers minus the 2 non-blind (oconnor, mueller).
 
+> **One of these 17 is not graded from what the report shows.** `agtzidis_2020` carries
+> `maj_status = MISSING_FROM_PAPER` with `diag_reason = extraction_quote_unresolved:quote_not_found`,
+> and is graded **`correct: yes`** via `scoring_mode = fallback` — i.e. from the diagnostic's raw value
+> `'MNI'`, while the field the report renders says *not reported in source*. A reader auditing that
+> paper's report would find no target space and score it a miss. The cause is the `×`→`/C2` pypdf glyph
+> leak whose fix is unbuilt (`target_space_README.md:115-118`;
+> `docs/design/DELTA_glyph_leak_span_recovery.md`). **Until that fix lands, this rate measures the report
+> for 16 cells and the diagnostic for one.** Repairing it does not move the number — the grade is
+> `family_specified` either way — it makes the number measure one thing.
+
+
 **Why the aggregation is on the face of the rate, not in a footnote.** Both vintages are K=3 runs
 collapsed to ONE status per paper *before* grading. The frozen CSV's own header says `status = K=3
 MAJORITY` and `score_target_space.py:173` reads that collapsed column; for v050,

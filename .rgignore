@@ -1,0 +1,26 @@
+# Held-out corpus text — prereg C11/C26.
+#
+# liu_2005, tang_2025 and wheaton_2004 are the only uncontaminated papers left in the motion
+# corpus. Reading their text in any form destroys their value permanently, and a recursive
+# search is enough to do it: on 2026-10-22 a repo-wide `grep` for "/C2" printed a verbatim
+# wheaton_2004 methods sentence out of results/subject_corpus_sweep.txt, and a second search
+# evaluated its pattern against held-out-named result JSONs. Neither opened a PDF; both show the
+# hold-out was a reader's discipline rather than a property of the repository.
+#
+# SCOPE, STATED HONESTLY: ripgrep (rg) reads this file. PLAIN `grep -r` DOES NOT. Both incidents
+# above came from `grep`, so this closes the rg path only. The remaining protection is the habit
+# of excluding these ids explicitly, which is why they are also named in
+# extractor_mvp/scripts/motion_probe.py (_HELD_OUT, refused before a client is built) and in
+# scripts/glyph_leak_prediction.py (booleans-only output).
+
+*liu_2005*
+*tang_2025*
+*wheaton_2004*
+
+# Stores verbatim methods sentences for the whole corpus, held-out papers included.
+extractor_mvp/results/subject_corpus_sweep.txt
+
+# Listed although it is covered by *liu_2005* above, because it is the one held-out artifact that
+# is deliberately TRACKED: it is a pipeline INPUT (scripts/run_pending_target_space.py:31 feeds it
+# as liu_2005's methods slice). It stays in git and stays out of searches.
+ground_truth/liu_2005_deinterleaved_methods.txt

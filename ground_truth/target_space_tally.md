@@ -33,6 +33,12 @@ aggregation **K=3, plurality on status (`extractor_status`; per-draw record in `
 Denominator is the 19 scored papers minus the 2 non-blind
 (mueller_2021, oconnor_2017), who appear as worked-example rows as well as their own.
 
+> **The same agtzidis caveat applies to this vintage**, which also records it
+> `MISSING_FROM_PAPER`. This file's columns do not carry `scoring_mode`, so the fallback cannot be read
+> off the frozen CSV the way it can for v050 — the qualifier is stated for the reader, not derived here.
+> See the v050 rate below.
+
+
 ### Per-label state counts
 
 Rows are ground-truth labels, columns are graded predictions; the diagonal is correct.
@@ -55,6 +61,17 @@ Source: `target_space_predictions_v050.csv` — real 0.5.0 extractor output, K=3
 aggregation **K=3, plurality on status, winning draw supplies the value (`maj_status`; per-draw in `k3_status`)**.
 Denominator is the 19 scored papers minus the 2 non-blind
 (mueller_2021, oconnor_2017), who appear as worked-example rows as well as their own.
+
+> **One of these 17 is not graded from what the report shows.** `agtzidis_2020` carries
+> `maj_status = MISSING_FROM_PAPER` with `diag_reason = extraction_quote_unresolved:quote_not_found`,
+> and is graded **`correct: yes`** via `scoring_mode = fallback` — i.e. from the diagnostic's raw value
+> `'MNI'`, while the field the report renders says *not reported in source*. A reader auditing that
+> paper's report would find no target space and score it a miss. The cause is the `×`→`/C2` pypdf glyph
+> leak whose fix is unbuilt (`target_space_README.md:115-118`;
+> `docs/design/DELTA_glyph_leak_span_recovery.md`). **Until that fix lands, this rate measures the report
+> for 16 cells and the diagnostic for one.** Repairing it does not move the number — the grade is
+> `family_specified` either way — it makes the number measure one thing.
+
 
 ### Per-label state counts
 

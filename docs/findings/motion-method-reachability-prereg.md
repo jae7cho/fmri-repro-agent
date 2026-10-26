@@ -306,3 +306,64 @@ header, so every draw names the stanza it ran under and a mid-probe edit cannot 
 pre-registered one. The stanza was revised twice on review before any run — six defects in total,
 recorded at the constant and in the pin's dated note — and its hash at the time of this amendment is
 `56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a`.
+
+---
+
+## Amendment 3 (2026-10-22) — the positive control was mis-specified; its criterion is void
+
+**Written AFTER the run, which is exactly why it is written here rather than applied quietly.** The
+2026-10-21 probe has been executed and its output read. This amendment does not change any pre-run
+ruling, any state-map row, or any reported count. It records that one pre-registered criterion was
+not sound when it was written, and retires it.
+
+### What was wrong
+
+`:6` specified `agtzidis_2020` as the positive control, "→ SPM12", on the strength of the
+committed label `named_tool` / SPM12. **That label contradicted CALL 1 v1.5**, the binding test in
+the governing ground-truth protocol. agtzidis names SPM12 once, two sentences before the step
+clause, for "the fMRI data analysis" as a whole, and binds no tool to the realignment. Under the
+test as written that is the *procedure set* case — derosa's FSL shape — so the correct state is
+`described_only`, with SPM12 on the inference arm. The protocol records this as a dated
+clarification at `ground-truth-protocol-motion_correction.md` v1.6 (2026-10-22), which keeps CALL 1
+v1.5 and corrects its worked example.
+
+So the control asserted an expected answer its own protocol did not license. **Its criterion is void
+as stated**, and the probe's agtzidis result cannot be read as a stanza failure: the 9 of 10 draws
+that returned an operation phrase are consistent with the corrected label, and the 1 draw that
+returned `SPM12` is the outlier.
+
+### What the probe therefore cannot show
+
+**No paper in the six has a named tool as its correct answer.** power, binder, liu_2013, derosa and
+poldrack are all `described_only` or controls for other things, and agtzidis has just moved to
+`described_only` as well. The probe can show that `described_only` is reachable — rows 1, 2 and 3
+were all produced — but it **cannot show that the stanza emits a tool name when a tool name is
+correct.** That capability is untested, and no count in this run may be read as evidence either way.
+
+This is a gap in coverage, not a failure. It is stated plainly so that the probe's conclusions are
+not over-read: "`described_only` is expressible" stands; "the stanza distinguishes bound from
+unbound tools" does not, and was never measured.
+
+### The replacement, and its status
+
+**A replacement positive control is required before any claim about named-tool emission.** It will be
+named by the author. Two constraints bind it:
+
+1. **It is chosen after seeing this run.** Any paper picked now is picked with knowledge of how the
+   stanza behaved on six others, and a control selected post hoc is weaker evidence than one fixed in
+   advance. This must be stated wherever the replacement's result is reported — not as a caveat in a
+   footnote but in the same sentence as the number.
+2. **It may not be liu_2005, tang_2025 or wheaton_2004** (C11/C26). Those three remain unread, and
+   spending one as a control would cost the only uncontaminated cells left.
+
+Until the replacement runs, the named-tool arm is **untested**, and the honest statement of the
+probe's scope is: it measured reachability of `described_only` on five papers and one control that
+turned out to be mis-specified.
+
+### What is unchanged
+
+Amendment 2's five pre-run rulings stand in full. Ruling 4's trigger (binder `undecided` on 10 of 10,
+threshold 6) fired on raw values and is unaffected by any of this. The state map, the `verbatim=None`
+trigger decomposition, the heuristic's wording and the stanza hash
+`56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a` are all as pre-registered. No
+count in `docs/findings/motion-probe-v1-results.md` moves; one label on one of them does.

@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.5)
+# Ground-truth protocol — `motion_correction` (v1.6)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -28,6 +28,18 @@
   estimator nor nuisance consumer) and `HOST` (MATLAB, Python). Makes the decision ordered and mandatory
   (subject before role, role before tool). Records CALL 10's seven-passage fitting set and the resulting
   prompt-fitting contamination inside the protocol.
+- **v1.6 (2026-10-22):** **CALL 1 v1.5 is KEPT, and its agtzidis worked case is corrected.** No rule
+  changes; one worked example does. The v1.5 **Bound** bullet called agtzidis's SPM12 "a one-to-one
+  binding", a reading the full sentence does not support: SPM12 is named once, two sentences earlier,
+  governing "the fMRI data analysis", and the clause it was quoted against enumerates realignment,
+  coregistration, normalization and resampling (smoothing follows). That is the *procedure set* shape
+  v1.5 already treats as **Not bound** for derosa's FSL, so the binding test decides agtzidis the same
+  way: **`described_only`**, with SPM12 on the **inference arm** rather than the extraction arm.
+  Surfaced by the 2026-10-21 reachability probe, whose stanza returned an operation phrase on 9 of 10
+  draws — behaviour the committed label scored as wrong and this clarification scores as right. The
+  ruling was made after seeing that output and is dated accordingly. The competing reading is recorded
+  as defensible, not dismissed (see the v1.6 block in §5). agtzidis's label is the author's to change;
+  the labelling workbook is untouched by this edit.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -168,9 +180,13 @@ row, so the package-vs-wrapper rule does not decide its `method`.)
 it does not say which does. The governing question is neither package-vs-wrapper nor named-vs-unnamed but
 **binding**: *does the paper attribute a named tool to THIS step, or only to the enclosing procedure set?*
 
-- **Bound** → the tool populates the field. agtzidis: *"performed with SPM12 … The process comprised
+- **Bound** → the tool populates the field. ~~agtzidis: *"performed with SPM12 … The process comprised
   realigning the functional data to the mean image of each session"* — the step is described in the
-  paper's own voice and the package governs it; SPM12 → Realign is a one-to-one binding. `named_tool` / SPM12.
+  paper's own voice and the package governs it; SPM12 → Realign is a one-to-one binding. `named_tool` /
+  SPM12.~~ **This example is SUPERSEDED by the v1.6 clarification below; agtzidis is a `described_only`
+  case, not the Bound case.** The *rule* stands unchanged — a tool bound to this step populates the
+  field — and is now illustrated by the SPM-family papers the v1.1 pointer list names, each labelled
+  from its own text.
 - **Not bound** → a package named as governing a *procedure set* populates nothing. It is not enough that
   the package is named, named with a version, or named in the same sentence as the step.
 - **Bound but disqualified** → where the only tool bound to this step is routed elsewhere by another call,
@@ -189,6 +205,49 @@ reaches for "but FSL is named with a version" has skipped the test.
 
 This is the same discipline CALL 10's Axis 2 enforces one level down: the tool must hold the ESTIMATE role
 *for this step*, not merely appear in the passage.
+
+**Clarification (v1.6, 2026-10-22) — agtzidis_2020 is `described_only`, beside derosa.** CALL 1 v1.5 is
+kept. What changes is which side of it agtzidis falls on, because v1.5's own quotation elided the
+evidence: its *"performed with SPM12 … The process comprised realigning"* hides 121 characters spanning
+two sentence boundaries, and stops immediately before the rest of the clause.
+
+The sentence in full, whitespace collapsed (`/C2` is a pypdf glyph leak for the printed `×`):
+
+> The fMRI data analysis was performed with **SPM12** using Matlab 9.2. We initially followed a standard
+> preprocessing pipeline for each recording (Poldrack et al., 2011). The process comprised **realigning**
+> the functional data to the mean image of each session (without slice timing correction),
+> **coregistering** them to the anatomical T1 scan, **normalizing** them to the MNI template, and
+> **resampling** them into 3 × 3 × 3 mm3 voxels. Finally, we applied **smoothing** …
+
+**SPM12 is named once, for the analysis as a whole, and no tool is tied to the realignment.** One mention
+governs five steps, two sentences away; the word "motion" never appears. Applying the binding test as
+written: not bound. So the **extraction arm is `described_only`**, and **SPM12 belongs on the inference
+arm** — the paper's own voice asserts the operation, and the tool is an inference from the enclosing
+analysis statement rather than a value the paper bound to this step.
+
+| paper | tool named, versioned | bound to this step? | state |
+|---|---|---|---|
+| derosa_2025 | FSL 5.0.10 | no — governs a procedure set | `described_only`, blank value |
+| **agtzidis_2020** | **SPM12** | **no — governs the whole analysis** | **`described_only`**, SPM12 on the inference arm |
+
+The two now sit together, which is what makes the asymmetry paragraph above coherent rather than
+perverse: nothing turns on FSL being versioned and SPM12 not, because neither is bound.
+
+**The competing reading is defensible and is recorded, not dismissed.** COBIDAS §4.3 p.10 models
+attribution at the step level — "SPM's realign tool" — which, read strictly, licenses treating a
+package named for a pipeline as naming the tool for each step it enumerates. That sentence is framed for
+papers that *combine* tools, where step-level attribution is the only way to say who did what; agtzidis
+names one package for everything, which is the case the framing does not address. A rater who reads
+COBIDAS as decisive here reaches `named_tool` / SPM12, and that is a disagreement about the scope of a
+COBIDAS sentence, not a misapplication of this protocol.
+
+**Provenance of this clarification.** It was made **after** seeing the 2026-10-21 probe output, in which
+the extractor returned an operation phrase on 9 of 10 draws and `SPM12` on 1. Under the superseded
+example those 9 draws were errors; under this clarification they are correct. A ruling that converts a
+measured failure into a measured success cannot also be cited as evidence that the extractor performs
+well, and §7's co-adjudication reporting rules apply to it in full. The consequence for the probe is
+recorded in `docs/findings/motion-method-reachability-prereg.md` Amendment 3: the positive control's
+criterion is void as stated.
 
 **`deferred` is not a reporting failure.** Under `DESIGN_cobidas_coverage.md` §2, a D.3 row is addressed
 iff a field is `EXTRACTED` **or** `DEFERRED_TO_CITATION` — so oconnor satisfies D.3 bullet 1 by deferral
