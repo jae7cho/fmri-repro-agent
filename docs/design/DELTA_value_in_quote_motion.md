@@ -223,3 +223,19 @@ binding test, protocol v1.5/v1.6), and no value-in-quote rule reaches it.
 **Status.** No build yet. When built: the dated note at `extractor.py:571-573`, synthetic test strings,
 the 170-draw replay reported as counts beside the originals, and the vintage statement from §3 — under
 ruling 1 the raw layer and the state-map rows do not move, and only the processed layer re-vintages.
+
+---
+
+## 5. Built — 2026-10-26
+
+Implemented as `extractor_mvp/src/extractor_mvp/motion_guard.py` (pure functions:
+`quote_supports_value_inflected`, `structured_noise_tool`, `motion_post_check`), applied in
+`extract_motion_method` after `_process_field` returns, with two literal-prefixed reasons so
+`test_render.py`'s reason scan sees both; both bases are in `cobidas._UNVERIFIABLE_GAP_BASES` and in
+render's bucket and wording tables; the dated note sits at `extractor.py:571-573`'s comment. Tests:
+`tests/test_motion_guard.py` (synthetic strings only), mutation-checked on eight paths. Acceptance: the
+180-draw replay (`scripts/motion_guard_replay.py`; `docs/findings/motion-value-in-quote-replay.md`)
+rejects the 30 carries, routes derosa's 20, keeps ciric's 20 and the 8 inflected phrases, and lists
+no other change. Identity gate against HEAD: 19 identical (no stored JSON carries a motion step);
+negative control against `d31e8b7`: 19 changed, as derived beforehand. The vintage statement of §3
+holds: raw outputs and state-map rows are untouched; the processed layer is re-vintaged for motion.
