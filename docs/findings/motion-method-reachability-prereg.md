@@ -652,3 +652,82 @@ quote — as its own named line, against Amendment 4 §1's table, and not classi
 
 ciric_2017 is post hoc and already contaminated (Amendment 4 §1); every report of its count says so in
 the same sentence. Labels unchanged. The held-out three untouched. No accuracy figure.
+
+---
+
+## Amendment 7 (2026-10-26) — version 3 of the stanza: rule A and option (c), one new vintage
+
+**Written BEFORE any draw under this version. The run has not happened; the stanza is on review.**
+Ruled by the author on 2026-10-26: the deferral rule (A) and the model-emitted binding (option (c) of
+Amendment 1) are adopted together, so one new prompt version carries both rather than two.
+
+### What changed
+
+- **Protocol v1.7, CALL 11** (`docs/ground-truth-protocol-motion_correction.md`): with no bound ESTIMATE
+  tool, a paper that names the operation under a cited pipeline or method and states none of the
+  algorithm, transform type, reference image or cost function **defers** to that citation; stating any
+  one of the four makes it `described_only`, whatever it cites; citing nothing and binding no tool is
+  `described_only` on the paper's own assertion. CALL 7's enumeration criterion is narrowed; CALL 10's
+  liu_2013 row is superseded.
+- **Stanza version 3**, sha256 `ea7b0084255454fd38a6de566a5cccf2936b67b09910f6ffa15a79d01c5734a7`
+  (5,369 characters), written from v1.7 and not from any paper's text. Superseded: `56bc6305…`, which
+  stays on the 2026-10-21 run, the A/B's `56bc` arm and the ciric control; `378a294f…` stays on the
+  2026-10-22 run and the A/B's `378a` arm. STEP 4 carries CALL 11 as ordered steps; STEP 5 sets the new
+  field. Pinned (`extractor_mvp/tests/test_prompt_pin.py`) with a dated note.
+- **Option (c):** `MotionMethodExtraction.motion_correction_binding ∈ {named_tool, described_only}`,
+  set only when `status == "extracted"` and then always; `deferred` and `missing` keep the existing
+  status path. A validator enforces both directions, so a missing or stray binding is a reask the
+  recorder counts (`completion_attempts`), never a silent default.
+- **The frozen heuristic keeps running as the independent control.** The recorder stores the model's
+  binding as `raw_binding`; the projection carries `model_state` beside `heuristic_class` and
+  `model_vs_heuristic ∈ {agree, disagree, undecided}`; **disagreements are counted and listed by draw**.
+- **Amendment 2 ruling 4 is superseded.** Its trigger (`undecided` ≥ 6 of 10 on a `described_only`
+  paper) measured whether the heuristic alone was adequate; with (c) adopted, the heuristic's
+  `undecided` count is reported as a named line and compared with the model's binding, and it no
+  longer gates anything.
+- **Unchanged and in force on the processed layer:** the value-in-quote post-check and the
+  structured-noise routing (`motion_guard.py`); the span resolver at `3cb396e`.
+
+### Pre-declared readings — K = 10, seven papers, 70 draws
+
+| paper | label read against | pre-declared |
+|---|---|---|
+| power_2014 | `described_only` | `described_only` ×10 (model binding and heuristic class agree) |
+| liu_2013 | **both**: `described_only` at HEAD; `deferred` pending the author's relabel under CALL 11 | **`deferred`, target = the FCP citation** (Biswal 2010 / the scripts). Reported against both labels |
+| poldrack_2015 | `deferred` | **`deferred`, target = ref 45** — the first test of whether `deferred` is reachable at all: 0 of 180 draws have returned it |
+| agtzidis_2020 | `described_only` (relabel of 2026-10-22) | `described_only`, value = the paper's phrase. **Any `SPM12` is a check failure**: the quoted clause does not contain it, so the post-check demotes it (`motion_value_unsupported_by_quote`), and it is counted as such |
+| binder_1999 | `described_only` | `described_only` (the algorithm). The heuristic's `undecided` count is reported beside the model's binding |
+| derosa_2025 | `described_only` — **fitted** | the check routes `ICA-AROMA` off the method whatever the model says; model state and value reported as found |
+| ciric_2017 | `named_tool` / MCFLIRT — post hoc control | `named_tool`, `MCFLIRT` ×10, with the ESTIMATE span |
+
+**Anything else is reported as found**, as its own named line — a deferral whose target is not the one
+named, a binding that disagrees with the heuristic, a reask, an unresolved span. **No rates.** Rows,
+bindings and classes are computed from the raw layer; the post-check's demotions are reported on the
+processed layer beside them, never folded in.
+
+### One risk, pre-declared before the first call (2026-10-26, the author's)
+
+poldrack_2015's methods slice contains, immediately after the realignment sentence the earlier runs
+quoted (span 25523–25671), a sentence that registers each session to a single reference session —
+a link in the paper's session-to-atlas registration chain, not the realignment. It is EPI-to-EPI, so
+STEP 1 keeps it, and it names a reference. STEP 4's detail (c), the reference image, may read it as a
+stated reference image and return `described_only` on that sentence instead of `deferred`. The label
+keeps poldrack on the deferred side because that reference belongs to the atlas chain, not to the
+motion estimate. **If poldrack returns `described_only` on that sentence, the reading is fixed now:
+detail (c) needs a within-run / within-session scope, and the next iteration adds it.** It is not
+fixed before the run, which would fit the stanza to poldrack before seeing the data.
+
+### A limitation logged, not fixed
+
+STEP 1 folds "the step is stated as NOT performed" into `status="missing"`. COBIDAS counts a stated
+negative as a report, so this under-credits a paper that says it skipped the step. The label
+vocabulary has `stated_not_performed` (protocol §3); the raw status does not, and Amendment 1's state
+map already records the state as unreachable-but-unexercised. No corpus paper carries it.
+
+### Unchanged
+
+The probe tests reachability, not accuracy; no accuracy figure may be computed from or cited out of it.
+The seven papers are contaminated (derosa and poldrack fitted; ciric post hoc); liu_2005, tang_2025 and
+wheaton_2004 are not touched. The vocabulary of the heuristic is not extended. The run follows the
+author's review of the stanza, which was given on 2026-10-26; the run precedes this amendment's commit
+only because commits are blocked until 17:00, and the manifest's timestamp orders the two.
