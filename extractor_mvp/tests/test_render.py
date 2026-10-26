@@ -1382,3 +1382,61 @@ def test_no_unverifiable_reason_renders_a_source_absence_claim():
         )
     )
     assert "span unresolved" not in c_line, c_line
+
+
+# ---------------------------------------------------------------------------
+# span_recovered reaches a report surface (v0.4.0 shipped the field with no consumer)
+# ---------------------------------------------------------------------------
+
+
+def _extracted_recovered(field_id: str, value: object, *, recovered: bool) -> ProvenancedField:
+    """An EXTRACTED field whose span was located by the tolerant tier (or cleanly)."""
+    return ProvenancedField(
+        field_id=field_id,
+        extraction=Extracted(
+            value=value, spans=[_span()], confidence=0.95, span_recovered=recovered
+        ),
+        inference=NotApplicable(),
+    )
+
+
+def test_recovered_span_is_disclosed_on_both_surfaces_and_clean_spans_are_not() -> None:
+    """A span found only by repairing mangled source text must SAY so in the report.
+
+    ``Extracted.span_recovered`` shipped in v0.4.0 and nothing read it: no report, summary or
+    coverage surface showed it, so a span located by repair was presented identically to a clean
+    character-exact match. A provenance flag no surface reads is not a disclosure.
+
+    The clean case is asserted beside the recovered one. Without it this test would pass against
+    a render that tagged EVERY extracted field, which discloses nothing by saying it everywhere.
+    """
+    from extractor_mvp.render import _fmt_field_text, _protocol_main, _row_from_field
+
+    for surface in (
+        lambda r: _protocol_main(r, "target_space", equals_for_extracted=True),
+        _fmt_field_text,
+    ):
+        recovered = _row_from_field(
+            _extracted_recovered("target_space", "MNI-152", recovered=True),
+            "spatial_normalization.target_space",
+            "spatial_normalization",
+            None,
+        )
+        clean = _row_from_field(
+            _extracted_recovered("target_space", "MNI-152", recovered=False),
+            "spatial_normalization.target_space",
+            "spatial_normalization",
+            None,
+        )
+        assert recovered.span_recovered is True
+        assert clean.span_recovered is False
+
+        out_recovered, out_clean = surface(recovered), surface(clean)
+        # The disclosure is present, and names repair rather than merely hinting at it.
+        assert "source-text repair" in out_recovered, out_recovered
+        # ... and absent on a clean match, which is what makes it informative.
+        assert "repair" not in out_clean, out_clean
+        # Both still report the value and the quote: the marker widens the line, not replaces it.
+        for out in (out_recovered, out_clean):
+            assert "MNI-152" in out
+            assert "verbatim methods sentence" in out

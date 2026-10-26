@@ -142,6 +142,10 @@ class FieldRow:
     left_missing_reason: str | None = None  # LeftMissing.reason, for protocol hole callouts
     searched_terms: list[str] | None = None
     deferral_refs: list[str] | None = None
+    span_recovered: bool = False  # Extracted.span_recovered: the quote matched only after the
+    # corrupted-source tolerant tier repaired mangled PDF text. Carried to the report because a
+    # span located by repair is weaker evidence than a clean match, and a flag no surface reads
+    # is not a disclosure (the field shipped in v0.4.0 with no consumer).
 
 
 # ---------------------------------------------------------------------------
@@ -209,6 +213,7 @@ def _row_from_field(
     )
     if ext.status == "EXTRACTED":
         row.span_text = ext.spans[0].text
+        row.span_recovered = bool(getattr(ext, "span_recovered", False))
     if ext.status in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION"):
         row.searched_terms = list(ext.searched_terms)
     if ext.status == "DEFERRED_TO_CITATION":
@@ -325,6 +330,19 @@ def _fmt_value(value: Any) -> str:
     return str(value)
 
 
+#: Shown on an EXTRACTED field whose span was located only by the corrupted-source tolerant
+#: tier. One wording, used by both the protocol view and the field table, so the two surfaces
+#: cannot disagree about the same field.
+_REPAIRED_SPAN_NOTE = "[quote matched after source-text repair]"
+
+
+def _from_paper_tag(row: FieldRow) -> str:
+    """``[from paper]``, widened when the span was recovered rather than cleanly matched."""
+    if row.span_recovered:
+        return f"[from paper — {_REPAIRED_SPAN_NOTE[1:-1]}]"
+    return "[from paper]"
+
+
 def _truncate_quote(text: str) -> str:
     flat = " ".join(text.split())
     if len(flat) > _SPAN_QUOTE_MAX:
@@ -335,7 +353,10 @@ def _truncate_quote(text: str) -> str:
 def _fmt_field_text(row: FieldRow) -> str:
     """The right-hand value/explanation per the five display states."""
     if row.state == EXTRACTED:
-        return f"from paper: {_fmt_value(row.value)}   «{_truncate_quote(row.span_text or '')}»"
+        tag = "" if not row.span_recovered else f"   {_REPAIRED_SPAN_NOTE}"
+        return (
+            f"from paper: {_fmt_value(row.value)}   «{_truncate_quote(row.span_text or '')}»{tag}"
+        )
     if row.state == INFERRED_DEFAULT:
         return f"inferred: {_fmt_value(row.value)}   ({row.basis_type}, conf {row.confidence})"
     if row.state == DEFERRED_TO_CITATION:
@@ -606,7 +627,7 @@ def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> 
     st = row.state
     sep = " = " if equals_for_extracted else ": "
     if st == EXTRACTED:
-        line = f"{label}{sep}{_fmt_value(row.value)}   [from paper]"
+        line = f"{label}{sep}{_fmt_value(row.value)}   {_from_paper_tag(row)}"
         if row.span_text:
             line += f"  «{_truncate_quote(row.span_text)}»"
         return line
