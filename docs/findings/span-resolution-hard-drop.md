@@ -81,6 +81,15 @@ So the hand-adjudicated split of the 10 drops:
    quote present but value inferred — must stay MISSING/DEFERRED, or the honesty fix would convert
    an inference into a fabricated extraction. A pure "flag on span failure" that ignores
    value-support would re-introduce the very over-claim AESPA exists to prevent.
+
+   > **Note, 2026-10-26.** Items 1 and 2 above are requirements as written during Phase 1. What
+   > shipped in v0.4.0 is narrower, and `span-resolution-fix.md:27-29` records it: the value-support
+   > guard fires in `_build_base_pipeline` only (`extractor.py:677` for the version, `:778` for the
+   > name); `_process_field`'s step fields are marked `span_recovered` but not value-guarded. The
+   > requirement was not withdrawn, it was scoped; `motion_correction.method` gained its own
+   > post-check on 2026-10-26 (`extractor_mvp/src/extractor_mvp/motion_guard.py`), and the other
+   > seven step fields are surveyed, unchanged, in
+   > `docs/findings/value-support-survey-step-fields.md`.
 3. **Tolerant-resolve (Fix B) must handle whitespace-deletion, `×→/C2`, mid-quote markers, and
    hyphenation** — the four artifacts above — and must still fail closed on genuine absence. The
    three-arm regression (recovery with verified span text, zero spurious moves, hallucination guard)

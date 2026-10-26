@@ -61,7 +61,17 @@ with its own basis (`enumerated_pipeline_complete`) and a **confidence ceiling**
 
 The value-support guard (the fabrication firewall) keeps doing its job untouched. This **supersedes** the
 "unreachable by construction" framing: CALL 7 native_volume was never unreachable — it was **mis-located
-in the extraction layer**. Moving it to inference makes it reachable *and* keeps the guard. (The two leaks
+in the extraction layer**. Moving it to inference makes it reachable *and* keeps the guard.
+
+> **Correction, 2026-10-26 (scope of the guard; original text above kept).** The value-support guard
+> (`span_resolver.quote_supports_value`) runs on exactly two fields: `base_pipeline.version`
+> (`extractor.py:677`) and the pipeline name (`extractor.py:778`). It has never run on
+> `target_space` or any other step field; those go through `_process_field`, which resolves the quote
+> and checks nothing about the value (`extractor.py:569-585`; the scoping is recorded at
+> `span-resolution-fix.md:27-29`). So "keeps doing its job" is true of `base_pipeline` only. The
+> conclusion of this section — route a CALL 7 `native_volume` to the inference arm with a basis —
+> does not rest on the guard and stands as written. See `docs/design/DELTA_value_in_quote_motion.md`
+> §1b and the 2026-10-26 DEVLOG entry. (The two leaks
 that currently ride on those rows — chen cross-axis, binder results-space — remain genuine extraction
 defects and would then score against the resolved `native_volume`.)
 

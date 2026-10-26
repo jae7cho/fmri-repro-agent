@@ -224,3 +224,18 @@ difference turns on that single 2-1 vote.
 tally surfaces the contested cells. Nothing in this pre-registration's design, predictions or
 pre-committed expectations is altered — this amendment narrows one attribution made in its outcome
 section, and that is all.
+
+---
+
+## Erratum (2026-10-26) — the drop credited to the value-support guard was the span resolver's
+
+Lines 19–20 above say *"the value-support guard is working as designed — it correctly refuses to
+ground a quote that does not match the (mangled) source."* That attribution is wrong and is left in
+place as written, with this erratum. The value-support guard (`span_resolver.quote_supports_value`)
+runs on two fields only — `base_pipeline.version` (`extractor.py:677`) and the pipeline name
+(`extractor.py:778`) — and never on `target_space`. What refused agtzidis's `target_space` quote was
+`resolve_quote` in `_process_field` (`extractor.py:569-583`), which drops a field when the quote
+cannot be located in the (mangled) source text: a span-resolution failure, recorded as
+`extraction_quote_unresolved:quote_not_found`. The conclusion of the paragraph — that the root cause
+is pypdf's text layer, not the retype — does not depend on which component dropped the field, and
+stands. See `docs/design/DELTA_value_in_quote_motion.md` §1b.
