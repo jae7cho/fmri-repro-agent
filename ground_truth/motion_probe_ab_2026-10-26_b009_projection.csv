@@ -1,0 +1,126 @@
+# PROJECTION of the motion_correction.method reachability probe, run 2026-10-26.
+# Emitted by extractor_mvp/scripts/motion_probe_projection.py -- do not hand-edit. Regenerate from the
+# run's results/<run>/motion_probe/*.jsonl.
+#
+# WHY A PROJECTION AND NOT THE RUN. The per-draw records under extractor_mvp/results/ carry the
+# model's returned value and quote, which are SENTENCES FROM THE PAPERS. The corpus is not in this
+# repository for licensing reasons, so tracking those strings would redistribute what the corpus
+# deliberately withholds. This projection therefore carries NO quote text and NO value text: only the
+# status, the derived heuristic class, the state-map row, and the span OFFSETS. Anyone holding the
+# corpus can recover the text from the offsets; anyone who does not, cannot.
+#
+# DIAGNOSTIC, NOT EVALUATIVE. No rate, fraction or accuracy figure is computed here or may be
+# computed from it (prereg :9-10, :158-159). The probe tests whether a state is EXPRESSIBLE.
+# Counts only. See the matching docs/findings/motion-probe-*-results.md for the outcome against the
+# pre-declared readings, and the pre-registration for what may and may not be concluded.
+#
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0, temperature 0.0, max_retries 2
+# K                          : 10 per paper, 10 papers, 100 draws
+# motion_method_prompt_sha256: b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+# span_resolver vintage      : 3cb396e 2026-07-16, working tree clean
+# heuristic                  : extractor_mvp/scripts/motion_value_kind.py (prereg Amendment 2 ruling 5)
+# state map                  : prereg Amendment 1, six rows
+# run generated_utc          : 2026-10-26T23:29:33+00:00
+# projection generated_utc   : 2026-10-26T23:43:17+00:00
+#
+paper_id,draw,raw_status,heuristic_class,state_map_row,predicted_label_state,span_resolved,span_start,span_end,left_missing_reason,deferral_target_kind,completion_attempts,reask_occurred,wall_seconds,model_state,model_vs_heuristic
+power_2014,1,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,3.944,described_only,agree
+power_2014,2,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,4.047,described_only,agree
+power_2014,3,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,3.996,described_only,agree
+power_2014,4,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,3.933,described_only,agree
+power_2014,5,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,4.098,described_only,agree
+power_2014,6,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,3.993,described_only,agree
+power_2014,7,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,3.96,described_only,agree
+power_2014,8,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,4.075,described_only,agree
+power_2014,9,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,4.018,described_only,agree
+power_2014,10,extracted,operation_phrase,1,described_only,yes,3112,3528,,,1,no,4.204,described_only,agree
+binder_1999,1,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,18.313,described_only,agree
+binder_1999,2,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,15.971,described_only,agree
+binder_1999,3,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,16.902,described_only,undecided
+binder_1999,4,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,13.871,described_only,undecided
+binder_1999,5,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,16.401,described_only,agree
+binder_1999,6,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,16.697,described_only,undecided
+binder_1999,7,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,15.536,described_only,agree
+binder_1999,8,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,15.43,described_only,agree
+binder_1999,9,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,14.18,described_only,undecided
+binder_1999,10,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,15.498,described_only,agree
+liu_2013,1,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,20.633,,
+liu_2013,2,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,15.707,described_only,agree
+liu_2013,3,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,16.443,,
+liu_2013,4,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,15.703,described_only,agree
+liu_2013,5,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,15.871,described_only,agree
+liu_2013,6,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,15.809,described_only,agree
+liu_2013,7,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,15.744,described_only,agree
+liu_2013,8,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,15.078,,
+liu_2013,9,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,16.513,,
+liu_2013,10,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,16.494,,
+derosa_2025,1,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.719,named_tool,agree
+derosa_2025,2,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.793,named_tool,agree
+derosa_2025,3,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.788,named_tool,agree
+derosa_2025,4,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.635,named_tool,agree
+derosa_2025,5,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.491,named_tool,agree
+derosa_2025,6,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.681,named_tool,agree
+derosa_2025,7,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.687,named_tool,agree
+derosa_2025,8,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.636,named_tool,agree
+derosa_2025,9,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.763,named_tool,agree
+derosa_2025,10,extracted,tool_name,2,named_tool,no,,,motion_value_routed_structured_noise:ica_aroma,,1,no,5.547,named_tool,agree
+agtzidis_2020,1,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.677,described_only,agree
+agtzidis_2020,2,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.537,described_only,agree
+agtzidis_2020,3,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.477,described_only,agree
+agtzidis_2020,4,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.654,described_only,agree
+agtzidis_2020,5,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.462,described_only,agree
+agtzidis_2020,6,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.331,described_only,agree
+agtzidis_2020,7,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.48,described_only,agree
+agtzidis_2020,8,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.746,described_only,agree
+agtzidis_2020,9,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.555,described_only,agree
+agtzidis_2020,10,extracted,operation_phrase,1,described_only,no,,,extraction_quote_unresolved:quote_not_found,,1,no,4.34,described_only,agree
+poldrack_2015,1,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.418,described_only,agree
+poldrack_2015,2,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.247,described_only,agree
+poldrack_2015,3,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.106,described_only,agree
+poldrack_2015,4,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.321,described_only,agree
+poldrack_2015,5,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.226,described_only,agree
+poldrack_2015,6,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.505,described_only,agree
+poldrack_2015,7,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.349,described_only,agree
+poldrack_2015,8,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.115,described_only,agree
+poldrack_2015,9,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.187,described_only,agree
+poldrack_2015,10,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,5.014,described_only,agree
+ciric_2017,1,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,13.522,named_tool,agree
+ciric_2017,2,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,13.607,named_tool,agree
+ciric_2017,3,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,14.751,named_tool,agree
+ciric_2017,4,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,16.283,named_tool,agree
+ciric_2017,5,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,15.139,named_tool,agree
+ciric_2017,6,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,13.845,named_tool,agree
+ciric_2017,7,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.873,named_tool,agree
+ciric_2017,8,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,13.925,named_tool,agree
+ciric_2017,9,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,14.099,named_tool,agree
+ciric_2017,10,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,13.788,named_tool,agree
+braun_2015,1,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,9.63,,
+braun_2015,2,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,10.66,,
+braun_2015,3,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,9.621,,
+braun_2015,4,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,10.948,,
+braun_2015,5,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,9.865,,
+braun_2015,6,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,9.433,,
+braun_2015,7,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,10.804,,
+braun_2015,8,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,9.529,,
+braun_2015,9,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,10.234,,
+braun_2015,10,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,10.964,,
+viduarre_2017,1,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.875,,
+viduarre_2017,2,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,3.889,,
+viduarre_2017,3,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.834,,
+viduarre_2017,4,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,3.004,,
+viduarre_2017,5,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.899,,
+viduarre_2017,6,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.805,,
+viduarre_2017,7,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.887,,
+viduarre_2017,8,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.877,,
+viduarre_2017,9,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,3.053,,
+viduarre_2017,10,deferred,,4,deferred,no,,,deferred_to_citation,paper,1,no,2.989,,
+vanderwal_2016,1,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.428,,
+vanderwal_2016,2,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.535,,
+vanderwal_2016,3,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.523,,
+vanderwal_2016,4,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.64,,
+vanderwal_2016,5,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.485,,
+vanderwal_2016,6,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.736,,
+vanderwal_2016,7,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.59,,
+vanderwal_2016,8,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.662,,
+vanderwal_2016,9,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.455,,
+vanderwal_2016,10,deferred,,4,deferred,no,,,deferred_to_citation,pipeline,1,no,3.835,,
