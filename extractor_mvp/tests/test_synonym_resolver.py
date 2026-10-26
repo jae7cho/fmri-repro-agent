@@ -31,10 +31,14 @@ def test_specific_target_space_resolves():
     assert _ts("MNI152NLin6Asym").status == "resolved"
 
 
-def test_fsl_mni152_resolves_to_nlin6asym():
-    # FSL ships NLin6Asym unambiguously -> more specific, allowed
-    r = _ts("registered to the FSL MNI152 template")
-    assert r.resolved == "MNI152NLin6Asym" and r.status == "resolved"
+def test_fsl_mni152_phrase_is_family_level():
+    # RULED 2026-10-26 (DELTA_value_in_quote_step_fields.md §7.7): a tool-generic MNI reference is
+    # family_specified per target_space protocol CALL 2. The phrase forms used to resolve to
+    # MNI152NLin6Asym ("FSL ships NLin6Asym unambiguously") -- a fact about FSL, not something the
+    # paper reported, which belongs on the inference arm. They now resolve underspecified.
+    for raw in ("registered to the FSL MNI152 template", "FSL's MNI152", "MNI152 (FSL)"):
+        r = _ts(raw)
+        assert r.status == "underspecified" and r.resolved is None, raw
 
 
 def test_fsl_mni152_file_form_resolves_to_nlin6asym():

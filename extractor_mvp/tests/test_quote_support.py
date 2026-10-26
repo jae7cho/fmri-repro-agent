@@ -123,8 +123,14 @@ def test_canonical_value_is_supported_by_an_alias_in_the_quote() -> None:
 
 
 def test_split_alias_is_rejected_whole_alias_passes() -> None:
-    """Ruling 4: 'MNI152 (FSL)' must not yield a bare 'MNI152'. A quote naming only MNI152 does not
-    support the specific template; a quote naming FSL's MNI152 does (the table's own alias)."""
+    """Ruling 4: an alias is taken whole, so a quote naming only MNI152 does not support the specific
+    template; the identifier does, and so does a file form (CALL 2's oconnor case).
+
+    UPDATED 2026-10-26 (DELTA §7.7): the phrase forms "FSL MNI152" / "FSL's MNI152" / "MNI152 (FSL)"
+    were removed from the table, so a quote naming FSL's MNI152 no longer supports the specific
+    template either -- the phrase is family-level, and the family-level value it now resolves to IS
+    supported by that quote.
+    """
     assert not literal_value_supported(
         TS,
         "MNI152NLin6Asym",
@@ -135,7 +141,7 @@ def test_split_alias_is_rejected_whole_alias_passes() -> None:
     assert not literal_value_supported(
         TS, "MNI152NLin6Asym", "MNI152NLin6Asym", "resolved", "normalized to MNI space"
     )
-    assert literal_value_supported(
+    assert not literal_value_supported(
         TS,
         "MNI152NLin6Asym",
         "MNI152NLin6Asym",
@@ -143,7 +149,17 @@ def test_split_alias_is_rejected_whole_alias_passes() -> None:
         "Images were registered to the FSL MNI152 template.",
     )
     assert literal_value_supported(
+        TS,
+        "FSL MNI152",
+        None,
+        "underspecified",
+        "Images were registered to the FSL MNI152 template.",
+    )
+    assert literal_value_supported(
         TS, "MNI152NLin6Asym", "MNI152NLin6Asym", "resolved", "warped to MNI152NLin6Asym"
+    )
+    assert literal_value_supported(
+        TS, "MNI152_T1_2mm", "MNI152NLin6Asym", "resolved", "the MNI152_T1_2mm template"
     )
 
 
@@ -175,9 +191,9 @@ def test_unrecognized_value_is_its_own_only_alias() -> None:
 
 
 def test_phrase_is_never_split_into_first_use_variants() -> None:
-    # a phrase with a parenthetical matches only as a whole
-    assert phrase_in_quote("MNI152 (FSL)", "the MNI152 (FSL) template")
-    assert not phrase_in_quote("MNI152 (FSL)", "MNI152 standard space")
+    # a phrase with a parenthetical matches only as a whole (synthetic strings)
+    assert phrase_in_quote("Template (TPL)", "the Template (TPL) atlas")
+    assert not phrase_in_quote("Template (TPL)", "Template standard space")
 
 
 # ---------------------------------------------------------------------------

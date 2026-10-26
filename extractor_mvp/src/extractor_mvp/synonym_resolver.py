@@ -36,9 +36,14 @@ TARGET_SPACE_SYNONYMS: dict[str, list[str]] = {
         "MNI152NLin6Asym",
         "MNI152 NLin6Asym",
         "MNI152 NLin6 Asym",
-        "FSL MNI152",  # FSL ships NLin6Asym unambiguously
-        "FSL's MNI152",
-        "MNI152 (FSL)",
+        # REMOVED 2026-10-26, by the author's ruling (DELTA_value_in_quote_step_fields.md §7.7):
+        # the phrase forms "FSL MNI152", "FSL's MNI152" and "MNI152 (FSL)". A tool-generic MNI
+        # reference resolves FAMILY-level per target_space protocol CALL 2 (:168, :186-188); the
+        # template FSL ships is a tool fact for the inference arm, to be carried by the KB once
+        # kb/tools has a reader (backlog). Such a phrase now falls to the underspecified list via
+        # its "MNI152" token, i.e. resolution="underspecified", resolved=None. No committed cell
+        # had ever resolved through these forms (§7.2). The FILE forms below stay: a file name
+        # identifies the template (CALL 2's oconnor case).
         # FSL standard-template FILE forms — FSL ships NLin6Asym; the file IS that template
         # (verified vs FSL docs + TemplateFlow + Lead-DBS). Safe identity, NOT silent substitution.
         # Substring-matched, so "MNI152T1_2mm" covers "...MNI152T1_2mm_brain.nii.gz". Fires only when

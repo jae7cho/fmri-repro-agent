@@ -442,3 +442,31 @@ carry the value `other`**, so the number whose quote names a canonical member is
 `v050`'s `resolved` column (0 of 19) and for the 180 recorded motion draws (0 raw values equal to
 `other`); the scoring map already marks `other` "UNUSED on this corpus". There is nothing to count a
 contradiction test against; the decision waits for the first `other`.
+
+### 7.7 Ruling — 2026-10-26, by the author
+
+*Sourced to the author's instruction of 2026-10-26 (evening), not backdated.*
+
+**The phrase-form alias is removed; the file-form aliases stay.** A tool-generic MNI reference ("FSL
+MNI152", "FSL's MNI152", "MNI152 (FSL)") resolves **family-level**, per target_space protocol CALL 2
+(`:168`, `:186-188`): it names the family via a tool, not a resolvable variant. The template FSL ships
+is a **tool fact for the inference arm** — the v1.4 motion amendment's principle, that tool-behaviour
+evidence is a KB fact entering downstream through the inference arm with a basis, never through
+labelling — and the resolver is part of the extraction arm, so the same applies. A file name identifies
+the template (CALL 2's oconnor case), so `MNI152_T1_2mm` and its kin stay canonical.
+
+**The KB side is backlog, not built.** Carrying "FSL ships MNI152NLin6Asym" needs a tool-keyed default
+and a reader for `kb/tools`, which is empty and unread (§7.4). Until then a paper that writes "FSL
+MNI152" extracts as `resolution="underspecified"`, which is what CALL 2 says it reported.
+
+**What the removal cost: nothing on the record.** §7.2: no committed cell in the stored results or in
+either prediction vintage resolved through the phrase forms, and no number or finding depends on them.
+The replay over the 19 stored results after the removal: 0 cells change. Two tests moved with it —
+`test_synonym_resolver.py` (the phrase now asserts `underspecified`) and `test_quote_support.py` (a
+quote naming FSL's MNI152 supports the family-level value it now resolves to, not the specific
+template). The resolver's comment at the former `synonym_resolver.py:38` records the removal and cites
+this section.
+
+**Side note, from §7.2, for the target_space stanza later:** oconnor_2017 names the template file and
+the model returned the bare family in both vintages — a model under-claim, already scored as an error;
+the file-form aliases have never fired on a committed cell.
