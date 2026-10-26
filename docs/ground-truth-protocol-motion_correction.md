@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.6)
+# Ground-truth protocol — `motion_correction` (v1.7)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -40,6 +40,18 @@
   ruling was made after seeing that output and is dated accordingly. The competing reading is recorded
   as defensible, not dismissed (see the v1.6 block in §5). agtzidis's label is the author's to change;
   the labelling workbook is untouched by this edit.
+- **v1.7 (2026-10-26):** **CALL 11 — the deferral line (rule A).** A paper that names the motion operation
+  under a cited pipeline or cited method and states none of the algorithm, transform type, reference
+  image or cost function **defers** the method to that citation; a paper that states any of those is
+  **`described_only`**, whatever it cites; a paper that cites nothing for the operation and binds no tool
+  is `described_only` on its own assertion. A package name is neither a method statement nor a citation
+  (CALL 1 v1.6). **CALL 7 is narrowed:** enumeration under a citation counts as the paper's own
+  description only when it carries one of the four details. **One CALL 10 worked case is superseded:**
+  liu_2013 → `deferred` (FCP scripts, Biswal 2010), not `described_only`; poldrack's `deferred` stands.
+  Drafted by the assistant from the author's rule of 2026-10-26; **ratified by the author's commit**.
+  Label changes that follow (liu_2013's method; a pass over the other six deferred rows for in-paper
+  estimation detail) are the author's, in the workbook, after this commit. The extraction stanza is
+  rewritten from this call (prereg Amendment 7).
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -156,7 +168,7 @@ parameters. That is the population where non-compliance is assertible.
 
 ---
 
-## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12; CALL 9 added v1.4 2026-08-13; CALL 1 clarified and CALL 10 added v1.5 2026-08-17)
+## 5. The definitional calls (CALLs 1–5 ratified 2026-08-07; CALLs 6–7 added v1.1 2026-08-08; CALL 8 added v1.2 2026-08-11, narrowed v1.3 2026-08-12; CALL 9 added v1.4 2026-08-13; CALL 1 clarified and CALL 10 added v1.5 2026-08-17; CALL 1 clarified v1.6 2026-10-22; CALL 11 added v1.7 2026-10-26)
 
 ### CALL 1 — a citation that identifies the method is `deferred`, not `named_tool`
 **RATIFIED: deferred.** oconnor states "motion correction" and cites Jenkinson et al. (the MCFLIRT paper).
@@ -278,6 +290,12 @@ algorithm in-paper (iterative, minimising variance in voxel intensity difference
 spans a range of detail — from cole's bare "motion correction" to binder's characterised algorithm — and
 the difference lives in the verbatim quote, not in the state.
 
+> **Superseded in part (v1.7, 2026-10-26; original text kept).** "cole's bare 'motion correction'" is
+> stale: CALL 10 (v1.5) places cole_2013 at `named_tool` / AFNI, so cole no longer illustrates
+> `described_only`. The range the sentence describes is now bounded by CALL 11: a bare operation name
+> with no citation is `described_only` on the paper's own assertion; under a citation it is `deferred`
+> unless one of CALL 11's four details is stated.
+
 *Verification flag:* **Cox 1996b is not identified.** Cox 1996a is the AFNI software paper; 1996b is a
 different work of the same year and has NOT been verified. Do not assume it is a volume-registration paper.
 
@@ -366,6 +384,11 @@ Worked cases (all from corpus text):
 - **agtzidis, supporting citation:** "we initially followed a standard preprocessing pipeline (Poldrack
   et al., 2011). The process comprised realigning…" — the citation supports an enumerated pipeline, so
   `named_tool` stands. Had the paper **not** enumerated, the same phrasing would substitute.
+  > **Superseded in part (v1.6, 2026-10-22, and v1.7, 2026-10-26; original text kept).** "`named_tool`
+  > stands" is stale since v1.6, which rules agtzidis `described_only` (SPM12 is bound to the analysis,
+  > not the step). And v1.7's CALL 11 narrows the enumeration criterion: enumeration under a citation
+  > is the paper's own description only when it carries one of the four details — agtzidis still
+  > supports, on the reference image ("to the mean image of each session"), not on enumeration alone.
 - **binder:** the Cox (1996b) reference supports a described algorithm → `described_only`, per CALL 2a.
 - **braun:** "preprocessed according to standard protocols as previously described in refs. 47 and 48"
   substitutes for **every** preprocessing row — the wholesale case CALL 6 governs.
@@ -576,6 +599,11 @@ un-ordered reading produces.
 | agtzidis_2020 | one package coordinates a four-step list; a parenthetical sits inside the realign clause | package bound only to the first step, or dropped | `named_tool` / SPM12 |
 | gordon_2014 | two nested parentheticals between package and verb; **MATLAB is nearer**; RMS is a third attractor | `MATLAB` or `RMS` | `named_tool` / **SPM8** (MATLAB = HOST, RMS = CONSUME) |
 | liu_2013 | "FCP scripts … employs AFNI and FSL"; `align_epi_anat.py` named later | `AFNI` or `FSL` | `described_only`, **blank** (nothing bound in ESTIMATE; align_epi_anat fails Axis 1) |
+
+> **Superseded (v1.7, 2026-10-26; original row kept).** The liu_2013 row's "right" column is now
+> **`deferred`** to the FCP scripts (Biswal 2010) under CALL 11: the operation is named under a cited
+> pipeline and none of the four details is stated. The role-axis finding — nothing bound in ESTIMATE
+> — stands; CALL 11 decides what follows from it. The label change is the author's, in the workbook.
 | chen_2015 | STC and motion in one coordinated verb phrase; engines cited [48–50], never mapped to steps | `named_tool` / an engine | `deferred` / CCS |
 
 **Why ordered rather than a list of exclusions.** `docs/findings/temporal-firewall-fix.md` records that the
@@ -607,6 +635,64 @@ that produced this call. **No stratification of this corpus yields an uncontamin
 The `method` figure is therefore **diagnostic, not evaluative**: it establishes which error classes exist
 and roughly where; it does not measure extractor quality. Any report leads with the error decomposition and
 states this caveat and the co-adjudication caveat **before** the rate, with intervals.
+
+### CALL 11 — the deferral line: a citation substitutes for the method only when the paper states no estimation detail
+**Added v1.7 (2026-10-26). Drafted from the author's rule; ratified by commit.** Decides `deferred` versus
+`described_only` where CALL 7's substitute-or-support test and CALL 10's role axis left the line
+between two probe papers undrawn (prereg Amendment 4 §3).
+
+**The rule.**
+1. A paper that names the motion operation **under a cited pipeline or cited method**, and states
+   **none** of (a) the algorithm, (b) the transform type, (c) the reference image, (d) the cost
+   function, **defers** the method to that citation.
+2. A paper that states **any** of those four is **`described_only`**, whatever it cites. A citation
+   beside a stated detail supports the description; it does not replace it.
+3. A paper that cites nothing for the operation and binds no tool (CALL 1) is **`described_only` on
+   its own assertion**.
+4. A package name is neither a method statement nor a citation (CALL 1 v1.6). Listing the step among
+   others under a citation is the paper's own description **only when the listing carries one of the
+   four details** — this narrows CALL 7's enumeration criterion (below).
+
+**Worked cases.**
+- **poldrack_2015 → `deferred`** (ref 45). "Realigned to correct for head motion" names the operation
+  under the cited pipeline and states none of the four details; its own details are APPLY-role (the
+  combined resample through applywarp, CALL 10), which say nothing about how motion was estimated.
+- **liu_2013 → `deferred`** (FCP scripts, Biswal 2010). "Image coregistration to correct for head
+  motion" names the operation under the cited scripts and states none of the four. **Supersedes CALL
+  10's worked-case row for liu_2013** (`described_only`, blank), which was decided on the role axis alone;
+  CALL 10's emission rule ("the ESTIMATE role is attributed to a citation or an undecomposed
+  pipeline/wrapper → `deferred`; value = the pipeline name") already pointed here.
+- **agtzidis_2020 → `described_only`**: the reference image is stated ("to the mean image of each
+  session"), so the Poldrack 2011 citation supports, as CALL 7 had it.
+- **derosa_2025 → `described_only`**: no citation for the operation; the operation is asserted; no tool
+  bound (CALL 1 v1.5; the ICA-AROMA name is routed off this row by CALL 4).
+- **binder_1999 → `described_only`** (algorithm stated; Cox 1996b supports, CALL 2a) and **power_2014 →
+  `described_only`** (transform type stated).
+
+**Checked against the calls it touches.**
+- **CALL 2a** — subsumed, not contradicted. Its test ("does the paper's own text identify the method,
+  or must the citation be read to know what was done?") and both poles (binder's characterised
+  algorithm → `described_only`; oconnor's operation name plus a pointer → `deferred`) are this rule's
+  shape; the four details make "identify the method" checkable. One clause is stale on another ground:
+  `:278` places "cole's bare 'motion correction'" in `described_only`, but CALL 10's table has cole as
+  `named_tool` / AFNI. Pre-existing; noted, not resolved here.
+- **CALL 6** — no conflict. A wholesale deferral names no operation and states no detail; it defers
+  under both.
+- **CALL 7** — **narrowed**, as the changelog says. CALL 7's agtzidis bullet (`:366`) reads "the citation
+  supports an enumerated pipeline, so `named_tool` stands. Had the paper not enumerated, the same
+  phrasing would substitute." Under CALL 11 enumeration supports only when it carries a detail;
+  agtzidis still supports (the reference image) — and that bullet's "`named_tool` stands" has been
+  stale since v1.6 (agtzidis is `described_only`). Noted; the bullet is left as written, with this
+  pointer.
+- **CALL 10** — one worked-case row superseded (liu_2013, `:578`); poldrack's row (`:573`) agrees. The
+  emission rule and the role axis are unchanged; CALL 11 runs after the role axis has found no bound
+  ESTIMATE tool.
+
+**Consequences, recorded.** liu_2013's committed label (`described_only`) changes to `deferred` when the
+author relabels; until then the probe reports liu_2013 against both. The other six `deferred` labels
+(braun, chen, oconnor, vanderwal, viduarre, weber) get a pass for in-paper estimation detail, by the
+author, after this commit — a row stating any of the four details moves to `described_only`. Every such
+change is made after seeing probe output and is recorded in the row's Notes with the date.
 
 ---
 
