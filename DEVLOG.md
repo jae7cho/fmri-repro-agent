@@ -3262,3 +3262,45 @@ Commits: `18bbd25` (the DELTA's ratification and facts), `884810f` (the alias), 
 v1.7), `af09dcb` (version 3 and its pin), `ef56453` (Amendment 7), `a678562` (the run's findings and
 projection), `043ed08` (the author's liu_2013 relabel, alone), `c76716d` (protocol v1.7.1). This entry is
 committed after them.
+
+## 2026-10-26 (late night)
+
+**Erratum, one line.** The subject of `9e7f206` says "stanza version 3 built and not run"; the entry
+it carries records the run. The subject was written before the author said run and was not updated.
+
+**Three deferral shapes joined the probe, and version 4 reached all three.** Amendment 8 (`fef37a7`),
+written before any edit, added braun_2015, viduarre_2017 and vanderwal_2016 for the shapes the
+version-3 run and the author's label pass found the stanza could not reach: a wholesale deferral with
+no operation named (CALL 6's case) and a named, uncited pipeline. All three are co-adjudicated and
+outside CALL 10's seven, so the contaminated union stays 16 of 19 and the clean three are untouched;
+they are fitted from this version, and the record says so. Version 4 (`590c790`) is three general
+edits from CALL 6 and CALL 11, none naming a paper: citation forms (author-year, a bare number the
+text layer attaches to a word, a named pipeline as a target with or without a reference); the
+wholesale branch when STEP 1 keeps no passage; "or a named pipeline" in STEP 4's trigger — and one
+sentence the author kept on review, that a toolbox named as governing the analysis is not a
+pipeline, drawn from CALL 1 v1.1, without which SPM12 and the FSL suite would have become candidate
+targets. The refusal message's stale "six probe papers" now counts the table. Pinned `b0093774…`,
+`ea7b0084…` retained.
+
+**The run: 100 draws, 0 reasks, 0 errors, manifest gated.** braun deferred ×10 to refs 47 and 48
+through the wholesale branch; viduarre deferred ×10 to Glasser et al., nothing for the check to
+route; vanderwal deferred ×10 to C-PAC as a named pipeline, and the pre-declared ANTs risk did not
+occur. Of the seven regression papers, four did not move (power, derosa, agtzidis, ciric), binder's
+`AFNI` carry vanished on this vintage (0 of 10 after 6), **liu_2013 lost three draws to
+`described_only`** on the operation sentence — the lesson of 2026-10-22 again, and why regression
+runs on all ten — and **poldrack did not move**: edit (a) did not reach it. Its shape is now
+narrower than "numbered citation": a bare number on an *unnamed* pipeline beside an operation
+sentence STEP 1 keeps, where braun's and viduarre's numbers sit on wholesale deferrals with no
+competing passage. Held for the author, with the question whether liu_2013's three draws are
+version 4's cost or the day's. Model binding against the heuristic over 63 extracted draws: 61
+agree, 0 disagree, 2 the heuristic cannot class. Findings and projection in `d8cf3ba`; counts only, no
+paper text.
+
+**The author's second liu_2013 edit**, committed alone in the commit that follows this entry: `method_value` set to the pipeline
+name as the other deferred rows carry it, bullets 2–7 deferred under CALL 7's bullet-level default
+with none stated in-paper, a dated note superseding the "pending" one with the original kept. All
+eight deferred rows now follow one pattern; poldrack keeps its in-paper overrides. §7's list is
+unchanged, so no protocol edit.
+
+Commits: `fef37a7` (Amendment 8), `590c790` (version 4), `d8cf3ba` (the run's findings and projection),
+then this entry, then the workbook alone after it, as the author ordered the sequence.
