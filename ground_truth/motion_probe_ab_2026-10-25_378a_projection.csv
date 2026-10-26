@@ -1,0 +1,46 @@
+# PROJECTION of the motion_correction.method reachability probe, run 2026-10-25.
+# Emitted by extractor_mvp/scripts/motion_probe_projection.py -- do not hand-edit. Regenerate from the
+# run's results/<run>/motion_probe/*.jsonl.
+#
+# WHY A PROJECTION AND NOT THE RUN. The per-draw records under extractor_mvp/results/ carry the
+# model's returned value and quote, which are SENTENCES FROM THE PAPERS. The corpus is not in this
+# repository for licensing reasons, so tracking those strings would redistribute what the corpus
+# deliberately withholds. This projection therefore carries NO quote text and NO value text: only the
+# status, the derived heuristic class, the state-map row, and the span OFFSETS. Anyone holding the
+# corpus can recover the text from the offsets; anyone who does not, cannot.
+#
+# DIAGNOSTIC, NOT EVALUATIVE. No rate, fraction or accuracy figure is computed here or may be
+# computed from it (prereg :9-10, :158-159). The probe tests whether a state is EXPRESSIBLE.
+# Counts only. See the matching docs/findings/motion-probe-*-results.md for the outcome against the
+# pre-declared readings, and the pre-registration for what may and may not be concluded.
+#
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0, temperature 0.0, max_retries 2
+# K                          : 10 per paper, 2 papers, 20 draws
+# motion_method_prompt_sha256: 378a294f94ca9f0fc6bd45bd42caf4646a007c7d705d05c8b5f584dd66ca8cab
+# span_resolver vintage      : 3cb396e 2026-07-16, working tree clean
+# heuristic                  : extractor_mvp/scripts/motion_value_kind.py (prereg Amendment 2 ruling 5)
+# state map                  : prereg Amendment 1, six rows
+# run generated_utc          : 2026-10-25T22:53:54+00:00
+# projection generated_utc   : 2026-10-25T22:54:51+00:00
+#
+paper_id,draw,raw_status,heuristic_class,state_map_row,predicted_label_state,span_resolved,span_start,span_end,left_missing_reason,deferral_target_kind,completion_attempts,reask_occurred,wall_seconds
+binder_1999,1,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,13.82
+binder_1999,2,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,16.057
+binder_1999,3,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,13.976
+binder_1999,4,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.291
+binder_1999,5,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,14.224
+binder_1999,6,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.218
+binder_1999,7,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.086
+binder_1999,8,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,13.98
+binder_1999,9,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,13.584
+binder_1999,10,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,15.431
+agtzidis_2020,1,extracted,tool_name,2,named_tool,no,,,extraction_quote_unresolved:quote_not_found,,1,no,15.484
+agtzidis_2020,2,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.166
+agtzidis_2020,3,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,10.234
+agtzidis_2020,4,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.27
+agtzidis_2020,5,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,4.359
+agtzidis_2020,6,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.232
+agtzidis_2020,7,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.34
+agtzidis_2020,8,extracted,tool_name,2,named_tool,yes,7210,7274,,,1,no,15.286
+agtzidis_2020,9,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.256
+agtzidis_2020,10,extracted,tool_name,2,named_tool,no,,,extraction_quote_unresolved:quote_not_found,,1,no,15.319

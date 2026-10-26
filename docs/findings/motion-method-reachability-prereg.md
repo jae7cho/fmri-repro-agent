@@ -544,3 +544,75 @@ ruling 5's heuristic, not extended. Amendment 3's retirement of the agtzidis cri
 tests reachability, not accuracy; **no accuracy figure may be computed from or cited out of this
 run**; the iteration licence covers the seven contaminated probe papers and does not extend to
 liu_2005, tang_2025 or wheaton_2004.
+
+---
+
+## Amendment 5 (2026-10-25) — same-day control: did the stanza move agtzidis and binder, or did the day?
+
+**Written BEFORE the run it governs, on the day of that run.** Between the 2026-10-21 run (stanza
+`56bc6305…`) and the 2026-10-22 run (stanza `378a294f…`) two papers moved, and two things changed
+between those runs — the stanza and the day. The project has measured day-to-day movement at
+`temperature=0.0` before (the temporal finding's fixed→fixed 4/10 → 0/10), so neither cause can be
+read off the two runs. This amendment pre-registers the one experiment that separates them.
+
+### What moved, and the shared shape the author identified
+
+| paper | 2026-10-21 under `56bc` (v1) | 2026-10-22 under `378a` (v2) |
+|---|---|---|
+| agtzidis_2020 | operation phrase (row 1) on 9, `SPM12` (row 2) on 1; spans resolved 3 of 10 | `SPM12` (row 2) on 10; spans resolved 9 of 10 |
+| binder_1999 | the algorithm description, `undecided` (row 3) on 10 | `AFNI`/`MCW-AFNI` (row 2) on 5, `undecided` on 3, operation phrase (row 1) on 2 |
+
+The author matched the v2 projection's offsets back to both texts: on every resolved agtzidis draw
+the quote is the realignment clause (7188–7308, the span v1 quoted for its operation phrases) and
+`SPM12` is two sentences away; on every binder draw the quote is the Cox 1996b sentence (11023–11180)
+and `AFNI` occurs only in the Talairach sentence. **Both papers moved toward naming a tool that is not
+in the quoted sentence.** The other four v1 papers (power, liu_2013, derosa, poldrack) gave the same
+answer type on all 40 draws across the two runs — derosa among them, the paper the edit was for. That
+pattern points at the edit, and only a same-day control can rule the day out.
+
+### Design
+
+- **Arms.** Two stanzas: `56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a` and
+  `378a294f94ca9f0fc6bd45bd42caf4646a007c7d705d05c8b5f584dd66ca8cab`. Two papers: agtzidis_2020,
+  binder_1999. **K = 10** per stanza per paper — **40 calls**, run back to back in one session on
+  2026-10-25, the `56bc` arm first (agtzidis, binder), then the `378a` arm (agtzidis, binder). Same
+  model id, `temperature=0.0`, `max_retries=2`.
+- **The `56bc` arm runs from a git worktree at `3fc366f`**, the last commit at which the pin reads
+  `56bc6305…` (the stanza iteration is not yet committed as this is written; `3fc366f` is HEAD, and
+  its `extractor.py` blob hashes to `56bc6305…` when evaluated). That arm uses the recorder and the
+  extractor module **as of that commit**; the `378a` arm uses the working tree's. The recorder inserts
+  its own `../src` at the head of `sys.path`, which is what makes the two arms import different
+  modules from one interpreter. Checked before writing this: the worktree path imports a module whose
+  stanza hashes to `56bc…`, the working-tree path one that hashes to `378a…`.
+- **Gate, applied before any per-draw record is read:** each arm's `manifest.json` must carry its own
+  hash in `motion_method_prompt_sha256`. An arm whose manifest carries the other hash is **void** and
+  is re-run after the import path is fixed — a wrong path would run `378a` twice and manufacture a
+  "day effect". No draw from a void arm is reported.
+- **Projection and results doc as for v2.** Two projections (one per arm), no quote or value text;
+  one results document. Counts only; no rate.
+
+### Pre-declared readings
+
+Compared per paper, on the heuristic class of the raw value (state-map row), against the earlier run
+under the same stanza and against the other arm. "Reproduces" means the modal row is the same as the
+earlier run's modal row for that paper; the count of the modal row is reported beside it, and no
+threshold is set on it — K=10 is too few for one, and no rate may be computed in any case.
+
+1. **Stanza effect:** each arm reproduces its own earlier run — `56bc` gives agtzidis mostly row 1 and
+   binder mostly row 3; `378a` gives agtzidis mostly row 2 and binder a row-2-led mix — **and** the two
+   arms differ from each other on that paper.
+2. **Day effect:** the two arms give the same modal row as each other on that paper, whichever row it
+   is. (Then at least one arm departs from its own earlier run, and the departure is the day's.)
+3. **Anything else** — the two papers splitting (one reads as 1, the other as 2); an arm reproducing
+   neither its earlier run nor the other arm; a row neither earlier run produced — is **reported as
+   found**, not classified into 1 or 2.
+
+Span offsets are reported beside the rows, because the author's finding is about the quote staying
+put while the value moves: whether each arm quotes the same clause as its earlier run is part of what
+"reproduces" means here, and is stated separately from the row.
+
+### Unchanged
+
+Labels as Amendment 4 reads them. No stanza edit and no label change accompany this run. agtzidis and
+binder are probe papers already inside the contaminated union; this spends no clean cell. The
+held-out three are not touched. No accuracy figure may be computed from or cited out of this run.
