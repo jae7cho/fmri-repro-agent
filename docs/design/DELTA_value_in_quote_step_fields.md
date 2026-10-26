@@ -303,3 +303,142 @@ re-renders stored JSONs, and 0 of them carry the new reason); measured 19 identi
 against `d31e8b7`: 0 identical, 19 changed**, as derived. 447 passed in extractor_mvp, 235 root, hooks
 and `ruff format --check` clean. No prompt, raw output, projection or committed number moves; the
 processed layer is re-vintaged for the seven step fields, and on the stored record it changes nothing.
+
+---
+
+## 5a. Ratified — 2026-10-26, by the author
+
+*Sourced to the author's instruction of 2026-10-26 (evening), not backdated.*
+
+The three decisions §5 recorded as this author's are **ratified**:
+
+- **A family term may match the start of a longer identifier, never the reverse** — follows from
+  ruling 1: a value may be less specific than its quote but not more.
+- **An unrecognized value is its own only alias** — a free-text value is checked the way motion's is:
+  its own string must appear in the quote.
+- **`other` passes through** — right as far as it goes, since there is no alias to test, with the
+  stated consequence that the check cannot catch the model returning `other` where the quote names a
+  canonical member. Whether `other` needs a contradiction test is decided on the count of such cells
+  (§7, Part 3: zero on the record today).
+
+**Rule for every future mutation test, from the same instruction:** *a mutation counts only once its
+diff is shown to be non-empty before the run.* Reason: the split-alias mutation of 2026-10-26 first
+ran against a stale anchor, changed nothing, and reported a pass; it was caught by reading the line,
+not by the harness.
+
+---
+
+## 7. Facts gathered 2026-10-26 for the FSL MNI152 alias — no ruling
+
+*Read-only; no code changed, no model calls. The author's position (the alias is a fact about what FSL
+ships, not something the paper reported, and belongs on the inference arm with a basis, as the v1.4
+motion amendment puts tool-behaviour evidence) is recorded here as a position, not a ruling. The
+file-form aliases are not in question: a file name identifies the template (CALL 2's oconnor case).*
+
+### 7.1 CALL 2, in full — `docs/ground-truth-protocol-target_space.md:164-188`
+
+> ### CALL 2 — canonical vs family_specified: does the reference resolve to a SPECIFIC template?
+> The boundary is resolvability to a specific variant/file, NOT how "official" the name sounds.
+> - **canonical**: names a specific resolvable template — a variant identifier, or a template FILE that
+>   resolves by established identity (oconnor's FSL file).
+> - **family_specified**: names the family via bare term OR via a tool, but not a resolvable variant.
+>   - wheaton "SPM MNI template" → **family_specified for now; OPEN QUESTION.** Author's position: a
+>     user CAN trace SPM's MNI template (SPM99 + "MNI template" identifies the file SPM99 shipped), which
+>     argues for canonical. Counter-consideration (UNVERIFIED, needs checking before promotion): SPM's
+>     bundled template differs by SPM version, and older SPM templates may derive from the *linear*
+>     ICBM152 rather than the nonlinear 6th-gen — for which `TargetSpace` currently has NO enum value.
+>     Promoting wheaton to canonical therefore requires (a) verifying which template SPM99 actually
+>     shipped and (b) possibly adding a linear-MNI152 enum value (an additive patch bump under the new
+>     versioning convention). **Until verified, label family_specified and record the open question.**
+>     Do not promote on the strength of "traceable" alone — traceable-to-a-file is not the same as
+>     resolvable-to-an-enum-value.
+>   - derosa "MNI-152 template, 12-dof linear" → **family_specified**. Names the family + the transform
+>     d.o.f., but not a variant identifier or file.
+>   - cole / liu_2005 "Talairach" (even citing "Talairach and Tournoux (1988)") → **family_specified**, NOT
+>     canonical. Talairach is a coordinate SYSTEM realized by many digital templates (AFNI's TT_N27, the
+>     original 1988 atlas, SPM's, …), so citing it names the family, not a resolvable digital variant.
+>     (Supersedes the v1.1 canonical "Talairach with its atlas" clause — see changelog; liu_2005 was the
+>     derivability-check trigger.)
+> **Rule:** canonical requires a reference that resolves to ONE specific template (variant or file).
+> A family term, or a tool-generic MNI reference, is family_specified. When unsure whether a reference
+> resolves, it is family_specified (canonical is the stricter claim; do not over-credit).
+
+### 7.2 Which committed cells resolved through the alias — none
+
+Classified by the alias the resolver fired (`resolutions[].matched_alias` in the stored results; the
+resolver re-run on the stored `verbatim` for v050; see 7.2's recoverability note for v040). Phrase
+form = `synonym_resolver.py:38-40` (`FSL MNI152`, `FSL's MNI152`, `MNI152 (FSL)`); file form =
+`:44-49`; identifier = the variant name itself.
+
+| record | non-held-out `target_space` cells | via phrase alias | via file alias | via identifier | what the cells are |
+|---|---|---|---|---|---|
+| stored results (`batch_a1_acceptance`, 19) | 16 | **0** | **0** | **0** | Talairach ×2 (binder, cole), study_specific ×1 (mueller), the rest `resolved=None` |
+| `target_space_predictions_v040_frozen.csv` | 16 | 0 | 0 | 0 | EXTRACTED Talairach ×2, DEFERRED ×1, MISSING ×13; **no `MNI152NLin6Asym` anywhere in the 19** |
+| `target_space_predictions_v050.csv` | 16 | 0 | 0 | 0 | underspecified ×6, unrecognized ×3, Talairach ×2, study_specific ×1, MISSING ×4; **no `MNI152NLin6Asym` anywhere in the 19** |
+
+Held-out papers (liu_2005, tang_2025, wheaton_2004), counts only: 3 cells per record, **0** on any
+`MNI152NLin6Asym` path in all three records.
+
+**What is not recoverable.** `v040_frozen` carries `extractor_value` — the resolved member, since the
+pre-0.5.0 extractor discarded the raw string on success — and keeps a raw string only in
+`raw_diagnostic` for the 10 non-held-out `value_not_in_literal` cells. For a v040 EXTRACTED cell the
+alias path is therefore not recoverable in principle; it is moot here, because no v040 cell is
+`MNI152NLin6Asym`. `v050` keeps `verbatim` on 13 non-held-out rows and its paths are recoverable.
+
+**One more fact the table implies.** oconnor_2017 — the one labelled-canonical paper, which names an FSL
+template *file* (`target_space_labels_v1.csv:47`) — was flattened by the model to the bare family term
+in both vintages (`docs/findings/extraction-specificity-flattening.md:11,52`). So the file-form aliases
+have never fired on a committed cell either; the alias question has so far been decided by no data.
+
+### 7.3 How the scoring map treats `underspecified` — `ground_truth/target_space_scoring_map.csv`
+
+| resolver verdict | scored state | vs `family_specified` label | vs `canonical` label |
+|---|---|---|---|
+| `resolved = MNI152NLin6Asym` | canonical | **error** (over-specific) | correct |
+| `resolution = underspecified` (bare MNI / MNI152 / standard space) | family_specified | correct | **error** (under-specific) |
+| `resolved = other` | family_specified ("catch-all; UNUSED on this corpus") | correct | error |
+
+So moving the alias to the inference arm, with no family-level token, would score a paper that writes
+"FSL's MNI152" as family_specified: correct under CALL 2's wording for that paper, an error only if its
+label were canonical — and no committed label is canonical on a phrase form (oconnor's is on a file).
+
+### 7.4 Can the KB carry it today — no
+
+- `recognize(name)` (`fmri-defaults-kb/src/fmri_defaults_kb/registry.py:105-128`) resolves a name
+  against **pipeline documents** only — `kb/pipelines/`: `ccs`, `cpac`, `fmriprep`, `hcp_minimal`.
+  **FSL is not a recognized pipeline.** `kb/tools/` exists and is empty, and no code reads it.
+- `fill_dependent_defaults` (`src/fmri_repro/kb_client/base_pipeline.py:176-220`) fills
+  `SEVEN_DEMOTED_FIELDS` — **`spatial_normalization.target_space` is one of them** (`:65`) — only for a
+  recognized pipeline whose version is *certain*, via `get_param_defaults(pipeline_id, version, …)`,
+  wrapping each as `InferredDefault` with `VersionDefaultBasis` (ceiling 0.95). The path is
+  pipeline-keyed and version-keyed; there is no tool-keyed path.
+- Basis types (`src/fmri_repro/spec/provenance.py:88-125`): `version_default(tool, version)`,
+  `date_inferred_version`, `prior_publication`, `lab_prior`, `field_convention(source)`, `derived`. The
+  one that fits "FSL ships MNI152NLin6Asym" is **`version_default`**, whose schema already carries
+  `tool` and `version` — if FSL were modelled as a KB pipeline document with a certain version. Without
+  a version, the only tool-independent basis is **`field_convention`** (ceiling 0.40, `source` = FSL
+  documentation / TemplateFlow), which under-states a fact that is not a convention.
+- So today the inference cannot be carried: no FSL document, no tool-keyed path, and the pipeline-keyed
+  path requires a certain version the paper may not state. Building it is an FSL pipeline document in
+  the KB plus a `target_space` default keyed on its versions, or a new tool-keyed path — either is its
+  own change.
+
+### 7.5 What in the record depends on the phrase alias resolving canonical
+
+| kind | locator | dependence |
+|---|---|---|
+| test | `extractor_mvp/tests/test_synonym_resolver.py:34-38` (`test_fsl_mni152_resolves_to_nlin6asym`, phrase "registered to the FSL MNI152 template") | **fails** if the alias moves |
+| test | `extractor_mvp/tests/test_quote_support.py:143` (asserts the phrase-form quote supports `MNI152NLin6Asym` through the table's own alias) | **changes** if the alias moves |
+| test | `extractor_mvp/tests/test_quote_support.py:179-180` (uses the string "MNI152 (FSL)" only as the whole-vs-split example) | needs a different example string; not a dependence on resolution |
+| test | `extractor_mvp/tests/test_synonym_resolver.py:40-50` (file forms) and `:52-56` (bare MNI152 stays underspecified) | **unaffected** — file forms stay |
+| committed number | target_space 11/17 (v040) and 10/17 (v050) | **none** — no committed cell resolved via the phrase alias, or via any `MNI152NLin6Asym` alias (7.2) |
+| findings claim | `ground-truth-protocol-target_space.md:85`; `target_space_labels_v1.csv:47`; `target_space-design-resolution.md:22`; `extraction-specificity-flattening.md:11,52` | all **file-form** (oconnor); none rests on the phrase alias |
+| the alias's own record | `synonym_resolver.py:38` ("FSL ships NLin6Asym unambiguously"); this DELTA §5; `DEVLOG.md:3163` | the statement itself and today's notes recording the question |
+
+### 7.6 Part 3 — cells carrying `other`
+
+Over the 19 stored results, across the five Literal fields and `motion_correction.method`: **0 cells
+carry the value `other`**, so the number whose quote names a canonical member is 0. The same holds for
+`v050`'s `resolved` column (0 of 19) and for the 180 recorded motion draws (0 raw values equal to
+`other`); the scoring map already marks `other` "UNUSED on this corpus". There is nothing to count a
+contradiction test against; the decision waits for the first `other`.
