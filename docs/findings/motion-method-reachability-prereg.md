@@ -731,3 +731,72 @@ The seven papers are contaminated (derosa and poldrack fitted; ciric post hoc); 
 wheaton_2004 are not touched. The vocabulary of the heuristic is not extended. The run follows the
 author's review of the stanza, which was given on 2026-10-26; the run precedes this amendment's commit
 only because commits are blocked until 17:00, and the manifest's timestamp orders the two.
+
+---
+
+## Amendment 8 (2026-10-26) — three deferral shapes join the probe; version 4 pre-declared
+
+**Written BEFORE any edit to the stanza and before any call.** Ruled by the author on 2026-10-26 after
+the version-3 run and the label pass over the deferred rows (protocol v1.7.1).
+
+### Why the probe set grows
+
+The version-3 run reached `deferred` on liu_2013 (10 of 10) and not on poldrack, and the author's pass
+over the seven `deferred` rows found three citation shapes the stanza does not reach: a **bare numbered
+citation** beside the operation (poldrack, already in the probe); a **wholesale deferral with no
+operation named** (braun, viduarre — STEP 1 keeps no passage and returns `missing` by construction, CALL
+6's case); and a **named but uncited pipeline** (vanderwal). Leaving the three papers out would make the
+full-corpus run show two or three `deferred` mismatches by construction — a known stanza gap presented as
+a result. So braun_2015, viduarre_2017 and vanderwal_2016 **join the probe set**, and the stanza is
+iterated once with three general instructions, none naming a paper.
+
+### Contamination status, from the record
+
+All three carry the `co-adjudicated` flag in the workbook (protocol §7, v1.7.1: the 14 flagged include
+braun_2015, vanderwal_2016 and viduarre_2017), and none is in CALL 10's seven fitting passages. They are
+therefore already inside the contaminated union of **16 of 19**, which does not change; the clean three —
+liu_2005, tang_2025, wheaton_2004 — are **unchanged** and are not touched. What changes is that the
+stanza becomes fitted to three more of the sixteen it was already fitted to, and that is stated here and
+wherever their counts are reported: **braun, viduarre and vanderwal are fitted, not independent**, from
+this version on, as derosa and poldrack already are.
+
+Their committed labels, read from the workbook (states and values only): braun_2015 `deferred`, value
+blank; viduarre_2017 `deferred`, value blank; vanderwal_2016 `deferred`, value `CPAC`.
+
+### Version 4 — three edits, general, written from CALL 6 and CALL 11
+
+a. **Citation forms.** A citation may appear as author-year, as a bare number attached to a word in the
+   text layer (the PDF layer writes "as described previously12"), or as a named pipeline. A named
+   pipeline is a deferral target with or without a reference beside it (`target_kind = "pipeline"`).
+b. **Wholesale deferral (CALL 6).** When STEP 1 keeps no passage but the text defers its preprocessing
+   as a whole to a citation or a named pipeline, the output is `status="deferred"` with that target, not
+   `"missing"`. Kept passages take precedence; this applies only when none is kept.
+c. **STEP 4's trigger** reads: under a cited pipeline, a cited method, a cited paper, or a named pipeline.
+
+The new hash is pinned in `extractor_mvp/tests/test_prompt_pin.py` with a dated note retaining
+`ea7b0084…`, and the recorder writes it into every manifest. **Regression stays on all ten papers**:
+the 2026-10-22 edit moved papers it was not aimed at, so every paper is re-read, not only the three.
+
+### Pre-declared readings — version 4, K = 10, ten papers, 100 draws
+
+| paper | label | pre-declared |
+|---|---|---|
+| braun_2015 | `deferred` | `deferred`, target = refs 47 and 48 (CALL 6; no operation named in the text) |
+| viduarre_2017 | `deferred` | `deferred`, target = Smith et al. / Glasser et al.; **FIX is not the value** (a structured-noise tool; the check routes it if returned) |
+| vanderwal_2016 | `deferred` | `deferred`, target = C-PAC. **Risk:** `ANTs` returned as `named_tool` from the same sentence — the host-sentence limit the value-in-quote check cannot catch (DELTA §4, recorded limit); reported as found if it happens |
+| poldrack_2015 | `deferred` | `deferred`, target = the Washington University pipeline (ref 45), through edit (a) |
+| power_2014 | `described_only` | unchanged from version 3: `described_only` ×10 |
+| agtzidis_2020 | `described_only` | unchanged: `described_only`, the paper's phrase; any `SPM12` is a check failure |
+| liu_2013 | `deferred` (v1.7.1) | unchanged: `deferred`, target = the FCP scripts |
+| binder_1999 | `described_only` | unchanged: the `AFNI` carry reported as found and demoted by the check |
+| derosa_2025 | `described_only` — fitted | unchanged: routed by the check; model state and value reported as found |
+| ciric_2017 | `named_tool` / MCFLIRT — post hoc | unchanged: `MCFLIRT` ×10 with the ESTIMATE span |
+
+**Anything else is reported as found**, as its own named line. The model's binding is reported beside
+the frozen heuristic's class, disagreements counted (Amendment 7). **No rates.**
+
+### Unchanged
+
+The probe tests reachability, not accuracy, and no accuracy figure may be computed from or cited out of
+it. The post-checks run on the processed layer; the raw layer and the state-map rows are computed as
+before. The run follows the author's review of version 4; no call is made before it.
