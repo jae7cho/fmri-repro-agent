@@ -107,7 +107,15 @@ _PINNED = {
     #: named pipeline". braun_2015, viduarre_2017 and vanderwal_2016 join the probe set and are fitted
     #: from this version. A NEW VINTAGE; regression on all ten papers; readings pre-declared in
     #: Amendment 8 before this edit was made.
-    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
+    #:
+    #: VERSION 5, 2026-10-26 (late night), by the author's ruling (prereg Amendment 9). Superseded value
+    #: b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837, which stays on the
+    #: version-4 run of 2026-10-26 (ten papers, K=10) and on the same-day version-4 ARM that this
+    #: version is judged against. One general edit in STEP 4: a kept passage is read with the sentence
+    #: that introduces its procedure set, whose citation or pipeline -- named or unnamed -- governs the
+    #: operation sentences that follow; a bound tool or any stated detail still wins. Adoption rule and
+    #: readings are in Amendment 9, written before this edit. The adopted version FREEZES under C11.
+    "MOTION_METHOD_PROMPT": ("fb5735fba39457a0f67aebe95fa4668f1df7ae55568f3ad86d1274563863e6d2"),
 }
 
 _VINTAGE_NOTE = (

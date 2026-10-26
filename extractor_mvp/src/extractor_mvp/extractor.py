@@ -1090,6 +1090,16 @@ value for this acquisition — use status="missing" for that field.
 #      separate the two anchors on the axis it names; the conflict is reported in Amendment 4,
 #      not resolved here.
 #
+# VERSION 5, 2026-10-26 (late night): ONE general edit in STEP 4, from CALL 6 and CALL 11, naming no
+# paper (prereg Amendment 9): each kept passage is read together with the sentence that introduces
+# the procedure set it belongs to, and a citation or a pipeline in that introducing sentence -- named
+# or unnamed ("were preprocessed as previously described12") -- governs the operation sentences that
+# follow it until the text begins a new procedure set. STEP 3 and the four-detail rule still decide
+# first. Written for the shape version 4 left unreached: an unnamed pipeline cited by a bare number in
+# the introducing sentence, followed by an operation sentence STEP 1 keeps, which the model read
+# alone. Run against version 4 the same day on all ten papers under Amendment 9's adoption rule; the
+# adopted version freezes under C11. Pinned with a dated note; b0093774... retained.
+#
 # VERSION 4, 2026-10-26 (night): three GENERAL edits from CALL 6 and CALL 11, none naming a paper
 # (prereg Amendment 8), after the version-3 run reached `deferred` on one of its two deferral cases
 # and the author's pass over the deferred rows found three citation shapes the stanza could not reach:
@@ -1198,6 +1208,11 @@ A citation may appear as author-year, as a bare number attached to a word in the
 PDF text can run them together: "as described previously12"), or as a NAMED PIPELINE -- a
 processing stream the text says performed its preprocessing, whose internal tool for this step it
 never names. A named pipeline is a deferral target with or without a reference beside it.
+Read each kept passage TOGETHER WITH the sentence that introduces the procedure set it belongs to.
+A citation or a pipeline in that introducing sentence -- named or unnamed ("were preprocessed as
+previously described12") -- governs the operation sentences that follow it, until the text begins
+a new procedure set. STEP 3 and the four-detail rule still decide first: a bound tool or any
+stated detail wins.
 - The operation is named under a cited pipeline, a cited method, a cited paper, or a named
   pipeline, and the text states NONE of the four details -> the method is DEFERRED to that target.
 - The text states ANY of the four details -> the method is DESCRIBED in the paper's own words,
