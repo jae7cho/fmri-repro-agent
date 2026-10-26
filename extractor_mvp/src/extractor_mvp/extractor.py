@@ -1053,6 +1053,21 @@ value for this acquisition — use status="missing" for that field.
 #      that limit, with the NOT BOUND case routed to the paper's-own-words rule instead.
 #   6. STEP 2 said "the surviving passage" while STEP 1 can keep several. Now "the kept passages".
 #
+# SEVENTH CORRECTION, 2026-10-22, AFTER the first run -- a prereg C11 iteration, not a pre-run fix:
+#   7. STEP 3's "BOUND BUT ROUTED ELSEWHERE" was abstract, and on the 2026-10-21 run derosa returned
+#      `ICA-AROMA` on 10 of 10 draws (prereg reading 2, "CALL 4 territory"). It now names the row
+#      and the tools: COBIDAS D.3 p.57 lists CompCor, ICA-FIX and ICA-AROMA under "Artifact and
+#      structured noise removal" (verified against the report), so they belong to that row, supply
+#      nothing here, and the value is the paper's own phrase for the operation. STEP 4's first rule
+#      gained "and not routed elsewhere" so the two rules cannot both fire.
+#      This REVERSES correction 4's reasoning by choice: derosa's own tool is now named in the
+#      stanza, so derosa's result under this stanza is FITTED, not independent. Recorded in the
+#      pin's dated note and in prereg Amendment 4. A second iteration the author proposed (the
+#      deferral line between poldrack and liu_2013) is HELD pending a ruling -- checked against
+#      CALL 6, CALL 7 and CALL 2a, it conflicts with CALL 7's enumeration criterion and does not
+#      separate the two anchors on the axis it names; the conflict is reported in Amendment 4,
+#      not resolved here.
+#
 # ORDERED STEPS, not prose exclusions, because the protocol says so in as many words
 # (protocol:526): "the axes are to be **emitted as discrete steps**, not offered as prose
 # guidance." Its reason is docs/findings/temporal-firewall-fix.md, which found the model
@@ -1104,11 +1119,15 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   the package is named, named with a version, or named in the same sentence as the step.
 - BOUND BUT ROUTED ELSEWHERE: if the only tool bound to this step performs an operation that
   belongs to a different field, then the assertion that motion correction was performed still
-  stands, but no tool name survives.
+  stands, but no tool name survives. In particular, the tools COBIDAS D.3 lists under "Artifact
+  and structured noise removal" -- CompCor, ICA-FIX, ICA-AROMA -- belong to THAT row, not to this
+  one, EVEN WHEN the text says "motion correction via" one of them. Here they supply nothing:
+  the value is the paper's own phrase for the operation (step 4, second rule), never the tool.
 
 ## STEP 4 -- OUTPUT
-- Exactly one tool in ESTIMATE and BOUND -> status "extracted"; value = that tool; verbatim_quote
-  = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of the same tool.
+- Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
+  that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY. Never quote a CONSUME mention of
+  the same tool.
 - The subject gate passed and the operation is described, but no bound tool is in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing

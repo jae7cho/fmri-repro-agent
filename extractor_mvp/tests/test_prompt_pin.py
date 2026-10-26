@@ -54,7 +54,30 @@ _PINNED = {
     #:
     #: This is what a pin update looks like: deliberate, dated, superseded hash retained, reason
     #: recorded. It is NOT a licence to edit the stanza to make a test pass.
-    "MOTION_METHOD_PROMPT": ("56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a"),
+    #:
+    #: UPDATED 2026-10-22, AFTER the first run, under prereg C11 (iteration on the probe papers
+    #: only; no held-out text was read in the session that made it). Superseded value was
+    #: 56bc6305d30cef011f382af74195d3352a6c584ef3abe317c30b807be9b1e21a -- the hash every draw of
+    #: the 2026-10-21 run carries, and it stays in that run's manifest, projection and findings.
+    #: One change, and one proposed change deliberately NOT made:
+    #:
+    #:   * MADE -- STEP 3's "BOUND BUT ROUTED ELSEWHERE" now names COBIDAS D.3's "Artifact and
+    #:     structured noise removal" row and the tools D.3 p.57 lists under it (CompCor, ICA-FIX,
+    #:     ICA-AROMA): they belong to that row, supply nothing here, and the value is the paper's
+    #:     own phrase for the operation. STEP 4's first rule gained "and not routed elsewhere".
+    #:     Prompted by derosa_2025 returning `ICA-AROMA` on 10 of 10 draws (prereg reading 2).
+    #:     Because the stanza now names derosa's own tool, derosa's result under this hash is
+    #:     FITTED, not independent -- the circularity correction 4 removed is re-admitted by choice.
+    #:   * HELD -- a deferral line ("a paper that only names the operation under a cited pipeline
+    #:     defers; one that describes how the method works in its own words does not"; poldrack
+    #:     deferred, liu_2013 described_only). Checked against CALL 6, CALL 7 and CALL 2a before
+    #:     writing, as instructed: it conflicts with CALL 7's enumeration criterion and does not
+    #:     separate its two anchors on the axis it names. Reported in prereg Amendment 4, not
+    #:     resolved by editing the stanza.
+    #:
+    #: Every draw after this date names 378a294f...; any draw naming 56bc6305... ran the superseded
+    #: stanza. The two are different vintages and are never pooled.
+    "MOTION_METHOD_PROMPT": ("378a294f94ca9f0fc6bd45bd42caf4646a007c7d705d05c8b5f584dd66ca8cab"),
 }
 
 _VINTAGE_NOTE = (
