@@ -499,6 +499,9 @@ _REASON_BUCKET: dict[str, str] = {
     # in it or names a structured-noise tool. not_covered, like base_pipeline_value_unsupported.
     "motion_value_unsupported_by_quote": "not_covered",
     "motion_value_routed_structured_noise": "not_covered",
+    # The step-field quote-support check (quote_support.py, 2026-10-26): the quote grounded; no alias
+    # of the value (or the number) is in it. A statement about the extractor's evidence.
+    "value_unsupported_by_quote": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -558,6 +561,11 @@ _REASON_LINE: dict[str, str] = {
     "motion_value_routed_structured_noise": (
         "the method named for motion correction is a structured-noise tool (COBIDAS D.3 artifact "
         "row), not a realignment tool — check the source yourself"
+    ),
+    # Must NOT say "not reported in source": the quoted sentence is real paper text about this step.
+    "value_unsupported_by_quote": (
+        "a value was returned but the quoted sentence does not state it or a known form of it — "
+        "check the source yourself"
     ),
 }
 

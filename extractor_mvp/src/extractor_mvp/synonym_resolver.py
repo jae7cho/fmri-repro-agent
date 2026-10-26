@@ -265,6 +265,35 @@ def resolve_to_literal(
 
 
 # Bare-field-id -> (synonyms, underspecified) used by the extractor.
+# temporal_standardization.method — the table build 2 §4c proposed and no build made
+# (docs/design/DESIGN_temporal_standardization_build2.md:226-234), built 2026-10-26 FOR THE
+# QUOTE-SUPPORT CHECK (quote_support.py; DELTA_value_in_quote_step_fields.md §5 ruling 3). It is
+# deliberately NOT in SYNONYMS_BY_FIELD: that map is keyed on the bare field id, "method" is the
+# bare id of two fields (motion opts out explicitly), and the author's condition for this change
+# was that resolution and raw outputs stay as they are — the field still resolves by exact Literal
+# membership (extractor.py, "no synonym table; exact member only"). Seeded from §4c's phrasings,
+# with the ellipsis form split into its two halves, plus z-scored / z-scoring stems for Cho 2021's
+# wording ("z-scoring the segments"). Kept TIGHT per §4c: the object discrimination (signal vs
+# regressor vs component) is the prompt's job and cannot be encoded here — identical words.
+TS_METHOD_SYNONYMS: dict[str, list[str]] = {
+    "voxel_temporal_zscore": [
+        "voxel temporal zscore",
+        "voxel-wise temporal z-score",
+        "per-voxel temporal z-score",
+        "temporal z-score",
+        "temporal z-scoring",
+        "z-scored over time",
+        "z-scored across time",
+        "temporally normalized",
+        "temporally standardized",
+        "temporal standard deviation",
+        "z-scored",
+        "z-scoring",
+        "zscored",
+        "zscoring",
+    ],
+}
+
 SYNONYMS_BY_FIELD: dict[str, tuple[dict[str, list[str]], list[str] | None]] = {
     "target_space": (TARGET_SPACE_SYNONYMS, TARGET_SPACE_UNDERSPECIFIED),
     "surface_registration": (SURFACE_REGISTRATION_SYNONYMS, SURFACE_REGISTRATION_UNDERSPECIFIED),

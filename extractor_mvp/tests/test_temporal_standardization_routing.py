@@ -100,6 +100,30 @@ def test_non_literal_method_value_recorded_unresolved() -> None:
     # 0.5.0: a value outside the Literal (no synonym table for "method") is no longer demoted to
     # MISSING — it is RECORDED as EXTRACTED with resolved=None, resolution="unrecognized" (the
     # verbatim term is kept, not discarded). No value_not_in_literal diagnostic is emitted.
+    #
+    # FIXTURE NOTE, 2026-10-26: the value used to be "min_max_scaled", which is in no quote. Since the
+    # step-field quote-support check (quote_support.py, DELTA_value_in_quote_step_fields.md §5) an
+    # unrecognized value is its own only alias and must occur in its quote, so that value is now
+    # demoted -- with reason value_unsupported_by_quote, NOT value_not_in_literal, and the raw value
+    # retained on the diagnostic. The 0.5.0 claim holds for an unrecognized value the quote DOES
+    # carry, which is what this fixture now uses; the demotion is asserted beside it.
+    prep, diags, _ = extract_preprocessing(
+        ParsedPaper(text=TEXT, source="t", parser="manual"),
+        "m",
+        client=_fake_client(
+            _payload(temporal_standardization_method=_ex("temporally normalized", _ZSCORE_QUOTE))
+        ),
+    )
+    ts = _ts_step(prep)
+    assert ts.method.extraction.status == "EXTRACTED"
+    assert ts.method.extraction.value.verbatim == "temporally normalized"
+    assert ts.method.extraction.value.resolved is None
+    assert ts.method.extraction.value.resolution == "unrecognized"
+    assert not any(
+        d.field == "temporal_standardization.method" and "value_not_in_literal" in d.failure_reason
+        for d in diags
+    )
+    # the same shape with a value the quote does not carry: demoted, raw value kept, no coercion
     prep, diags, _ = extract_preprocessing(
         ParsedPaper(text=TEXT, source="t", parser="manual"),
         "m",
@@ -108,22 +132,32 @@ def test_non_literal_method_value_recorded_unresolved() -> None:
         ),
     )
     ts = _ts_step(prep)
-    assert ts.method.extraction.status == "EXTRACTED"
-    assert ts.method.extraction.value.verbatim == "min_max_scaled"
-    assert ts.method.extraction.value.resolved is None
-    assert ts.method.extraction.value.resolution == "unrecognized"
-    assert not any(
-        d.field == "temporal_standardization.method" and "value_not_in_literal" in d.failure_reason
-        for d in diags
-    )
+    assert ts.method.extraction.status == "MISSING_FROM_PAPER"
+    assert ts.method.inference.reason == "value_unsupported_by_quote"
+    d = next(x for x in diags if x.field == "temporal_standardization.method")
+    assert d.failure_reason == "value_unsupported_by_quote" and d.raw_value == "min_max_scaled"
 
 
 def test_intensity_convention_does_not_resolve_zscore() -> None:
     # §3b: z-score fed into the intensity convention no longer resolves (voxel_temporal_zscore left
     # IntensityNormalizationConvention in Build 1). 0.5.0 records the verbatim term as EXTRACTED with
     # resolved=None rather than relabeling MISSING — "not a valid convention" is now resolved=None.
-    prep = _prep(_payload(intensity_convention=_ex("voxel_temporal_zscore", _ZSCORE_QUOTE)))
+    #
+    # FIXTURE NOTE, 2026-10-26: the token "voxel_temporal_zscore" is unrecognized on the convention
+    # field and, being another field's canonical, occurs in no quote. Since the quote-support check
+    # (quote_support.py, DELTA_value_in_quote_step_fields.md §5) that is a demotion with reason
+    # value_unsupported_by_quote. The §3b property this test pins -- the token is NOT resolved as a
+    # convention -- still holds: no member is produced and the raw value is retained on the
+    # diagnostic, not coerced.
+    prep, diags, _ = extract_preprocessing(
+        ParsedPaper(text=TEXT, source="t", parser="manual"),
+        "m",
+        client=_fake_client(
+            _payload(intensity_convention=_ex("voxel_temporal_zscore", _ZSCORE_QUOTE))
+        ),
+    )
     intensity = next(s for s in prep.steps if s.kind == "intensity_normalization")
-    assert intensity.convention.extraction.status == "EXTRACTED"
-    assert intensity.convention.extraction.value.resolved is None
-    assert intensity.convention.extraction.value.verbatim == "voxel_temporal_zscore"
+    assert intensity.convention.extraction.status == "MISSING_FROM_PAPER"
+    assert intensity.convention.inference.reason == "value_unsupported_by_quote"
+    d = next(x for x in diags if x.field == "intensity_normalization.convention")
+    assert d.raw_value == "voxel_temporal_zscore"

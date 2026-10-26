@@ -32,9 +32,8 @@ if the paper had said nothing.
 
 from __future__ import annotations
 
-import re
-
-from extractor_mvp.span_resolver import _first_use_variants, normalize_with_offset_map
+from extractor_mvp.quote_support import token_equivalent, tokens
+from extractor_mvp.span_resolver import _first_use_variants
 
 #: Base of the reason emitted when the value is not in its own quote (ruling 1-3).
 MOTION_VALUE_UNSUPPORTED = "motion_value_unsupported_by_quote"
@@ -54,52 +53,12 @@ STRUCTURED_NOISE_TOOLS: dict[tuple[str, ...], str] = {
     ("ica", "aroma"): "ica_aroma",
 }
 
-#: Suffixes stripped once, longest first, and only when at least ``_MIN_STEM`` characters remain.
-#: Chosen for the word forms seen in motion-correction prose (realign-ment/-ed/-ing,
-#: coregist-ration/-ered, spatial-ly, image-s). Deliberately not a general stemmer.
-_SUFFIXES: tuple[str, ...] = ("ation", "ment", "ing", "ies", "ied", "ed", "es", "ly", "s")
-_MIN_STEM = 4
-
-
-def _tokens(s: str) -> list[str]:
-    """Lower-cased, NFKD-folded alphanumeric tokens — the same instrument ``quote_supports_value`` uses."""
-    return re.findall(r"[a-z0-9]+", normalize_with_offset_map(s.lower())[0])
-
-
-def _stem(tok: str) -> str:
-    for suf in _SUFFIXES:
-        if tok.endswith(suf) and len(tok) - len(suf) >= _MIN_STEM:
-            return tok[: -len(suf)]
-    return tok
-
-
-def _stem_equivalent(a: str, b: str) -> bool:
-    """Two tokens are the same word form when equal, or when their stems agree.
-
-    Tokens shorter than ``_MIN_STEM`` must match exactly (``spm`` is not ``spm12``; ``fd`` is
-    ``fd``). Longer tokens match when their stems are equal, or when one stem is a prefix of the
-    other, or when their common prefix covers all but one character of the shorter stem — the
-    last clause is what joins ``coregistration`` (stem ``coregistr``) to ``coregistered`` (stem
-    ``coregister``). Every clause requires the shared material to be at least ``_MIN_STEM`` long.
-    """
-    if a == b:
-        return True
-    if len(a) < _MIN_STEM or len(b) < _MIN_STEM:
-        return False
-    sa, sb = _stem(a), _stem(b)
-    if sa == sb:
-        return True
-    short, long_ = (sa, sb) if len(sa) <= len(sb) else (sb, sa)
-    if len(short) < _MIN_STEM:
-        return False
-    if long_.startswith(short):
-        return True
-    common = 0
-    for x, y in zip(sa, sb, strict=False):
-        if x != y:
-            break
-        common += 1
-    return common >= _MIN_STEM and common >= len(short) - 1
+#: The matcher is shared with the step-field check (quote_support.py) and is DIGIT-EXACT since
+#: 2026-10-26 (DELTA_value_in_quote_step_fields.md §5 ruling 5): a token containing a digit must
+#: match exactly, so ``mni152`` no longer stands for ``mni152nlin6asym`` through the prefix clause.
+#: The 160 resolved motion draws on record are unchanged by the tightening (the replay shows 0).
+_tokens = tokens
+_stem_equivalent = token_equivalent
 
 
 def quote_supports_value_inflected(value: str, quote: str) -> bool:

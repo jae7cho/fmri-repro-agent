@@ -101,6 +101,9 @@ def _method(prep: Any) -> Any:
         ("ACRONYM", "an iterative procedure that minimizes variance (Author, 1999b)", False),
         # short tokens must match exactly: "spm" is not supported by "spm12"
         ("SPM", "realigned using SPM12", False),
+        # digit-exact (2026-10-26 tightening): an identifier is not supported by a prefix of it
+        ("MNI152NLin6Asym", "normalized to MNI152 standard space", False),
+        ("SPM12", "performed with SPM12b", False),
         ("SPM12", "realigned using SPM12", True),
         # hyphen and case
         ("Denoise-ICA-AROMA", "via DenoiseICA-AROMA (version 1.0)", False),

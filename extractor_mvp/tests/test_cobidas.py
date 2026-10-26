@@ -436,6 +436,9 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
             # quote resolved, and both must render "could not verify", never "not reported".
             "motion_value_unsupported_by_quote",
             "motion_value_routed_structured_noise",
+            # Added 2026-10-26 (later) with the step-field quote-support check (quote_support.py,
+            # DELTA_value_in_quote_step_fields.md §5 ruling 6).
+            "value_unsupported_by_quote",
         }
     )
     # every member matches through _gap_base, suffixed as the producers emit them

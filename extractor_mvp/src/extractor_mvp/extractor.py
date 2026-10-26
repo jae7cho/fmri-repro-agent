@@ -66,6 +66,7 @@ from pydantic import BaseModel, Field
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.motion_guard import motion_post_check
 from extractor_mvp.parsed_paper import ParsedPaper
+from extractor_mvp.quote_support import step_value_supported
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
 
@@ -572,12 +573,13 @@ def _process_field(
     # span_recovered=True — honest because the marker distinguishes it from a clean match.
     # Step fields are marked-only in this release (no value-support guard here; that guard is
     # base_pipeline-scoped — see _build_base_pipeline). Only a genuine not-found span drops.
-    # DATED NOTE, 2026-10-26: motion_correction.method is now the exception. extract_motion_method
+    # DATED NOTE, 2026-10-26: motion_correction.method is the first exception — extract_motion_method
     # applies motion_guard.motion_post_check AFTER this function returns (DELTA_value_in_quote_motion.md
-    # §4), because the 2026-10-22/25 probe runs showed 30 resolved draws whose value came from a
-    # sentence other than the one quoted. The other seven step fields are still marked-only; a
-    # read-only survey of the stored results (docs/findings/value-support-survey-step-fields.md)
-    # measures what extending the check to them would do, before any of them is changed.
+    # §4). LATER THE SAME DAY the seven step fields got their own check, below, at the Extracted
+    # return (quote_support.step_value_supported; DELTA_value_in_quote_step_fields.md §5): alias-whole
+    # for the five Literal fields, digit-exact for the two numbers. "Marked-only" is no longer true of
+    # any targeted field; the survey that preceded the change is
+    # docs/findings/value-support-survey-step-fields.md.
     if resolution.span is None:
         return (
             _missing_pf(field_id, t, f"extraction_quote_unresolved:{resolution.failure_reason}"),
@@ -590,6 +592,19 @@ def _process_field(
             None,
         )
 
+    # Quote-support check for the step fields (quote_support.py; DELTA_value_in_quote_step_fields.md
+    # §5, the author's rulings of 2026-10-26). Runs on the text the resolver LOCATED, after the span
+    # resolved: a Literal value is supported when an alias of it, taken whole, is in that text; a
+    # number when the number is in it, digit-exact. The motion field is not covered here (it has its
+    # own post-check in extract_motion_method) and None means "not a checked field". One literal
+    # reason at one _missing_pf call, so tests/test_render.py's reason scan can see it.
+    supported = step_value_supported(dotted, value, resolution.span.text)
+    if supported is False:
+        return (
+            _missing_pf(field_id, t, "value_unsupported_by_quote"),
+            ExtractionDiagnostic(dotted, "value_unsupported_by_quote", fe.value, fe.verbatim_quote),
+            None,
+        )
     return (
         _extracted_pf(field_id, t, value, resolution.span, span_recovered=resolution.recovered),
         None,

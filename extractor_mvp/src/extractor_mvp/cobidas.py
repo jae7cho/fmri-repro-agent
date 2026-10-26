@@ -165,6 +165,10 @@ _UNVERIFIABLE_GAP_BASES = frozenset(
         # derosa's motion row would render "not reported" while the paper asserts the operation.
         "motion_value_unsupported_by_quote",
         "motion_value_routed_structured_noise",
+        # The step-field quote-support check (quote_support.py, DELTA_value_in_quote_step_fields.md
+        # §5 ruling 6, 2026-10-26): the span resolved and no alias of the value is in it. Same
+        # judgement as base_pipeline_value_unsupported, on the seven targeted step fields.
+        "value_unsupported_by_quote",
     }
 )
 
