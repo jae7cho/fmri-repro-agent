@@ -1090,6 +1090,20 @@ value for this acquisition — use status="missing" for that field.
 #      separate the two anchors on the axis it names; the conflict is reported in Amendment 4,
 #      not resolved here.
 #
+# VERSION 4, 2026-10-26 (night): three GENERAL edits from CALL 6 and CALL 11, none naming a paper
+# (prereg Amendment 8), after the version-3 run reached `deferred` on one of its two deferral cases
+# and the author's pass over the deferred rows found three citation shapes the stanza could not reach:
+#   (a) citation forms -- author-year, a bare number the PDF layer attaches to a word, or a NAMED
+#       PIPELINE, which is a deferral target with or without a reference beside it (target_kind
+#       "pipeline");
+#   (b) wholesale deferral (CALL 6) -- when STEP 1 keeps no passage and the text defers its
+#       preprocessing as a whole, the output is "deferred" with that target, not "missing"; kept
+#       passages take precedence;
+#   (c) STEP 4's trigger: under a cited pipeline, a cited method, a cited paper, or a named pipeline.
+# braun_2015, viduarre_2017 and vanderwal_2016 join the probe set and are FITTED from this version,
+# beside derosa and poldrack; the clean three are untouched. Pinned with a dated note; ea7b0084...
+# retained.
+#
 # VERSION 3, 2026-10-26 (later): written from protocol v1.7 (CALL 11, rule A) and option (c) of
 # prereg Amendment 1 -- not from any paper's text. Two changes to the 56bc6305... stanza:
 #   * a CITATION step (STEP 4) carrying CALL 11 as ordered steps: with no bound ESTIMATE tool, the
@@ -1147,7 +1161,10 @@ ask of EACH ONE: what is aligned to what?
 Then:
 - If at least one passage was kept, continue to step 2 using only the kept passages.
 - Only if NO passage was kept -- the text describes no functional-to-functional alignment at all --
-  output status "missing".
+  look for a WHOLESALE deferral: the text defers its preprocessing as a whole to a citation or to a
+  named pipeline ("preprocessed as described in ...", "the <pipeline> minimally preprocessed data").
+  If it does, output status "deferred" with that target (step 5). If it does not, output status
+  "missing". Kept passages take precedence: this rule applies ONLY when none is kept.
 - If the text states the step was NOT performed, output status "missing".
 
 ## STEP 2 -- ROLE (for every tool named in the kept passages, assign exactly one)
@@ -1177,16 +1194,20 @@ Otherwise decide between "deferred" and the paper's own words by what the text i
 about HOW the motion was estimated. Exactly four details count:
   (a) the algorithm, (b) the transform type (for example rigid body), (c) the reference image the
   volumes are aligned to, (d) the cost function.
-- The operation is named under a cited pipeline, a cited method or a cited paper, and the text
-  states NONE of the four details -> the method is DEFERRED to that citation.
+A citation may appear as author-year, as a bare number attached to a word in the text layer (the
+PDF text can run them together: "as described previously12"), or as a NAMED PIPELINE -- a
+processing stream the text says performed its preprocessing, whose internal tool for this step it
+never names. A named pipeline is a deferral target with or without a reference beside it.
+- The operation is named under a cited pipeline, a cited method, a cited paper, or a named
+  pipeline, and the text states NONE of the four details -> the method is DEFERRED to that target.
 - The text states ANY of the four details -> the method is DESCRIBED in the paper's own words,
   whatever it cites. A citation beside a stated detail supports the description; it does not
   replace it.
-- The text cites nothing for the operation -> the method is DESCRIBED in the paper's own words,
-  on the paper's own assertion.
-A package name alone is neither a statement of how the motion was estimated nor a citation.
-Listing the step among others under a citation is a description ONLY when the listing carries
-one of the four details.
+- The text cites nothing for the operation and names no pipeline for it -> the method is
+  DESCRIBED in the paper's own words, on the paper's own assertion.
+A software PACKAGE named as governing the analysis (a toolbox) is neither a statement of how the
+motion was estimated nor a citation; it is not a pipeline. Listing the step among others under a
+citation is a description ONLY when the listing carries one of the four details.
 
 ## STEP 5 -- OUTPUT
 - Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
@@ -1198,9 +1219,11 @@ one of the four details.
   those words; motion_correction_binding = "described_only". Do NOT substitute a word of your
   own, and do NOT invent a category. Tools named elsewhere in the kept passages do NOT license a
   value.
-- The method is DEFERRED (step 4) -> status "deferred"; ref_string = the pipeline name if the
-  text gives one, else the citation as written; deferral_sentence = the sentence that names the
-  operation under the citation; leave motion_correction_binding unset.
+- The method is DEFERRED (step 4, or step 1's wholesale case) -> status "deferred"; ref_string =
+  the pipeline name if the text gives one, else the citation as written (author-year, or the bare
+  number as it appears); deferral_sentence = the sentence that names the operation under the
+  citation, or the wholesale-deferral sentence; target_kind = "pipeline" when the target is a
+  named pipeline, else "paper"; leave motion_correction_binding unset.
 - Nothing about between-volume alignment, or the step is stated as not performed -> status
   "missing"; leave motion_correction_binding unset.
 

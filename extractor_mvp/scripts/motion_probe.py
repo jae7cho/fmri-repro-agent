@@ -16,6 +16,8 @@ Run history (each run is its own vintage, named by the stanza hash in its manife
 * version 3 (Amendment 7): stanza rewritten from protocol v1.7 (CALL 11) with option (c) -- the
   model states the binding in ``motion_correction_binding``; recorded here as ``raw_binding`` beside
   the frozen heuristic's class, so the projection can count their disagreements.
+* version 4 (Amendment 8): braun_2015, viduarre_2017 and vanderwal_2016 join the set for the three
+  deferral shapes version 3 could not reach; ten papers.
 
 **It makes ONLY the motion call.** Not ``extract``, not ``extract_preprocessing`` — just
 ``extract_motion_method``. Two reasons, both deliberate:
@@ -101,6 +103,21 @@ _PROBE_PAPERS: dict[str, dict[str, str]] = {
         # Named by the author on 2026-10-22 AFTER the first run (Amendment 4). Post hoc by
         # construction; every report of its result must say so in the same sentence as the count.
         "role": "REPLACEMENT POSITIVE CONTROL -> expect MCFLIRT, span = the ESTIMATE clause",
+    },
+    # Amendment 8 (2026-10-26): the three deferral shapes the version-3 run and the label pass found
+    # the stanza could not reach. All three are co-adjudicated and outside CALL 10's seven, so the
+    # contaminated union stays 16 of 19; they are FITTED from version 4, and every count says so.
+    "braun_2015": {
+        "pdf": "Braun_2015.pdf",
+        "role": "deferred candidate -- wholesale deferral (CALL 6); fitted from version 4",
+    },
+    "viduarre_2017": {
+        "pdf": "Viduarre_2017.pdf",
+        "role": "deferred candidate -- wholesale deferral; FIX is not the value; fitted from v4",
+    },
+    "vanderwal_2016": {
+        "pdf": "Vanderwal_2016.pdf",
+        "role": "deferred candidate -- named, uncited pipeline; host-sentence risk; fitted from v4",
     },
 }
 
@@ -322,9 +339,9 @@ def main(argv: list[str] | None = None) -> int:
         held = sorted(set(refused) & _HELD_OUT)
         extra = (
             f"\n{held} are HELD OUT: the only uncontaminated cells in the motion corpus. The "
-            "pre-registration permits iterating the stanza on the six probe papers and explicitly "
-            "does not extend that licence to these (prereg C11, C26). A draw against one cannot "
-            "be undone."
+            f"pre-registration permits iterating the stanza on the {len(_PROBE_PAPERS)} probe "
+            "papers and explicitly does not extend that licence to these (prereg C11, C26). A "
+            "draw against one cannot be undone."
             if held
             else ""
         )

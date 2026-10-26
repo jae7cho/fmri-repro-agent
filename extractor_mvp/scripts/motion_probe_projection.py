@@ -51,6 +51,10 @@ _ORDER = (
     "agtzidis_2020",
     "poldrack_2015",
     "ciric_2017",
+    # Amendment 8 (2026-10-26): the three deferral-shape papers, after the seven.
+    "braun_2015",
+    "viduarre_2017",
+    "vanderwal_2016",
 )
 
 #: Added for version-3 runs (Amendment 7): the binding the MODEL stated, and whether it agrees with

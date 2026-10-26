@@ -97,7 +97,17 @@ _PINNED = {
     #: response-model field `motion_correction_binding` on every extracted draw. A NEW VINTAGE: its
     #: draws are never pooled with any earlier run's. Pre-declared readings are in Amendment 7,
     #: written before the first draw.
-    "MOTION_METHOD_PROMPT": ("ea7b0084255454fd38a6de566a5cccf2936b67b09910f6ffa15a79d01c5734a7"),
+    #:
+    #: VERSION 4, 2026-10-26 (night), by the author's ruling (prereg Amendment 8). Superseded value
+    #: ea7b0084255454fd38a6de566a5cccf2936b67b09910f6ffa15a79d01c5734a7, which stays on the
+    #: version-3 run of 2026-10-26 (seven papers, K=10). Three GENERAL edits from CALL 6 and CALL 11,
+    #: none naming a paper: citation forms (author-year, a bare number the text layer attaches to a
+    #: word, a named pipeline as a target with or without a reference); wholesale deferral when STEP
+    #: 1 keeps no passage (CALL 6) -> "deferred", not "missing"; STEP 4's trigger widened to "or a
+    #: named pipeline". braun_2015, viduarre_2017 and vanderwal_2016 join the probe set and are fitted
+    #: from this version. A NEW VINTAGE; regression on all ten papers; readings pre-declared in
+    #: Amendment 8 before this edit was made.
+    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
 }
 
 _VINTAGE_NOTE = (
