@@ -1100,6 +1100,20 @@ value for this acquisition — use status="missing" for that field.
 # alone. Run against version 4 the same day on all ten papers under Amendment 9's adoption rule; the
 # adopted version freezes under C11. Pinned with a dated note; b0093774... retained.
 #
+# FROZEN, 2026-10-26 (late night), by Amendment 9's adoption rule applied as written: VERSION 5 WAS
+# NOT ADOPTED. In the same-day A/B (ten papers, K=10 per arm, 200 draws, each arm's manifest gated on
+# its own hash) poldrack_2015 returned `deferred` to ref 45 on 3 of 10 under version 5, below the
+# pre-declared 6 of 10; the second clause (no other paper losing more than 2 matching draws against
+# its same-day version-4 arm) was not breached -- liu_2013 went from 5 of 10 deferred under version 4
+# today to 10 of 10, binder_1999 lost 2 draws to the binding validator (2 errors after reask) -- but
+# the rule is a conjunction. The five version-5 lines were REMOVED from STEP 4 and the constant below
+# is version 4 VERBATIM, sha256 b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837,
+# the FROZEN STANZA under prereg C11. Version 5's hash fb5735fb... stays on its arm's records only.
+# scripts/motion_probe.py now refuses to draw under any other hash; changing this constant requires
+# a new prereg amendment naming the new hash there, in the same commit. poldrack's shape is recorded
+# as unreached; liu_2013's movement under version 4 (7 of 10, then 5 of 10 on a second day) is a
+# recorded cost of the frozen version, not a shape.
+#
 # VERSION 4, 2026-10-26 (night): three GENERAL edits from CALL 6 and CALL 11, none naming a paper
 # (prereg Amendment 8), after the version-3 run reached `deferred` on one of its two deferral cases
 # and the author's pass over the deferred rows found three citation shapes the stanza could not reach:
@@ -1208,11 +1222,6 @@ A citation may appear as author-year, as a bare number attached to a word in the
 PDF text can run them together: "as described previously12"), or as a NAMED PIPELINE -- a
 processing stream the text says performed its preprocessing, whose internal tool for this step it
 never names. A named pipeline is a deferral target with or without a reference beside it.
-Read each kept passage TOGETHER WITH the sentence that introduces the procedure set it belongs to.
-A citation or a pipeline in that introducing sentence -- named or unnamed ("were preprocessed as
-previously described12") -- governs the operation sentences that follow it, until the text begins
-a new procedure set. STEP 3 and the four-detail rule still decide first: a bound tool or any
-stated detail wins.
 - The operation is named under a cited pipeline, a cited method, a cited paper, or a named
   pipeline, and the text states NONE of the four details -> the method is DEFERRED to that target.
 - The text states ANY of the four details -> the method is DESCRIBED in the paper's own words,

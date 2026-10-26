@@ -856,3 +856,68 @@ full-corpus run. Its hash is the one the full-corpus run's manifest must carry.
 Reachability, not accuracy; no accuracy figure may be computed from or cited out of either arm. The
 contaminated union is 16 of 19 (Amendment 8); the clean three are not touched. The run follows the
 author's review of version 5; no call is made before it.
+
+## Freeze (2026-10-26, late night) — the adoption rule applied as written; version 4 is the frozen stanza
+
+**Written AFTER the same-day A/B, from records read only after each arm's manifest passed its gate.**
+Counts of draws; no rate. The run is reported in
+[motion-probe-v5-ab-results.md](motion-probe-v5-ab-results.md).
+
+- **Gates.** Version-4 arm (worktree at `d1292f6`, that commit's recorder): manifest
+  `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`, 6,402 characters. Version-5
+  arm (working tree at `2f0fe2e`): `fb5735fba39457a0f67aebe95fa4668f1df7ae55568f3ad86d1274563863e6d2`,
+  6,809 characters. Both checked before any record of either arm was read. Neither arm void.
+  23:15:50–23:29:33 and 23:29:33–23:41:25 UTC, back to back.
+- **Clause 1 not met.** poldrack returned `deferred` to ref 45 on **3 of 10** under version 5
+  (`described_only` on the realignment sentence, 25523–25671, on the other 7). The rule requires at
+  least 6.
+- **Clause 2 not breached, reported because the rule names it.** Matching draws by state-map row,
+  version-4 arm today → version-5 arm: liu_2013 5 → 10; poldrack 0 → 3; binder_1999 6 → 8 by row
+  (4 heuristic-`undecided` draws today, 0 under version 5), and 10 → 8 by the model's own state,
+  because 2 version-5 draws ended in error at the binding validator after reask; every other paper
+  10 → 10. No paper lost more than 2 on either reading.
+- **Outcome, as written: version 4 freezes.** The rule is a conjunction; the second clause does not
+  rescue the first.
+- **liu_2013's pre-declared reading.** Version 4 today: `deferred` **5 of 10**, `described_only` on
+  the operation sentence 5 — neither of the two branches written above (10 means variation; 7 again
+  means version 4's cost). A second day gives a second count below 10, so the loss recurs under
+  version 4 and is **recorded as the frozen version's cost**, not as within-run variation. Version 5
+  returned `deferred` 10 of 10 on this paper; that is on the record and does not change the outcome.
+
+### The frozen stanza
+
+- **Hash:** `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837` (version 4; 6,402
+  characters). The five version-5 lines were removed from STEP 4 and the constant is version 4
+  **verbatim** (its diff against `d1292f6` is comment lines only; the live hash was checked after the
+  edit). Version 5's hash stays on its arm's records and projection only and is never pooled.
+- **Three guards, one value.** `extractor_mvp/tests/test_prompt_pin.py` pins the hash with a dated
+  note. `extractor_mvp/scripts/motion_probe.py` carries it as `_FROZEN_STANZA_SHA256` and **refuses
+  to draw under any other stanza** before building a client; its manifest now also writes
+  `motion_method_prompt_frozen_sha256`. `extractor_mvp/tests/test_motion_probe_freeze.py` holds the
+  three values equal and the refusal live (positive control: a hash one character off is refused;
+  the held-out refusal still precedes any client).
+- **Rule under C11 from this note on:** no stanza change without a new amendment that names the new
+  frozen hash in the recorder, in the same commit as the edit. The full-corpus run's manifest must
+  carry `b0093774…`.
+
+### Unreached, and recorded
+
+- **poldrack's shape remains unreached under the frozen stanza:** an unnamed pipeline cited by a
+  bare number in the sentence that introduces the procedure set, followed by an operation sentence
+  STEP 1 keeps. 0 of 10 under version 4 on both days it ran; 3 of 10 under version 5's
+  introducing-sentence rule, which is on the record as the first draws ever to defer this paper and
+  was not adopted.
+- **liu_2013's loss is a cost, not a shape:** its shape (a named, versioned pipeline cited beside an
+  operation sentence) is reached, on 7 of 10 and then 5 of 10 under the frozen stanza.
+- **binder_1999 under version 5** lost 2 draws to the response schema, not to the text: the model
+  returned `status="extracted"` without `motion_correction_binding` on 7 of 10 first attempts, and 2
+  draws did not recover on reask. 0 reasks under version 4 today. Recorded; version 5 is not adopted
+  for other reasons.
+- No other shape from the label pass remains: braun, viduarre and vanderwal deferred on 10 of 10 in
+  both arms.
+
+### Unchanged
+
+Reachability, not accuracy. The contaminated union is 16 of 19; the clean three were not loaded,
+searched or read. The full-corpus run — 19 papers under `b0093774…`, the held-out three entering for
+the first time — is the next design question and is not pre-registered here.

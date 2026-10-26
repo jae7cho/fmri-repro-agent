@@ -115,7 +115,18 @@ _PINNED = {
     #: that introduces its procedure set, whose citation or pipeline -- named or unnamed -- governs the
     #: operation sentences that follow; a bound tool or any stated detail still wins. Adoption rule and
     #: readings are in Amendment 9, written before this edit. The adopted version FREEZES under C11.
-    "MOTION_METHOD_PROMPT": ("fb5735fba39457a0f67aebe95fa4668f1df7ae55568f3ad86d1274563863e6d2"),
+    #:
+    #: FROZEN, 2026-10-26 (late night): VERSION 4 IS THE FROZEN STANZA. Amendment 9's adoption rule,
+    #: applied as written to the same-day A/B (ten papers, K=10 per arm), did not adopt version 5:
+    #: poldrack_2015 deferred on 3 of 10, below the pre-declared 6 of 10. Version 5's value
+    #: fb5735fba39457a0f67aebe95fa4668f1df7ae55568f3ad86d1274563863e6d2 stays on the version-5 ARM's
+    #: records only (results/motion_probe_ab_2026-10-26_v4v5/v5, projection ..._fb57_...). The
+    #: constant was restored to version 4 VERBATIM and this pin returns to b0093774..., which is now
+    #: the hash the full-corpus run's manifest must carry (prereg C11). scripts/motion_probe.py
+    #: carries the same value as _FROZEN_STANZA_SHA256 and refuses to draw under any other; a change
+    #: here without a new amendment naming the new hash there is refused at the recorder, not only
+    #: here. See docs/findings/motion-probe-v5-ab-results.md.
+    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
 }
 
 _VINTAGE_NOTE = (

@@ -124,6 +124,23 @@ _PROBE_PAPERS: dict[str, dict[str, str]] = {
 #: Never a probe target. Named so a typo cannot silently spend a held-out cell (prereg C11, C26).
 _HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
 
+#: THE FROZEN STANZA (prereg C11; Amendment 9, adopted 2026-10-26). The sha256 of the stanza the
+#: same-day A/B adopted. The recorder refuses to run under any other: a stanza change now needs a new
+#: prereg amendment that names the new hash HERE, in the same commit, and the full-corpus run's
+#: manifest must carry this value. A pin alone (test_prompt_pin.py) can be updated to make a test
+#: pass; this constant stands between an edited stanza and a draw.
+_FROZEN_STANZA_SHA256 = "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
+
+
+def _refuse_unless_frozen(live_sha256: str) -> None:
+    """Raise before any client is built if the live stanza is not the frozen one."""
+    if live_sha256 != _FROZEN_STANZA_SHA256:
+        raise SystemExit(
+            f"refused: MOTION_METHOD_PROMPT hashes to {live_sha256[:8]}..., but the stanza is FROZEN "
+            f"at {_FROZEN_STANZA_SHA256[:8]}... (prereg C11, Amendment 9). No draw runs under an "
+            "unfrozen stanza. A change needs a new amendment naming the new hash in this file."
+        )
+
 
 @dataclass(frozen=True)
 class DrawRecord:
@@ -278,7 +295,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
         "pre_registration": (
-            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-7)"
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-9; frozen)"
         ),
         "model": _MODEL,
         "k": k,
@@ -291,6 +308,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
             MOTION_METHOD_PROMPT.encode("utf-8")
         ).hexdigest(),
         "motion_method_prompt_chars": len(MOTION_METHOD_PROMPT),
+        "motion_method_prompt_frozen_sha256": _FROZEN_STANZA_SHA256,
         "aggregation": (
             "NONE. Per-draw distribution only; no majority, no plurality, no representative value "
             "(DESIGN_kdraw_stability.md fork 3). Any aggregate is computed downstream and must "
@@ -334,6 +352,7 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.k < 1:
         raise SystemExit("--k must be >= 1")
+    _refuse_unless_frozen(hashlib.sha256(MOTION_METHOD_PROMPT.encode("utf-8")).hexdigest())
     refused = [p for p in args.papers if p not in _PROBE_PAPERS]
     if refused:
         held = sorted(set(refused) & _HELD_OUT)
