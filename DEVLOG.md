@@ -3053,3 +3053,58 @@ Commits: `2099d04`, `d1eaf94`, `865f40b` (the morning, reconstructed); `194c4a2`
 `374580c`, `a0b9e2b`, `ad667dc` (the afternoon, and the author's relabel); `f39b58c` (the same-day
 control), `86f9ab2` (the DELTA with its rulings), `8064bf1` (the revert), `5ccd3c5` (Amendment 6),
 `77eacc6` (ciric under `56bc`). This entry is committed after them.
+
+## 2026-10-26 (late)
+
+**The motion value-in-quote post-check is built, and it does on the record exactly what the DELTA
+said it would.** `motion_guard.py` holds three pure functions — an inflection-tolerant support check,
+the structured-noise routing table, and `motion_post_check` — and `extract_motion_method` applies the
+last one after `_process_field` returns, on the processed layer only. No reask: the raw
+`FieldExtractionResult` the recorder captures is untouched, so every count in v1, v2, the A/B and
+ciric stands. Support is checked before routing, so a structured-noise tool that is not in the quoted
+sentence is reported as unsupported, the more general finding. The two reasons are written as literal
+prefixes at two inline returns, because `test_render.py`'s reason scan refuses a local bound to a
+function return; both are in `cobidas._UNVERIFIABLE_GAP_BASES` and in render's bucket and wording
+tables, so a demoted motion row renders *examined; the extractor could not verify what it found* and
+never *not reported* — the rule the author asked for, and the one that keeps derosa's row honest.
+
+**Replayed over all 180 recorded draws with no model calls**: 30 unsupported, and they are the 30
+resolved cross-sentence carries by id; 20 routed, all derosa; 110 kept, among them ciric's 20 and the
+8 inflected phrases; 20 untouched because their quote never resolved. No other change. The word-form
+rule is deliberately small — nine suffixes, a four-character minimum stem, and a common-prefix clause
+that joins `coregistration` to `coregistered` — and a mutation that makes it exact-only fails six
+tests. Eight mutations in all (each branch, the order, the application site, each reason's membership,
+the passthrough guard) each fail at least one named test; two of them had silently run against no
+tests on the first pass, because zsh does not word-split an unquoted variable, and were rerun.
+
+**The identity gate was derived before it ran.** No stored JSON under `batch_a1_acceptance` carries a
+`motion_correction` step, so the expected result against HEAD was 19 identical, and it was. The
+negative control against `d31e8b7` was derived as 0 identical, 19 changed — the two papers still
+identical after `b5ae9c5` were among the five that `2099d04`'s repaired-span tag moved — and it was.
+
+**The guard's scope, corrected where correction is honest.** Of the five documents that claim the
+value-support guard covers more than `base_pipeline`, three got a dated note with the original text
+kept — `target_space-design-resolution.md` (its routing conclusion stands without the guard),
+`span-resolution-hard-drop.md` (a requirement that was scoped, not withdrawn), and the 0.5.0
+re-extraction prereg (an erratum: the agtzidis drop was `resolve_quote`'s). Two are left exactly as
+they are, because their conclusions rest on the claim: `target_space-call7-unreachable.md` argues from
+its first line that the guard "forbids an absence-evidenced conclusion", and
+`target_space-pending-runs.md` concludes binder "cannot score correct" on the same ground. Whether
+those conclusions survive — CALL 7 `native_volume` was moved to the inference arm for reasons that may
+hold without the guard — is the author's to rule, and editing them would have resolved it by stealth.
+
+**Before the other seven fields get the check, the survey says what it would cost.** Over the 19 stored
+results, `target_space` passes on all 12 non-held-out values. Eleven failures elsewhere: four numbers
+the whole-token rule cannot match across forms, six synonym or canonical forms whose alias is in the
+quote, and **one value absent from its quote outright** — liu_2013's temporal method. The held-out
+three: 2 pass, 1 fail, nothing else said. So the honest description, the author's, holds: every
+value's quote is found in the paper; for the pipeline name and version the value must also be in its
+quote; motion has that check as of today; the seven step fields do not yet.
+
+412 passed / 2 deselected in extractor_mvp by CI's two steps (coverage 83.91%), 235 in the root
+package, `ruff format --check` clean in both trees, every touched file through the hooks before
+staging. Built and verified before 17:00; committed after it, as instructed.
+
+Commits: `0621d71` (the post-check and its tests), `e066769` (the replay and the DELTA's built note),
+`c539f4e` (the three document corrections), `1aa90b5` (the step-field survey). This entry is committed
+after them.
