@@ -62,6 +62,16 @@ the timeseries stays native (label = `native_volume`, CALL 7(a)).
   value-support guard forbids an EXTRACTED value with no supporting quote
   (`target_space-call7-unreachable.md`). The extractor cannot produce this outcome.
 
+  > **Note, 2026-10-26 (original text kept).** The guard named here ran only on `base_pipeline`
+  > until this date; no check forbade an unsupported `target_space` extraction. The outcome was
+  > nonetheless never produced — the 2026-10-26 survey of the 19 stored results found every stored
+  > `target_space` value backed by its own quote — and from this commit it is forbidden by design:
+  > `quote_support.step_value_supported` (`extractor_mvp/src/extractor_mvp/quote_support.py:194`) at
+  > `extractor.py:601-606` demotes a `target_space` value no alias of which is in the located text,
+  > so an absence-evidenced `native_volume` cannot be EXTRACTED. The scoring conclusion drawn here
+  > (binder cannot score correct through extraction) therefore stands on the check, not on a guard
+  > that did not reach this field.
+
 So binder **cannot score correct** under the current architecture — it is one of the 2-of-19
 unreachable-by-construction rows (capability-limited). The run does NOT test correctness; it tests **which
 failure class** — results-space leak (grabs Talairach) vs the native_volume-via-MISSING gap — and closes

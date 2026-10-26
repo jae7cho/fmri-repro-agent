@@ -9,6 +9,19 @@ value-support guard is untouched. So it is reachable *and* the firewall holds. T
 guard blocks it in the extraction layer) still stands as the reason it must NOT be forced through
 extraction. See [`target_space-design-resolution.md`](target_space-design-resolution.md).
 
+> **Note, 2026-10-26 (scope of the guard; original text kept).** The sentences above and below that
+> credit "the value-support guard" with forbidding an absence-evidenced extraction describe a check
+> that, until this date, ran only on `base_pipeline` (`extractor.py:677`, `:778`) — never on
+> `target_space`. The claim nonetheless **held in the data**: a read-only survey of the 19 stored
+> results on 2026-10-26 (`value-support-survey-step-fields.md`) found every stored `target_space`
+> value backed by its own quote, and no stored EXTRACTED `native_volume` exists. **From this commit it
+> holds by design:** `quote_support.step_value_supported` (`extractor_mvp/src/extractor_mvp/quote_support.py:194`),
+> applied at the Extracted return of `_process_field` (`extractor.py:601-606`), demotes a `target_space`
+> value no alias of which occurs in the text the resolver located. An absence-evidenced
+> `native_volume` has no such alias in any quote and cannot be EXTRACTED; a paper that states native
+> space is supported by that statement, as it should be. The CALL 7 conclusion — that such a value
+> belongs to the inference arm with a basis — is unchanged.
+
 **DECISION (0.5.0 retype — basis NOT built).** The verbatim+resolved retype shipped (v0.5.0); the CALL 7
 inference *basis* did not. `enumerated_pipeline_complete` was proposed as an inference basis at ceiling
 0.75, then **dropped**: it changes no output — nothing produces the inference, because detecting
