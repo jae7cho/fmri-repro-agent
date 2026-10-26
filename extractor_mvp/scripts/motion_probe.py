@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
-"""The `motion_correction.method` reachability probe recorder. BUILT, NOT RUN.
+"""The `motion_correction.method` reachability probe recorder.
 
-Pre-registered by ``docs/findings/motion-method-reachability-prereg.md`` (v1 + Amendment 1).
+Pre-registered by ``docs/findings/motion-method-reachability-prereg.md`` (v1 + Amendments 1-4).
 Ordered by ``docs/design/DESIGN_motion_correction_extraction.md`` ruling E: extraction and this
 probe may precede the K-draw stability runner; SCORES may not.
+
+Run history (each run is its own vintage, named by the stanza hash in its manifest):
+
+* 2026-10-21 -- six papers, K=10, stanza ``56bc6305...``. Recorded in
+  ``docs/findings/motion-probe-v1-results.md``.
+* 2026-10-22 -- seven papers, K=10, stanza ``378a294f...``: ciric_2017 added as the REPLACEMENT
+  positive control (Amendment 4), chosen after the first run and therefore post hoc by construction.
 
 **It makes ONLY the motion call.** Not ``extract``, not ``extract_preprocessing`` — just
 ``extract_motion_method``. Two reasons, both deliberate:
@@ -13,11 +20,13 @@ probe may precede the K-draw stability runner; SCORES may not.
   any pre-registered question. Those draws would exist, be stored, and invite later use.
 * K=10 x 6 papers is 60 calls on one short prompt instead of 120 calls on two, half of them large.
 
-**It cannot be pointed at a clean paper.** ``_PROBE_PAPERS`` is exactly the six the prereg names,
-and any other id is refused before a client is built. liu_2005, tang_2025 and wheaton_2004 are the
-only uncontaminated cells in the motion corpus; prereg C11/C26 permit iterating the stanza on the
-six contaminated probe papers and explicitly do not extend that licence to those three. A probe run
-that touched one would spend a held-out cell that cannot be recovered.
+**It cannot be pointed at a clean paper.** ``_PROBE_PAPERS`` is exactly the papers the prereg names
+(six at v1, seven from Amendment 4), and any other id is refused before a client is built.
+liu_2005, tang_2025 and wheaton_2004 are the only uncontaminated cells in the motion corpus; prereg
+C11/C26 permit iterating the stanza on the contaminated probe papers and explicitly do not extend
+that licence to those three. A probe run that touched one would spend a held-out cell that cannot
+be recovered. ciric_2017 is already contaminated twice over -- `co-adjudicated`, and one of CALL
+10's seven fitting passages -- so adding it spends nothing.
 
 **Records both layers, because one mapping is not yet ruled.** The prereg requires ``verbatim``,
 ``resolved``, ``resolution`` and span per draw (``:8``) — those are ``SpecifiedTerm`` fields, i.e.
@@ -63,17 +72,30 @@ from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 _MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"  # the v6/v7-pinned model
 _CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
 
-#: The six papers the pre-registration names, and nothing else (prereg :5-7). The two controls are
-#: marked because their expected outcomes are pre-declared and must be checkable after the run.
+#: The papers the pre-registration names, and nothing else: six at v1 (prereg :5-7), plus
+#: ciric_2017 from Amendment 4 (2026-10-22). The controls are marked because their expected
+#: outcomes are pre-declared and must be checkable after the run.
 _PROBE_PAPERS: dict[str, dict[str, str]] = {
     "power_2014": {"pdf": "Power_2014.pdf", "role": "described_only candidate"},
     "binder_1999": {"pdf": "Binder_1999.pdf", "role": "described_only candidate; undecided case"},
     "liu_2013": {"pdf": "Liu_2013.pdf", "role": "described_only candidate"},
     "derosa_2025": {"pdf": "DeRosa_2025.pdf", "role": "described_only candidate; 4 readings"},
-    "agtzidis_2020": {"pdf": "Agtzidis_2020.pdf", "role": "POSITIVE CONTROL -> expect SPM12"},
+    "agtzidis_2020": {
+        "pdf": "Agtzidis_2020.pdf",
+        # Was "POSITIVE CONTROL -> expect SPM12" at v1. Amendment 3 voided that criterion: the
+        # committed label contradicted CALL 1 v1.5 and was corrected to described_only on
+        # 2026-10-22 (protocol v1.6). Kept in the set as a described_only candidate.
+        "role": "described_only candidate (ex-positive control; Amendment 3)",
+    },
     "poldrack_2015": {
         "pdf": "Poldrack_2015.pdf",
-        "role": "APPLY CONTROL -> must NOT yield applywarp",
+        "role": "APPLY CONTROL -> must NOT yield applywarp; committed label deferred",
+    },
+    "ciric_2017": {
+        "pdf": "Ciric_2017.pdf",
+        # Named by the author on 2026-10-22 AFTER the first run (Amendment 4). Post hoc by
+        # construction; every report of its result must say so in the same sentence as the count.
+        "role": "REPLACEMENT POSITIVE CONTROL -> expect MCFLIRT, span = the ESTIMATE clause",
     },
 }
 
@@ -225,7 +247,9 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "artifact": "motion_correction.method reachability probe — per-draw records",
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
-        "pre_registration": "docs/findings/motion-method-reachability-prereg.md (v1 + Amendment 1)",
+        "pre_registration": (
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-4)"
+        ),
         "model": _MODEL,
         "k": k,
         "papers": papers,
@@ -236,6 +260,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "motion_method_prompt_sha256": hashlib.sha256(
             MOTION_METHOD_PROMPT.encode("utf-8")
         ).hexdigest(),
+        "motion_method_prompt_chars": len(MOTION_METHOD_PROMPT),
         "aggregation": (
             "NONE. Per-draw distribution only; no majority, no plurality, no representative value "
             "(DESIGN_kdraw_stability.md fork 3). Any aggregate is computed downstream and must "
@@ -247,10 +272,12 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         ),
         "held_out_never_touched": sorted(_HELD_OUT),
         "latency_note": (
-            "This call's latency was UNMEASURED before this run. Per-draw wall_seconds is recorded "
-            "so it is measured here rather than borrowed from the shared call's 11.87 s "
+            "This call's latency was UNMEASURED before the first run. Per-draw wall_seconds is "
+            "recorded so it is measured here rather than borrowed from the shared call's 11.87 s "
             "(DESIGN_kdraw_stability.md 3g), which times a 13,480-char seven-field prompt; this "
-            "one is 3,887 chars and one field."
+            f"one is {len(MOTION_METHOD_PROMPT):,} chars (the template, before {{text}} is "
+            "substituted) and one field. An earlier version of this note hard-coded 3,887, the "
+            "length of the stanza two revisions before the first run; the figure is now computed."
         ),
     }
 
@@ -289,8 +316,8 @@ def main(argv: list[str] | None = None) -> int:
             else ""
         )
         raise SystemExit(
-            f"refused paper id(s): {refused}. This probe accepts only the six pre-registered "
-            f"papers: {sorted(_PROBE_PAPERS)}.{extra}"
+            f"refused paper id(s): {refused}. This probe accepts only the "
+            f"{len(_PROBE_PAPERS)} pre-registered papers: {sorted(_PROBE_PAPERS)}.{extra}"
         )
 
     out_dir = args.results_dir / "motion_probe"
