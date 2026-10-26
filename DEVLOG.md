@@ -3304,3 +3304,55 @@ unchanged, so no protocol edit.
 
 Commits: `fef37a7` (Amendment 8), `590c790` (version 4), `d8cf3ba` (the run's findings and projection),
 then this entry, then the workbook alone after it, as the author ordered the sequence.
+
+---
+
+## 2026-10-26 (late night, second sitting)
+
+**Amendment 9 and version 5 (`60dc817`, `2f0fe2e`).** The amendment, written before the edit, set a
+same-day A/B of version 5 against version 4 on all ten papers at K=10 per arm, with an adoption rule:
+version 5 is adopted if poldrack defers to ref 45 on at least 6 of 10 and no other paper loses more
+than 2 matching draws against its same-day version-4 arm; otherwise version 4 freezes. Version 5 is
+one general edit in STEP 4 — a kept passage is read with the sentence that introduces its procedure
+set, whose citation or pipeline, named or unnamed, governs the operation sentences that follow —
+pinned `fb5735fb…` with `b0093774…` retained.
+
+**The A/B: 200 draws, 23:15:50–23:41:25 UTC, both gates passed before any record was read.** The
+version-4 arm ran from a detached worktree at `d1292f6` with that commit's recorder, the version-5 arm
+from the working tree; one interpreter, the import check done before the run; the worktree removed
+after. **Version 5 was not adopted.** poldrack deferred on 3 of 10 — the first draws ever to defer this
+paper, and half the pre-declared threshold. The second clause was not breached and is reported because
+the rule names it: liu_2013 5 → 10, poldrack 0 → 3, binder 6 → 8 by state-map row (10 → 8 by the
+model's own state, after 2 draws ended in error at the binding validator following 7 reasks — the one
+paper to reask on either arm; version 4 today had none), every other paper 10 → 10. **liu_2013's
+version-4 count today was 5 of 10**, neither of the two branches Amendment 9 wrote (10 = variation; 7 =
+version 4's cost): a second day, a second count below 10, so the loss recurs under version 4 and is
+recorded as the frozen version's cost, not within-run variation. viduarre's target split 6/4 between
+its two pre-declared citations under version 5. Model binding against the heuristic: 61 agree / 0
+disagree / 4 undecided on the version-4 arm, 55 / 0 / 0 on the version-5 arm. Findings and the two
+projections (`b009`, `fb57`; fourteen needles absent from both) in `725dc6a`. Counts only, no paper
+text.
+
+**The freeze (`c5bfe6b`).** Version 4 is the frozen stanza under C11:
+`b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`. The five version-5 lines were
+removed and the constant is version 4 verbatim (its diff against `d1292f6` is comment lines only; the
+live hash checked after the edit); the pin returns to `b0093774…` with a dated note; the recorder
+carries the value as `_FROZEN_STANZA_SHA256` and refuses to draw under any other hash before building
+a client, and writes it into its manifest; a new test holds the three values equal and the refusal
+live. Two mutations counted, each diff shown non-empty before its run: the guard call dropped (fails at
+a stub client) and the comparison inverted (three of five fail); restored byte-identical. **One
+unplanned live draw:** the first run of the dropped-call mutation, before the stub client existed,
+let `main` proceed to a real K=1 draw on power_2014, written to pytest's temp directory and nowhere
+else; the test was then rewritten so that a missing guard fails at the stub and can never reach the
+model. The prereg carries a dated freeze section after Amendment 9: gates, both clauses with counts,
+liu_2013's reading, the three guards, and the rule from here on — no stanza change without a new
+amendment naming the new hash in the recorder, in the same commit. **Unreached under the frozen
+stanza:** poldrack's shape (an unnamed pipeline cited by a bare number in the introducing sentence,
+beside an operation sentence STEP 1 keeps), 0 of 10 on both days version 4 ran. Not a shape, a cost:
+liu_2013 at 7 then 5 of 10.
+
+**Next, for the author:** the full-corpus motion run — 19 papers under `b0093774…`, the held-out three
+entering for the first time — is a design question, not yet pre-registered.
+
+Commits: `60dc817` (Amendment 9), `2f0fe2e` (version 5), `c5bfe6b` (the freeze), `725dc6a` (findings and
+projections), then this entry.
