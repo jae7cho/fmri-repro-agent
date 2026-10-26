@@ -494,6 +494,11 @@ _REASON_BUCKET: dict[str, str] = {
     # a paper claim — the KB says the step does not apply — so it must not land in not_reported.
     "kb_ambiguous": "not_covered",
     "kb_not_applicable": "not_covered",
+    # The motion post-check (motion_guard.py, 2026-10-26). Both are judgements about the
+    # extractor's evidence, not about the manuscript: the quote grounded; the value is either not
+    # in it or names a structured-noise tool. not_covered, like base_pipeline_value_unsupported.
+    "motion_value_unsupported_by_quote": "not_covered",
+    "motion_value_routed_structured_noise": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -542,6 +547,17 @@ _REASON_LINE: dict[str, str] = {
     "kb_not_applicable": (
         "AESPA's knowledge base records that this step does not apply to the named pipeline; "
         "the paper did not report it"
+    ),
+    # Must NOT say "not reported in source": the quoted sentence is real paper text about motion
+    # correction. The first says the value was taken from elsewhere than the sentence cited; the
+    # second says the tool named belongs to COBIDAS D.3's artifact/structured-noise row (CALL 4).
+    "motion_value_unsupported_by_quote": (
+        "a motion-correction value was returned but the quoted sentence does not state it — "
+        "check the source yourself"
+    ),
+    "motion_value_routed_structured_noise": (
+        "the method named for motion correction is a structured-noise tool (COBIDAS D.3 artifact "
+        "row), not a realignment tool — check the source yourself"
     ),
 }
 

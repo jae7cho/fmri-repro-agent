@@ -431,6 +431,11 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
             "deferral_quote_unresolved",
             "extraction_quote_missing",
             "kb_ambiguous",
+            # Added 2026-10-26 with the motion value-in-quote post-check (motion_guard.py,
+            # DELTA_value_in_quote_motion.md §4): both sit on a MissingFromPaper motion field whose
+            # quote resolved, and both must render "could not verify", never "not reported".
+            "motion_value_unsupported_by_quote",
+            "motion_value_routed_structured_noise",
         }
     )
     # every member matches through _gap_base, suffixed as the producers emit them

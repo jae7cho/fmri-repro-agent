@@ -158,6 +158,13 @@ _UNVERIFIABLE_GAP_BASES = frozenset(
         # base_pipeline.VERSION and step fields, never the base_pipeline field, so it cannot alter
         # _software_coverage — by construction, not by corpus.
         "kb_ambiguous",
+        # The two motion post-check reasons, DELTA_value_in_quote_motion.md §4 (2026-10-26). Both
+        # sit on a MissingFromPaper field whose quote RESOLVED: the extractor looked, found a
+        # value, and could not credit it -- either the quoted sentence does not state it, or the
+        # tool it names belongs to D.3's structured-noise row. Ruled in deliberately: left out,
+        # derosa's motion row would render "not reported" while the paper asserts the operation.
+        "motion_value_unsupported_by_quote",
+        "motion_value_routed_structured_noise",
     }
 )
 

@@ -64,6 +64,7 @@ from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field
 
 from extractor_mvp.extraction_result import FieldExtractionResult
+from extractor_mvp.motion_guard import motion_post_check
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
@@ -571,6 +572,12 @@ def _process_field(
     # span_recovered=True — honest because the marker distinguishes it from a clean match.
     # Step fields are marked-only in this release (no value-support guard here; that guard is
     # base_pipeline-scoped — see _build_base_pipeline). Only a genuine not-found span drops.
+    # DATED NOTE, 2026-10-26: motion_correction.method is now the exception. extract_motion_method
+    # applies motion_guard.motion_post_check AFTER this function returns (DELTA_value_in_quote_motion.md
+    # §4), because the 2026-10-22/25 probe runs showed 30 resolved draws whose value came from a
+    # sentence other than the one quoted. The other seven step fields are still marked-only; a
+    # read-only survey of the stored results (docs/findings/value-support-survey-step-fields.md)
+    # measures what extending the check to them would do, before any of them is changed.
     if resolution.span is None:
         return (
             _missing_pf(field_id, t, f"extraction_quote_unresolved:{resolution.failure_reason}"),
@@ -1235,10 +1242,11 @@ def extract_motion_method(
     if raw_out is not None:
         raw_out.append(extraction.motion_correction_method)
     _attr, field_id, dotted, literal_type, t = _MOTION_FIELD_SPEC
-    return _process_field(
+    raw = extraction.motion_correction_method
+    pf, diag, deferral = _process_field(
         field_id,
         dotted,
-        extraction.motion_correction_method,
+        raw,
         literal_type,
         t,
         parsed_paper.text,
@@ -1248,6 +1256,30 @@ def extract_motion_method(
         # a motion value. Asserted in tests/test_motion_method.py.
         use_synonym_table=False,
     )
+    # The value-in-quote post-check, DELTA_value_in_quote_motion.md §4 (rulings 1-4, 2026-10-26).
+    # Runs on the PROCESSED layer only -- after the quote has resolved, never as a reask -- and
+    # compares the model's own value with its own quote. The 2026-10-22 and 2026-10-25 runs
+    # produced 30 resolved draws whose tool name came from a sentence other than the one quoted;
+    # _process_field cannot see that, because resolving the quote proves the QUOTE is real, not that
+    # the VALUE is in it (:571-573 records why the step-field path was built without this check).
+    # Two inline returns rather than one reason variable, so tests/test_render.py's reason scan can
+    # read both bases (a local bound to a function return is refused there).
+    if isinstance(pf.extraction, Extracted):
+        verdict = motion_post_check(raw.value, raw.verbatim_quote)
+        if verdict == "motion_value_unsupported_by_quote":
+            return (
+                _missing_pf(field_id, t, "motion_value_unsupported_by_quote"),
+                ExtractionDiagnostic(dotted, verdict, raw.value, raw.verbatim_quote),
+                deferral,
+            )
+        if verdict is not None:
+            tool = verdict.split(":", 1)[1]
+            return (
+                _missing_pf(field_id, t, f"motion_value_routed_structured_noise:{tool}"),
+                ExtractionDiagnostic(dotted, verdict, raw.value, raw.verbatim_quote),
+                deferral,
+            )
+    return pf, diag, deferral
 
 
 def _extract_from_prompt(

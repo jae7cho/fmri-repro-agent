@@ -13,6 +13,12 @@ What these tests pin, and why each one exists:
 * ``method`` only, per prereg ``:5`` and ruling B. The other nine MotionCorrection fields stay
   untargeted; bullets 2-7 arrive by amendment after the probe.
 * the mapping check from the design doc's acceptance item 5.
+
+FIXTURE NOTE, 2026-10-26: the motion payload's value used to be the resolver id ``spm_realign``.
+Since the value-in-quote post-check (motion_guard.py, DELTA_value_in_quote_motion.md §4) a value
+that is not in its own quote is demoted on the processed layer, and ``spm_realign`` is in no quote.
+The fixtures now use the paper's own words, which the quote contains; nothing these tests pin
+depends on the value's identity. The check itself is tested in test_motion_guard.py.
 """
 
 from __future__ import annotations
@@ -77,7 +83,7 @@ def test_exactly_one_motion_call_per_paper_on_the_single_acquisition_path() -> N
         _prep_payload(),
         motion=_motion(
             "extracted",
-            value="spm_realign",
+            value="realigned to the mean image of each session",
             verbatim_quote="realigned to the mean image of each session using SPM12",
         ),
         counter=counter,
@@ -108,7 +114,7 @@ def test_both_calls_are_made_with_the_same_sampling_settings() -> None:
             _prep_payload(),
             motion=_motion(
                 "extracted",
-                value="spm_realign",
+                value="realigned to the mean image of each session",
                 verbatim_quote="realigned to the mean image of each session using SPM12",
             ),
             calls=calls,
@@ -163,7 +169,7 @@ def test_only_method_is_targeted_the_other_nine_fields_are_not() -> None:
             _prep_payload(),
             motion=_motion(
                 "extracted",
-                value="spm_realign",
+                value="realigned to the mean image of each session",
                 verbatim_quote="realigned to the mean image of each session using SPM12",
             ),
         ),
@@ -186,7 +192,11 @@ def test_only_method_is_targeted_the_other_nine_fields_are_not() -> None:
     [
         (_motion("missing"), "not_stated_in_text"),
         (
-            _motion("extracted", value="spm_realign", verbatim_quote="nowhere in the text"),
+            _motion(
+                "extracted",
+                value="realigned to the mean image of each session",
+                verbatim_quote="nowhere in the text",
+            ),
             "extraction_quote_unresolved:quote_not_found",
         ),
     ],
@@ -220,7 +230,7 @@ def test_a_method_only_run_credits_only_the_motion_row() -> None:
             _prep_payload(),
             motion=_motion(
                 "extracted",
-                value="spm_realign",
+                value="realigned to the mean image of each session",
                 verbatim_quote="realigned to the mean image of each session using SPM12",
             ),
         ),
@@ -239,7 +249,11 @@ def test_a_dropped_method_quote_renders_the_motion_row_unverifiable() -> None:
         "m",
         client=stub_client(
             _prep_payload(),
-            motion=_motion("extracted", value="spm_realign", verbatim_quote="nowhere in the text"),
+            motion=_motion(
+                "extracted",
+                value="realigned to the mean image of each session",
+                verbatim_quote="nowhere in the text",
+            ),
         ),
     )
     rc = {c.row.row_id: c for c in assess_coverage(render.flatten(prep), None)}["motion_correction"]
