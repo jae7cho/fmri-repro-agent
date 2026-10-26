@@ -2840,3 +2840,216 @@ Verified by seven needles absent from the CSV and present in the run records. 37
 
 Commits: `8803ae5` (the sampling-settings tests), `7dfbceb` (the findings doc and the projection).
 This entry is committed after them.
+
+## 2026-10-22 (morning) — reconstructed on 2026-10-26 from the files that session staged
+
+**This entry was not written by the session it describes.** That session staged ten paths on the
+morning of 2026-10-22, left no DEVLOG entry, and its transcript is not on disk (the desktop app's
+search returns fragments only). What follows is read off the staged files themselves — the protocol
+diff, the amendment, the corrected findings, the DELTA and its script, the render change and its test,
+the two target_space caveats, and `.rgignore` — on 2026-10-26, and claims nothing the files do not
+carry. The three commits are `2099d04` (render + test), `d1eaf94` (the DELTA + its predictor),
+`865f40b` (the documents). The blobs committed are byte-identical to the ones that session staged:
+the index had been overwritten by later work, and each reconstructed version was matched against the
+dangling blobs `git fsck` still held.
+
+**The positive control was mis-specified, and the ruling that says so was made after seeing the run.**
+Protocol v1.6 keeps CALL 1 v1.5's binding test and corrects its own worked example: agtzidis names
+SPM12 once, two sentences before the step clause, for "the fMRI data analysis" as a whole, and binds no
+tool to the realignment — derosa's procedure-set shape. v1.5's quotation had elided 121 characters and
+two sentence boundaries to make it look bound. So agtzidis is `described_only` with SPM12 on the
+inference arm; the competing COBIDAS §4.3 step-level reading is recorded as defensible, not dismissed;
+and the ruling is dated to the day it was made, with the statement that a clarification which converts
+measured errors into measured successes cannot also be cited as evidence the extractor performs well.
+Prereg Amendment 3 retires the control's criterion, states what the probe therefore cannot show (no paper
+in the six had a named tool as its correct answer), and binds the replacement: chosen after the run and
+said so wherever its number appears; never liu_2005, tang_2025 or wheaton_2004.
+
+**The findings document was corrected twice, and the second correction reversed the first.** The late
+2026-10-21 entry reported agtzidis as a failed control; under the relabel the same nine draws are
+consistent with the label and the one `SPM12` draw is the outlier. The count did not change; its reading
+did. The seven discarded draws were then re-described: not a defect found in passing but a **decision
+already taken** — `span_resolver.py:16-20` deliberately excludes the `×`→`/C2` glyph mangle from tier 5
+— and the attribution of those drops was corrected against three records that disagree (the v0.4.0
+remeasure's classifier, the later hand adjudication, the stale residue figure). The glyph-leak counts
+for the six probe papers were re-done with a corrected regex (agtzidis 6 leaks, poldrack 31; the first
+pass had 5 and 21 from a trailing `\b`). Ruling 4's trigger was recorded as fired on binder (10 of 10)
+with the option-(c) decision held.
+
+**A DELTA against a ratified exclusion, and the one piece of it that was built.**
+`DELTA_glyph_leak_span_recovery.md` proposes that a `/C<digit>+` run in the source may stand for exactly
+one character of the quote — a width claim, not the glyph-identity claim the docstring refuses —
+quantifies it across every published vintage (no figure moves; 30 stored records recover, all agtzidis,
+one clause; the `liu_2005` cell is declared unpredictable rather than read), and leaves the proposal
+unimplemented. Its §2a found that the safety argument it leaned on was false: `Extracted.span_recovered`
+had shipped in v0.4.0 with no consumer, so a repaired span was presented identically to a clean match.
+That disclosure was built — `render.py` now tags such a field on both surfaces through one shared
+constant, with a test — and the re-render gate against the parent reported 14 identical, 5 changed,
+the five papers predicted before the change. `glyph_leak_prediction.py` prints booleans only, by
+design, so the held-out cell's prediction can be derived without the operator seeing its text.
+
+**Two smaller records.** `target_space_README.md` and `target_space_tally.md` now say that one of the
+17 graded cells (agtzidis) is scored from the diagnostic's raw value under `scoring_mode = fallback`
+while the rendered report says *not reported in source* — the rate measures the report for 16 cells
+and the diagnostic for one. And `.rgignore` closes the `rg` path to the three held-out papers after two
+`grep` incidents that morning printed held-out text out of `results/`; the file states that plain
+`grep -r` does not read it and that the remaining protection is the explicit exclusion in two scripts.
+
+Committed 2026-10-26 as `2099d04`, `d1eaf94`, `865f40b`. One departure from the staged bytes: the
+pre-commit hook's `ruff format` rewrote three lines of `render.py` at commit time (one f-string split
+across two lines joined into one); the file had not been formatted on 2026-10-22. `test_render.py`
+passes against the committed file (49 passed). The two shared documents (`motion-method-reachability-prereg.md`,
+`motion-probe-v1-results.md`) were committed from the morning's own staged blobs, recovered from
+`git fsck --dangling` after the afternoon session had overwritten the index.
+
+## 2026-10-22 (afternoon)
+
+**The stanza was iterated once under C11, a second iteration was held, and the seven-paper re-run
+disagrees with yesterday's on the paper whose label just changed.** A fresh session, as the 2026-10-21
+results doc required: no held-out text read, `.rgignore` in place, no recursive `grep` over `results/`,
+the recorder's refusal of the held-out ids checked before anything ran.
+
+**Made: STEP 3 names the structured-noise row.** derosa returned `ICA-AROMA` on 10 of 10 yesterday, so
+"BOUND BUT ROUTED ELSEWHERE" now names COBIDAS D.3's *Artifact and structured noise removal* row and the
+tools p.57 lists under it — CompCor, ICA-FIX, ICA-AROMA — as belonging to that row and supplying nothing
+here, "EVEN WHEN the text says 'motion correction via' one of them". Verified against the report, not
+recalled. STEP 4's first rule gained "and not routed elsewhere". New hash `378a294f…`, superseded
+`56bc6305…` retained in the pin's dated note and on every v1 artifact. **This re-admits, by choice, the
+circularity correction 4 removed**: derosa's tool is named in the stanza, so derosa is fitted.
+
+**Held: the deferral line, because the check I was told to run found a conflict.** The proposed line —
+operation name under a cited pipeline defers; a description of how (algorithm, transform type,
+reference) does not; poldrack `deferred`, liu_2013 `described_only` — was to be checked against CALL 6,
+CALL 7 and CALL 2a first, with any conflict reported rather than resolved. CALL 6: none. CALL 2a:
+consistent, carried by the "cited pipeline" qualifier. **CALL 7: conflict.** Its agtzidis case makes
+*enumeration* sufficient for a citation to count as support — "had the paper not enumerated, the same
+phrasing would substitute" — and poldrack cites and then enumerates in its own voice, so CALL 7 as
+worded puts poldrack on `described_only`, which is what the CALL-7-shaped deferral arm returned on 10
+of 10 both days. The label's `deferred` comes through CALL 10. And the line's own axis does not separate
+its anchors: "realigned to correct for head motion" and "image coregistration to correct for head
+motion" are both an operation plus a purpose under a cited pipeline, with no algorithm, transform type
+or reference in either. What differs is the citing sentence's form, which is a CALL 7 distinction, not a
+how-it-works one. Written up in Amendment 4 §3 for a ruling; the stanza was not edited for it.
+
+**Named: ciric_2017 as the replacement positive control, post hoc.** Amendment 3 required one; the
+author chose it after seeing the six-paper run, so it is reported as post hoc in the same sentence as
+every count. Already contaminated twice over (co-adjudicated; CALL 10's fitting set) — no clean cell
+spent. Pre-declared readings for it and for derosa under the new stanza went into Amendment 4 before
+the run started; the commit lands after, because of the window, and the amendment says so.
+
+**The run: 70 draws, 0 reasks, 0 retries, 0 errors, 1 unresolved span.** power and liu_2013 row 1 on
+10 of 10, as before. **ciric `MCFLIRT` 10 of 10 with the ESTIMATE span** — the "(3) realignment …"
+clause, none of the three CONSUME mentions — so named-tool emission, which Amendment 3 said the probe
+could not test, is now exercised, on a post hoc control. **derosa `ICA-AROMA` 10 of 10**: the routing
+edit changed nothing, which is the temporal-firewall shape again — the exclusion is in the prompt,
+explicit, and overridden. Fitted and wrong, recorded as both. **poldrack row 1 on 10 of 10, `applywarp`
+never** — control met, label mismatch, pre-declared as what CALL 7's wording predicts.
+
+**agtzidis flipped: `SPM12` on 10 of 10, against 1 of 10 yesterday.** Under the author's relabel that is
+the pre-declared mismatch on every draw; under HEAD's superseded label it would be ten targets. The
+stanza changed and the day changed, and the project has measured temperature-0 movement across days
+before, so this run cannot say which moved it. The experiment that would — agtzidis K=10 under
+`56bc6305…` today — is inside the licence and costs ten calls, and I did not run it: it was not asked
+for, and it belongs beside the ruling on what agtzidis's label is. Spans improved on their own: 9 of
+10 resolved against 3 of 10, because the quotes stopped short of the corrupt `×` clause.
+
+**binder produced an error the prereg did not declare.** `AFNI` or `MCW-AFNI` on 5 of 10, `undecided`
+on 3, row 1 on 2. `MCW-AFNI` is in binder's text — in the Talairach-projection sentence 1,600
+characters later, cited to Cox **1996a** — and every draw quoted the **1996b** sentence. The model
+carried a package across two passages and two citations on a shared surname, which is the exact
+assumption CALL 2a's verification flag says not to make. Ruling 3 anticipated "a tool name absent from
+binder's own text"; this is a tool name present in a passage STEP 1 should have set aside. Ruling 4's
+trigger did not fire on this vintage (3 of 10 against 6) after firing at 10 of 10 on the last one, so
+the trigger is vintage-dependent, and option (c) stays held.
+
+**A generator that did not exist.** The v1 projection's header says "Emitted by extractor_mvp/scripts/"
+and no script there emits it; it was an ad-hoc script that was not kept. `motion_probe_projection.py`
+now exists, and before it touched the new run it regenerated the v1 projection from the v1 records —
+**every data row byte-identical**, CRLF included — so the two tracked projections are known to be the
+same function of their runs. It also writes the resolver vintage into the header, which the DELTA asked
+for and v1 lacked. Seven needles (`SPM12`, `MCFLIRT`, `ICA-AROMA`, `realign`, `coregist`, `Washington`,
+`iterative`) absent from the new CSV, present in the run records.
+
+**Two stale numbers.** The recorder's provenance header said the stanza "is 3,887 chars"; that was the
+length two revisions before the first run, and the pinned stanza was 4,716 when it ran and is 5,090
+now. It is computed at emit time from here on, and the manifest carries the count. The `--papers`
+refusal said "six pre-registered papers" with seven in the table; it counts the table now. The
+held-out refusal was re-tested after the edit and still fires on `liu_2005` before a client is built.
+
+377 passed / 2 deselected in extractor_mvp (plain pytest in the existing venv — `uv sync` was not run
+while the probe held that venv open); 235 in the root package. The author's agtzidis relabel is in the
+workbook working copy, unstaged, for its own commit; the results doc reads agtzidis against it and says
+so.
+
+Commits, made 2026-10-26 (the window was closed on the day): `194c4a2` (stanza + pin), `9b07f40`
+(recorder + projection generator), `374580c` (prereg Amendment 4), `a0b9e2b` (v2 findings + projection
++ the v1 pointer), `ad667dc` (the author's workbook relabel, on its own). This entry is committed after
+them, with the 2026-10-26 entry.
+
+## 2026-10-26
+
+**Fourteen commits, in the order the two 2026-10-22 reports planned, the morning's three from blobs
+recovered out of `git fsck`.** The morning session's index had been overwritten by the afternoon's
+staging, so its versions of the two shared documents no longer existed anywhere named. Reconstructing
+them from the working tree — the prereg truncated before Amendment 4, the v1 findings minus the
+afternoon's six-line pointer — produced files whose sha256 matched dangling blobs `7102f86` and
+`2461953` exactly, and the afternoon's own prereg version (through Amendment 4) matched `8751fd2` the
+same way. Each shared-file commit was then checked against its parent for only that session's hunks
+(+61, +177, +72, +36 on the prereg; +152/−30 then +5 on the v1 findings), and the last commit leaves
+each file byte-identical to the working tree. Commit 1a (`2099d04`) was checked in a worktree equal to
+its content before it existed: `test_render.py` passed, and the re-render gate against `3fc366f`
+reported 14 identical, 5 changed, the five papers the glyph DELTA predicted, every changed line the
+repaired-span tag. **One departure:** the hook's `ruff format` rewrote three lines of `render.py` at
+commit time, so 1a's blob differs from the morning's by a joined f-string; recorded in its message and
+in the reconstructed morning entry above.
+
+**The window.** The author's instruction said to touch the index only after 17:00; at 12:30 the
+author asked for the commits now and named the hook's override. Every commit and the push ran with
+`ALLOW_WORKHOURS_COMMIT=1`, which `.local/check_offhours.py` documents as the off-duty exception.
+Recorded so the timestamps are explicable.
+
+**The value-in-quote check: rulings recorded, nothing built.** `86f9ab2` carries the author's four
+rulings of 2026-10-26 in `DELTA_value_in_quote_motion.md` §4 — a post-check on the processed layer
+with no reask (three agtzidis draws already quote the host sentence, which a reask would reward);
+every motion value, inflection-tolerant, because a tool-only scope would put the scoring heuristic's
+lists into extraction and give guard and scorer one set of blind spots; the D.3 structured-noise
+tools routed in code, derosa fitted by construction; both new reasons placed in or out of
+`_UNVERIFIABLE_GAP_BASES` on purpose, since a reason left out renders as *not reported*. Acceptance is
+a replay over all 170 recorded draws: reject the 30 resolved cross-sentence carries, pass the inflected
+phrases, list anything else. **And one of my numbers was wrong:** the 2026-10-25 report said 6
+inflected phrases; the table it was summarising sums to 8 (poldrack 6, agtzidis 1, binder 1). Corrected
+in the DELTA, in the same paragraph, with the ids.
+
+**The stanza is `56bc6305…` again.** `8064bf1` restores `MOTION_METHOD_PROMPT` verbatim from the parent
+of the commit that changed it — the committed constant hashes to `56bc6305…` and equals `3fc366f`'s —
+and pins back with a dated note citing the same-day control. The 2026-10-22 edit moved agtzidis and
+binder toward tool names from unquoted sentences and left derosa at `ICA-AROMA` on all 20 draws across
+both versions; restoring a measured version creates no new vintage. The gap was ciric, run only under
+`378a`: Amendment 6 (`5ccd3c5`) pre-declared K=10 under `56bc`, pass iff every draw returns `MCFLIRT`
+with the ESTIMATE span. The manifest named `56bc…` before any record was read; **10 of 10 pass**, span
+4410–4507 on every draw, no CONSUME mention, no deferral (`77eacc6`). The post hoc control now
+exists for the stanza the pin names.
+
+**Where the guard actually runs — Part D, report only.** `quote_supports_value`
+(`span_resolver.py:400`) is called from exactly two places: `extractor.py:677` (`base_pipeline.version`)
+and `extractor.py:778` (the pipeline name). The seven main-call step fields in `_FIELD_SPECS` and the
+motion call all go through `_process_field`, which resolves the quote at `:569` and runs no value check
+(`:571-573` says so; v0.4.0's scoping is recorded at `span-resolution-fix.md:27-29`). So the author's
+10-19 description — a value has to be supported by its quote or it is not recorded as extracted — was
+true of `base_pipeline` and its version only. Three documents repeat the wider claim for `target_space`:
+`target_space-call7-unreachable.md:1,18-19,33-37` (the guard "structurally forbids" a CALL 7
+extraction), `target_space-pending-runs.md:62-63` (the guard "forbids an EXTRACTED value with no
+supporting quote"), `target_space-design-resolution.md:62` (the guard "keeps doing its job untouched").
+`span-resolution-hard-drop.md:76-83` states the corpus-wide requirement that the fix then narrowed, and
+`target_space-0.5.0-reextraction-prereg.md:19-20` credits the guard for agtzidis's `target_space` drop,
+which was `resolve_quote`'s. The correctly scoped records are `span-resolution-fix.md`,
+`cobidas-version-criterion.md:49-52`, `DELTA_base_pipeline_diagnostic.md`, and the harness diagram.
+None edited; listed for the author.
+
+**Suites on the final tree:** extractor_mvp by CI's two steps and the root package both green — 377 passed, 2 deselected, coverage 83.47%; 235 passed (counts
+in the report); `ruff format --check` clean in both trees. Pushed once after this entry.
+
+Commits: `2099d04`, `d1eaf94`, `865f40b` (the morning, reconstructed); `194c4a2`, `9b07f40`,
+`374580c`, `a0b9e2b`, `ad667dc` (the afternoon, and the author's relabel); `f39b58c` (the same-day
+control), `86f9ab2` (the DELTA with its rulings), `8064bf1` (the revert), `5ccd3c5` (Amendment 6),
+`77eacc6` (ciric under `56bc`). This entry is committed after them.
