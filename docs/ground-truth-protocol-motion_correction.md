@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.7)
+# Ground-truth protocol — `motion_correction` (v1.7.1)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -52,6 +52,13 @@
   Label changes that follow (liu_2013's method; a pass over the other six deferred rows for in-paper
   estimation detail) are the author's, in the workbook, after this commit. The extraction stanza is
   rewritten from this call (prereg Amendment 7).
+- **v1.7.1 (2026-10-26):** **liu_2013 relabelled `deferred`** under CALL 11 by the author (workbook row
+  10: `method_state`, `method_quote` extended to the deferring sentence, dated Notes entry; the row now
+  carries the `co-adjudicated` flag). §7's co-adjudication list and the CALL 10 contamination counts are
+  **re-derived from the workbook's Notes flags**, not transcribed: 14 flagged
+  (was 13), overlap with CALL 10's seven now 5 (liu_2013 joins the four), contaminated union
+  **16 of 19 — unchanged**, clean three **unchanged**. Method states read deferred 8,
+  named_tool 7, described_only 4. No rule changes.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -632,6 +639,12 @@ derived with these seven papers' committed labels in view, so any extraction sta
 (agtzidis_2020, chen_2015, ciric_2017, poldrack_2015): contaminated union **16 of 19**, leaving **3** clean
 on both axes — liu_2005, tang_2025, wheaton_2004 — of which tang_2025 was label-adjudicated in the session
 that produced this call. **No stratification of this corpus yields an uncontaminated accuracy estimate.**
+
+> **Re-derived 2026-10-26 (v1.7.1; original text kept).** With liu_2013 now flagged `co-adjudicated`
+> (14 flags), the overlap with CALL 10's seven is **5** (agtzidis_2020, chen_2015, ciric_2017, liu_2013, poldrack_2015); liu_2013 was
+> already in CALL 10's derivation set, so the contaminated union is **16 of 19, unchanged**, and the
+> clean three are **unchanged**: liu_2005, tang_2025, wheaton_2004. Derived from the workbook's Notes flags by script,
+> not transcribed.
 The `method` figure is therefore **diagnostic, not evaluative**: it establishes which error classes exist
 and roughly where; it does not measure extractor quality. Any report leads with the error decomposition and
 states this caveat and the co-adjudication caveat **before** the rate, with intervals.
@@ -722,9 +735,8 @@ output.
 
 Candidate sentences were located and states **proposed with LLM assistance of the same model family as the
 extractor** (claude-sonnet-4-5); the **author reviewed and ratified every state**. The papers worked through
-jointly are the **13 flagged `co-adjudicated` in the instrument's Notes column**: agtzidis_2020,
-braun_2015, chen_2015, ciric_2017, derosa_2025, mueller_2021, oconnor_2017, poldrack_2015, power_2014,
-vanderwal_2016, viduarre_2017, weber_2024, binder_1999. (The v1.1–v1.3 text named only agtzidis_2020 and
+jointly are the **14 flagged `co-adjudicated` in the instrument's Notes column** (re-derived from the
+workbook on 2026-10-26, v1.7.1; liu_2013 joined the list with its CALL 11 relabel): agtzidis_2020, binder_1999, braun_2015, chen_2015, ciric_2017, derosa_2025, liu_2013, mueller_2021, oconnor_2017, poldrack_2015, power_2014, vanderwal_2016, viduarre_2017, weber_2024. (The v1.1–v1.3 text named only agtzidis_2020 and
 braun_2015; the instrument accumulated flags that the protocol did not track. Corrected at v1.4 — the
 per-row Notes flags in the workbook are authoritative, and this list is derived from them, not the
 reverse.)
