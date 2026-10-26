@@ -3108,3 +3108,72 @@ staging. Built and verified before 17:00; committed after it, as instructed.
 Commits: `0621d71` (the post-check and its tests), `e066769` (the replay and the DELTA's built note),
 `c539f4e` (the three document corrections), `1aa90b5` (the step-field survey). This entry is committed
 after them.
+
+## 2026-10-26 (evening)
+
+**The quote-support check now covers every targeted field, and on the stored record it demotes
+nothing.** The author ruled (b) for the five Literal fields — supported means an alias of the returned
+value, taken whole, is in the repaired quote — because the prompt asks the model for canonical tokens
+and a value-in-quote test rejects correct extractions: 7 or 8 of the 32 stored values, the survey's
+own mistake on liu_2013 made general. Numbers are digit-exact (equal as numbers, no tolerance; "3" and
+"3.0" are one number). Motion keeps (a), its value being free text, with its matcher tightened to
+digit-exact in the same change; the motion replay is unchanged, 0 of 160 resolved draws moved.
+`quote_support.py` holds the matcher and the check; `_process_field` applies it at the Extracted return
+on the text the resolver located (`extractor.py:601-606`); `value_unsupported_by_quote` is in the
+unverifiable set and both render tables, so a demoted row reads *examined; could not verify*.
+
+**The temporal field finally has the table build 2 §4c proposed.** `TS_METHOD_SYNONYMS`, seeded from
+§4c's five phrasings (the ellipsis form split into its halves) plus z-scored / z-scoring stems for
+Cho's wording, used by the check only: it is not in `SYNONYMS_BY_FIELD`, because that map is keyed on
+the bare id `method` that two fields share and because the author's condition was that resolution
+and raw outputs stay put. liu_2013's temporal method — the survey's one "absent", the field's
+positive case, the miss build 3 calls the worse failure — passes on `temporally normalized`, which
+the resolver's normaliser exposes by repairing the line-break hyphen in the stored span. **Replay over
+the 19 stored results: 0 demotions**, 3 held-out values counted and not listed; which alias carries
+each cell is in `docs/findings/step-field-support-replay.md`, offsets only.
+
+**Three decisions inside ruling 1 were mine, and the DELTA says so.** `other` has no aliases and passes
+through — a recorded limit, not a hole the check claims. An underspecified family term may match the
+*start* of a longer identifier in the quote ("MNI152" against "MNI152NLin6Asym"), the safe direction;
+the reverse never. An unrecognized value is its own only alias, which turns one 0.5.0 fixture around:
+a free-text value absent from its quote is now demoted with the new reason and the raw value kept on
+the diagnostic, never coerced and never `value_not_in_literal`. Two fixtures in
+`test_temporal_standardization_routing.py` carry dated notes. **Aliases are never split** into
+first-use variants: the mutation that splits them fails five tests, and the one that lets "MNI152 (FSL)"
+yield a bare "MNI152" would have let a quote saying only MNI152 support the specific template.
+
+**A matcher I had to fix twice before it was right.** The prefix clause that joined `mni152` to
+`mni152nlin6asym` also joined `mode` to `model`; it is gone, and word forms now match only when both
+tokens shed a suffix and their stems agree to within a character. And the suffix list stripped "es"
+off "images" to leave "imag"; "es" is now an ending only after a sibilant. Both caught by tests
+written before the fix, which is the order that catches them.
+
+**Mutations and the gate.** Five mutations, each failing named tests with the sources restored after:
+an alias removed demotes poldrack's convention cell 25523–25671; aliases split, 5 failures; a numeric
+tolerance, 3; the temporal table emptied demotes liu_2013's 4733–4884, 6 failures; the digit rule
+removed, 9, the motion leak regression among them. One mutation first ran against a stale anchor and
+reported nothing — the same silence-as-success shape as yesterday's unsplit variable — and was rerun
+against the current text. Identity gate against HEAD derived as 19 identical (the gate re-renders
+stored JSONs, the check runs at extraction, 0 stored JSONs carry the new reason) and measured 19
+identical; negative control against `d31e8b7` 0 identical, 19 changed, as derived.
+
+**CALL 7 does not conflict with the FSL alias; CALL 2 might.** CALL 7 decides which volumetric state the
+timeseries reaches and says nothing about how a named template resolves to a token. The rule the alias
+at `synonym_resolver.py:38` touches is CALL 2 — "a tool-generic MNI reference is family_specified" —
+under whose wording the phrase form "FSL MNI152" would be family-level while the resolver returns the
+specific template; the file-form aliases are CALL 2's oconnor case and do not conflict. Open, for the
+author, with the fact that `TargetSpace` has no less specific MNI152 token: a family-level value is
+represented today as `resolution="underspecified"` with no member.
+
+**The two documents left unedited this morning got their notes.** The guard they credited never
+reached `target_space`; the claim held in the data (every stored value backed by its own quote) and
+holds by design from this commit, citing `quote_support.py:194` and `extractor.py:601-606`. Original
+text kept.
+
+447 passed / 2 deselected in extractor_mvp by CI's two steps (coverage 84.14%), 235 in the root
+package; hooks and `ruff format --check` clean on every touched file before staging. Built and verified
+before 17:00; committed after it.
+
+Commits: `78bd90c` (the check, the table, the tightened matcher, the tests), `65068b2` (the replay, its
+findings, the DELTA's rulings and built note), `2e7fba4` (the two notes). This entry is committed after
+them.
