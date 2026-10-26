@@ -3177,3 +3177,88 @@ before 17:00; committed after it.
 Commits: `78bd90c` (the check, the table, the tightened matcher, the tests), `65068b2` (the replay, its
 findings, the DELTA's rulings and built note), `2e7fba4` (the two notes). This entry is committed after
 them.
+
+## 2026-10-26 (night)
+
+**Ratified, removed, drafted, built — and not run.** Four things landed after the evening entry, in
+that order, all under the rule that nothing is staged before 17:00.
+
+**The three build decisions are ratified and a rule for mutations is on record.** `other` passes
+through (nothing to test against); a family term may match the start of a longer identifier and never
+the reverse; a free-text value must appear in its quote as motion's does. And: a mutation counts only
+once its diff is shown non-empty before the run — written down because the split-alias mutation had
+reported a pass against a stale anchor the day it was run.
+
+**The FSL MNI152 phrase aliases are gone, at no cost.** The facts gathered first (§7 of the step-field
+DELTA): no committed `target_space` cell in the stored results or in either prediction vintage had ever
+resolved through "FSL MNI152", "FSL's MNI152" or "MNI152 (FSL)"; neither vintage contains an
+`MNI152NLin6Asym` at all; only two tests pinned the phrase; the KB cannot carry "FSL ships NLin6Asym"
+today (`recognize` matches pipeline documents only, `kb/tools` is empty and unread, the
+dependent-defaults path is pipeline- and version-keyed); and `other` appears in 0 cells anywhere. The
+author ruled: a tool-generic MNI reference is family-level per CALL 2, the template FSL ships is a
+tool fact for the inference arm, file forms stay. The phrase now resolves `underspecified` through its
+`MNI152` token; the replay over the 19 stored results changes 0 cells; the KB work is backlog. One side
+note kept for the target_space stanza: oconnor names the template *file* and the model returned the
+bare family in both vintages, so the file-form aliases have never fired either.
+
+**Protocol v1.7 — CALL 11, the deferral line, rule A.** Drafted from the author's rule and ratified by
+the commit: under a citation, naming the operation with none of the four details (algorithm,
+transform type, reference image, cost function) defers; stating any one is `described_only`, whatever
+is cited; citing nothing and binding no tool is `described_only` on the paper's own assertion. Checked
+against CALL 2a (subsumed; its cole clause is stale on another ground), CALL 6 (no conflict), CALL 7
+(narrowed, as instructed; its agtzidis bullet still says `named_tool`, stale since v1.6) and CALL 10
+(one worked-case row superseded: liu_2013 → `deferred`). The workbook changes — liu_2013's method, a
+pass over the other six deferred rows — are the author's, after this commit.
+
+**Stanza version 3, built from v1.7 and not from any paper, with option (c).** STEP 4 carries CALL 11
+as ordered steps; STEP 5 sets a new response-model field, `motion_correction_binding`, required on an
+extracted draw and forbidden otherwise, so the model states the CALL 1 binding itself and a missing or
+stray binding is a reask the recorder counts. The frozen heuristic keeps running as the independent
+control; the projection carries both and counts disagreements, and the old projections still
+regenerate byte-for-byte. Pinned `ea7b0084…` with a dated note; `56bc6305…` and `378a294f…` retained.
+Amendment 7 pre-declares the seven papers at K=10 — poldrack and liu_2013 `deferred`, the first test of
+whether that state is reachable after 0 of 180 draws — and supersedes ruling 4. Identity gate derived
+as 19 identical and measured so; negative control 0 identical, 19 changed. One motion call per paper at
+temperature 0.0, asserted by the existing counter tests. 449 passed in extractor_mvp, 235 root, hooks
+and format clean. The author reviewed the stanza and said run.
+
+**Before the run, two edits the review asked for.** The three stale protocol lines — CALL 2a's cole
+clause, CALL 7's "`named_tool` stands" for agtzidis, CALL 10's liu_2013 row — carry dated supersession
+notes with the original text kept. And Amendment 7 pre-declares one risk rather than fixing it:
+poldrack's session-to-session registration sentence is EPI-to-EPI and names a reference, so detail (c)
+might read it as a stated reference image; if so, the next iteration scopes (c) to within-run. It also
+logs, not fixes, that STEP 1 folds a stated negative into `missing` while COBIDAS counts it as a report.
+
+**The run: `deferred` is reachable.** 70 draws, 0 reasks (the binding was set correctly on the first
+completion every time), 0 errors, manifest gated. liu_2013 returned `deferred` to the FCP scripts on 10
+of 10 — the first `deferred` in 250 draws across every vintage — matching the pending relabel and
+mismatching the HEAD label, both pre-declared. ciric `MCFLIRT` ×10 with the ESTIMATE span; power and
+agtzidis `described_only` ×10 with no `SPM12` anywhere (agtzidis's spans all failed on the corrupt
+clause, the recorded exclusion); derosa `ICA-AROMA` ×10 with the model binding it `named_tool`, routed
+by the check on every draw. **poldrack stayed `described_only` ×10, and not through the pre-declared
+risk**: every draw quoted the realignment sentence itself, which states none of CALL 11's four details.
+The model applied the deferral step to liu_2013 and not to poldrack; the visible difference is a
+pipeline named in the passage against a numbered citation, recorded for the next iteration and not
+fixed. binder's `AFNI` returned (6 of 10) as it had under `378a`, and the value-in-quote check demoted
+all six. Option (c) against the frozen heuristic over the 60 extracted draws: 58 agree, 0 disagree, 2
+the heuristic cannot class. Counts only, in `docs/findings/motion-probe-v3-results.md` and a projection
+that carries `model_state` and `model_vs_heuristic` and no paper text.
+
+**Also from the facts pass, for the record:** the two documents the morning had left unedited got
+their notes this evening; the `other` passthrough has nothing to catch on the record (0 cells); and
+the FSL MNI152 phrase alias, removed, had never carried a committed cell.
+
+**After the run, the author's relabel and the derived counts.** liu_2013's method went to `deferred` in
+the workbook — the author's edit, verified on disk by hash before staging — and protocol v1.7.1
+re-derives §7's co-adjudication list from the Notes flags by script rather than transcribing it: 14
+flagged, overlap with CALL 10's seven now five, union 16 of 19 unchanged, clean three unchanged, all
+reproduced by the script and asserted before the text was written. The author's pass over the six
+other deferred rows found all six staying `deferred` under CALL 11 and three citation shapes the
+stanza does not reach — a numbered citation (poldrack, the only one in the probe set), a wholesale
+deferral with no operation named (braun, viduarre; STEP 1 returns missing by construction), and a
+named-but-uncited pipeline (vanderwal) — held, with the version-4 stanza, for the author's call.
+
+Commits: `18bbd25` (the DELTA's ratification and facts), `884810f` (the alias), `25d28c1` (protocol
+v1.7), `af09dcb` (version 3 and its pin), `ef56453` (Amendment 7), `a678562` (the run's findings and
+projection), `043ed08` (the author's liu_2013 relabel, alone), `c76716d` (protocol v1.7.1). This entry is
+committed after them.
