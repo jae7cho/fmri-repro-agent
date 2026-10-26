@@ -1,0 +1,96 @@
+# PROJECTION of the motion_correction.method reachability probe, run 2026-10-22.
+# Emitted by extractor_mvp/scripts/motion_probe_projection.py -- do not hand-edit. Regenerate from the
+# run's results/<run>/motion_probe/*.jsonl.
+#
+# WHY A PROJECTION AND NOT THE RUN. The per-draw records under extractor_mvp/results/ carry the
+# model's returned value and quote, which are SENTENCES FROM THE PAPERS. The corpus is not in this
+# repository for licensing reasons, so tracking those strings would redistribute what the corpus
+# deliberately withholds. This projection therefore carries NO quote text and NO value text: only the
+# status, the derived heuristic class, the state-map row, and the span OFFSETS. Anyone holding the
+# corpus can recover the text from the offsets; anyone who does not, cannot.
+#
+# DIAGNOSTIC, NOT EVALUATIVE. No rate, fraction or accuracy figure is computed here or may be
+# computed from it (prereg :9-10, :158-159). The probe tests whether a state is EXPRESSIBLE.
+# Counts only. See the matching docs/findings/motion-probe-*-results.md for the outcome against the
+# pre-declared readings, and the pre-registration for what may and may not be concluded.
+#
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0, temperature 0.0, max_retries 2
+# K                          : 10 per paper, 7 papers, 70 draws
+# motion_method_prompt_sha256: 378a294f94ca9f0fc6bd45bd42caf4646a007c7d705d05c8b5f584dd66ca8cab
+# span_resolver vintage      : 3cb396e 2026-07-16, working tree clean
+# heuristic                  : extractor_mvp/scripts/motion_value_kind.py (prereg Amendment 2 ruling 5)
+# state map                  : prereg Amendment 1, six rows
+# run generated_utc          : 2026-10-22T16:22:35+00:00
+# projection generated_utc   : 2026-10-22T16:22:47+00:00
+#
+paper_id,draw,raw_status,heuristic_class,state_map_row,predicted_label_state,span_resolved,span_start,span_end,left_missing_reason,deferral_target_kind,completion_attempts,reask_occurred,wall_seconds
+power_2014,1,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.39
+power_2014,2,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.172
+power_2014,3,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,4.201
+power_2014,4,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.277
+power_2014,5,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.167
+power_2014,6,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,4.096
+power_2014,7,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.262
+power_2014,8,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.298
+power_2014,9,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.175
+power_2014,10,extracted,operation_phrase,1,described_only,yes,3137,3402,,,1,no,3.172
+binder_1999,1,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.526
+binder_1999,2,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.063
+binder_1999,3,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,16.119
+binder_1999,4,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,14.192
+binder_1999,5,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,18.835
+binder_1999,6,extracted,tool_name,2,named_tool,yes,11023,11180,,,1,no,18.178
+binder_1999,7,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,16.751
+binder_1999,8,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.205
+binder_1999,9,extracted,undecided,3,undecided,yes,11023,11180,,,1,no,3.446
+binder_1999,10,extracted,operation_phrase,1,described_only,yes,11023,11180,,,1,no,18.984
+liu_2013,1,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.374
+liu_2013,2,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.496
+liu_2013,3,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.464
+liu_2013,4,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.482
+liu_2013,5,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.295
+liu_2013,6,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.361
+liu_2013,7,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.789
+liu_2013,8,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,8.778
+liu_2013,9,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,3.406
+liu_2013,10,extracted,operation_phrase,1,described_only,yes,3344,3658,,,1,no,4.912
+derosa_2025,1,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,20.93
+derosa_2025,2,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,15.387
+derosa_2025,3,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,21.064
+derosa_2025,4,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,16.798
+derosa_2025,5,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,20.682
+derosa_2025,6,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,18.442
+derosa_2025,7,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,16.886
+derosa_2025,8,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,195.911
+derosa_2025,9,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,20.975
+derosa_2025,10,extracted,tool_name,2,named_tool,yes,8801,9045,,,1,no,16.426
+agtzidis_2020,1,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,10.27
+agtzidis_2020,2,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,10.845
+agtzidis_2020,3,extracted,tool_name,2,named_tool,yes,7210,7274,,,1,no,15.265
+agtzidis_2020,4,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,11.025
+agtzidis_2020,5,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,11.788
+agtzidis_2020,6,extracted,tool_name,2,named_tool,no,,,extraction_quote_unresolved:quote_not_found,,1,no,16.114
+agtzidis_2020,7,extracted,tool_name,2,named_tool,yes,7210,7274,,,1,no,15.72
+agtzidis_2020,8,extracted,tool_name,2,named_tool,yes,7188,7308,,,1,no,11.3
+agtzidis_2020,9,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.455
+agtzidis_2020,10,extracted,tool_name,2,named_tool,yes,7086,7308,,,1,no,3.708
+poldrack_2015,1,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.522
+poldrack_2015,2,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.495
+poldrack_2015,3,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,19.155
+poldrack_2015,4,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.509
+poldrack_2015,5,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,19.55
+poldrack_2015,6,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,21.115
+poldrack_2015,7,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.377
+poldrack_2015,8,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,18.435
+poldrack_2015,9,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,18.011
+poldrack_2015,10,extracted,operation_phrase,1,described_only,yes,25523,25671,,,1,no,4.511
+ciric_2017,1,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.142
+ciric_2017,2,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,5.349
+ciric_2017,3,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,3.99
+ciric_2017,4,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.031
+ciric_2017,5,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.066
+ciric_2017,6,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.117
+ciric_2017,7,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.474
+ciric_2017,8,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,3.906
+ciric_2017,9,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.091
+ciric_2017,10,extracted,tool_name,2,named_tool,yes,4410,4507,,,1,no,4.045

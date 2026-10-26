@@ -217,3 +217,8 @@ would be fixing the wrong thing. The decision waits on the agtzidis ruling.
 - **Ruled 2026-10-22:** width-not-identity answers the `/C<digit>` exclusion. See
   `docs/design/DELTA_glyph_leak_span_recovery.md`, which remains unimplemented.
 - Held: option (c) under ruling 4.
+- **2026-10-22, later:** the stanza WAS iterated, in a fresh session that had not seen held-out text,
+  under C11 and on the probe papers only — one change made (the structured-noise row named in STEP 3),
+  one proposed change held with its conflict reported. ciric_2017 was named as the replacement positive
+  control, post hoc. Seven papers re-run at K=10 under the new hash as a **separate vintage**; nothing
+  in this document moves. See prereg Amendment 4 and `motion-probe-v2-results.md`.
