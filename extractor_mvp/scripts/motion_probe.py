@@ -35,6 +35,14 @@ that licence to those three. A probe run that touched one would spend a held-out
 be recovered. ciric_2017 is already contaminated twice over -- `co-adjudicated`, and one of CALL
 10's seven fitting passages -- so adding it spends nothing.
 
+**The table is the whole corpus since 2026-10-26 (DESIGN_motion_full_corpus.md §2.1).** All 19
+ids of ``configs/batch_a1_acceptance_config.yaml`` are in ``_PROBE_PAPERS``, written from ids and
+file names only; no text was read to add them. The three held-out ids stay REFUSED: ``_HELD_OUT``
+is checked before any client is built, and a held-out id is admitted only when ``--corpus-run``
+equals ``_CORPUS_RUN_LICENCE``, which is None until the prereg amendment that licenses the
+full-corpus run sets it in the same commit. A typo still cannot spend a cell, and neither can the
+default paper list, which names all 19 and is refused until that licence exists.
+
 **Records both layers, because one mapping is not yet ruled.** The prereg requires ``verbatim``,
 ``resolved``, ``resolution`` and span per draw (``:8``) — those are ``SpecifiedTerm`` fields, i.e.
 the PROCESSED layer. But Amendment 1 (``:45-46``) states the LLM output schema is
@@ -119,10 +127,70 @@ _PROBE_PAPERS: dict[str, dict[str, str]] = {
         "pdf": "Vanderwal_2016.pdf",
         "role": "deferred candidate -- named, uncited pipeline; host-sentence risk; fitted from v4",
     },
+    # The full corpus (2026-10-26, DESIGN_motion_full_corpus.md §2.1): the nine remaining papers of
+    # configs/batch_a1_acceptance_config.yaml, ids and file names copied from it. NO TEXT WAS READ
+    # to write these entries. Six are contaminated (co-adjudicated, or in CALL 10's derivation set)
+    # and never ran under the motion call; three are the held-out clean cells, which stay refused
+    # until a corpus-run licence admits them (see _CORPUS_RUN_LICENCE).
+    "chen_2015": {"pdf": "Chen_2015.pdf", "role": "co-adjudicated; CALL 10; not probed"},
+    "cole_2013": {
+        "pdf": "Cole_2013.pdf",
+        "role": "CALL 10 only; label check pending (CALL 1 v1.6)",
+    },
+    "gordon_2014": {
+        "pdf": "Gordon_2014.pdf",
+        "role": "CALL 10 only; label check pending (CALL 1 v1.6)",
+    },
+    "mueller_2021": {
+        "pdf": "Mueller_2021.pdf",
+        "role": "co-adjudicated; not probed; label check pending (CALL 1 v1.6)",
+    },
+    "oconnor_2017": {"pdf": "OConnor_2017.pdf", "role": "co-adjudicated; not probed"},
+    "weber_2024": {
+        "pdf": "Weber_2024.pdf",
+        "role": "co-adjudicated; not probed; likely_multi_acquisition flag (does not route)",
+    },
+    "liu_2005": {
+        "pdf": "Liu_2005.pdf",
+        "role": "HELD OUT -- clean cell; refused without a licence",
+    },
+    "tang_2025": {
+        "pdf": "Tang_2025.pdf",
+        "role": "HELD OUT -- clean cell; refused without a licence",
+    },
+    "wheaton_2004": {
+        "pdf": "Wheaton_2004.pdf",
+        "role": "HELD OUT -- clean cell; refused without a licence",
+    },
 }
 
 #: Never a probe target. Named so a typo cannot silently spend a held-out cell (prereg C11, C26).
 _HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+
+#: The licence that admits the held-out three (DESIGN_motion_full_corpus.md §7 fork 1, 2026-10-26).
+#: None until the prereg amendment that licenses the full-corpus run sets it to that amendment's id
+#: in the SAME commit; then ``--corpus-run <id>`` must equal it exactly. Default-closed: while this
+#: is None no flag value admits them, and the default paper list (all 19) is refused with a message
+#: that says what to pass instead. The run that spends the three cells is one run; a second needs
+#: a new licence, because it would be made after their first result was seen.
+_CORPUS_RUN_LICENCE: str | None = None
+
+
+def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:
+    """Raise before any client is built unless the held-out ids are licensed for this run."""
+    if _CORPUS_RUN_LICENCE is None or corpus_run != _CORPUS_RUN_LICENCE:
+        why = (
+            "no corpus-run licence is recorded in this file"
+            if _CORPUS_RUN_LICENCE is None
+            else f"--corpus-run {corpus_run!r} does not match the recorded licence"
+        )
+        raise SystemExit(
+            f"refused: {held} are HELD OUT -- the only uncontaminated cells in the motion corpus "
+            f"(prereg C11, C26) -- and {why}. A draw against one cannot be undone. Pass --papers "
+            "with the sixteen contaminated ids, or run under the amendment that licenses the "
+            "full-corpus run."
+        )
+
 
 #: THE FROZEN STANZA (prereg C11; Amendment 9, adopted 2026-10-26). The sha256 of the stanza the
 #: same-day A/B adopted. The recorder refuses to run under any other: a stanza change now needs a new
@@ -300,6 +368,8 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "model": _MODEL,
         "k": k,
         "papers": papers,
+        "corpus_run_licence": _CORPUS_RUN_LICENCE,
+        "held_out_admitted": sorted(set(papers) & _HELD_OUT),
         # THE point of this header. prereg C2 ("committed BEFORE the run") and C21 ("the vocabulary
         # may not be extended after seeing output") are only checkable if every draw names the
         # stanza it ran under. C11 licenses iterating the wording on these six papers; doing so
@@ -345,7 +415,15 @@ def main(argv: list[str] | None = None) -> int:
         "--papers",
         nargs="*",
         default=sorted(_PROBE_PAPERS),
-        help="subset of the six pre-registered papers. Any other id is refused.",
+        help="subset of the 19-paper corpus. Any other id is refused; the three held-out ids are "
+        "refused unless --corpus-run matches the recorded licence.",
+    )
+    ap.add_argument(
+        "--corpus-run",
+        default=None,
+        metavar="AMENDMENT",
+        help="admit the held-out ids: must equal _CORPUS_RUN_LICENCE, which the licensing "
+        "amendment sets in the same commit. Refused while no licence is recorded.",
     )
     ap.add_argument("--results-dir", required=True, type=Path)
     args = ap.parse_args(argv)
@@ -355,19 +433,13 @@ def main(argv: list[str] | None = None) -> int:
     _refuse_unless_frozen(hashlib.sha256(MOTION_METHOD_PROMPT.encode("utf-8")).hexdigest())
     refused = [p for p in args.papers if p not in _PROBE_PAPERS]
     if refused:
-        held = sorted(set(refused) & _HELD_OUT)
-        extra = (
-            f"\n{held} are HELD OUT: the only uncontaminated cells in the motion corpus. The "
-            f"pre-registration permits iterating the stanza on the {len(_PROBE_PAPERS)} probe "
-            "papers and explicitly does not extend that licence to these (prereg C11, C26). A "
-            "draw against one cannot be undone."
-            if held
-            else ""
-        )
         raise SystemExit(
             f"refused paper id(s): {refused}. This probe accepts only the "
-            f"{len(_PROBE_PAPERS)} pre-registered papers: {sorted(_PROBE_PAPERS)}.{extra}"
+            f"{len(_PROBE_PAPERS)} papers of the corpus: {sorted(_PROBE_PAPERS)}."
         )
+    held = sorted(set(args.papers) & _HELD_OUT)
+    if held:
+        _refuse_unless_licensed(args.corpus_run, held)
 
     out_dir = args.results_dir / "motion_probe"
     out_dir.mkdir(parents=True, exist_ok=True)

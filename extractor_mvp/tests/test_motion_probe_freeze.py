@@ -68,13 +68,15 @@ def test_main_refuses_before_touching_the_results_dir(
     assert not out.exists()
 
 
-def test_held_out_refusal_still_precedes_any_client(
+def test_out_of_corpus_refusal_still_precedes_any_client(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """The freeze did not displace the C11/C26 guard: under the frozen stanza, a held-out id is
-    still refused before a client is built."""
+    """The freeze did not displace the id guard: under the frozen stanza, an id outside the corpus
+    is still refused before a client is built. The control uses an out-of-corpus id since
+    2026-10-26, when the table became the whole corpus (the held-out ids are now in it, refused by
+    the licence guard that tests/test_motion_probe_corpus.py covers)."""
     monkeypatch.setattr(motion_probe, "_CountingClient", _NoClient)
     out = tmp_path / "never"
-    with pytest.raises(SystemExit, match="HELD OUT"):
-        motion_probe.main(["--k", "1", "--papers", "liu_2005", "--results-dir", str(out)])
+    with pytest.raises(SystemExit, match="refused paper id"):
+        motion_probe.main(["--k", "1", "--papers", "cabral_2017", "--results-dir", str(out)])
     assert not out.exists()

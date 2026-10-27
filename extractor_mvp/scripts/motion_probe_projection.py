@@ -41,8 +41,10 @@ from motion_value_kind import value_kind
 _REPO = Path(__file__).resolve().parents[2]
 _RESOLVER = "extractor_mvp/src/extractor_mvp/span_resolver.py"
 
-#: The prereg's own order (:5-7), then the Amendment 4 addition. Papers absent from a run are skipped,
-#: so the same order serves the six-paper and seven-paper runs.
+#: The prereg's own order (:5-7), then the Amendment 4 addition. Papers absent from a run are skipped
+#: (a subset run is legitimate), so the same order serves every run; a paper PRESENT in a run but
+#: absent from this tuple is refused in main(), never dropped -- both the manifest's list and the
+#: record files on disk are checked against it.
 _ORDER = (
     "power_2014",
     "binder_1999",
@@ -55,6 +57,17 @@ _ORDER = (
     "braun_2015",
     "viduarre_2017",
     "vanderwal_2016",
+    # The full corpus (2026-10-26, DESIGN_motion_full_corpus.md §4.2), in the reporting partition's
+    # order after the probe ten: co-adjudicated and not probed; CALL 10 only; the clean three last.
+    "chen_2015",
+    "mueller_2021",
+    "oconnor_2017",
+    "weber_2024",
+    "cole_2013",
+    "gordon_2014",
+    "liu_2005",
+    "tang_2025",
+    "wheaton_2004",
 )
 
 #: Added for version-3 runs (Amendment 7): the binding the MODEL stated, and whether it agrees with
@@ -202,6 +215,13 @@ def main(argv: list[str] | None = None) -> int:
     rows: list[dict[str, Any]] = []
     raw_records: list[dict[str, Any]] = []
     papers: list[str] = []
+    on_disk = sorted(p.stem for p in run_dir.glob("*.jsonl"))
+    unlisted = [p for p in on_disk if p not in _ORDER]
+    if unlisted:
+        raise SystemExit(
+            f"records on disk for papers not in _ORDER: {unlisted}. Extend _ORDER; nothing is "
+            "projected until every recorded paper has a place in it."
+        )
     for paper_id in _ORDER:
         src = run_dir / f"{paper_id}.jsonl"
         if not src.is_file():
