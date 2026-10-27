@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.8)
+# Ground-truth protocol — `motion_correction` (v1.8.1)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -73,6 +73,15 @@
   2a's cole clause. Scoring: a `named_tool` match is state plus normalized value; the attribution level is
   a separate agreement count, diagnostic. Sourced to the author; ratified by commit. The workbook edits
   (agtzidis, derosa, cole, gordon, mueller) and the re-derivation of §7's list follow the commit.
+- **v1.8.1 (2026-10-27):** **The v1.8 workbook edits are on the record** (committed alone; sha256
+  `894c3bf5…`, 22,355 bytes): column R `attribution` (step / package); 17 cells changed — agtzidis back
+  to `named_tool` SPM12 `package`, derosa `named_tool` FSL `package`, cole `package`, gordon `step`,
+  mueller `package`, ciric `step`, dated notes on all six, `co-adjudicated` flags on cole and gordon.
+  §7's list and the CALL 10 contamination counts are **re-derived from the workbook's Notes flags by
+  script**, not transcribed: **16 flagged** (was 14; cole and gordon join), overlap with CALL 10's
+  seven now **7**, contaminated union **16 of 19 — unchanged**, clean three **unchanged**. Method
+  states read `named_tool` 9, `deferred` 8, `described_only` 2. The held-out three's rows are
+  untouched and their R cells are pending the author (0 of 3, a count). No rule changes.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -735,6 +744,10 @@ that produced this call. **No stratification of this corpus yields an uncontamin
 > already in CALL 10's derivation set, so the contaminated union is **16 of 19, unchanged**, and the
 > clean three are **unchanged**: liu_2005, tang_2025, wheaton_2004. Derived from the workbook's Notes flags by script,
 > not transcribed.
+
+> **Re-derived 2026-10-27 (v1.8.1).** With cole_2013 and gordon_2014 flagged by v1.8's worked cases,
+> the co-adjudicated list is **16** and the overlap with these seven is **7**: the union is still
+> **16 of 19**, the clean three still liu_2005, tang_2025, wheaton_2004.
 The `method` figure is therefore **diagnostic, not evaluative**: it establishes which error classes exist
 and roughly where; it does not measure extractor quality. Any report leads with the error decomposition and
 states this caveat and the co-adjudication caveat **before** the rate, with intervals.
@@ -837,6 +850,15 @@ reverse.)
 > re-derived to **16**. Both were already in CALL 10's derivation set, so the overlap becomes 7, the
 > contaminated union stays **16 of 19**, and the clean three are **unchanged**: liu_2005, tang_2025,
 > wheaton_2004.
+
+> **Re-derived 2026-10-27 (v1.8.1; original text kept).** From the workbook as committed (sha256
+> `894c3bf5…`), by script: **16 flagged** — agtzidis_2020, binder_1999, braun_2015, chen_2015,
+> ciric_2017, cole_2013, derosa_2025, gordon_2014, liu_2013, mueller_2021, oconnor_2017, poldrack_2015,
+> power_2014, vanderwal_2016, viduarre_2017, weber_2024; 0 of the 3 held-out rows carry the flag (a
+> count). Overlap with CALL 10's seven: **7** (all seven). Contaminated union **16 of 19, unchanged**;
+> clean three **unchanged**. Column R `attribution` is filled on the six `named_tool` rows among the
+> sixteen (four `package`, two `step`) and on no other; the held-out three's R cells are pending the
+> author, needed before the corpus run and not for the 13-paper probe.
 
 This is a **stronger contamination risk** than clarification-only assistance, and is **stated rather than
 mitigated**. Ground truth partly produced by the model under evaluation inflates agreement in a way no
