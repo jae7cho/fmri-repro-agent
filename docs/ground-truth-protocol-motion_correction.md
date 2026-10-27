@@ -1,4 +1,4 @@
-# Ground-truth protocol — `motion_correction` (v1.7.1)
+# Ground-truth protocol — `motion_correction` (v1.8)
 
 **Ratified 2026-08-07 (ET):** all five original definitional calls (§5, CALLs 1–5) ratified by the author; this protocol was committed as pre-registration — *before any label is written*.
 
@@ -59,6 +59,20 @@
   (was 13), overlap with CALL 10's seven now 5 (liu_2013 joins the four), contaminated union
   **16 of 19 — unchanged**, clean three **unchanged**. Method states read deferred 8,
   named_tool 7, described_only 4. No rule changes.
+- **v1.8 (2026-10-26):** **CALL 1 gains an attribution level — a definitional change, not tuning.**
+  `named_tool` carries `attribution` = `step` or `package`: `step` when the tool is named as the
+  instrument of the realignment itself; `package` when the paper names, for its preprocessing or
+  analysis as a whole, exactly one package on a closed realignment-capable list, names no step-level
+  tool, and asserts the motion step. Two or more listed packages, none bound → not attributable, CALL 11
+  decides. A pipeline or wrapper is not a package (CALLs 6 and 11; the KB fills its tool). The list is
+  frozen here with one documented program and a source per entry; FreeSurfer is off it; an unlisted
+  package is reported as unlisted, never attributed silently. Worked cases from labels on the record:
+  agtzidis SPM12 `package`, cole AFNI `package`, gordon SPM8 `step`, mueller SPM12 `package`, derosa FSL
+  `package` with ICA-AROMA routed, liu_2013 `deferred` unchanged, ciric MCFLIRT `step`. The v1.6
+  agtzidis worked case is superseded with a dated note, text kept; notes on CALL 10's cole row and CALL
+  2a's cole clause. Scoring: a `named_tool` match is state plus normalized value; the attribution level is
+  a separate agreement count, diagnostic. Sourced to the author; ratified by commit. The workbook edits
+  (agtzidis, derosa, cole, gordon, mueller) and the re-derivation of §7's list follow the commit.
 
 **Status: PRE-REGISTRATION.** To be committed before any label is written; labels committed after. The
 signed commit order is the pre-registration. Amendments get a new version and a stated reason, never a
@@ -268,6 +282,71 @@ well, and §7's co-adjudication reporting rules apply to it in full. The consequ
 recorded in `docs/findings/motion-method-reachability-prereg.md` Amendment 3: the positive control's
 criterion is void as stated.
 
+**Amendment (v1.8, 2026-10-26) — `named_tool` carries an attribution level. A definitional change, not
+tuning. Sourced to the author; ratified by commit.** CALL 1 v1.5's binding test is kept as the test for
+the `step` level; what is added is a second, lower level of attribution that the v1.5/v1.6 reading could
+not express, and that the record's own worked cases (agtzidis, derosa, cole, mueller) had been placed on
+opposite sides of by the same sentence shape.
+
+- **`named_tool` carries `attribution` ∈ {`step`, `package`}.**
+  - **`step`:** the tool is named as the instrument of the realignment itself (v1.5's Bound case).
+  - **`package`:** the paper names, for its preprocessing or its analysis as a whole, **exactly one**
+    package on the realignment-capable list below, names **no step-level tool** for the realignment
+    (a tool bound to the step but routed to another row by CALL 4 does not count as one), and
+    **asserts the motion step**. `method_value` = the package **name token as written** (SPM12, SPM8, AFNI, FSL); **a version
+    written separately is recorded in the quote, not in the value** — adjusted before commit on
+    2026-10-26 by the author, so that normalized equality cannot fail on a separately written version.
+- **Two or more listed packages named for the preprocessing and none bound to the step → not
+  attributable.** CALL 11 decides: `deferred` under a citation or pipeline, else `described_only`.
+- **A pipeline or wrapper is not a package** — C-PAC, CCS, HCP, FCP scripts, fMRIPrep, DPABI/DPARSF,
+  CONN: CALLs 6 and 11 apply, and the knowledge base is where its tool gets filled, not the label.
+- **The realignment-capable list, frozen here.** One documented program and a source per entry;
+  an unlisted package is **reported as unlisted** in the row's Notes and **never attributed silently**.
+
+  | package | realignment program | source |
+  |---|---|---|
+  | AFNI | `3dvolreg` | Cox, R.W. (1996), *Computers and Biomedical Research* 29:162–173; Cox & Jesmanowicz (1999), *Magn. Reson. Med.* 42:1014–1018; the `3dvolreg` program help in the AFNI distribution |
+  | FSL | `MCFLIRT` | Jenkinson, Bannister, Brady & Smith (2002), *NeuroImage* 17:825–841; FSL wiki, "MCFLIRT" |
+  | SPM, any version | `Realign` (`spm_realign`) | Friston et al. (1995), *Human Brain Mapping* 3:165–189; the SPM12 Manual, chapter "Realign" |
+  | ANTs | `antsMotionCorr` | the ANTs distribution, `Examples/antsMotionCorr.cxx` and its usage text (github.com/ANTsX/ANTs); Avants et al. (2011), *NeuroImage* 54:2033–2044 for the registration framework |
+  | BrainVoyager | 3D motion correction (the preprocessing module) | Goebel, Esposito & Formisano (2006), *Human Brain Mapping* 27:392–401; the BrainVoyager User's Guide, "Motion Correction" |
+
+  **FreeSurfer stays off the list**, with the note that FS-FAST's motion correction (`preproc-sess`
+  → `mc-afni2`) calls AFNI's `3dvolreg`: a paper naming FreeSurfer alone for its preprocessing names
+  no realignment program of its own. (Sources are cited from the documentation as the author knows it;
+  the ratifying commit is the author's check of each.)
+- **Worked cases, from labels on the record** (every state the author's; the workbook rows are edited
+  after this commit): **agtzidis_2020** — SPM12 named once for the analysis as a whole, no step-level
+  tool, realignment asserted → `named_tool`, `package`, value SPM12 (supersedes v1.6's
+  `described_only`; see the dated note below). **cole_2013** — AFNI named for the preprocessing with
+  FreeSurfer re-scoped to segmentation, the step listed in the paper's voice → `named_tool`,
+  `package`, value AFNI (the state CALL 10's row already carries; the level is new). **gordon_2014** —
+  the package is the instrument of the realignment sentence itself → `named_tool`, `step`, value
+  SPM8. **mueller_2021** — SPM12 named for the initial preprocessing, the step in the paper's voice,
+  none of the four details → `named_tool`, `package`, value SPM12 (the earlier deferral of the
+  preprocessing to a prior paper does not displace a package the paper names itself). **derosa_2025**
+  — FSL named for the preprocessing as a whole, motion correction asserted, ICA-AROMA the only
+  step-level tool and routed by CALL 4 → `named_tool`, `package`, value FSL; ICA-AROMA stays routed.
+  **liu_2013** — AFNI and FSL both named under the FCP scripts → two listed packages, none bound →
+  not attributable → `deferred` to the scripts, unchanged. **ciric_2017** — MCFLIRT bound to the
+  realignment clause → `named_tool`, `step`, value MCFLIRT.
+- **Scoring.** A `named_tool` match is **state plus normalized value**; the **attribution level is a
+  separate agreement count, diagnostic** — reported beside the match, never folded into it.
+- **Consequence for v1.5's asymmetry paragraph.** The asymmetry it defends (FSL 5.0.10 blank, SPM12
+  kept) dissolves at the package level: both are `named_tool`/`package`. The paragraph is kept as the
+  record of the v1.5–v1.7 reading. The competing COBIDAS reading the v1.6 block recorded is, at the
+  package level, now the protocol's own.
+
+> **Superseded (v1.8, 2026-10-26; original text kept).** The v1.6 clarification's conclusion —
+> agtzidis_2020 `described_only`, SPM12 on the inference arm — and its table row are superseded:
+> under the attribution level, agtzidis is **`named_tool`, attribution `package`, value SPM12**, and
+> derosa_2025 is **`named_tool`, attribution `package`, value FSL** with ICA-AROMA routed. The v1.6
+> *reasoning* stands as the `step`-level test: neither package is bound to the step, which is exactly
+> what `package` records. The provenance paragraph above still applies to agtzidis, and the
+> package-level readings were proposed with LLM assistance of the extractor's model family and ratified
+> by the author, so every paper named in the worked cases carries the `co-adjudicated` flag once the
+> workbook is edited (§7).
+
 **`deferred` is not a reporting failure.** Under `DESIGN_cobidas_coverage.md` §2, a D.3 row is addressed
 iff a field is `EXTRACTED` **or** `DEFERRED_TO_CITATION` — so oconnor satisfies D.3 bullet 1 by deferral
 and counts as *reported* in the compliance table. Compliance and label state are different axes.
@@ -302,6 +381,11 @@ the difference lives in the verbatim quote, not in the state.
 > `described_only`. The range the sentence describes is now bounded by CALL 11: a bare operation name
 > with no citation is `described_only` on the paper's own assertion; under a citation it is `deferred`
 > unless one of CALL 11's four details is stated.
+
+> **Note (v1.8, 2026-10-26).** cole's `named_tool`/AFNI is **package-level** attribution: AFNI is named
+> for the preprocessing as a whole (FreeSurfer re-scoped to segmentation), and the step is listed in
+> the paper's voice. The state stands; the level is recorded as `package`, and cole no longer sits
+> on either end of the `described_only` range this sentence described.
 
 *Verification flag:* **Cox 1996b is not identified.** Cox 1996a is the AFNI software paper; 1996b is a
 different work of the same year and has NOT been verified. Do not assume it is a volume-registration paper.
@@ -607,6 +691,12 @@ un-ordered reading produces.
 | gordon_2014 | two nested parentheticals between package and verb; **MATLAB is nearer**; RMS is a third attractor | `MATLAB` or `RMS` | `named_tool` / **SPM8** (MATLAB = HOST, RMS = CONSUME) |
 | liu_2013 | "FCP scripts … employs AFNI and FSL"; `align_epi_anat.py` named later | `AFNI` or `FSL` | `described_only`, **blank** (nothing bound in ESTIMATE; align_epi_anat fails Axis 1) |
 
+> **Note (v1.8, 2026-10-26; rows kept).** The cole_2013 row's `named_tool` / AFNI stands with
+> attribution **`package`**: the ordered reading placed AFNI as the paper's sole listed package, which
+> v1.8 names package-level attribution rather than a step binding. The agtzidis_2020 row's
+> `named_tool` / SPM12 — superseded at v1.6 — is restored at the **`package`** level. The gordon_2014
+> row's `named_tool` / SPM8 is **`step`**: the package is the instrument of the realignment sentence.
+
 > **Superseded (v1.7, 2026-10-26; original row kept).** The liu_2013 row's "right" column is now
 > **`deferred`** to the FCP scripts (Biswal 2010) under CALL 11: the operation is named under a cited
 > pipeline and none of the four details is stated. The role-axis finding — nothing bound in ESTIMATE
@@ -740,6 +830,13 @@ workbook on 2026-10-26, v1.7.1; liu_2013 joined the list with its CALL 11 relabe
 braun_2015; the instrument accumulated flags that the protocol did not track. Corrected at v1.4 — the
 per-row Notes flags in the workbook are authoritative, and this list is derived from them, not the
 reverse.)
+
+> **Note (v1.8, 2026-10-26).** The v1.8 worked cases for cole_2013 and gordon_2014 were proposed with
+> LLM assistance of the extractor's model family and ratified by the author, so both rows carry the
+> `co-adjudicated` flag once the workbook is edited after the v1.8 commit, and this list is then
+> re-derived to **16**. Both were already in CALL 10's derivation set, so the overlap becomes 7, the
+> contaminated union stays **16 of 19**, and the clean three are **unchanged**: liu_2005, tang_2025,
+> wheaton_2004.
 
 This is a **stronger contamination risk** than clarification-only assistance, and is **stated rather than
 mitigated**. Ground truth partly produced by the model under evaluation inflates agreement in a way no
