@@ -1114,3 +1114,37 @@ as written). The value match is normalized exact equality (the author's scoring 
 
 Reachability, not accuracy; counts only, no rates; the clean three are not loaded, searched or read
 and are not in the probe set; no call is made before the author says run.
+
+## Amendment 12 (2026-10-27) — Amendment 11's rule applied as written: version 7 not adopted; version 4 restored and frozen; no further iteration before the corpus run
+
+**Written AFTER the version-7 run, from records read only after the manifest passed its gate
+(`d353fb47…`; 13 papers, K=10, 130 draws, 16:25:50–16:51:46 UTC; no held-out id admitted).** Counts
+only. The run is reported in [motion-probe-v7-results.md](motion-probe-v7-results.md).
+
+- **Clause 1 not met.** `named_tool` with the label's value (normalized exact equality) on at least 8
+  of 10: ciric 10, agtzidis 10, mueller 10 at the raw layer (7 of them quoted against the realignment
+  sentence and demoted by the check), derosa 10 at the processed layer through the fallback —
+  **cole 0** (deferred to its citation on 6, `described_only` on 4; the package rule never fired)
+  and **gordon 7** (`SPM8` on 7; an operation phrase under a `named_tool` binding on 3).
+- **Clause 2 breached.** Against the version-6 counts: **liu_2013 10 → 5, poldrack 8 → 4, cole 4 →
+  0**; gordon 8 → 7; every other paper held or gained (agtzidis 6 → 10, mueller 8 → 10, derosa 0 →
+  10, binder 8 → 8, power, braun, viduarre, vanderwal 10 → 10, ciric 10 → 10). A different day, as
+  Amendment 11 noted; the losses are reported as losses under the rule as written and are not
+  attributed to version 7 alone.
+- **Outcome, as written: version 7 is not adopted; `b0093774…` (version 4) is restored by this
+  amendment and freezes.** The stanza constant is version 4 **verbatim** (its body equal to the one
+  committed at `c5bfe6b`; the live hash checked after the restore); the pin and
+  `_FROZEN_STANZA_SHA256` return to
+  `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`, with dated notes retaining the
+  chain `b0093774…` → `8df070da…` (version 6) → `d353fb47…` (version 7) → `b0093774…`.
+- **What stays, because it is code and not the stanza:** the matcher's ruling 5, the routing fallback
+  to the one listed package a routed tool's quote names (ruling 6), the level derived on the
+  processed layer and reported against column R, and the recorder's per-draw diagnostic reason. Under
+  version 4 the model is not asked for the package rule; the fallback still applies to a routed
+  draw, as it did on every recorded derosa draw.
+- **No further iteration before the corpus run.** This closes the licence Amendment 11 opened. The
+  corpus run's manifests must carry `b0093774…`. The next stanza change, if any, follows that run.
+
+### Unchanged
+
+Reachability, not accuracy; counts only, no rates; the clean three are not loaded, searched or read.

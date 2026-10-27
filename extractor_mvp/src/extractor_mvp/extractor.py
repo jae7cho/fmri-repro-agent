@@ -1104,6 +1104,15 @@ value for this acquisition — use status="missing" for that field.
 # alone. Run against version 4 the same day on all ten papers under Amendment 9's adoption rule; the
 # adopted version freezes under C11. Pinned with a dated note; b0093774... retained.
 #
+# RESTORED TO VERSION 4 AND FROZEN, 2026-10-27, by prereg Amendment 12: Amendment 11's adoption rule,
+# applied as written to the version-7 run (13 papers, K=10), did not adopt version 7 -- cole returned
+# named_tool with its value on 0 of 10 and gordon on 7, and liu_2013, poldrack and cole each lost more
+# than 2 draws against their version-6 counts. The constant below is version 4 VERBATIM (body equal to
+# c5bfe6b's), sha256 b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837. Versions 6
+# (8df070da...) and 7 (d353fb47...) stay on their runs' records. The processed-layer code built with
+# them -- the matcher's ruling 5, the routing fallback, the derived level -- stays: it is not the
+# stanza. NO FURTHER ITERATION before the corpus run.
+#
 # VERSION 7, 2026-10-27, by the author's ruling (prereg Amendment 11): version 6 with the attribution
 # LEVEL removed from the model's output. Version 6 assigned state and value correctly on gordon and
 # mueller and the level backwards on both, on all ten draws, and the level then chose the wrong quote;
@@ -1240,16 +1249,6 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   tool supplies the value.
 - NOT BOUND: a package named as governing a procedure set supplies nothing. It is NOT enough that
   the package is named, named with a version, or named in the same sentence as the step.
-- PACKAGE ATTRIBUTION, the one exception to NOT BOUND: the text names, for its preprocessing
-  or its analysis as a whole, EXACTLY ONE package from the list below, names no tool for the
-  realignment itself (a tool bound to the step but routed to another field, as in the next bullet,
-  does not count as one), and asserts the motion step -> that package is the method, and this
-  decides the field: skip step 4. The list, closed: AFNI (3dvolreg), FSL (MCFLIRT),
-  SPM any version (Realign), ANTs (antsMotionCorr), BrainVoyager. FreeSurfer is NOT on it. A package
-  that is not on this list is NOT attributed and supplies nothing: treat it as NOT BOUND and continue
-  to step 4. Two or more listed packages named for the preprocessing with none bound to the step ->
-  NOT attributable: continue to step 4. A pipeline or wrapper (C-PAC, CCS, HCP, FCP scripts,
-  fMRIPrep, DPABI/DPARSF, CONN) is not a package: it is a deferral target for step 4, never a value.
 - BOUND BUT ROUTED ELSEWHERE: if the only tool bound to this step performs an operation that
   belongs to a different field, then the assertion that motion correction was performed still
   stands, but no tool name survives.
@@ -1279,11 +1278,6 @@ citation is a description ONLY when the listing carries one of the four details.
 - Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
   that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY (never a CONSUME mention of the
   same tool); motion_correction_binding = "named_tool".
-- No tool bound to the step, but step 3's PACKAGE ATTRIBUTION holds -> status "extracted";
-  value = the package NAME TOKEN as written in the text (for example "SPM12", "SPM8", "AFNI",
-  "FSL"); a version written separately stays in the quote, NOT in the value; verbatim_quote = the sentence that names the package for the preprocessing or
-  analysis as a whole, copied exactly (the value must appear in it); motion_correction_binding =
-  "named_tool".
 - The subject gate passed and the method is DESCRIBED (step 4), with no bound tool in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing
@@ -1299,8 +1293,7 @@ citation is a description ONLY when the listing carries one of the four details.
   "missing"; leave motion_correction_binding unset.
 
 motion_correction_binding is set ONLY when status is "extracted", and then it is ALWAYS set:
-"named_tool" when step 3 found a bound tool or its package attribution holds, "described_only"
-otherwise.
+"named_tool" when step 3 found a bound tool, "described_only" otherwise.
 
 verbatim_quote and deferral_sentence must be copied EXACTLY from the text below, character for
 character, or the field is discarded.

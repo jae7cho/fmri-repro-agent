@@ -148,7 +148,13 @@ _PINNED = {
     #: b0093774... (version 4, the first freeze) -> 8df070da... (version 6) -> this value. Amendment
     #: 11 pre-declares the last iteration before the corpus run: adopted, version 7 freezes; not
     #: adopted, b0093774... is restored by amendment and freezes.
-    "MOTION_METHOD_PROMPT": ("d353fb478cd1fbbe03d079a51b322c749c8b8a3431b58261745ac17b503d5a1d"),
+    #:
+    #: RESTORED AND FROZEN, 2026-10-27, by Amendment 12: Amendment 11's rule applied as written did not
+    #: adopt version 7 (cole 0 of 10, gordon 7 of 10 on clause 1; liu_2013, poldrack and cole lost more
+    #: than 2 on clause 2), so the constant is VERSION 4 VERBATIM again and this pin returns to
+    #: b0093774... The chain: b0093774... -> 8df070da... (v6) -> d353fb47... (v7) -> b0093774...
+    #: The superseded values stay on their runs' records. NO FURTHER ITERATION before the corpus run.
+    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
 }
 
 _VINTAGE_NOTE = (

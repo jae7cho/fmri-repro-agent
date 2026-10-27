@@ -1,6 +1,7 @@
 """The motion stanza is FROZEN (prereg C11; Amendment 9, 2026-10-26; moved to version 6 by Amendment
 10 the same night, for a DEFINITIONAL change -- protocol v1.8's attribution level -- not tuning; moved
-to version 7 by Amendment 11 on 2026-10-27, the last iteration before the corpus run).
+to version 7 by Amendment 11 on 2026-10-27, the last iteration before the corpus run; version 7 not
+adopted, so RESTORED to version 4 and frozen by Amendment 12 the same day).
 
 Two guards, one fact. ``test_prompt_pin.py`` pins the stanza's hash so an edit is a deliberate,
 dated act; this file checks that the probe recorder carries the same hash as its frozen value and

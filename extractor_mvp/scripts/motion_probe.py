@@ -231,7 +231,11 @@ def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:
 #: stays on the version-6 run's records. The chain: b0093774... -> 8df070da... -> this value. The
 #: last iteration before the corpus run: adopted, version 7 freezes; not adopted, b0093774... is
 #: restored by amendment and freezes.
-_FROZEN_STANZA_SHA256 = "d353fb478cd1fbbe03d079a51b322c749c8b8a3431b58261745ac17b503d5a1d"
+#:
+#: RESTORED AND FROZEN at version 4, 2026-10-27, by Amendment 12 (version 7 not adopted). The chain:
+#: b0093774... -> 8df070da... -> d353fb47... -> b0093774... No further iteration before the corpus
+#: run; its manifests must carry this value.
+_FROZEN_STANZA_SHA256 = "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
 
 
 def _refuse_unless_frozen(live_sha256: str) -> None:
@@ -403,7 +407,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
         "pre_registration": (
-            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-11; frozen)"
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-12; frozen)"
         ),
         "model": _MODEL,
         "k": k,
