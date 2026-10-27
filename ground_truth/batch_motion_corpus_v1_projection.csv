@@ -1,0 +1,30 @@
+# PROJECTION of the motion field from a BATCH run (the processed layer, one draw per paper).
+# Emitted by extractor_mvp/scripts/batch_motion_projection.py -- do not hand-edit. No quote or
+# value text: status, reason base, span OFFSETS, heuristic class, derived attribution.
+# DIAGNOSTIC, NOT EVALUATIVE. Counts only; no rate may be computed from this file.
+# vintage                    : motion_corpus_v1
+# motion_method_prompt_sha256: b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+# head                       : 8099063cf715e7ad3f8bbf744c407a76c9807905
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+# projection generated_utc   : 2026-10-27T19:32:53+00:00
+#
+paper_id,class,likely_multi_acquisition,motion_status,reason_base,span_start,span_end,heuristic_class,attribution,diagnostic_base
+power_2014,probe,no,EXTRACTED,,3112,3528,operation_phrase,,
+binder_1999,probe,no,EXTRACTED,,11023,11180,operation_phrase,,
+liu_2013,probe,no,EXTRACTED,,3344,3658,operation_phrase,,
+derosa_2025,probe,no,EXTRACTED,,8801,9045,tool_name,package,motion_value_routed_fallback_to_package
+agtzidis_2020,probe,no,MISSING_FROM_PAPER,extraction_quote_unresolved,,,,,extraction_quote_unresolved
+poldrack_2015,probe,no,EXTRACTED,,25523,25671,operation_phrase,,
+ciric_2017,probe,no,EXTRACTED,,4410,4507,tool_name,step,
+braun_2015,probe,no,DEFERRED_TO_CITATION,deferred_to_citation,,,,,
+viduarre_2017,probe,no,DEFERRED_TO_CITATION,deferred_to_citation,,,,,
+vanderwal_2016,probe,no,DEFERRED_TO_CITATION,deferred_to_citation,,,,,
+cole_2013,probe,no,EXTRACTED,,4992,5431,operation_phrase,,
+gordon_2014,probe,no,EXTRACTED,,4860,5140,tool_name,step,
+mueller_2021,probe,no,EXTRACTED,,3894,4058,operation_phrase,,
+chen_2015,"co-adjudicated, not probed",no,EXTRACTED,,3812,4144,operation_phrase,,
+oconnor_2017,"co-adjudicated, not probed",no,EXTRACTED,,19662,19988,operation_phrase,,
+weber_2024,"co-adjudicated, not probed",yes,EXTRACTED,,4797,5068,operation_phrase,,
+liu_2005,clean,no,MISSING_FROM_PAPER,extraction_quote_unresolved,,,,,extraction_quote_unresolved
+tang_2025,clean,no,EXTRACTED,,4429,5084,operation_phrase,,
+wheaton_2004,clean,no,EXTRACTED,,3386,3604,operation_phrase,,
