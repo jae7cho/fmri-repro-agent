@@ -13,6 +13,15 @@ through the model only, and their results are read as states and counts.
 
 ## 1. Scope
 
+> **Dated note, 2026-10-26 (late night).** The freeze this document was written under is **lifted and
+> moved by prereg Amendment 10 for a definitional change, not tuning**: protocol v1.8 gives
+> `named_tool` an attribution level (`step` / `package`), and stanza version 6 expresses it. The
+> full-corpus run runs under the version Amendment 10 adopts — `8df070da…` if version 6 freezes —
+> and every reading in §5 is re-declared under v1.8 labels before that run. cole, gordon and mueller
+> now have v1.8 worked cases (§5.0's first check is settled by the protocol, pending the workbook
+> edits); the held-out three's check by the author alone still stands. §2.6's state counts change
+> with the workbook edits (agtzidis and derosa become `named_tool`) and are restated then.
+
 - **What this is.** The first extraction of `motion_correction.method` over all 19 papers under the
   frozen stanza `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837` (version 4; prereg
   freeze section after Amendment 9; `scripts/motion_probe.py:132` refuses any other hash before a
@@ -185,6 +194,19 @@ after the model's values are seen.
 6. **liu_2005's interleaved text layer is named beside its result** as a possible cause the stanza
    does not own (§2.3), whatever the result is.
 
+**Ratified 2026-10-26 (late night), by the author: all seven decisions of the version-6 build, with
+two adjustments, both applied before the commit.** (a) The `named_tool` value is the **package name
+token as written** (SPM12, SPM8, AFNI, FSL); a version written separately is recorded in the quote,
+not in the value, or normalized equality would fail on a separately written version — protocol
+v1.8, the stanza's STEP 5 and Amendment 10 say so. (b) The matcher tolerates a **letter-ending value
+followed by a digit run in the quote**, under-claim only (`DELTA_value_in_quote_motion.md` §4 ruling
+5): the text layer attaches citation numbers to words, and a demoted cole report would have been
+wrong; the replay over all 550 recorded motion draws and the step-field replay move nothing. Also
+ruled: **clause 1 of Amendment 10's adoption rule covers every `named_tool` paper**, gordon and ciric
+included, neither of which has a clause-2 count; **binder and power are `described_only`, confirmed
+from their text** (power names no listed package; binder names MCW-AFNI once for a different step),
+with a package-level return on either pre-declared as an over-reach; and the five list entries stand.
+
 ### 2.5 Contamination classes, derived from the record
 
 | class | source | members | n |
@@ -297,6 +319,15 @@ before the run, and §2.6's counts are restated.** No paper sentence is reproduc
    which the protocol keeps off labels; and an earlier sentence defers the preprocessing to a prior
    paper with a brief reproduction, which CALL 11 reads as `deferred` unless the reproduction carries
    a detail. Three candidate states; the author's.
+> **Status, 2026-10-26 (late night).** Check 1 is settled by protocol v1.8's worked cases, and the
+> workbook is done by the author: sha256 `894c3bf523a38f5076bb250465629eb63ee38489687f478218145d37c9afbabe`,
+> 22,355 bytes, verified in the working tree; a new column R `attribution` (step / package), 17 cells
+> changed (agtzidis back to `named_tool` SPM12 `package`; derosa `named_tool` FSL `package`; cole
+> `package`; gordon `step`; mueller `package`; ciric `step`; dated notes on all six; `co-adjudicated`
+> flags on cole and gordon). States now read `named_tool` 9, `deferred` 8, `described_only` 2. The
+> held-out three's rows are untouched and their R cells are **pending the author** (0 of 3 filled, a
+> count). Committed alone after the protocol commit. Check 2 stands.
+
 2. **The held-out three, by the author alone.** All three carry `named_tool` and need the same v1.6
    check. Nothing in this repository proposes a reading for them: anything proposed here would
    contaminate them. tang_2025's sentences are already quoted in the protocol's v1.4 amendment, so

@@ -126,7 +126,18 @@ _PINNED = {
     #: carries the same value as _FROZEN_STANZA_SHA256 and refuses to draw under any other; a change
     #: here without a new amendment naming the new hash there is refused at the recorder, not only
     #: here. See docs/findings/motion-probe-v5-ab-results.md.
-    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
+    #:
+    #: VERSION 6, 2026-10-26 (late night), by the author's ruling: protocol v1.8 (CALL 1 gains an
+    #: attribution level, named_tool = step or package) and prereg Amendment 10, which LIFTS the
+    #: freeze for this DEFINITIONAL CHANGE -- not tuning -- and re-applies it to the adopted version.
+    #: Superseded value b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837 (version 4),
+    #: which stays on every version-4 run and on the same-day A/B's version-4 arm. Two edits from the
+    #: protocol's text: STEP 3's package rule after NOT BOUND (the closed list verbatim; an unlisted
+    #: package is not attributed), STEP 5's output rules for named_tool_step / named_tool_package.
+    #: The response model's binding literal changed with it. Readings for the 13-paper probe set,
+    #: K=10, and the adoption rule are in Amendment 10, written before the edit. scripts/motion_probe.py
+    #: carries this value as _FROZEN_STANZA_SHA256 in the same commit.
+    "MOTION_METHOD_PROMPT": ("8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f"),
 }
 
 _VINTAGE_NOTE = (

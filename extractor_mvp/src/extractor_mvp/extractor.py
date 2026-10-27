@@ -1100,6 +1100,19 @@ value for this acquisition — use status="missing" for that field.
 # alone. Run against version 4 the same day on all ten papers under Amendment 9's adoption rule; the
 # adopted version freezes under C11. Pinned with a dated note; b0093774... retained.
 #
+# VERSION 6, 2026-10-26 (late night), by the author's ruling (protocol v1.8; prereg Amendment 10). A
+# DEFINITIONAL CHANGE, NOT TUNING: the freeze below is lifted for it and re-applied to the adopted
+# version. CALL 1 gains an attribution level -- named_tool is `step` (the v1.5 binding test) or
+# `package` (exactly one package from a closed realignment-capable list named for the preprocessing
+# or analysis as a whole, no step-level tool, the step asserted) -- and a stanza that cannot express
+# the label vocabulary measures nothing. Two edits only, from the protocol's text: STEP 3 gains the
+# package rule after NOT BOUND, with the list verbatim and the unlisted-package instruction; STEP 5
+# gains the output rules for both named_tool levels (the package draw quotes the sentence that names
+# the package, so the value-in-quote check holds on it). The response model's binding literal is
+# now named_tool_step / named_tool_package / described_only; the validator is unchanged in shape.
+# No other change from b0093774... Pinned with a dated note; b0093774... retained. Readings, the
+# 13-paper probe set and the adoption rule are in Amendment 10, written before this edit.
+#
 # FROZEN, 2026-10-26 (late night), by Amendment 9's adoption rule applied as written: VERSION 5 WAS
 # NOT ADOPTED. In the same-day A/B (ten papers, K=10 per arm, 200 draws, each arm's manifest gated on
 # its own hash) poldrack_2015 returned `deferred` to ref 45 on 3 of 10 under version 5, below the
@@ -1208,6 +1221,16 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   tool supplies the value.
 - NOT BOUND: a package named as governing a procedure set supplies nothing. It is NOT enough that
   the package is named, named with a version, or named in the same sentence as the step.
+- PACKAGE-LEVEL ATTRIBUTION, the one exception to NOT BOUND: the text names, for its preprocessing
+  or its analysis as a whole, EXACTLY ONE package from the list below, names no tool for the
+  realignment itself (a tool bound to the step but routed to another field, as in the next bullet,
+  does not count as one), and asserts the motion step -> that package is the method at the PACKAGE
+  level, and this decides the field: skip step 4. The list, closed: AFNI (3dvolreg), FSL (MCFLIRT),
+  SPM any version (Realign), ANTs (antsMotionCorr), BrainVoyager. FreeSurfer is NOT on it. A package
+  that is not on this list is NOT attributed and supplies nothing: treat it as NOT BOUND and continue
+  to step 4. Two or more listed packages named for the preprocessing with none bound to the step ->
+  NOT attributable: continue to step 4. A pipeline or wrapper (C-PAC, CCS, HCP, FCP scripts,
+  fMRIPrep, DPABI/DPARSF, CONN) is not a package: it is a deferral target for step 4, never a value.
 - BOUND BUT ROUTED ELSEWHERE: if the only tool bound to this step performs an operation that
   belongs to a different field, then the assertion that motion correction was performed still
   stands, but no tool name survives.
@@ -1236,7 +1259,12 @@ citation is a description ONLY when the listing carries one of the four details.
 ## STEP 5 -- OUTPUT
 - Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
   that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY (never a CONSUME mention of the
-  same tool); motion_correction_binding = "named_tool".
+  same tool); motion_correction_binding = "named_tool_step".
+- No tool bound to the step, but step 3's PACKAGE-LEVEL ATTRIBUTION holds -> status "extracted";
+  value = the package NAME TOKEN as written in the text (for example "SPM12", "SPM8", "AFNI",
+  "FSL"); a version written separately stays in the quote, NOT in the value; verbatim_quote = the sentence that names the package for the preprocessing or
+  analysis as a whole, copied exactly (the value must appear in it); motion_correction_binding =
+  "named_tool_package".
 - The subject gate passed and the method is DESCRIBED (step 4), with no bound tool in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing
@@ -1252,7 +1280,8 @@ citation is a description ONLY when the listing carries one of the four details.
   "missing"; leave motion_correction_binding unset.
 
 motion_correction_binding is set ONLY when status is "extracted", and then it is ALWAYS set:
-"named_tool" when step 3 found a bound tool, "described_only" otherwise.
+"named_tool_step" when step 3 found a bound tool, "named_tool_package" when step 3's package-level
+attribution holds, "described_only" otherwise.
 
 verbatim_quote and deferral_sentence must be copied EXACTLY from the text below, character for
 character, or the field is discarded.
@@ -1274,23 +1303,31 @@ class MotionMethodExtraction(BaseModel):
 
     ``motion_correction_binding`` — option (c) of prereg Amendment 1, adopted 2026-10-26 (Amendment
     7): the model states the CALL 1 binding itself. Set ONLY when ``status == "extracted"``, and then
-    always: ``"named_tool"`` when a tool is bound to the step, ``"described_only"`` when the value is
-    the paper's own words. Deferred and missing keep the existing status path and leave it unset.
+    always: ``"named_tool_step"`` when a tool is bound to the step, ``"named_tool_package"`` when
+    STEP 3's package-level attribution holds (protocol v1.8, 2026-10-26: exactly one listed package
+    named for the preprocessing as a whole, no step-level tool, the step asserted),
+    ``"described_only"`` when the value is the paper's own words. Deferred and missing keep the
+    existing status path and leave it unset. Until version 6 the literal was ``"named_tool"`` /
+    ``"described_only"``; the projection folds both ``named_tool_*`` values to ``named_tool`` for the
+    state comparison and carries the level in its own column.
     The frozen heuristic (``scripts/motion_value_kind.py``) still classifies the value independently;
     the probe's projection carries both and counts the disagreements. Enforced by a validator, so a
     missing or stray binding is a reask the probe counts, not a silent default.
     """
 
     motion_correction_method: FieldExtractionResult
-    motion_correction_binding: Literal["named_tool", "described_only"] | None = None
+    motion_correction_binding: (
+        Literal["named_tool_step", "named_tool_package", "described_only"] | None
+    ) = None
 
     @model_validator(mode="after")
     def enforce_binding_constraints(self) -> MotionMethodExtraction:
         status = self.motion_correction_method.status
         if status == "extracted" and self.motion_correction_binding is None:
             raise ValueError(
-                "status='extracted' requires motion_correction_binding: 'named_tool' when a tool is "
-                "BOUND to this step (STEP 3), 'described_only' when the value is the paper's own words."
+                "status='extracted' requires motion_correction_binding: 'named_tool_step' when a "
+                "tool is BOUND to this step (STEP 3), 'named_tool_package' when STEP 3's package-level "
+                "attribution holds, 'described_only' when the value is the paper's own words."
             )
         if status != "extracted" and self.motion_correction_binding is not None:
             raise ValueError(

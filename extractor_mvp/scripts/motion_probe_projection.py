@@ -75,6 +75,24 @@ _ORDER = (
 #: v1/v2/A-B/ciric projections regenerate byte-for-byte as before.
 _V3_COLUMNS = ("model_state", "model_vs_heuristic")
 
+#: Added for version-6 runs (protocol v1.8, Amendment 10, 2026-10-26): the attribution LEVEL the model
+#: stated with a named_tool binding -- "step" or "package" -- in its own column, so ``model_state``
+#: stays at the state level (named_tool / described_only) and every earlier projection regenerates
+#: byte-for-byte. Emitted only when some record carries a ``named_tool_*`` binding.
+_V6_COLUMNS = ("model_attribution",)
+
+
+def _split_binding(binding: str | None) -> tuple[str | None, str]:
+    """``named_tool_step`` -> (``named_tool``, ``step``); ``named_tool_package`` -> (``named_tool``,
+    ``package``); anything else is a state with no level. The state comparison against the heuristic
+    is made at the state level, as prereg Amendment 7 defined it; the level is diagnostic."""
+    if binding is None:
+        return None, ""
+    if binding.startswith("named_tool_"):
+        return "named_tool", binding[len("named_tool_") :]
+    return binding, ""
+
+
 _COLUMNS = (
     "paper_id",
     "draw",
@@ -116,7 +134,7 @@ def _row(rec: dict[str, Any]) -> dict[str, Any]:
     elif status == "missing":
         row, state = 6, "absent"
     resolved = rec["span_start"] is not None
-    model_state = rec.get("raw_binding")
+    model_state, attribution = _split_binding(rec.get("raw_binding"))
     if status == "extracted" and model_state is not None:
         expected = {"operation_phrase": "described_only", "tool_name": "named_tool"}.get(heuristic)
         agreement = (
@@ -143,6 +161,7 @@ def _row(rec: dict[str, Any]) -> dict[str, Any]:
         "wall_seconds": rec["wall_seconds"],
         "model_state": model_state or "",
         "model_vs_heuristic": agreement,
+        "model_attribution": attribution,
     }
 
 
@@ -238,7 +257,10 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit(f"papers in the manifest but not in _ORDER or on disk: {unordered}")
 
     v3 = any("raw_binding" in r for r in raw_records)
+    v6 = any(str(r.get("raw_binding") or "").startswith("named_tool_") for r in raw_records)
     columns = _COLUMNS + _V3_COLUMNS if v3 else _COLUMNS
+    if v6:
+        columns = columns + _V6_COLUMNS
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", encoding="utf-8", newline="") as f:
         f.write(_header(manifest, args.run_date, len(papers), len(rows)))

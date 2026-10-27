@@ -128,6 +128,10 @@ remains unreached: braun, viduarre and vanderwal deferred on 10 of 10 in both ar
 
 ## The freeze
 
+> **Dated note, 2026-10-26 (late night).** Lifted and moved to version 6 by prereg Amendment 10 for a
+> **definitional change, not tuning** (protocol v1.8: `named_tool` carries an attribution level).
+> This section stands as the record of version 4's adoption and of the version-5 arm's non-adoption.
+
 Version 4 is the frozen stanza under prereg C11: `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`.
 The five version-5 lines were removed and the constant is version 4 verbatim (comment lines only
 differ from `d1292f6`; live hash checked after the edit). The pin returns to `b0093774…` with a dated

@@ -16,6 +16,12 @@
 #   scripts/rerender_reports.py --results-dir results/batch_a1_acceptance --against d31e8b7
 #       -> 0 identical, 19 changed   (the negative control; derived and observed 2026-10-26)
 # Any other pair means code moved between the freeze and the run. output_dir is gitignored.
+#
+# DATED NOTE, 2026-10-26 (late night): the freeze named above is LIFTED and moved by prereg Amendment
+# 10 for a DEFINITIONAL CHANGE, not tuning (protocol v1.8: named_tool = step or package; stanza
+# version 6, sha256 8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f). This config runs under the
+# version Amendment 10 adopts; the stanza hash its manifest must carry is the recorder's
+# _FROZEN_STANZA_SHA256 at run time, checked before any record is read.
 model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
 output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_motion_corpus_v1
 papers:

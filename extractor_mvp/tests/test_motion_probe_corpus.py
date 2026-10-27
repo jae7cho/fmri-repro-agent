@@ -78,11 +78,16 @@ def _main(args: list[str], out: Path) -> None:
     motion_probe.main(["--k", "1", "--results-dir", str(out), *args])
 
 
-def test_default_list_is_the_whole_corpus_and_is_refused_without_a_licence(tmp_path: Path) -> None:
-    out = tmp_path / "never"
+def test_default_list_is_the_probe_set_and_passes_both_guards(tmp_path: Path) -> None:
+    """Amendment 10: the default is the 13-paper probe set, no held-out id in it, so ``main`` reaches
+    the (stub) client. Listing the whole corpus is refused without a licence."""
+    accepted = tmp_path / "accepted"
+    with pytest.raises(AssertionError, match="a client was built"):
+        _main([], accepted)  # main creates the results dir just before the client; that is fine
+    refused = tmp_path / "never"
     with pytest.raises(SystemExit, match="HELD OUT"):
-        _main([], out)
-    assert not out.exists()
+        _main(["--papers", *sorted(motion_probe._PROBE_PAPERS)], refused)
+    assert not refused.exists()
 
 
 def test_held_out_refused_with_a_flag_while_no_licence_is_recorded(tmp_path: Path) -> None:
@@ -217,3 +222,88 @@ def test_projection_accepts_a_listed_subset(tmp_path: Path) -> None:
     assert _project(results, tmp_path / "p.csv") == 0
     text = (tmp_path / "p.csv").read_text(encoding="utf-8")
     assert "ciric_2017,1,deferred" in text
+
+
+# --- version 6 (protocol v1.8, Amendment 10): the attribution level in the projection -------------
+
+
+def _extracted_record(paper_id: str, value: str, binding: str | None) -> dict[str, Any]:
+    rec = _record(paper_id)
+    rec.update(
+        raw_status="extracted",
+        raw_value=value,
+        raw_verbatim_quote="x",
+        raw_ref_string=None,
+        raw_deferral_sentence=None,
+        raw_binding=binding,
+        extraction_arm="Extracted",
+        left_missing_reason=None,
+        deferral_target_kind_original=None,
+        deferral_target_kind_stored=None,
+        deferral_ref=None,
+    )
+    return rec
+
+
+def test_split_binding_folds_both_named_tool_levels_to_the_state() -> None:
+    split = motion_probe_projection._split_binding
+    assert split("named_tool_step") == ("named_tool", "step")
+    assert split("named_tool_package") == ("named_tool", "package")
+    assert split("described_only") == ("described_only", "")
+    assert split(None) == (None, "")
+
+
+def test_projection_row_agrees_at_the_state_level_and_carries_the_level() -> None:
+    row = motion_probe_projection._row(_extracted_record("gordon_2014", "SPM8", "named_tool_step"))
+    assert (row["model_state"], row["model_vs_heuristic"], row["model_attribution"]) == (
+        "named_tool",
+        "agree",
+        "step",
+    )
+    row = motion_probe_projection._row(_extracted_record("cole_2013", "AFNI", "named_tool_package"))
+    assert (row["model_state"], row["model_vs_heuristic"], row["model_attribution"]) == (
+        "named_tool",
+        "agree",
+        "package",
+    )
+    # a package binding on an operation phrase is a DISAGREEMENT at the state level, as before
+    row = motion_probe_projection._row(
+        _extracted_record("power_2014", "rigid body realignment", "named_tool_package")
+    )
+    assert (row["model_vs_heuristic"], row["model_attribution"]) == ("disagree", "package")
+
+
+def test_projection_emits_the_attribution_column_only_for_a_version_6_run(tmp_path: Path) -> None:
+    """A pre-v6 record set (bindings named_tool / described_only, or none) regenerates without the
+    column, so every earlier projection stays byte-identical; a v6 record set gains it."""
+    run = tmp_path / "run" / "motion_probe"
+    run.mkdir(parents=True)
+    manifest = {
+        "model": "m",
+        "k": 1,
+        "papers": ["ciric_2017"],
+        "motion_method_prompt_sha256": "0" * 64,
+        "generated_utc": "2026-10-26T00:00:00+00:00",
+    }
+    (run / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    for binding, expect in (("described_only", False), ("named_tool_step", True)):
+        (run / "ciric_2017.jsonl").write_text(
+            json.dumps(_extracted_record("ciric_2017", "MCFLIRT", binding)) + "\n", encoding="utf-8"
+        )
+        out = tmp_path / f"{binding}.csv"
+        assert _project(tmp_path / "run", out) == 0
+        header = next(
+            line
+            for line in out.read_text(encoding="utf-8").splitlines()
+            if not line.startswith("#")
+        )
+        assert ("model_attribution" in header) is expect, binding
+
+
+def test_probe_set_is_the_thirteen_and_is_the_default() -> None:
+    """Amendment 10: cole, gordon and mueller join the ten; the default paper list is this set, which
+    passes both guards -- the held-out three are not in it."""
+    assert len(motion_probe._PROBE_SET) == 13
+    assert set(motion_probe._PROBE_SET) <= set(motion_probe._PROBE_PAPERS)
+    assert not set(motion_probe._PROBE_SET) & set(motion_probe._HELD_OUT)
+    assert {"cole_2013", "gordon_2014", "mueller_2021"} <= set(motion_probe._PROBE_SET)

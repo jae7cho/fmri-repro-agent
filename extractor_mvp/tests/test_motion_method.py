@@ -387,13 +387,22 @@ def test_binding_is_required_when_extracted_and_forbidden_otherwise() -> None:
     silent default that would make the heuristic's control vacuous."""
     import pytest
 
-    ok = MotionMethodExtraction(
-        motion_correction_method=FieldExtractionResult(
-            status="extracted", value="realigned", verbatim_quote="volumes were realigned"
-        ),
-        motion_correction_binding="named_tool",
-    )
-    assert ok.motion_correction_binding == "named_tool"
+    # version 6 (protocol v1.8, 2026-10-26): named_tool carries its attribution level in the literal.
+    for binding in ("named_tool_step", "named_tool_package", "described_only"):
+        ok = MotionMethodExtraction(
+            motion_correction_method=FieldExtractionResult(
+                status="extracted", value="realigned", verbatim_quote="volumes were realigned"
+            ),
+            motion_correction_binding=binding,
+        )
+        assert ok.motion_correction_binding == binding
+    with pytest.raises(ValueError, match="named_tool"):  # the pre-v6 literal is refused
+        MotionMethodExtraction(
+            motion_correction_method=FieldExtractionResult(
+                status="extracted", value="realigned", verbatim_quote="volumes were realigned"
+            ),
+            motion_correction_binding="named_tool",  # type: ignore[arg-type]
+        )
     with pytest.raises(ValueError, match="requires motion_correction_binding"):
         MotionMethodExtraction(
             motion_correction_method=FieldExtractionResult(

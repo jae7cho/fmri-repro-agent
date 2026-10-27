@@ -41,7 +41,8 @@ file names only; no text was read to add them. The three held-out ids stay REFUS
 is checked before any client is built, and a held-out id is admitted only when ``--corpus-run``
 equals ``_CORPUS_RUN_LICENCE``, which is None until the prereg amendment that licenses the
 full-corpus run sets it in the same commit. A typo still cannot spend a cell, and neither can the
-default paper list, which names all 19 and is refused until that licence exists.
+default paper list, which is the 13-paper probe set (``_PROBE_SET``, Amendment 10) and names no
+held-out id; listing all 19 is refused until that licence exists.
 
 **Records both layers, because one mapping is not yet ruled.** The prereg requires ``verbatim``,
 ``resolved``, ``resolution`` and span per draw (``:8``) — those are ``SpecifiedTerm`` fields, i.e.
@@ -133,17 +134,19 @@ _PROBE_PAPERS: dict[str, dict[str, str]] = {
     # and never ran under the motion call; three are the held-out clean cells, which stay refused
     # until a corpus-run licence admits them (see _CORPUS_RUN_LICENCE).
     "chen_2015": {"pdf": "Chen_2015.pdf", "role": "co-adjudicated; CALL 10; not probed"},
+    # Amendment 10 (2026-10-26): the three join the probe set from version 6 (protocol v1.8's
+    # attribution level); their v1.8 worked cases are on the record, so they are fitted from v6.
     "cole_2013": {
         "pdf": "Cole_2013.pdf",
-        "role": "CALL 10 only; label check pending (CALL 1 v1.6)",
+        "role": "named_tool PACKAGE candidate (AFNI); probe from v6, fitted; CALL 10",
     },
     "gordon_2014": {
         "pdf": "Gordon_2014.pdf",
-        "role": "CALL 10 only; label check pending (CALL 1 v1.6)",
+        "role": "named_tool STEP candidate (SPM8); probe from v6, fitted; CALL 10",
     },
     "mueller_2021": {
         "pdf": "Mueller_2021.pdf",
-        "role": "co-adjudicated; not probed; label check pending (CALL 1 v1.6)",
+        "role": "named_tool PACKAGE candidate (SPM12); probe from v6, fitted; co-adjudicated",
     },
     "oconnor_2017": {"pdf": "OConnor_2017.pdf", "role": "co-adjudicated; not probed"},
     "weber_2024": {
@@ -166,6 +169,26 @@ _PROBE_PAPERS: dict[str, dict[str, str]] = {
 
 #: Never a probe target. Named so a typo cannot silently spend a held-out cell (prereg C11, C26).
 _HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+
+#: The PROBE SET (prereg Amendment 10, 2026-10-26): the ten papers of Amendments 4 and 8 plus
+#: cole_2013, gordon_2014 and mueller_2021, all contaminated, on which C11 licenses iterating the
+#: stanza. The default --papers. The other six corpus papers run only when listed, and the held-out
+#: three only under a corpus-run licence.
+_PROBE_SET: tuple[str, ...] = (
+    "power_2014",
+    "binder_1999",
+    "liu_2013",
+    "derosa_2025",
+    "agtzidis_2020",
+    "poldrack_2015",
+    "ciric_2017",
+    "braun_2015",
+    "viduarre_2017",
+    "vanderwal_2016",
+    "cole_2013",
+    "gordon_2014",
+    "mueller_2021",
+)
 
 #: The licence that admits the held-out three (DESIGN_motion_full_corpus.md §7 fork 1, 2026-10-26).
 #: None until the prereg amendment that licenses the full-corpus run sets it to that amendment's id
@@ -197,7 +220,12 @@ def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:
 #: prereg amendment that names the new hash HERE, in the same commit, and the full-corpus run's
 #: manifest must carry this value. A pin alone (test_prompt_pin.py) can be updated to make a test
 #: pass; this constant stands between an edited stanza and a draw.
-_FROZEN_STANZA_SHA256 = "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
+#:
+#: MOVED to version 6, 2026-10-26 (late night), by prereg Amendment 10 -- a DEFINITIONAL CHANGE, not
+#: tuning: protocol v1.8 gives named_tool an attribution level (step / package) that version 4 could
+#: not express. Superseded value b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+#: stays on every version-4 record. Version 6 freezes on adoption under Amendment 10's rule.
+_FROZEN_STANZA_SHA256 = "8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f"
 
 
 def _refuse_unless_frozen(live_sha256: str) -> None:
@@ -205,7 +233,7 @@ def _refuse_unless_frozen(live_sha256: str) -> None:
     if live_sha256 != _FROZEN_STANZA_SHA256:
         raise SystemExit(
             f"refused: MOTION_METHOD_PROMPT hashes to {live_sha256[:8]}..., but the stanza is FROZEN "
-            f"at {_FROZEN_STANZA_SHA256[:8]}... (prereg C11, Amendment 9). No draw runs under an "
+            f"at {_FROZEN_STANZA_SHA256[:8]}... (prereg C11, Amendments 9 and 10). No draw runs under an "
             "unfrozen stanza. A change needs a new amendment naming the new hash in this file."
         )
 
@@ -363,7 +391,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
         "pre_registration": (
-            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-9; frozen)"
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-10; frozen)"
         ),
         "model": _MODEL,
         "k": k,
@@ -414,9 +442,10 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--papers",
         nargs="*",
-        default=sorted(_PROBE_PAPERS),
-        help="subset of the 19-paper corpus. Any other id is refused; the three held-out ids are "
-        "refused unless --corpus-run matches the recorded licence.",
+        default=list(_PROBE_SET),
+        help="subset of the 19-paper corpus; default = the 13-paper probe set (Amendment 10). Any "
+        "other id is refused; the three held-out ids are refused unless --corpus-run matches the "
+        "recorded licence.",
     )
     ap.add_argument(
         "--corpus-run",
