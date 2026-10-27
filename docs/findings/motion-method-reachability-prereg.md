@@ -1148,3 +1148,78 @@ only. The run is reported in [motion-probe-v7-results.md](motion-probe-v7-result
 ### Unchanged
 
 Reachability, not accuracy; counts only, no rates; the clean three are not loaded, searched or read.
+
+## Amendment 13 (2026-10-27) — the held-out release: the stanza is frozen, the label checks are done; the corpus run; one pre-declared error class
+
+**Written BEFORE the corpus run and before any call that touches a held-out paper.** Ruled by the
+author on 2026-10-27; drafted by Claude Code; ratified by commit. This is the amendment
+`DESIGN_motion_full_corpus.md` §7 fork 12 required, and it sets `_CORPUS_RUN_LICENCE` in
+`scripts/motion_probe.py` to its own id in the same commit.
+
+### The two conditions, met
+
+- **The stanza is frozen** at `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837`
+  (version 4) by Amendment 12, with no further iteration before this run. The pin, the recorder's
+  `_FROZEN_STANZA_SHA256` and the manifests of both runs below carry it.
+- **The label checks are done.** The v1.8 label pass is complete on all 19 rows: the workbook as
+  committed at `bc18447` (sha256 `350331c8…`, 26,822 bytes) carries column R
+  `attribution` on every `named_tool` row, **3 of 3 held-out rows included** (a count); no held-out
+  state changed from `named_tool` (cells B, C and R read by id only; D and Q unread). cole, gordon and
+  mueller were settled by protocol v1.8; binder and power were confirmed from their text (Amendment 10).
+
+### The release
+
+`_CORPUS_RUN_LICENCE = "Amendment 13"`. The recorder admits liu_2005, tang_2025 and wheaton_2004 only
+when `--corpus-run Amendment 13` is passed, and the manifest records the licence and the ids admitted.
+**The three cells are spent on one recorder run and one batch run, both in this amendment's session.
+No second run on them without a further amendment.** Their results are read as **states and counts
+only**: label state, matching draws of 10, level agreement with column R; no value, offset, quote,
+reason detail or text of theirs appears in any document, and the projections' rows for them are
+emitted by script and transcribed by nobody.
+
+### The two runs, as `DESIGN_motion_full_corpus.md` §3 ruled
+
+1. **R — the recorder over all 19 at K=10** (190 draws) into `results/motion_probe_corpus_v1/`, the
+   manifest gated on `b0093774…`, licence `Amendment 13`, `held_out_admitted` = the three, before any
+   record is read.
+2. **B — the batch, one draw over 19** into `configs/batch_motion_corpus_v1_config.yaml`'s
+   `output_dir` (`results/batch_motion_corpus_v1/`), the same session, after R. `batch.py` writes no
+   manifest of its own, so the launcher writes a provenance header beside its output — HEAD, the live
+   stanza hash, the config's sha256, the model, start and end — and that header is gated the same way.
+   **Every field B writes is the new named vintage `motion_corpus_v1`**; this run reports the motion
+   field only.
+
+### Pre-declared readings — the frozen stanza, v1.8 labels
+
+By contamination class (the partition of the design doc §2.5, with cole and gordon now in the probe
+set): **probe thirteen** · **co-adjudicated, not probed** (chen, oconnor, weber) · **clean three**.
+"Match" is the state-map row equal to the label state, plus normalized exact value equality for
+`named_tool`; the level from the processed layer against column R, reported, not scored.
+
+| paper | class | v1.8 label | reading under `b0093774…` |
+|---|---|---|---|
+| agtzidis_2020 | probe | `named_tool` / SPM12 / package | **expected to mismatch: "package attribution unreached by the frozen stanza"** — row 1 on the operation phrase, as on every version-4 run |
+| cole_2013 | probe | `named_tool` / AFNI / package | **expected to mismatch, the same class** — `described_only` on the step list, or `deferred` to its citation under CALL 11 |
+| mueller_2021 | probe | `named_tool` / SPM12 / package | **expected to mismatch, the same class** — `described_only`, or `deferred` to the prior paper |
+| derosa_2025 | probe | `named_tool` / FSL / package | raw `ICA-AROMA`, routed; **processed `FSL` by the fallback**, attribution package — a match at the processed layer |
+| gordon_2014 | probe | `named_tool` / SPM8 / step | **reported as found**: never run under version 4; the step tool is bound in the realignment sentence, which version 4's STEP 3 can reach |
+| ciric_2017 | probe | `named_tool` / MCFLIRT / step | row 2, `MCFLIRT`, span 4410–4507, level step |
+| liu_2013 | probe | `deferred` | row 4 on 5 to 10 of 10 (the recorded cost); below 5 a new finding |
+| braun, viduarre, vanderwal | probe | `deferred` | row 4 ×10 each |
+| power_2014 | probe | `described_only` | row 1 ×10 |
+| binder_1999 | probe | `described_only` | row 1 on most, row 3 on some (excluded by name) |
+| poldrack_2015 | probe | `deferred` | row 1 ×10, the unreached shape; any deferred draw reported |
+| chen, oconnor, weber | co-adjudicated, not probed | `deferred` (a wrapper: CCS, CPAC, CPAC) | row 4, target kind `pipeline`; a row-2 draw naming the wrapper as a tool is the mismatch to name |
+| liu_2005, tang_2025, wheaton_2004 | clean | `named_tool`, level per column R | **"matches its label"**: row 2 with the value in column C and the level in column R, evaluated by script; reported as matching draws of 10 and agreement counts, nothing else. A `missing` draw is a mismatch by construction. **liu_2005's interleaved text layer is named beside its result** as a possible cause the stanza does not own (§2.3 of the design doc), whatever the result is |
+
+**The batch's one draw per paper** is read against the paper's recorder distribution: inside the set
+of states R produced for it, or outside; for the clean three, inside/outside only.
+
+### What this run may and may not say
+
+Reachability, not accuracy. Thirteen of nineteen are fitted; sixteen are contaminated; three are clean
+for the first and only time. Counts per line; **no corpus-wide rate**, fraction or interval anywhere,
+including the projection headers. Every table names the vintage and `b0093774…`. The demoted-or-routed
+count is its own line. The identity gate against HEAD is derived as **19 identical** (neither run
+changes code; B writes under its own `output_dir`) and run with the negative control (`d31e8b7` → 0
+identical, 19 changed) after the batch.

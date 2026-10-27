@@ -196,7 +196,12 @@ _PROBE_SET: tuple[str, ...] = (
 #: is None no flag value admits them, and the default paper list (all 19) is refused with a message
 #: that says what to pass instead. The run that spends the three cells is one run; a second needs
 #: a new licence, because it would be made after their first result was seen.
-_CORPUS_RUN_LICENCE: str | None = None
+#:
+#: SET 2026-10-27 by prereg Amendment 13, in the same commit: the stanza is frozen at b0093774...
+#: (Amendment 12) and the v1.8 label pass is complete on all 19 rows (column R on 3 of 3 held-out
+#: rows). The three cells are spent on one recorder run and one batch run in that amendment's
+#: session; no second run on them without a further amendment.
+_CORPUS_RUN_LICENCE: str | None = "Amendment 13"
 
 
 def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:

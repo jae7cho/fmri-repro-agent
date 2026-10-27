@@ -65,10 +65,10 @@ def test_held_out_ids_are_in_the_table_and_still_named() -> None:
     assert set(_HELD) <= set(motion_probe._PROBE_PAPERS)
 
 
-def test_no_licence_is_recorded_until_the_amendment_sets_one() -> None:
-    """Default-closed. The amendment that licenses the full-corpus run sets this in the same
-    commit; until then no flag value admits a held-out id."""
-    assert motion_probe._CORPUS_RUN_LICENCE is None
+def test_the_licence_is_the_release_amendment_and_nothing_else() -> None:
+    """Default-closed until 2026-10-27, when prereg Amendment 13 released the held-out three and set
+    this constant in the same commit. Only that exact id admits them (the guard tests below)."""
+    assert motion_probe._CORPUS_RUN_LICENCE == "Amendment 13"
 
 
 # --- the guard, every branch, no client, no read ----------------------------------------------
@@ -90,11 +90,27 @@ def test_default_list_is_the_probe_set_and_passes_both_guards(tmp_path: Path) ->
     assert not refused.exists()
 
 
-def test_held_out_refused_with_a_flag_while_no_licence_is_recorded(tmp_path: Path) -> None:
+def test_held_out_refused_with_a_flag_while_no_licence_is_recorded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The default-closed branch, kept under test by pointing the constant back at None."""
+    monkeypatch.setattr(motion_probe, "_CORPUS_RUN_LICENCE", None)
     out = tmp_path / "never"
     with pytest.raises(SystemExit, match="no corpus-run licence is recorded"):
         _main(["--papers", "liu_2005", "--corpus-run", "Amendment 10"], out)
     assert not out.exists()
+
+
+def test_the_release_id_admits_a_held_out_paper_and_a_wrong_id_does_not(tmp_path: Path) -> None:
+    """Under the committed licence: the amendment's id reaches the (stub) client; any other id is
+    refused before it; no flag is refused before it."""
+    with pytest.raises(AssertionError, match="a client was built"):
+        _main(["--papers", "liu_2005", "--corpus-run", "Amendment 13"], tmp_path / "accepted")
+    for args in (["--corpus-run", "Amendment 12"], []):
+        out = tmp_path / "never"
+        with pytest.raises(SystemExit, match="HELD OUT"):
+            _main(["--papers", "liu_2005", *args], out)
+        assert not out.exists()
 
 
 def test_held_out_refused_when_the_flag_mismatches_the_licence(
