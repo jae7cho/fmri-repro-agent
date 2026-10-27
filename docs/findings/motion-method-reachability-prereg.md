@@ -1033,3 +1033,84 @@ run, not of this 13-paper probe, which does not touch them.
 Reachability, not accuracy; no accuracy figure may be computed from or cited out of this run. Counts
 only, no rates. The clean three are not loaded, searched or read. The run follows the protocol commit
 and the workbook edits; no call is made before them.
+
+## Amendment 11 (2026-10-27) — version 7: the attribution level leaves the model's output; the level and a routing fallback move into code; the last iteration before the corpus run
+
+**Written BEFORE the stanza edit and before any call.** Ruled by the author on 2026-10-27, after the
+version-6 run (Amendment 10, not adopted); drafted by Claude Code from the author's rulings;
+ratified by commit.
+
+### Why
+
+Version 6 assigned state and value correctly on gordon and mueller — row 2 with the label's value on
+8 of 10 each — and the level backwards on both, on all ten draws; the level then chose the wrong quote
+on mueller, and the check demoted eight of ten. **The level is derivable** from the quoted sentence,
+and it is already on the labels (column R). It does not need to be asked of the model.
+
+### Version 7 — version 6 with the level removed from the output
+
+- **Binding:** `motion_correction_binding` ∈ {`named_tool`, `described_only`}, the validator as
+  before (required iff `status == "extracted"`).
+- **STEP 3** keeps the package rule exactly as version 6 wrote it, minus any mention of a level.
+  **STEP 5:** `named_tool` quotes the sentence that names the tool; value = the package name token or
+  the step tool, as written; the binding is `named_tool` for both. No other change from `8df070da…`.
+  The diff from version 6 is quoted in the results document and in the commit.
+- **Hash:** `d353fb478cd1fbbe03d079a51b322c749c8b8a3431b58261745ac17b503d5a1d` (7,848 characters), pinned with a dated note
+  retaining `b0093774…` and `8df070da…`; `_FROZEN_STANZA_SHA256` moved with it in the same commit.
+- **The level, in code, on the processed layer.** `motion_guard.attribution_from_quote`: **`step` if
+  the quoted sentence contains an operation phrase from the frozen heuristic's list** (the same eleven
+  phrases as `motion_value_kind._OPERATION_PHRASES`, copied with a test holding the copy equal),
+  **else `package`.** Derived from the resolved span's text for every row-2 draw; carried by the
+  projection in an `attribution` column, emitted only for records of this version and later, so every
+  earlier projection regenerates byte-for-byte. **Reported against column R as agreement counts,
+  diagnostic, never scored.**
+- **The routing fallback, in code.** When the check routes a D.3 structured-noise tool off the method
+  (ruling 4) and **the same quote names exactly one listed package** (AFNI, FSL, SPM with any version
+  token, ANTs, BrainVoyager — by token, digits after the name tolerated for the citation artefact;
+  the SPM version is part of the token and is kept, the others' is not), **the processed value is that
+  package, attribution `package`**, with its own reason string
+  (`motion_value_routed_fallback_to_package:<tool>-><package>`) on the diagnostic. The raw layer is
+  untouched. **Replayed over every recorded draw before the run:** on derosa's routed draws the
+  fallback must yield FSL on every one, and it must fire on no other paper's draw — the numbers are in
+  `DELTA_value_in_quote_motion.md` §5 and the results document.
+- **The frozen heuristic is not extended** (C21).
+
+### Pre-declared readings — version 7, K = 10, the 13-paper probe set
+
+State and value, by state-map row (raw layer) with the value as the label carries it; the level from
+the processed layer, compared with column R and reported, not scored.
+
+| paper | v1.8 label | pre-declared under v7 | version-6 count |
+|---|---|---|---|
+| ciric_2017 | `named_tool` / MCFLIRT / `step` | row 2, `MCFLIRT`, span 4410–4507; level `step` | 10 |
+| agtzidis_2020 | `named_tool` / SPM12 / `package` | row 2, `SPM12`, the package sentence (7020–7085 resolved under v6); level `package` | 6 (row 2) |
+| cole_2013 | `named_tool` / AFNI / `package` | row 2, `AFNI`, the package sentence, kept under ruling 5; level `package` | 4 (row 2) |
+| gordon_2014 | `named_tool` / SPM8 / `step` | row 2, `SPM8`, span 4860–5140; level `step` (the sentence carries an operation phrase) | 8 (row 2) |
+| mueller_2021 | `named_tool` / SPM12 / `package` | row 2, `SPM12`, **quote = the SPM12 sentence** (so the check keeps it); level `package` | 8 (row 2, 8 demoted) |
+| derosa_2025 | `named_tool` / FSL / `package` | raw: `ICA-AROMA`, routed; **processed: `FSL` by the fallback, attribution `package`**, on every routed draw | 10 routed |
+| liu_2013 | `deferred` | row 4 ×10 to the scripts | 10 |
+| braun_2015 | `deferred` | row 4 ×10 | 10 |
+| viduarre_2017 | `deferred` | row 4 ×10 | 10 |
+| vanderwal_2016 | `deferred` | row 4 ×10 | 10 |
+| power_2014 | `described_only` | row 1 ×10 at 3112–3528 | 10 |
+| binder_1999 | `described_only` | row 1 on most, row 3 on some (excluded) | 8 by row |
+| poldrack_2015 | `deferred` | **reported as found**; version 6's 8 of 10 noted — a majority of deferred draws under edits aimed elsewhere, and version 7 keeps those edits | 8 |
+
+### Adoption rule
+
+**Version 7 is adopted if every `named_tool` paper** (ciric, agtzidis, cole, gordon, mueller, derosa
+— derosa at the processed layer) **returns `named_tool` with the label's value on at least 8 of 10,
+and no paper loses more than 2 matching draws against its version-6 count** (a different day;
+noted, and a loss within the day-to-day range the record shows is reported as a loss under the rule
+as written). The value match is normalized exact equality (the author's scoring ruling of
+2026-10-26). The level is reported beside it and does not enter the rule.
+
+- **Adopted → version 7 freezes** under C11: pin, recorder constant and a dated freeze note.
+- **Not adopted → `b0093774…` (version 4) is restored by amendment and freezes.**
+- **Either way, no further iteration before the corpus run.** This is the last stanza change the
+  pre-registration permits before the 19-paper run; the next change, if any, follows that run.
+
+### Unchanged
+
+Reachability, not accuracy; counts only, no rates; the clean three are not loaded, searched or read
+and are not in the probe set; no call is made before the author says run.
