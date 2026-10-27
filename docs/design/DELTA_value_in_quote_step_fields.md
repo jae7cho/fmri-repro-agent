@@ -216,6 +216,12 @@ fork in §2 is left as written; this is what was decided.*
    bare "MNI152", and a quote saying only MNI152 would support `MNI152NLin6Asym`.
 5. **The motion matcher is tightened to digit-exact in the same change**; the replay must show 0 of 160
    resolved motion draws changing. (It shows 0: totals 30 / 20 / 110 / 20, unchanged.)
+   > **Dated note, 2026-10-26 (late night).** Digit-exactness now has one directional exception,
+   > ruled by the author for the motion check and carried by the shared matcher: a letter-ending value
+   > is matched by its quote's token plus a digit run (the text layer's citation-number artefact;
+   > `AFNI` / `AFNI48`), under-claim only — `DELTA_value_in_quote_motion.md` §4 ruling 5. The
+   > step-field replay over the 19 stored results after the change: 0 cells change.
+
 6. **A rejected value renders as unverifiable, never "not reported"**; its reason base,
    `value_unsupported_by_quote`, is in `_UNVERIFIABLE_GAP_BASES` (`cobidas.py`).
 

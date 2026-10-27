@@ -39,6 +39,12 @@ _RUNS: tuple[tuple[str, Path], ...] = (
     ("ab 56bc 2026-10-25", _RESULTS / "motion_probe_ab_2026-10-25" / "56bc" / "motion_probe"),
     ("ab 378a 2026-10-25", _RESULTS / "motion_probe_ab_2026-10-25" / "378a" / "motion_probe"),
     ("ciric 56bc 2026-10-26", _RESULTS / "motion_probe_ciric_2026-10-26" / "motion_probe"),
+    # Added 2026-10-26 (late night) so that "all recorded motion draws" means all of them: the
+    # version-3 run, the version-4 run, and both arms of the same-day version-4 / version-5 A/B.
+    ("v3 ea7b 2026-10-26", _RESULTS / "motion_probe_v3" / "motion_probe"),
+    ("v4 b009 2026-10-26", _RESULTS / "motion_probe_v4" / "motion_probe"),
+    ("ab v4 b009 2026-10-26", _RESULTS / "motion_probe_ab_2026-10-26_v4v5" / "v4" / "motion_probe"),
+    ("ab v5 fb57 2026-10-26", _RESULTS / "motion_probe_ab_2026-10-26_v4v5" / "v5" / "motion_probe"),
 )
 
 
@@ -86,7 +92,7 @@ def main() -> int:
     by_v: collections.Counter = collections.Counter(v for _, _, _, v, _ in listing)
     for run, paper, draw, v, kind in listing:
         print(f"   {run:22s} {paper:15s} draw {draw:2d}  {v:28s} {kind}")
-    print("\n== totals over 180")
+    print(f"\n== totals over {total}")
     for v, n in sorted(by_v.items()):
         print(f"   {v:28s} {n}")
     print(f"   {'keep':28s} {total - sum(by_v.values())}")

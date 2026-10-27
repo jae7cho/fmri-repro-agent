@@ -107,8 +107,17 @@ def token_equivalent(a: str, b: str) -> bool:
     common prefix covering all but one character of the shorter (``coregistration`` → ``coregistr``,
     ``coregistered`` → ``coregister``). A bare prefix is NOT equivalence: ``mode`` is not ``model``.
     A token with a digit in it is an identifier, and identifiers match exactly: ``mni152`` is not
-    ``mni152nlin6asym`` and ``spm`` is not ``spm12``. Tokens shorter than ``_MIN_STEM`` match exactly."""
+    ``mni152nlin6asym`` and ``spm8`` is not ``spm12`` -- with one directional exception (motion DELTA §4 ruling 5,
+    2026-10-26): a letter-ending ``a`` is matched by ``b`` = ``a`` + a digit run (``afni`` / ``afni48``,
+    ``spm`` / ``spm12``), the text-layer citation-number artefact, under-claim only. Tokens shorter
+    than ``_MIN_STEM`` otherwise match exactly."""
     if a == b:
+        return True
+    # Ruling 5 of DELTA_value_in_quote_motion.md §4 (2026-10-26, the author): a LETTER-ENDING token may
+    # be followed by a digit run in the quote's token. The text layer attaches citation numbers to
+    # words ("AFNI48", "Louis45"), and a value may under-claim ("spm" against "spm12"). Under-claim
+    # only: never the reverse, and never for a token that ends in a digit -- "spm8" is not "spm12".
+    if a and a[-1].isalpha() and len(b) > len(a) and b.startswith(a) and b[len(a) :].isdigit():
         return True
     if any(ch.isdigit() for ch in a) or any(ch.isdigit() for ch in b):
         return False

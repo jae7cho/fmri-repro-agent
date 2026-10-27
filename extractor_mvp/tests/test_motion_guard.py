@@ -104,7 +104,8 @@ def _method(prep: Any) -> Any:
         ("ToolKit 9", "Functional volumes were realigned to the mean image.", False),
         ("ACRONYM", "an iterative procedure that minimizes variance (Author, 1999b)", False),
         # short tokens must match exactly: "spm" is not supported by "spm12"
-        ("SPM", "realigned using SPM12", False),
+        # flipped 2026-10-26 by motion DELTA §4 ruling 5: an under-claim is tolerated
+        ("SPM", "realigned using SPM12", True),
         # digit-exact (2026-10-26 tightening): an identifier is not supported by a prefix of it
         ("MNI152NLin6Asym", "normalized to MNI152 standard space", False),
         ("SPM12", "performed with SPM12b", False),
@@ -121,6 +122,20 @@ def _method(prep: Any) -> Any:
 )
 def test_inflection_tolerant_support(value: str, quote: str, expected: bool) -> None:
     assert quote_supports_value_inflected(value, quote) is expected
+
+
+def test_citation_number_attached_to_a_package_name_is_tolerated_under_claim_only() -> None:
+    """Motion DELTA §4 ruling 5 (2026-10-26): the text layer attaches a citation number to the word before it, so
+    a package-level value is supported by a quote in which the package name carries a digit run.
+    Under-claim only: a value that ends in a digit still matches exactly."""
+    from extractor_mvp.motion_guard import quote_supports_value_inflected
+
+    quote = "Images were processed with AFNI12 and a surface package13 before realignment"
+    assert quote_supports_value_inflected("AFNI", quote) is True
+    assert quote_supports_value_inflected("AFNI12", quote) is True
+    assert quote_supports_value_inflected("AFNI1", quote) is False  # ends in a digit: exact only
+    assert quote_supports_value_inflected("SPM8", "realigned with SPM12 in MATLAB") is False
+    assert quote_supports_value_inflected("SPM", "realigned with SPM12 in MATLAB") is True
 
 
 @pytest.mark.parametrize(

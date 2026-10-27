@@ -81,7 +81,16 @@ def _field(prep: Any, kind: str, name: str) -> Any:
         ("coregistration", "coregistered", True),
         ("spatially", "spatial", True),
         ("mni152", "mni152nlin6asym", False),  # the prefix leak, closed
-        ("spm", "spm12", False),
+        # Motion DELTA §4 ruling 5 (2026-10-26): a letter-ending value may be followed by a digit run in the quote --
+        # the text layer's citation-number artefact ("AFNI48", "Louis45"); under-claim only.
+        ("spm", "spm12", True),  # was False before that ruling: an under-claim is now tolerated
+        ("afni", "afni48", True),
+        ("louis", "louis45", True),
+        ("fsl", "fsl5", True),
+        ("spm8", "spm12", False),  # the value ends in a digit: still exact
+        ("spm12", "spm", False),  # the reverse direction is never tolerated
+        ("afni48", "afni", False),
+        ("spm", "spm12a", False),  # a digit run, not a mixed suffix
         ("3", "30", False),
         ("fsaverage5", "fsaverage", False),
         ("mode", "model", False),

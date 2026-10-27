@@ -226,6 +226,17 @@ ruling 1 the raw layer and the state-map rows do not move, and only the processe
 
 ---
 
+**Ruling 5 — 2026-10-26 (late night), by the author, before the version-6 commit: a letter-ending
+value may be followed by a digit run in the quote; under-claim only.** The text layer attaches
+citation numbers to the word before them (`AFNI48`, `Louis45`), so a package-level value such as
+`AFNI` against the sentence that names the package would fail the digit-exact matcher of rulings 2–3
+and demote a correct cole report. The rule, in `quote_support.token_equivalent` (shared with the
+step-field check): a token ending in a letter is matched by the quote's token when that token is the
+value plus a digit run. It only ever lets a value under-claim (`AFNI` / `AFNI48`, `SPM` / `SPM12`);
+the reverse is never tolerated, and a value that ends in a digit still matches exactly (`SPM8` is not
+`SPM12`; `mni152` is not `mni152nlin6asym`). Recorded here because it is the motion check's rule;
+the step-field DELTA carries a dated note under its ruling 5.
+
 ## 5. Built — 2026-10-26
 
 Implemented as `extractor_mvp/src/extractor_mvp/motion_guard.py` (pure functions:
@@ -239,3 +250,15 @@ rejects the 30 carries, routes derosa's 20, keeps ciric's 20 and the 8 inflected
 no other change. Identity gate against HEAD: 19 identical (no stored JSON carries a motion step);
 negative control against `d31e8b7`: 19 changed, as derived beforehand. The vintage statement of §3
 holds: raw outputs and state-map rows are untouched; the processed layer is re-vintaged for motion.
+
+**Ruling 5 built — 2026-10-26 (late night).** `token_equivalent` gained the directional digit-run
+clause; `scripts/motion_guard_replay.py` now lists every recorded run (nine: v1, v2, the 2026-10-25
+A/B's two arms, ciric, v3, v4, and the 2026-10-26 A/B's two arms — 550 draws; its totals line
+reports the real count instead of a hard-coded 180). Replay before and after the change, byte for
+byte: **identical** — 20 routed, 30 unsupported, 267 kept, 233 untouched, no draw moves. The
+step-field replay over the 19 stored results: identical (0 demotions; held-out counts only, pass 3,
+demote 0). The value survey: identical. The only cell the rule can move is a cole-type one, and no
+recorded draw is of that type. Tests: nine parametrized cases in `test_quote_support.py` (`spm` /
+`spm12` flips from False to True by this ruling; the reverse and the digit-ending cases stay False)
+and one synthetic case in `test_motion_guard.py`; one mutation (the clause disabled, diff shown)
+fails five of them.
