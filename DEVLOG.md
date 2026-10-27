@@ -3408,3 +3408,45 @@ alone. The full-corpus run waits on that ruling and on the held-out three's R ce
 
 Commits: `f82b2e1`, `f99ef47`, `76a5f3f`, `8592ab8`, `cd98904`, `331af0e`, `ad0e04a`, then this entry.
 All under `ALLOW_WORKHOURS_COMMIT=1`, invoked by the author this morning.
+
+---
+
+## 2026-10-27 (afternoon)
+
+**Version 7, under the author's override (`ALLOW_WORKHOURS_COMMIT=1`, invoked in the message).**
+Amendment 11 (`205ddc6`) and the version-7 build (`b7dafd3`) landed first, since the amendment must be
+on the record before its run: the attribution level removed from the model's output (the binding
+literal `named_tool` / `described_only` again; STEP 3's package rule kept minus any mention of a
+level; STEP 5's two `named_tool` bullets both set `named_tool` — a five-hunk diff from version 6,
+quoted in the findings), the level derived in code on the processed layer (step iff the quoted
+sentence carries one of the frozen heuristic's eleven operation phrases, else package; copied from
+the script with a test holding the copy equal) and reported against column R, and the routing
+fallback (a routed structured-noise tool whose quote names exactly one listed package yields that
+package as the processed value, attribution package, with its own diagnostic reason; replayed over all
+ten recorded runs, 680 draws: derosa's 70 routed draws all fall back to FSL, no other paper is
+routed). Six mutations with diffs. **The workbook alone (`e624361`)**: sha256 `8cd9cbbb…`, 26,816
+bytes, the staged blob verified; column R filled by the author on **2 of the 3 held-out rows** —
+tang_2025's R cell is still empty — and no held-out state changed from `named_tool` (cells B, C and R
+read by id only; D and Q unread; C kept in the scratchpad, never printed).
+
+**The version-7 run: 130 draws, 16:25:50–16:51:46 UTC, manifest gated on `d353fb47…`, no held-out
+id admitted. Version 7 was not adopted.** Clause 1 (every `named_tool` paper returns `named_tool`
+with the label's value on at least 8 of 10): ciric 10, agtzidis 10 (up from 6), mueller 10 at the raw
+layer (7 of them quoted against the realignment sentence and demoted by the check), derosa 10 at the
+processed layer through the fallback — **gordon 7, cole 0** (the package rule never fired on cole: 6
+draws deferred to its citation, 4 read the step list in the paper's voice). Clause 2 against the
+version-6 counts: **liu_2013 10 → 5, poldrack 8 → 4, cole 4 → 0**, gordon −1, the rest held or gained;
+a different day, as the amendment noted. The derived level against column R: 40 agree, 0 disagree, 20
+without a level. By the rule as written, **Amendment 12 restores version 4 verbatim and freezes it**
+(`dc649da`): the constant's body equal to `c5bfe6b`'s, `b0093774…` checked live, the pin and the
+recorder's constant back with dated notes retaining the chain through `8df070da…` and `d353fb47…`;
+the processed-layer code stays, since it is not the stanza; **no further iteration before the corpus
+run**. Findings and projection in `7f51757` (50 needles derived from the records, 0 in the CSV). 501 passed
+(not live), 235 root; hooks clean; identity gate 19 identical against HEAD and the negative control
+0 / 19, derived before each run.
+
+**Stopped before the held-out release amendment.** It states that the label checks are done, and they
+are not: column R is filled on 2 of the 3 held-out rows. The release constant, the corpus run and its
+findings wait on tang_2025's R cell. Counts only; no rates; no paper text.
+
+Commits: `205ddc6`, `b7dafd3`, `e624361`, `dc649da`, `7f51757`, then this entry.
