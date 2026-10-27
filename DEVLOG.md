@@ -3356,3 +3356,55 @@ entering for the first time — is a design question, not yet pre-registered.
 
 Commits: `60dc817` (Amendment 9), `2f0fe2e` (version 5), `c5bfe6b` (the freeze), `725dc6a` (findings and
 projections), then this entry.
+
+---
+
+## 2026-10-27
+
+**The night's work landed this morning under the author's override, in the order the author set.**
+Four commits for the eighteen files staged on the night of the 26th: protocol **v1.8** (`f82b2e1`) —
+CALL 1 gains an attribution level, `named_tool` = `step` or `package`, the realignment-capable list
+frozen with a documented program and a source per entry (AFNI/3dvolreg, FSL/MCFLIRT, SPM/Realign,
+ANTs/antsMotionCorr, BrainVoyager; FreeSurfer off it), the pipeline/wrapper rule, seven worked cases
+from labels on the record, the v1.6 agtzidis case superseded with a dated note; prereg **Amendment
+10** (`f99ef47`) — the freeze of Amendment 9 lifted once for a definitional change, not tuning, and
+re-applied to the adopted version; the 13-paper probe set; readings with the level per paper; the
+adoption rule; the matcher's **ruling 5** (`76a5f3f`) — a letter-ending value may be followed by a
+digit run in the quote, under-claim only, the text layer's citation-number artefact; replay over all
+nine recorded runs (550 draws) byte-identical before and after, the step-field replay identical;
+and **stanza version 6** (`8592ab8`) — the package rule in STEP 3 and both levels in STEP 5, nothing
+else from `b0093774…`; sha256 `8df070da…`, 7,934 characters; the binding literal `named_tool_step` /
+`named_tool_package` / `described_only`; the pin and the recorder's constant moved with it, dated at
+every citation of the freeze; the projection's `model_attribution` column; the recorder's
+`_PROBE_SET` default of thirteen; five mutations with diffs. Two adjustments the author ratified
+before the commit: the value is the package name token as written, a separate version staying in
+the quote; and clause 1 of the adoption rule covers every `named_tool` paper. binder and power
+confirmed `described_only` by the author from their text.
+
+**The workbook, alone (`cd98904`)**: the author's v1.8 edits, staged blob verified at
+`894c3bf5…`, 22,355 bytes — column R `attribution`, 17 cells, `co-adjudicated` on cole and gordon;
+the held-out three untouched, their R cells pending the author. **Protocol v1.8.1 (`331af0e`)**: §7
+and the contamination counts re-derived from the flags by script — 16 flagged, overlap with CALL
+10's seven now 7, union 16 of 19 unchanged, clean three unchanged, 0 of 3 held-out rows flagged.
+
+**The version-6 run: 130 draws, 13:39:31–14:04:58 UTC, manifest gated on `8df070da…`, no held-out
+id admitted. Version 6 was not adopted.** Clause 1 — every `named_tool` paper returns its level on at
+least 8 of 10 — failed on five of six: ciric 10, agtzidis 6 (package on all ten, row 2 on six), cole 4,
+gordon 0 (`package` returned on all ten where the label is `step`), mueller 0 (`step` on all ten
+where the label is `package`, the package then quoted against the realignment sentence and demoted
+by the check on eight), derosa 0 (`ICA-AROMA` as `step` on all ten, routed). Clause 2 was not
+breached: no paper lost a draw against its version-4 count, and **liu_2013 went 5 → 10, poldrack 0 →
+8** — the unreached shape moved on a majority of draws under edits aimed elsewhere — binder 6 → 8 by
+row. The rule is a conjunction: report and stop. The level was right where the sentence structure is
+simplest and wrong on both papers where it turns on one sentence; six `named_tool` bindings carried
+an operation phrase, the first model-versus-heuristic disagreements on any run (8 of 79 extracted
+draws); cole's four package draws were kept under ruling 5. Findings and projection in `ad0e04a`
+(53 needles derived from the records, 0 in the CSV). Counts only, no paper text.
+
+**No stanza is frozen by adoption.** The pin and `_FROZEN_STANZA_SHA256` carry `8df070da…` as
+Amendment 10's candidate. Held for the author: restore `b0093774…` by amendment, or a version 7 under
+a new amendment; and whether the level belongs in the model's output at all or in the scoring map
+alone. The full-corpus run waits on that ruling and on the held-out three's R cells.
+
+Commits: `f82b2e1`, `f99ef47`, `76a5f3f`, `8592ab8`, `cd98904`, `331af0e`, `ad0e04a`, then this entry.
+All under `ALLOW_WORKHOURS_COMMIT=1`, invoked by the author this morning.
