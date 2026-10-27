@@ -3450,3 +3450,41 @@ are not: column R is filled on 2 of the 3 held-out rows. The release constant, t
 findings wait on tang_2025's R cell. Counts only; no rates; no paper text.
 
 Commits: `205ddc6`, `b7dafd3`, `e624361`, `dc649da`, `7f51757`, then this entry.
+
+---
+
+## 2026-10-27 (late afternoon) — the corpus run
+
+**The release, under the author's override, after the workbook.** The workbook alone (`bc18447`):
+column R filled on 3 of 3 held-out rows by the author, sha256 `350331c8…`, 26,822 bytes, the staged
+blob verified; no held-out state changed from `named_tool` (cells B, C and R by id only; D and Q
+unread; C in the scratchpad, never printed). Amendment 13 (`8099063`): the stanza frozen at
+`b0093774…` by Amendment 12 and the label checks done, citing `bc18447`; `_CORPUS_RUN_LICENCE =
+"Amendment 13"` in the same commit with its tests (the exact id admits a held-out paper to a stub
+client, any other id or no flag is refused, the default-closed branch kept under test); one
+pre-declared error class — agtzidis, cole and mueller expected to mismatch their package-attributed
+labels, *package attribution unreached by the frozen stanza*; derosa FSL at the processed layer by
+the fallback; gordon reported as found; `scripts/batch_motion_projection.py` with its test.
+
+**The two runs, one session, every manifest gated.** The recorder over all 19 at K=10 (190 draws,
+18:53–19:22 UTC; manifest: the hash, the frozen key, the licence, the three admitted) and the batch
+into the config's `output_dir` (19:22–19:31 UTC; the launcher's provenance header: HEAD, the live
+hash, the config's sha256, exit 0; 19 results, 18 success, liu_2005 `methods_not_found`). Findings
+(`3dc1ac4`) by contamination class: **probe thirteen** — all ten draws match on eight (power, binder,
+derosa by the fallback, ciric, braun, viduarre, vanderwal, gordon), cole 8 (`AFNI` reached by a
+two-sentence quote, the derived level reading `step` against column R's `package` on all 8),
+poldrack 5 (the unreached shape on half the draws under version 4, a third day's count), liu_2013 4,
+agtzidis 0 and mueller 0 (the pre-declared class). **Co-adjudicated, not probed** — chen, oconnor,
+weber: 0 of 10 each, the operation in the paper's own voice on 30 of 30: the poldrack shape with a
+named wrapper, recorded as unreached. **The clean three, states and counts only** — 0 of 30 recorder
+draws and 0 of 3 batch draws match a clean label; no row-2 draw, so no level to compare; liu_2005's
+interleaved text layer named beside its result (`fallback_full_text` in the batch, every recorder
+quote unresolved). Raw and processed layers side by side; the demoted-or-routed line: demoted 0,
+routed-then-fallback 10 (derosa), routed without fallback 0, unresolved 20. Model vs heuristic 142
+agree / 0 disagree / 0 undecided. The batch draw inside the recorder's set on 17 of 19. Identity gate
+derived 19 identical and run 19 identical; negative control 0 / 19; the stored acceptance results
+untouched. Two projections committed, no text; the batch output untracked, as results/ always has
+been. **No corpus-wide rate.** The three clean cells are spent.
+
+Commits: `bc18447`, `8099063`, `3dc1ac4`, then this entry. Under `ALLOW_WORKHOURS_COMMIT=1`, invoked by
+the author in the message that started the run.
