@@ -859,6 +859,11 @@ author's review of version 5; no call is made before it.
 
 ## Freeze (2026-10-26, late night) — the adoption rule applied as written; version 4 is the frozen stanza
 
+> **Lifted and moved (Amendment 10, 2026-10-26, late night).** The freeze below stands as the record of
+> how version 4 was adopted. It is lifted once, for a **definitional change, not tuning** — protocol
+> v1.8 gives `named_tool` an attribution level that version 4 cannot express — and re-applied to
+> version 6 on adoption under Amendment 10's rule. Nothing in this section is tuned by that.
+
 **Written AFTER the same-day A/B, from records read only after each arm's manifest passed its gate.**
 Counts of draws; no rate. The run is reported in
 [motion-probe-v5-ab-results.md](motion-probe-v5-ab-results.md).
@@ -921,3 +926,110 @@ Counts of draws; no rate. The run is reported in
 Reachability, not accuracy. The contaminated union is 16 of 19; the clean three were not loaded,
 searched or read. The full-corpus run — 19 papers under `b0093774…`, the held-out three entering for
 the first time — is the next design question and is not pre-registered here.
+
+## Amendment 10 (2026-10-26, late night) — the freeze lifted for a definitional change; version 6; the 13-paper probe set; adoption rule
+
+**Written BEFORE any call under version 6, after the stanza edit was drafted from the protocol's text
+and before it ran.** Ruled by the author on 2026-10-26; drafted by Claude Code from the author's
+rulings; ratified by commit.
+
+### Why the freeze is lifted, and why this is not tuning
+
+Protocol **v1.8** amends CALL 1: `named_tool` carries an attribution level, `step` (the v1.5 binding
+test) or `package` (exactly one package from a closed realignment-capable list named for the
+preprocessing or analysis as a whole, no step-level tool, the motion step asserted). This changes the
+**label vocabulary**. A stanza that cannot express the vocabulary the labels are written in measures
+nothing about those labels: the four papers the v1.8 worked cases move or settle (agtzidis, derosa,
+cole, mueller) would be scored against a state the frozen stanza has no way to return. The freeze was
+pre-declared to end iteration on wording; it was not pre-declared to bind the stanza to a superseded
+definition. So the freeze is **lifted once, for this definitional change only**, and re-applied to
+version 6 under the rule below. Every place the freeze is cited carries a dated note saying so.
+
+### Version 6
+
+- **Two edits, both from the protocol's text, no other change from `b0093774…`:** STEP 3 gains the
+  package rule after NOT BOUND — the list verbatim (AFNI (3dvolreg), FSL (MCFLIRT), SPM any version
+  (Realign), ANTs (antsMotionCorr), BrainVoyager; FreeSurfer not on it), the unlisted-package
+  instruction (not attributed, continue to STEP 4), the two-or-more rule, the pipeline/wrapper rule;
+  STEP 5 gains the output rules for both levels. **A package-level draw quotes the sentence that
+  names the package** (the value must appear in it), so the value-in-quote check holds on it, and its
+  span is the package sentence, not the realignment sentence — consistent with `span_role` being
+  evaluated for ciric only.
+- **Response model:** `motion_correction_binding` ∈ {`named_tool_step`, `named_tool_package`,
+  `described_only`}; the validator is unchanged in shape. The projection folds both `named_tool_*`
+  values to `named_tool` for the state comparison with the frozen heuristic and carries the level in
+  a new column, `model_attribution`, emitted only for version-6 records; every earlier projection
+  regenerates byte-for-byte.
+- **Hash:** `8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f` (7,934 characters). Pinned with a dated
+  note retaining `b0093774…`; `_FROZEN_STANZA_SHA256` moved to it in the same commit.
+- **The frozen heuristic is not extended (C21).** It classes `ANTs` and `BrainVoyager` as `undecided`
+  (not tool-shaped in its frozen vocabulary): a draw returning either lands on row 3 — halt, count,
+  never default. Recorded as a known gap, not amended; no probe paper is expected to return either.
+
+### The probe set: 13 papers
+
+cole_2013, gordon_2014 and mueller_2021 join the ten of Amendments 4 and 8. All three are inside the
+contaminated union (cole and gordon in CALL 10's derivation set; mueller co-adjudicated), and the v1.8
+worked cases for cole and gordon were proposed with LLM assistance and ratified by the author, so both
+carry the `co-adjudicated` flag once the workbook is edited: the co-adjudicated list becomes 16, the
+union stays **16 of 19**, the clean three are **unchanged** and are not in the probe set. The recorder's
+default `--papers` is this set (`_PROBE_SET`); the held-out guard is unchanged. **K = 10, 130 draws,
+one session; the manifest gated on version 6's hash before any record is read.** All 13 are fitted
+by construction: the stanza's package rule is the protocol's, and the protocol's worked cases name
+them.
+
+### Pre-declared readings — version 6, K = 10
+
+"Label" is the v1.8 label; the workbook edits for agtzidis, derosa, cole, gordon and mueller follow the
+protocol commit and precede the run. "Row" is the state-map row from the raw layer; "level" is the
+model's `motion_correction_binding`. The version-4 count is the matching-draw count by row on the
+2026-10-26 same-day A/B's version-4 arm (`motion_probe_ab_2026-10-26_b009_projection.csv`).
+
+| paper | v1.8 label | pre-declared under v6 | v4 count | clause |
+|---|---|---|---|---|
+| agtzidis_2020 | `named_tool` / `package` / SPM12 | row 2, value `SPM12`, level `package`; the quote moves to the package sentence, which may resolve where the realignment sentence (`/C2`) did not — reported | 10 under the old label | 1 |
+| cole_2013 | `named_tool` / `package` / AFNI | row 2, value `AFNI`, level `package`. The text layer attaches the citation number to the package name (the protocol's `AFNI48` note); under the matcher's ruling 6 (2026-10-26, before commit) a letter-ending value is supported by such a quote, so the draw is **not** demoted — a demoted cole would have been wrong, and the replay over every recorded draw moved nothing else | — | 1 |
+| mueller_2021 | `named_tool` / `package` / SPM12 | row 2, value `SPM12`, level `package`. Risk: the paper's earlier deferral of its preprocessing to a prior paper read as STEP 4 — a `deferred` draw is the mismatch to name | — | 1 |
+| derosa_2025 | `named_tool` / `package` / FSL, ICA-AROMA routed | row 2, value `FSL`, level `package`, quote = the FSL sentence. A draw returning `ICA-AROMA` is routed by the check as before and is **not** the level: reported as found | 10 routed under the old label | 1 |
+| gordon_2014 | `named_tool` / `step` / SPM8 | row 2, value `SPM8`, level `step`; CALL 10's attractors (MATLAB = HOST, RMS = CONSUME) are the mismatches to name | — | 1 |
+| ciric_2017 | `named_tool` / `step` / MCFLIRT (post hoc) | row 2, `MCFLIRT`, level `step`, span 4410–4507 | 10 (reported, not a clause-2 count) | 1 |
+| power_2014 | `described_only` — **confirmed by the author from the text** (no listed package named anywhere; one MATLAB mention, in a figure caption) | row 1 ×10 at 3112–3528, level `described_only`; a package-level return would be an over-reach, recorded | 10 | 2 |
+| binder_1999 | `described_only` — **confirmed by the author from the text**: MCW-AFNI is named once, for projecting anatomical scans and statistical maps into Talairach space, a different step, so the "for its preprocessing as a whole" condition fails | row 1 on most draws, row 3 on some (excluded by name), level `described_only`; **a `named_tool`/`package`/AFNI return is an over-reach of that condition, recorded as such** | 6 by row | 2 |
+| liu_2013 | `deferred` (two listed packages under the scripts → not attributable) | row 4 to the scripts, target kind `pipeline`, on 5 to 10 of 10 (the recorded cost); below 5 is a new finding | 5 (7 on the earlier v4 run; both reported) | 2 |
+| poldrack_2015 | `deferred` | row 1 ×10 at 25523–25671 (the unreached shape; the pipeline is unnamed, so the package rule does not apply) | 0 | 2 (cannot lose) |
+| braun_2015 | `deferred` | row 4 ×10, target kind `paper` | 10 | 2 |
+| viduarre_2017 | `deferred` | row 4 ×10 to one of the two pre-declared citations | 10 | 2 |
+| vanderwal_2016 | `deferred` (C-PAC is a wrapper) | row 4 ×10, target kind `pipeline`; `ANTs` host-sentence risk unchanged, and an `ANTs` value would land on row 3 (above) | 10 | 2 |
+
+**power_2014 and binder_1999, confirmed.** Both were checked by the author from their text, not the
+model's output, before this commit: power names no listed package anywhere; binder names MCW-AFNI once
+for a different step. Both stay `described_only`, and the over-reach readings in the table are
+pre-declared so that neither is written after a value is seen.
+
+### Adoption rule
+
+**Version 6 freezes if every `named_tool` paper** — agtzidis, cole, mueller, derosa at the `package`
+level; gordon and ciric at the `step` level (clause 1 covers every `named_tool` paper, the author's
+adjustment of 2026-10-26; neither gordon nor ciric has a clause-2 count) — **returns its level on at
+least 8 of 10** — level means the raw `motion_correction_binding` equal to the label's level with the
+raw value on row 2 — **and no other paper loses more than 2 matching draws against its version-4
+count** (power, binder, liu_2013, poldrack, braun, viduarre, vanderwal, by state-map row; liu_2013
+against 5, with 7 reported beside it). **Otherwise: report and stop.** The value match (normalized exact
+equality, the author's scoring ruling of 2026-10-26) and the level are reported per paper as separate
+counts and do not enter the rule beyond the level clause.
+
+**Pre-declared limitation.** There is no same-day version-4 arm this time; the comparison crosses
+days, and liu_2013's 7 → 5 across two days is the measured size of that movement. A loss within that
+range is reported as a loss under the rule as written and is not attributed to version 6 alone.
+
+### Precondition carried from `DESIGN_motion_full_corpus.md` §5.0
+
+The cole, gordon and mueller label check is settled by v1.8's worked cases, pending the workbook
+edits. The held-out three's v1.8 check, by the author alone, is a precondition of the **full-corpus**
+run, not of this 13-paper probe, which does not touch them.
+
+### Unchanged
+
+Reachability, not accuracy; no accuracy figure may be computed from or cited out of this run. Counts
+only, no rates. The clean three are not loaded, searched or read. The run follows the protocol commit
+and the workbook edits; no call is made before them.
