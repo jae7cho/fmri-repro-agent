@@ -21,6 +21,13 @@ through the model only, and their results are read as states and counts.
 > now have v1.8 worked cases (§5.0's first check is settled by the protocol, pending the workbook
 > edits); the held-out three's check by the author alone still stands. §2.6's state counts change
 > with the workbook edits (agtzidis and derosa become `named_tool`) and are restated then.
+>
+> **2026-10-27.** Version 6 was not adopted (Amendment 10's clause 1 failed on five of six). Amendment
+> 11 defines version 7 — the level removed from the model's output and derived in code, a routing
+> fallback to the one listed package a routed tool's quote names — with the rule that either version
+> 7 freezes on adoption or `b0093774…` is restored by amendment and freezes, and **no further
+> iteration before the corpus run** either way. The corpus run runs under whichever of the two that
+> rule selects.
 
 - **What this is.** The first extraction of `motion_correction.method` over all 19 papers under the
   frozen stanza `b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837` (version 4; prereg

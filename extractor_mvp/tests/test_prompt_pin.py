@@ -137,7 +137,18 @@ _PINNED = {
     #: The response model's binding literal changed with it. Readings for the 13-paper probe set,
     #: K=10, and the adoption rule are in Amendment 10, written before the edit. scripts/motion_probe.py
     #: carries this value as _FROZEN_STANZA_SHA256 in the same commit.
-    "MOTION_METHOD_PROMPT": ("8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f"),
+    #:
+    #: VERSION 7, 2026-10-27, by the author's ruling (prereg Amendment 11). Superseded value
+    #: 8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f (version 6), which stays on
+    #: the version-6 run of 2026-10-27 (13 papers, K=10; not adopted: the model assigned the level
+    #: backwards on gordon and mueller). Version 7 is version 6 with the attribution level removed
+    #: from the output -- the binding literal is named_tool / described_only again, STEP 3 keeps the
+    #: package rule minus any mention of a level, STEP 5's two named_tool bullets both set
+    #: "named_tool" -- and the level derived in code on the processed layer. The chain retained:
+    #: b0093774... (version 4, the first freeze) -> 8df070da... (version 6) -> this value. Amendment
+    #: 11 pre-declares the last iteration before the corpus run: adopted, version 7 freezes; not
+    #: adopted, b0093774... is restored by amendment and freezes.
+    "MOTION_METHOD_PROMPT": ("d353fb478cd1fbbe03d079a51b322c749c8b8a3431b58261745ac17b503d5a1d"),
 }
 
 _VINTAGE_NOTE = (

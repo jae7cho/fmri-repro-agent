@@ -36,7 +36,10 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from motion_value_kind import value_kind
+
+from extractor_mvp.motion_guard import MOTION_VALUE_ROUTED_FALLBACK, attribution_from_quote
 
 _REPO = Path(__file__).resolve().parents[2]
 _RESOLVER = "extractor_mvp/src/extractor_mvp/span_resolver.py"
@@ -80,6 +83,22 @@ _V3_COLUMNS = ("model_state", "model_vs_heuristic")
 #: stays at the state level (named_tool / described_only) and every earlier projection regenerates
 #: byte-for-byte. Emitted only when some record carries a ``named_tool_*`` binding.
 _V6_COLUMNS = ("model_attribution",)
+
+#: Added for version-7 runs (Amendment 11, 2026-10-27): the attribution level DERIVED in code on the
+#: processed layer -- "step" if the resolved span's text carries an operation phrase from the frozen
+#: heuristic's list, else "package"; "package" by construction on a routing-fallback draw -- for every
+#: row-2 draw whose span resolved. Reported against the labels' column R, never scored. Emitted only
+#: when the records carry ``diagnostic_reason`` (recorded from version 7 on), so every earlier
+#: projection regenerates byte-for-byte.
+_V7_COLUMNS = ("attribution",)
+
+
+def _derived_attribution(rec: dict[str, Any], row: int | str) -> str:
+    if row != 2 or rec.get("span_start") is None:
+        return ""
+    if str(rec.get("diagnostic_reason") or "").startswith(MOTION_VALUE_ROUTED_FALLBACK):
+        return "package"
+    return attribution_from_quote(rec.get("span_text"))
 
 
 def _split_binding(binding: str | None) -> tuple[str | None, str]:
@@ -162,6 +181,7 @@ def _row(rec: dict[str, Any]) -> dict[str, Any]:
         "model_state": model_state or "",
         "model_vs_heuristic": agreement,
         "model_attribution": attribution,
+        "attribution": _derived_attribution(rec, row),
     }
 
 
@@ -261,6 +281,8 @@ def main(argv: list[str] | None = None) -> int:
     columns = _COLUMNS + _V3_COLUMNS if v3 else _COLUMNS
     if v6:
         columns = columns + _V6_COLUMNS
+    if any("diagnostic_reason" in r for r in raw_records):
+        columns = columns + _V7_COLUMNS
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", encoding="utf-8", newline="") as f:
         f.write(_header(manifest, args.run_date, len(papers), len(rows)))

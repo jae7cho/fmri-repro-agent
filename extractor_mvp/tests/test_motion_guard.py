@@ -327,3 +327,126 @@ def test_demoted_motion_row_renders_unverifiable_not_not_reported(
         if r.group == "motion_correction" and r.path.endswith("method")
     )
     assert "not reported in source" not in render._reason_detail(row)
+
+
+# ---------------------------------------------------------------------------
+# Amendment 11 (2026-10-27) -- the level in code on the processed layer; the routing fallback
+# ---------------------------------------------------------------------------
+def test_the_copied_operation_phrases_equal_the_frozen_heuristic_list() -> None:
+    """motion_guard copies the frozen list because motion_value_kind is a script, not a package.
+    The copy may not drift from the original in either direction (C21)."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+    from motion_value_kind import _OPERATION_PHRASES
+
+    from extractor_mvp.motion_guard import _OPERATION_PHRASES_FROZEN
+
+    assert _OPERATION_PHRASES_FROZEN == _OPERATION_PHRASES
+
+
+@pytest.mark.parametrize(
+    ("quote", "level"),
+    [
+        (
+            "Using ToolKit 9, images were corrected for motion by realigning to the first image",
+            "step",
+        ),
+        ("The analysis was performed with ToolKit 9 using a scripting environment", "package"),
+        ("Initial preprocessing was performed using the ToolKit 9 software", "package"),
+        ("volumes were coregistered within each run", "step"),
+        ("", "package"),
+        (None, "package"),
+    ],
+)
+def test_attribution_from_quote_is_step_iff_an_operation_phrase_is_present(
+    quote: str | None, level: str
+) -> None:
+    from extractor_mvp.motion_guard import attribution_from_quote
+
+    assert attribution_from_quote(quote) == level
+
+
+@pytest.mark.parametrize(
+    ("quote", "package"),
+    [
+        (
+            "procedures were carried out using the FSL suite (version 5.0.10), including denoising",
+            "FSL",
+        ),
+        (
+            "Preprocessing was performed using AFNI48 and a surface package49",
+            "AFNI",
+        ),  # ruling 5 digits
+        (
+            "data analysis was performed with SPM12 using a host environment",
+            "SPM12",
+        ),  # SPM keeps digits
+        (
+            "realigned with SPM8 and later SPM12",
+            "SPM8",
+        ),  # one package, two version tokens: the first as written
+        ("scripts employ AFNI and FSL tools", None),  # two listed packages
+        ("the pipeline uses a wrapper and no package", None),
+        ("", None),
+        (None, None),
+        ("the ANTs registration framework", "ANTs"),
+        ("processed in BrainVoyager QX", "BrainVoyager"),
+    ],
+)
+def test_listed_package_in_quote_requires_exactly_one(
+    quote: str | None, package: str | None
+) -> None:
+    from extractor_mvp.motion_guard import listed_package_in_quote
+
+    assert listed_package_in_quote(quote) == package
+
+
+def _fallback_run(quote: str) -> tuple[Any, Any]:
+    from extractor_mvp.extractor import extract_motion_method
+
+    text = f"Methods. {quote} Other sentences follow."
+    paper = ParsedPaper(text=text, source="t", parser="pypdf", pdf_date=None)
+    pf, diag, _ = extract_motion_method(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            motion=_motion(
+                "extracted", value="ICA-AROMA", verbatim_quote=quote, binding="named_tool"
+            ),
+        ),
+    )
+    return pf, diag
+
+
+def test_routed_tool_falls_back_to_the_one_listed_package_its_quote_names() -> None:
+    """Amendment 11: ICA-AROMA is routed; its quote names FSL and nothing else listed -> the processed
+    value is FSL on the same span, attribution package, with the fallback's own reason."""
+    from extractor_mvp.motion_guard import MOTION_VALUE_ROUTED_FALLBACK
+
+    quote = "Standard preprocessing was carried out using the FSL suite, including denoising via ICA-AROMA."
+    pf, diag = _fallback_run(quote)
+    assert pf.extraction.status == "EXTRACTED"
+    assert pf.extraction.value.verbatim == "FSL"
+    assert pf.extraction.value.resolved is None
+    assert pf.extraction.spans[0].text == quote
+    assert (
+        diag is not None and diag.failure_reason == f"{MOTION_VALUE_ROUTED_FALLBACK}:ica_aroma->FSL"
+    )
+    assert diag.raw_value == "ICA-AROMA"  # the raw layer is untouched
+
+
+@pytest.mark.parametrize(
+    "quote",
+    [
+        "Denoising was performed via ICA-AROMA before further processing.",  # no package named
+        "Scripts employing AFNI and FSL performed denoising via ICA-AROMA.",  # two packages
+    ],
+)
+def test_routed_tool_stays_routed_without_exactly_one_listed_package(quote: str) -> None:
+    pf, diag = _fallback_run(quote)
+    assert pf.extraction.status == "MISSING_FROM_PAPER"
+    assert pf.inference.reason == f"{MOTION_VALUE_ROUTED}:ica_aroma"
+    assert diag is not None and diag.failure_reason == f"{MOTION_VALUE_ROUTED}:ica_aroma"

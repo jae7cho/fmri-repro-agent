@@ -64,7 +64,11 @@ from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field, model_validator
 
 from extractor_mvp.extraction_result import FieldExtractionResult
-from extractor_mvp.motion_guard import motion_post_check
+from extractor_mvp.motion_guard import (
+    MOTION_VALUE_ROUTED_FALLBACK,
+    listed_package_in_quote,
+    motion_post_check,
+)
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.quote_support import step_value_supported
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
@@ -1100,6 +1104,21 @@ value for this acquisition — use status="missing" for that field.
 # alone. Run against version 4 the same day on all ten papers under Amendment 9's adoption rule; the
 # adopted version freezes under C11. Pinned with a dated note; b0093774... retained.
 #
+# VERSION 7, 2026-10-27, by the author's ruling (prereg Amendment 11): version 6 with the attribution
+# LEVEL removed from the model's output. Version 6 assigned state and value correctly on gordon and
+# mueller and the level backwards on both, on all ten draws, and the level then chose the wrong quote;
+# the level is derivable and is already on the labels (column R). The binding literal is named_tool
+# / described_only again; STEP 3 keeps the package rule as version 6 wrote it minus any mention of a
+# level; STEP 5's two named_tool bullets both set "named_tool". The level is derived in code on the
+# processed layer (motion_guard.attribution_from_quote: step if the quoted sentence carries an
+# operation phrase from the frozen heuristic's list, else package) and reported against column R,
+# never scored. A routing fallback in code: a routed structured-noise tool whose quote names exactly
+# one listed package yields that package as the processed value, attribution package, with its own
+# diagnostic reason; replayed over every recorded draw before the run. Pinned with a dated note;
+# b0093774... and 8df070da... retained. Readings and the adoption rule (adopted -> v7 freezes; not
+# adopted -> b0093774... restored by amendment and freezes; either way the last iteration before the
+# corpus run) are in Amendment 11, written before this edit.
+#
 # VERSION 6, 2026-10-26 (late night), by the author's ruling (protocol v1.8; prereg Amendment 10). A
 # DEFINITIONAL CHANGE, NOT TUNING: the freeze below is lifted for it and re-applied to the adopted
 # version. CALL 1 gains an attribution level -- named_tool is `step` (the v1.5 binding test) or
@@ -1221,11 +1240,11 @@ Does the text attribute that tool to THIS step, or only to the enclosing set of 
   tool supplies the value.
 - NOT BOUND: a package named as governing a procedure set supplies nothing. It is NOT enough that
   the package is named, named with a version, or named in the same sentence as the step.
-- PACKAGE-LEVEL ATTRIBUTION, the one exception to NOT BOUND: the text names, for its preprocessing
+- PACKAGE ATTRIBUTION, the one exception to NOT BOUND: the text names, for its preprocessing
   or its analysis as a whole, EXACTLY ONE package from the list below, names no tool for the
   realignment itself (a tool bound to the step but routed to another field, as in the next bullet,
-  does not count as one), and asserts the motion step -> that package is the method at the PACKAGE
-  level, and this decides the field: skip step 4. The list, closed: AFNI (3dvolreg), FSL (MCFLIRT),
+  does not count as one), and asserts the motion step -> that package is the method, and this
+  decides the field: skip step 4. The list, closed: AFNI (3dvolreg), FSL (MCFLIRT),
   SPM any version (Realign), ANTs (antsMotionCorr), BrainVoyager. FreeSurfer is NOT on it. A package
   that is not on this list is NOT attributed and supplies nothing: treat it as NOT BOUND and continue
   to step 4. Two or more listed packages named for the preprocessing with none bound to the step ->
@@ -1259,12 +1278,12 @@ citation is a description ONLY when the listing carries one of the four details.
 ## STEP 5 -- OUTPUT
 - Exactly one tool in ESTIMATE and BOUND, and not routed elsewhere -> status "extracted"; value =
   that tool; verbatim_quote = the ESTIMATE mention SPECIFICALLY (never a CONSUME mention of the
-  same tool); motion_correction_binding = "named_tool_step".
-- No tool bound to the step, but step 3's PACKAGE-LEVEL ATTRIBUTION holds -> status "extracted";
+  same tool); motion_correction_binding = "named_tool".
+- No tool bound to the step, but step 3's PACKAGE ATTRIBUTION holds -> status "extracted";
   value = the package NAME TOKEN as written in the text (for example "SPM12", "SPM8", "AFNI",
   "FSL"); a version written separately stays in the quote, NOT in the value; verbatim_quote = the sentence that names the package for the preprocessing or
   analysis as a whole, copied exactly (the value must appear in it); motion_correction_binding =
-  "named_tool_package".
+  "named_tool".
 - The subject gate passed and the method is DESCRIBED (step 4), with no bound tool in ESTIMATE ->
   status "extracted"; value = THE PAPER'S OWN WORDS for the operation, copied from the text (for
   example the phrase it uses to name what was done); verbatim_quote = the sentence containing
@@ -1280,8 +1299,8 @@ citation is a description ONLY when the listing carries one of the four details.
   "missing"; leave motion_correction_binding unset.
 
 motion_correction_binding is set ONLY when status is "extracted", and then it is ALWAYS set:
-"named_tool_step" when step 3 found a bound tool, "named_tool_package" when step 3's package-level
-attribution holds, "described_only" otherwise.
+"named_tool" when step 3 found a bound tool or its package attribution holds, "described_only"
+otherwise.
 
 verbatim_quote and deferral_sentence must be copied EXACTLY from the text below, character for
 character, or the field is discarded.
@@ -1303,31 +1322,31 @@ class MotionMethodExtraction(BaseModel):
 
     ``motion_correction_binding`` — option (c) of prereg Amendment 1, adopted 2026-10-26 (Amendment
     7): the model states the CALL 1 binding itself. Set ONLY when ``status == "extracted"``, and then
-    always: ``"named_tool_step"`` when a tool is bound to the step, ``"named_tool_package"`` when
-    STEP 3's package-level attribution holds (protocol v1.8, 2026-10-26: exactly one listed package
-    named for the preprocessing as a whole, no step-level tool, the step asserted),
-    ``"described_only"`` when the value is the paper's own words. Deferred and missing keep the
-    existing status path and leave it unset. Until version 6 the literal was ``"named_tool"`` /
-    ``"described_only"``; the projection folds both ``named_tool_*`` values to ``named_tool`` for the
-    state comparison and carries the level in its own column.
+    always: ``"named_tool"`` when a tool is bound to the step or STEP 3's package attribution holds
+    (protocol v1.8: exactly one listed package named for the preprocessing as a whole, no step-level
+    tool, the step asserted), ``"described_only"`` when the value is the paper's own words. Deferred
+    and missing keep the existing status path and leave it unset. Version 6 (2026-10-26) asked the
+    model for the attribution LEVEL too (``named_tool_step`` / ``named_tool_package``); version 7
+    (Amendment 11, 2026-10-27) removed it from the output -- the model assigned it backwards on both
+    papers where it turns on one sentence -- and derives it in code on the processed layer
+    (``motion_guard.attribution_from_quote``). The projection still folds a stored ``named_tool_*``
+    binding to ``named_tool`` for the version-6 records.
     The frozen heuristic (``scripts/motion_value_kind.py``) still classifies the value independently;
     the probe's projection carries both and counts the disagreements. Enforced by a validator, so a
     missing or stray binding is a reask the probe counts, not a silent default.
     """
 
     motion_correction_method: FieldExtractionResult
-    motion_correction_binding: (
-        Literal["named_tool_step", "named_tool_package", "described_only"] | None
-    ) = None
+    motion_correction_binding: Literal["named_tool", "described_only"] | None = None
 
     @model_validator(mode="after")
     def enforce_binding_constraints(self) -> MotionMethodExtraction:
         status = self.motion_correction_method.status
         if status == "extracted" and self.motion_correction_binding is None:
             raise ValueError(
-                "status='extracted' requires motion_correction_binding: 'named_tool_step' when a "
-                "tool is BOUND to this step (STEP 3), 'named_tool_package' when STEP 3's package-level "
-                "attribution holds, 'described_only' when the value is the paper's own words."
+                "status='extracted' requires motion_correction_binding: 'named_tool' when a tool is "
+                "BOUND to this step or STEP 3's package attribution holds, 'described_only' when the "
+                "value is the paper's own words."
             )
         if status != "extracted" and self.motion_correction_binding is not None:
             raise ValueError(
@@ -1429,6 +1448,28 @@ def extract_motion_method(
             )
         if verdict is not None:
             tool = verdict.split(":", 1)[1]
+            # The routing fallback (prereg Amendment 11, 2026-10-27; DELTA §4 ruling 6): the routed
+            # tool's own quote names exactly one listed package -> the PROCESSED value is that
+            # package, attribution "package", the field stays EXTRACTED on the same span, and the
+            # diagnostic carries its own reason. The raw layer is untouched.
+            package = listed_package_in_quote(raw.verbatim_quote)
+            if package is not None:
+                return (
+                    _extracted_pf(
+                        field_id,
+                        t,
+                        SpecifiedTerm(verbatim=package, resolved=None, resolution="unrecognized"),
+                        pf.extraction.spans[0],
+                        pf.extraction.span_recovered,
+                    ),
+                    ExtractionDiagnostic(
+                        dotted,
+                        f"{MOTION_VALUE_ROUTED_FALLBACK}:{tool}->{package}",
+                        raw.value,
+                        raw.verbatim_quote,
+                    ),
+                    deferral,
+                )
             return (
                 _missing_pf(field_id, t, f"motion_value_routed_structured_noise:{tool}"),
                 ExtractionDiagnostic(dotted, verdict, raw.value, raw.verbatim_quote),

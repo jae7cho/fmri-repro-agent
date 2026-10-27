@@ -307,3 +307,58 @@ def test_probe_set_is_the_thirteen_and_is_the_default() -> None:
     assert set(motion_probe._PROBE_SET) <= set(motion_probe._PROBE_PAPERS)
     assert not set(motion_probe._PROBE_SET) & set(motion_probe._HELD_OUT)
     assert {"cole_2013", "gordon_2014", "mueller_2021"} <= set(motion_probe._PROBE_SET)
+
+
+# --- version 7 (Amendment 11): the level derived in code, in its own column ---------------------
+
+
+def test_projection_derives_the_level_from_the_span_text_for_row_2_only() -> None:
+    from extractor_mvp.motion_guard import MOTION_VALUE_ROUTED_FALLBACK
+
+    step = _extracted_record("gordon_2014", "SPM8", "named_tool")
+    step.update(span_start=1, span_end=9, span_text="images were realigned using SPM8")
+    assert motion_probe_projection._row(step)["attribution"] == "step"
+    package = _extracted_record("mueller_2021", "SPM12", "named_tool")
+    package.update(span_start=1, span_end=9, span_text="preprocessing was performed using SPM12")
+    assert motion_probe_projection._row(package)["attribution"] == "package"
+    fallback = _extracted_record("derosa_2025", "ICA-AROMA", "named_tool")
+    fallback.update(
+        span_start=1,
+        span_end=9,
+        span_text="carried out using FSL, including motion correction via ICA-AROMA",
+        diagnostic_reason=f"{MOTION_VALUE_ROUTED_FALLBACK}:ica_aroma->FSL",
+    )
+    assert motion_probe_projection._row(fallback)["attribution"] == "package"  # by construction
+    phrase = _extracted_record("power_2014", "rigid body realignment", "described_only")
+    phrase.update(span_start=1, span_end=9, span_text="rigid body realignment was applied")
+    assert motion_probe_projection._row(phrase)["attribution"] == ""  # row 1: no level
+    unresolved = _extracted_record("cole_2013", "AFNI", "named_tool")  # span None
+    assert motion_probe_projection._row(unresolved)["attribution"] == ""
+
+
+def test_projection_emits_the_derived_column_only_when_records_carry_a_diagnostic_key(
+    tmp_path: Path,
+) -> None:
+    run = tmp_path / "run" / "motion_probe"
+    run.mkdir(parents=True)
+    manifest = {
+        "model": "m",
+        "k": 1,
+        "papers": ["ciric_2017"],
+        "motion_method_prompt_sha256": "0" * 64,
+        "generated_utc": "2026-10-27T00:00:00+00:00",
+    }
+    (run / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    rec = _extracted_record("ciric_2017", "MCFLIRT", "named_tool")
+    rec.update(span_start=1, span_end=9, span_text="realignment using MCFLIRT")
+    old = {k: v for k, v in rec.items() if k != "diagnostic_reason"}  # a pre-v7 record shape
+    for shape, expect in ((old, False), (rec, True)):
+        (run / "ciric_2017.jsonl").write_text(json.dumps(shape) + "\n", encoding="utf-8")
+        out = tmp_path / f"{expect}.csv"
+        assert _project(tmp_path / "run", out) == 0
+        header = next(
+            line
+            for line in out.read_text(encoding="utf-8").splitlines()
+            if not line.startswith("#")
+        )
+        assert ("attribution" in header.split(",")) is expect

@@ -225,7 +225,13 @@ def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:
 #: tuning: protocol v1.8 gives named_tool an attribution level (step / package) that version 4 could
 #: not express. Superseded value b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
 #: stays on every version-4 record. Version 6 freezes on adoption under Amendment 10's rule.
-_FROZEN_STANZA_SHA256 = "8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f"
+#:
+#: MOVED to version 7, 2026-10-27, by prereg Amendment 11 (version 6 not adopted; the level leaves
+#: the model's output). Superseded value 8df070da9cc3f9628d6670c7285740155b05a06dd25972849f0711b056c8ef4f
+#: stays on the version-6 run's records. The chain: b0093774... -> 8df070da... -> this value. The
+#: last iteration before the corpus run: adopted, version 7 freezes; not adopted, b0093774... is
+#: restored by amendment and freezes.
+_FROZEN_STANZA_SHA256 = "d353fb478cd1fbbe03d079a51b322c749c8b8a3431b58261745ac17b503d5a1d"
 
 
 def _refuse_unless_frozen(live_sha256: str) -> None:
@@ -233,7 +239,7 @@ def _refuse_unless_frozen(live_sha256: str) -> None:
     if live_sha256 != _FROZEN_STANZA_SHA256:
         raise SystemExit(
             f"refused: MOTION_METHOD_PROMPT hashes to {live_sha256[:8]}..., but the stanza is FROZEN "
-            f"at {_FROZEN_STANZA_SHA256[:8]}... (prereg C11, Amendments 9 and 10). No draw runs under an "
+            f"at {_FROZEN_STANZA_SHA256[:8]}... (prereg C11, Amendments 9-11). No draw runs under an "
             "unfrozen stanza. A change needs a new amendment naming the new hash in this file."
         )
 
@@ -284,6 +290,10 @@ class DrawRecord:
     wall_seconds: float
 
     error: str | None = None
+    #: Amendment 11 (2026-10-27): the ExtractionDiagnostic's reason for this draw, when the motion
+    #: call emitted one (an unsupported or routed value, or the routing fallback to a listed
+    #: package). None when the draw produced no diagnostic. Records before this field carry no key.
+    diagnostic_reason: str | None = None
 
 
 class _CountingClient:
@@ -338,6 +348,7 @@ def _record(
     attempts: int,
     raw: Any,
     wall_seconds: float,
+    diag: Any = None,
 ) -> DrawRecord:
     ext = pf.extraction
     arm = type(ext).__name__
@@ -381,6 +392,7 @@ def _record(
         completion_attempts=attempts,
         reask_occurred=attempts > 1,
         wall_seconds=round(wall_seconds, 3),
+        diagnostic_reason=getattr(diag, "failure_reason", None),
     )
 
 
@@ -391,7 +403,7 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "generator": "extractor_mvp/scripts/motion_probe.py",
         "pre_registration": (
-            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-10; frozen)"
+            "docs/findings/motion-method-reachability-prereg.md (v1 + Amendments 1-11; frozen)"
         ),
         "model": _MODEL,
         "k": k,
@@ -482,7 +494,7 @@ def main(argv: list[str] | None = None) -> int:
             raw_capture: list[Any] = []
             started = time.perf_counter()
             try:
-                pf, _diag, deferral = extract_motion_method(
+                pf, diag, deferral = extract_motion_method(
                     paper, _MODEL, client=counting.client, raw_out=raw_capture
                 )
                 rec = _record(
@@ -493,6 +505,7 @@ def main(argv: list[str] | None = None) -> int:
                     counting.attempts,
                     raw_capture[0] if raw_capture else None,
                     time.perf_counter() - started,
+                    diag=diag,
                 )
             except Exception as exc:  # one draw's failure must not end the run
                 rec = DrawRecord(

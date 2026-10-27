@@ -32,8 +32,10 @@ if the paper had said nothing.
 
 from __future__ import annotations
 
+import re
+
 from extractor_mvp.quote_support import token_equivalent, tokens
-from extractor_mvp.span_resolver import _first_use_variants
+from extractor_mvp.span_resolver import _first_use_variants, normalize_with_offset_map
 
 #: Base of the reason emitted when the value is not in its own quote (ruling 1-3).
 MOTION_VALUE_UNSUPPORTED = "motion_value_unsupported_by_quote"
@@ -41,6 +43,35 @@ MOTION_VALUE_UNSUPPORTED = "motion_value_unsupported_by_quote"
 #: emitted reason is ``f"{MOTION_VALUE_ROUTED}:{tool}"`` with ``tool`` one of
 #: :data:`STRUCTURED_NOISE_TOOLS`'s values.
 MOTION_VALUE_ROUTED = "motion_value_routed_structured_noise"
+#: Base of the DIAGNOSTIC reason (never a gap: the field stays EXTRACTED) emitted when a routed
+#: structured-noise tool's own quote names exactly one listed package and the processed value falls
+#: back to that package (prereg Amendment 11, 2026-10-27; DELTA §4 ruling 6). Emitted as
+#: ``f"{MOTION_VALUE_ROUTED_FALLBACK}:{tool}->{package}"``.
+MOTION_VALUE_ROUTED_FALLBACK = "motion_value_routed_fallback_to_package"
+
+#: The realignment-capable list of protocol v1.8 (CALL 1), by lower-cased token. A digit run after
+#: the name is the text layer's citation artefact (ruling 5) or, for SPM only, the version that is
+#: part of the name token (SPM8, SPM12); the value returned keeps the digits for SPM and drops them
+#: for the others, which is how the labels write these packages.
+LISTED_PACKAGES: tuple[str, ...] = ("afni", "fsl", "spm", "ants", "brainvoyager")
+
+#: The frozen heuristic's operation-phrase list (scripts/motion_value_kind.py, prereg :97-99),
+#: COPIED here because that module is a script, not a package; tests/test_motion_guard.py holds the
+#: copy equal to the original, so neither can drift alone. Used only to derive the attribution
+#: level on the processed layer (Amendment 11); the heuristic itself is untouched (C21).
+_OPERATION_PHRASES_FROZEN: tuple[str, ...] = (
+    "realign",
+    "motion correction",
+    "motion-correction",
+    "head motion",
+    "head movement",
+    "coregist",
+    "co-regist",
+    "rigid body",
+    "rigid-body",
+    "volume registration",
+    "image registration",
+)
 
 #: COBIDAS D.3 p.57, "Artifact and structured noise removal — Name of software/method used (e.g.
 #: CompCor, ICA-FIX, ICA-AROMA, etc.)". Keyed on the normalised token sequence the name produces;
@@ -110,3 +141,30 @@ def motion_post_check(value: str | None, quote: str | None) -> str | None:
     if tool is not None:
         return f"{MOTION_VALUE_ROUTED}:{tool}"
     return None
+
+
+def attribution_from_quote(quote: str | None) -> str:
+    """The attribution level derived on the processed layer (Amendment 11): ``"step"`` if the quoted
+    sentence contains an operation phrase from the frozen heuristic's list, else ``"package"``.
+    Reported against the labels' column R as an agreement count; never scored."""
+    low = (quote or "").lower()
+    return "step" if any(p in low for p in _OPERATION_PHRASES_FROZEN) else "package"
+
+
+def listed_package_in_quote(quote: str | None) -> str | None:
+    """The one listed package the quote names, as written, or ``None`` when it names none or more
+    than one. A token is a package when it is the name alone or the name followed by a digit run
+    (``afni48``, ``spm12``). SPM keeps its digits (the version is part of the name token); the
+    others return the bare name."""
+    if not quote:
+        return None
+    found: dict[str, str] = {}
+    for raw_tok in re.findall(r"[A-Za-z0-9]+", normalize_with_offset_map(quote)[0]):
+        low = raw_tok.lower()
+        for name in LISTED_PACKAGES:
+            if low == name or (low.startswith(name) and low[len(name) :].isdigit()):
+                found.setdefault(name, raw_tok if name == "spm" else raw_tok[: len(name)])
+                break
+    if len(found) != 1:
+        return None
+    return next(iter(found.values()))

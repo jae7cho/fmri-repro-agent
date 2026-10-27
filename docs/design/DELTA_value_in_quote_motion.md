@@ -237,6 +237,20 @@ the reverse is never tolerated, and a value that ends in a digit still matches e
 `SPM12`; `mni152` is not `mni152nlin6asym`). Recorded here because it is the motion check's rule;
 the step-field DELTA carries a dated note under its ruling 5.
 
+**Ruling 6 — 2026-10-27, by the author (prereg Amendment 11): the routing fallback, and the
+attribution level derived on the processed layer.** Ruling 4 routes CompCor, ICA-FIX and ICA-AROMA
+off the method and leaves the field `MissingFromPaper`. From version 7, when the routed tool's **own
+quote names exactly one listed package** (protocol v1.8's realignment-capable list, by token; a
+digit run after the name tolerated as in ruling 5; SPM keeps its version digits, the others return
+the bare name) **the processed value is that package**, on the same span, attribution `package`, and
+the diagnostic carries its own reason, `motion_value_routed_fallback_to_package:<tool>-><package>`.
+The raw layer is untouched; the field stays `EXTRACTED`, so no new gap reason enters
+`cobidas._UNVERIFIABLE_GAP_BASES`. With it, the attribution level that version 6 asked of the model
+is **derived in code**: `attribution_from_quote` returns `step` if the quoted sentence carries one of
+the frozen heuristic's eleven operation phrases, else `package`; a fallback draw is `package` by
+construction. Reported against the labels' column R as agreement counts, diagnostic, never scored.
+Replay over every recorded draw: §5.
+
 ## 5. Built — 2026-10-26
 
 Implemented as `extractor_mvp/src/extractor_mvp/motion_guard.py` (pure functions:
@@ -262,3 +276,21 @@ recorded draw is of that type. Tests: nine parametrized cases in `test_quote_sup
 `spm12` flips from False to True by this ruling; the reverse and the digit-ending cases stay False)
 and one synthetic case in `test_motion_guard.py`; one mutation (the clause disabled, diff shown)
 fails five of them.
+
+**Ruling 6 built — 2026-10-27.** `motion_guard.listed_package_in_quote` (exactly one listed
+package, by token, ruling 5's digit run tolerated, SPM keeping its version digits) and
+`attribution_from_quote` (step iff an operation phrase from the frozen list, copied with a test
+holding the copy equal to `motion_value_kind._OPERATION_PHRASES`); the fallback in
+`extractor.extract_motion_method` after the routing verdict, the field re-built `EXTRACTED` on the
+same span with the package as the `SpecifiedTerm`'s verbatim and `resolved=None`, the diagnostic's
+reason `motion_value_routed_fallback_to_package:<tool>-><package>`; the recorder stores the
+diagnostic's reason per draw (`diagnostic_reason`, absent from earlier records), and the projection
+derives the level into an `attribution` column emitted only for records that carry that key.
+**Replay (`scripts/motion_fallback_replay.py`) over all ten recorded runs, 680 draws, 503 extracted:
+routed 70, all derosa_2025 (ICA-AROMA), and the fallback yields `FSL` on every one of the 70; no
+other paper has a routed draw, so the fallback fires nowhere else.** For the record, 23 extracted and
+NOT routed draws have a quote naming exactly one listed package (agtzidis 9, cole 4, gordon 10 — the
+package-sentence quotes of versions 2, 5 and 6); the fallback does not apply to them, since nothing
+is routed. Tests: the frozen-list copy; six level cases; ten package-finder cases; the fallback
+through `extract_motion_method` with a stub client (FSL on the same span, the raw layer untouched)
+and two no-fallback cases (no package; two packages).
