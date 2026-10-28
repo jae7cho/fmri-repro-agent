@@ -38,6 +38,10 @@ class Span(BaseModel):
     end: int = Field(gt=0)
     text: str = Field(min_length=1)
     section: str | None = None
+    # 0.5.3 (2026-10-28, DESIGN_coverage_expansion.md B14 item 1): the named source-text repairs the
+    # resolver applied to locate this span (the multiplication sign→/C2, fi→ª, >→4), empty for a clean or a tier-5
+    # match. Additive: a span written before 0.5.3 parses with an empty list.
+    repairs: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _ordered(self) -> Span:

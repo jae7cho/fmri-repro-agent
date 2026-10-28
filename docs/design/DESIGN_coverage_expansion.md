@@ -378,7 +378,9 @@ Two schema changes are needed and one choice is open.
      parses with the fields absent; `written_under = 0.5.1` says why they are absent; a native 0.5.2
      document always carries them because `_assemble` sets every one (asserted in C). Cost: the
      walkers in A2 must skip `None` (`_validate_step_invariants`, `_iter_fields`, `_tally`).
-   **Chosen: (ii)**, under the author's gate derivation ("stored JSONs have no new steps: 19
+   **Chosen: (ii)**, and **ratified by the author on 2026-10-28** ("Ratify the optional-fields fork
+   as optional", their message of that evening, which also ordered the six follow-ups recorded in
+   §B14). Chosen under the author's gate derivation ("stored JSONs have no new steps: 19
    identical") and the project's standing trade for the gate's attributability
    (`render.py:900-911`). The latent predicate defect under (i) is recorded here, not fixed: no
    migration synthesises fields in this build, so it cannot fire.
@@ -429,3 +431,32 @@ chen_2015 and poldrack_2015 in full (chat only); one table — per mandatory row
 contaminated papers are `addressed`, `performed=no`, `unverifiable`, `not reported` (exclusive, in
 that order), the held-out three as counts only; wall time per paper from `wall_time_s`. Every field
 this run writes is the new vintage `coverage_v1`; nothing is pooled with any earlier vintage.
+
+### B14. The six follow-ups, ordered by the author on 2026-10-28 (after the coverage_v1 run)
+
+Recorded verbatim from the author's message, each built in this order with tests, mutations and a
+replay where no model call is needed; then the nineteen re-run as `coverage_v2`:
+
+1. *Text-layer repair in the span resolver's repair pass: ligatures (ﬁ ﬂ, and binder's ª for fi),
+   and single-glyph substitutions where the quote has a symbol and the text a letter or digit at
+   that position (> as 4, < as o, × as /C2 already known), bounded to a small count per quote and
+   reported as "matched after source-text repair" with the substitutions named. Replay over every
+   stored result and every recorded motion draw: list each cell that moves from unresolved to
+   resolved, by paper and field, and confirm nothing resolved before changes.*
+2. *Boolean support: `performed` quotes must contain a phrase from a frozen per-step list; a miss
+   renders unverifiable; `performed` can never be deferred (validator and prompt). Replay: which
+   cells move.*
+3. *Alias fixes: underscore, space and hyphen equal in alias matching; susceptibility_fieldmap gains
+   "magnetic field inhomogeneit\*"; Volterra resolves to friston24; detrend takes the highest order
+   named. Replay.*
+4. *Coregistration field definitions in the spatial prompt: method = tool, cost_function = bbr |
+   mutual_information | correlation_ratio | other. New hash, dated note.*
+5. *A `multiple_pipelines` field on both coverage calls: whether the text describes more than one
+   preprocessing variant, with quote and count; rendered as a header line on the steps section when
+   true. New hashes, dated notes.*
+6. *Kind-prefixed fields on rows with sibling kinds.*
+
+Item 2 supersedes B2's third outcome (`performed` deferred) and B3's "no token check" for the
+boolean `performed`; item 4 supersedes B1's coregistration vocabulary in the prompt (the spec's
+Literal is unchanged: `bbr` resolves to `boundary_based`); item 6 supersedes B5's per-row value list
+on rows mapped to more than one kind.

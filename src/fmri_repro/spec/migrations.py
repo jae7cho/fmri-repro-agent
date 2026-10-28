@@ -239,6 +239,10 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
             for fid in _RETYPED_IN_0_5_2.get(step.get("kind", ""), ()):
                 _lift_to_specified_term(step.get(fid))
 
+    # 0.5.2 -> 0.5.3 (PATCH, pure re-stamp -- NO doc transform; 2026-10-28, DESIGN_coverage_expansion.md
+    # B14 item 1): ``Span`` gains ``repairs: list[str]`` with an empty default, the named source-text
+    # repairs the resolver applied. A 0.5.2 document's spans parse with an empty list.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

@@ -189,16 +189,22 @@ def test_hallucination_still_fails() -> None:
     assert r.failure_reason == "quote_not_found"
 
 
-def test_font_glyph_mangle_deliberately_not_recovered() -> None:
-    """The font-specific multiplication-sign -> /C2 mangle is NOT folded (module note): unresolved.
-
-    Recovering it would require treating '/C2' as that glyph, but '/C<digit>' are font glyph codes
-    that map to different glyphs across papers -- a wrong-match risk that fails the never-fuzzy
-    invariant.
+def test_font_glyph_mangle_recovered_by_tier6_without_naming_the_glyph() -> None:
+    """UNTIL 2026-10-28 this test pinned the exclusion: the /C2 mangle was NOT folded, because
+    '/C<digit>' are font glyph codes that map to different glyphs across papers. Tier 5 still does
+    not fold it. Tier 6 (the author's item 1, DESIGN_coverage_expansion.md B14) answers the recorded
+    reason as DELTA_glyph_leak_span_recovery.md proposed: the run matches exactly ONE quote
+    character with no claim about which glyph it is, and the substitution is named on the span.
     """
     text = "resampling them into 3 /C2 3 /C2 3m m 3 voxels finally."
     r = resolve_quote("resampling them into 3 \u00d7 3 \u00d7 3 mm3 voxels", text)
-    assert r.span is None
+    assert r.span is not None and r.recovered is True
+    assert r.repairs == ("\u00d7→/C2", "\u00d7→/C2")
+    # and a glyph code never matches MORE than one character: two quote characters for one run fail
+    assert (
+        resolve_quote("resampling them into 3 \u00d7\u00d7 3 \u00d7 3 mm3 voxels", text).span
+        is None
+    )
 
 
 def test_tolerant_match_still_requires_uniqueness() -> None:
@@ -207,3 +213,94 @@ def test_tolerant_match_still_requires_uniqueness() -> None:
     r = resolve_quote("using the pipeline", text)
     assert r.span is None
     assert r.failure_reason == "quote_ambiguous"
+
+
+# ---------------------------------------------------------------------------
+# Tier 6 — the named source-text repair (2026-10-28, DESIGN_coverage_expansion.md B14 item 1).
+# The excerpts are REAL mangled clauses from contaminated corpus papers (one clause each, not the
+# paper), because a synthetic glyph alone would not exercise the composition with tier 5's
+# whitespace-deletion (DELTA_glyph_leak_span_recovery.md §4a).
+# ---------------------------------------------------------------------------
+
+_AGTZIDIS = (
+    "with repetition time (TR) of 2 s and 3 /C2 3 /C2 3m m3 voxel size.\n2.2. Motion estimation"
+)
+_BINDER = (
+    "problem-solving, and plan-\nning is consistent with several recent ªndings regarding\n"
+    "cerebral lateralization."
+)
+_POLDRACK = "and spectral ﬁltering 45. Frames with framewise displacement 40.25 mm\nwere censored, as well as"
+
+
+def test_tier6_glyph_code_matches_one_quote_character_named() -> None:
+    """agtzidis: the text layer leaks ``\u00d7`` as ``/C2`` twice AND splits ``3 mm3`` as ``3m m3``; the
+    repair composes with tier 5's whitespace deletion and names both substitutions."""
+    r = resolve_quote("3 \u00d7 3 \u00d7 3 mm3 voxel size", _AGTZIDIS)
+    assert r.failure_reason is None and r.recovered is True
+    assert r.repairs == ("\u00d7→/C2", "\u00d7→/C2")
+    assert r.span is not None
+    assert r.span.text == "3 /C2 3 /C2 3m m3 voxel size"
+    assert r.span.repairs == ["\u00d7→/C2", "\u00d7→/C2"]
+
+
+def test_tier6_binder_ligature_glyph_matches_fi() -> None:
+    r = resolve_quote(
+        "consistent with several recent findings regarding cerebral lateralization", _BINDER
+    )
+    assert r.failure_reason is None and r.recovered is True
+    assert r.repairs == ("fi→ª",)
+    assert r.span is not None and "ªndings" in r.span.text
+
+
+def test_tier6_quote_symbol_matches_a_source_digit() -> None:
+    """poldrack: the text layer prints ``>`` as ``4`` (``FD 40.25 mm`` for ``FD >0.25 mm``)."""
+    r = resolve_quote("Frames with framewise displacement >0.25 mm were censored", _POLDRACK)
+    assert r.failure_reason is None and r.recovered is True
+    assert r.repairs == (">→4",)
+    assert r.span is not None and r.span.text.startswith("Frames with framewise displacement 40.25")
+
+
+@pytest.mark.parametrize(
+    ("quote", "text"),
+    [
+        ("3 \u00d7 3 \u00d7 4 mm3 voxel size", _AGTZIDIS),  # a digit changed
+        ("3 \u00d7 3 \u00d7 3 mm3 voxel sizes are", _AGTZIDIS),  # a word changed
+        ("Frames with framewise displacement >0.35 mm were censored", _POLDRACK),  # a digit changed
+        ("Frames with framewise displacement >0.25 mm were kept", _POLDRACK),  # a word changed
+        ("consistent with several recent findings regarding spinal lateralization", _BINDER),
+    ],
+)
+def test_tier6_fails_closed_on_any_other_difference(quote: str, text: str) -> None:
+    """The repair is substring-only: every character outside a named substitution must match."""
+    r = resolve_quote(quote, text)
+    assert r.span is None and r.failure_reason == "quote_not_found"
+
+
+def test_tier6_is_bounded() -> None:
+    """More than _MAX_REPAIRS substitutions is not a repair, it is a different sentence."""
+    text = "values 4 a 4 b 4 c 4 d end"
+    assert resolve_quote("values > a > b > c > d end", text).span is None
+    assert resolve_quote("values > a > b > c 4 d end", text).repairs == (">→4", ">→4", ">→4")
+
+
+def test_tier6_two_candidate_sites_are_ambiguous_not_guessed() -> None:
+    text = "FD 40.2 mm here. FD 40.2 mm there."
+    r = resolve_quote("FD >0.2 mm", text)
+    assert r.span is None and r.failure_reason == "quote_ambiguous"
+
+
+def test_tier6_never_touches_a_clean_or_tier5_match() -> None:
+    """arm (ii) for tier 6: a quote any earlier tier resolves keeps its span, recovered flag and an
+    empty repairs list. The ``ﬁ`` ligature keeps folding silently at tier 3."""
+    for quote, text in _CLEAN_PAIRS:
+        r = resolve_quote(quote, text)
+        assert r.recovered is False and r.repairs == () and r.span.repairs == []
+    r = resolve_quote("spectral filtering", "and spectral ﬁltering 45. Frames")
+    assert r.span is not None and r.recovered is False and r.repairs == ()
+
+
+def test_tier6_symbol_never_matches_a_symbol_or_a_space() -> None:
+    """A quote symbol stands for a LETTER or DIGIT only: ``=`` for ``¼`` (symbol for symbol) and
+    ``>`` for a space are not repairs."""
+    assert resolve_quote("sigma = 2", "sigma ¼ 2 voxels").span is None
+    assert resolve_quote("FD > 0.2", "FD   0.2").span is None

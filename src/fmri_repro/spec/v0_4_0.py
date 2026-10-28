@@ -42,7 +42,7 @@ from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):
-    schema_version: Literal["0.5.2"] = "0.5.2"
+    schema_version: Literal["0.5.3"] = "0.5.3"
     run: RunMeta
     specs: list[ReplicationSpec] = Field(min_length=1)
     study_analysis: StudyAnalysis | None = None

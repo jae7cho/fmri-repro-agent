@@ -1632,10 +1632,10 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.2) is the live root.
+    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.3) is the live root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.2"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.3"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1645,12 +1645,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.5.2"
-    assert prep.written_under == "0.5.2"
+    assert prep.schema_version == "0.5.3"
+    assert prep.written_under == "0.5.3"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.2"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.3"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1658,7 +1658,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.5.2",
+            written_under="0.5.3",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),

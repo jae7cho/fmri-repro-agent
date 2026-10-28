@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.5.2",
+  "schema_version": "0.5.3",
   "run": {
     "run_id": "00000000000000000000000000000001",
     "created_at": "2026-05-20T00:00:00Z",
@@ -28,7 +28,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.98,
@@ -48,7 +49,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -68,7 +70,8 @@
                   "start": 107,
                   "end": 109,
                   "text": "3T",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.99,
@@ -102,7 +105,8 @@
                   "start": 200,
                   "end": 217,
                   "text": "gradient-echo EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -136,7 +140,8 @@
                   "start": 220,
                   "end": 226,
                   "text": "2D EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.93,
@@ -170,7 +175,8 @@
                   "start": 300,
                   "end": 310,
                   "text": "TR = 2.0 s",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.97,
@@ -190,7 +196,8 @@
                   "start": 340,
                   "end": 354,
                   "text": "flip angle 80°",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -214,7 +221,8 @@
                   "start": 400,
                   "end": 419,
                   "text": "3 x 3 x 3 mm voxels",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -286,7 +294,8 @@
                   "start": 700,
                   "end": 712,
                   "text": "TE = 2.34 ms",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -308,7 +317,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.98,
@@ -328,7 +338,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -348,7 +359,8 @@
                   "start": 107,
                   "end": 109,
                   "text": "3T",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.99,
@@ -382,7 +394,8 @@
                   "start": 200,
                   "end": 217,
                   "text": "gradient-echo EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -416,7 +429,8 @@
                   "start": 220,
                   "end": 226,
                   "text": "2D EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.93,
@@ -450,7 +464,8 @@
                   "start": 300,
                   "end": 310,
                   "text": "TR = 2.0 s",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.97,
@@ -470,7 +485,8 @@
                   "start": 340,
                   "end": 354,
                   "text": "flip angle 80°",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -494,7 +510,8 @@
                   "start": 400,
                   "end": 419,
                   "text": "3 x 3 x 3 mm voxels",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -568,7 +585,8 @@
                   "start": 320,
                   "end": 330,
                   "text": "TE = 30 ms",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -629,7 +647,8 @@
                   "start": 440,
                   "end": 451,
                   "text": "300 volumes",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -649,7 +668,8 @@
                   "start": 420,
                   "end": 429,
                   "text": "36 slices",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -725,7 +745,8 @@
                   "start": 460,
                   "end": 493,
                   "text": "interleaved ascending slice order",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.9,
@@ -792,7 +813,8 @@
                   "start": 500,
                   "end": 518,
                   "text": "multiband factor 4",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.92,
@@ -922,7 +944,8 @@
                     "start": 550,
                     "end": 615,
                     "text": "scanner-side motion handling as described in Gordon et al. (2017)",
-                    "section": "Methods"
+                    "section": "Methods",
+                    "repairs": []
                   },
                   "target_kind": "paper"
                 }
@@ -1025,7 +1048,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.98,
@@ -1045,7 +1069,8 @@
                   "start": 100,
                   "end": 125,
                   "text": "Siemens 3T Prisma scanner",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -1065,7 +1090,8 @@
                   "start": 107,
                   "end": 109,
                   "text": "3T",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.99,
@@ -1099,7 +1125,8 @@
                   "start": 200,
                   "end": 217,
                   "text": "gradient-echo EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -1133,7 +1160,8 @@
                   "start": 220,
                   "end": 226,
                   "text": "2D EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.93,
@@ -1167,7 +1195,8 @@
                   "start": 300,
                   "end": 310,
                   "text": "TR = 2.0 s",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.97,
@@ -1187,7 +1216,8 @@
                   "start": 340,
                   "end": 354,
                   "text": "flip angle 80°",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -1211,7 +1241,8 @@
                   "start": 400,
                   "end": 419,
                   "text": "3 x 3 x 3 mm voxels",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -1283,7 +1314,8 @@
                   "start": 800,
                   "end": 821,
                   "text": "phase encoding j (PA)",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.9,
@@ -1333,7 +1365,8 @@
                   "start": 820,
                   "end": 841,
                   "text": "TE = 30 ms (fieldmap)",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.9,
@@ -1358,8 +1391,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.5.2",
-          "written_under": "0.5.2",
+          "schema_version": "0.5.3",
+          "written_under": "0.5.3",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -1390,7 +1423,8 @@
                           "start": 1000,
                           "end": 1039,
                           "text": "preprocessed with CCS (Xu et al., 2015)",
-                          "section": "Methods"
+                          "section": "Methods",
+                          "repairs": []
                         },
                         "target_kind": "pipeline"
                       }
@@ -1414,7 +1448,8 @@
                   "start": 950,
                   "end": 962,
                   "text": "CCS pipeline",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.93,
@@ -1438,7 +1473,8 @@
                       "start": 1100,
                       "end": 1125,
                       "text": "first 4 volumes discarded",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.92,
@@ -1466,7 +1502,8 @@
                       "start": 1140,
                       "end": 1154,
                       "text": "AFNI 3dDespike",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.9,
@@ -1507,7 +1544,8 @@
                       "start": 1200,
                       "end": 1211,
                       "text": "FSL MCFLIRT",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.95,
@@ -1662,7 +1700,8 @@
                       "start": 1300,
                       "end": 1330,
                       "text": "24 motion regressors (Friston)",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.92,
@@ -1693,7 +1732,8 @@
                       "start": 1340,
                       "end": 1359,
                       "text": "WM + CSF regression",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.9,
@@ -1747,7 +1787,8 @@
                       "start": 1380,
                       "end": 1394,
                       "text": "linear detrend",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.9,
@@ -1801,7 +1842,8 @@
                       "start": 1400,
                       "end": 1420,
                       "text": "bandpass 0.01-0.1 Hz",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.95,
@@ -1821,7 +1863,8 @@
                       "start": 1420,
                       "end": 1440,
                       "text": "Butterworth bandpass",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.93,
@@ -1841,7 +1884,8 @@
                       "start": 1440,
                       "end": 1447,
                       "text": "0.01 Hz",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.95,
@@ -1861,7 +1905,8 @@
                       "start": 1460,
                       "end": 1466,
                       "text": "0.1 Hz",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.95,
@@ -1954,7 +1999,8 @@
                   "start": 100,
                   "end": 119,
                   "text": "Siemens 3T Trio Tim",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.98,
@@ -1974,7 +2020,8 @@
                   "start": 100,
                   "end": 119,
                   "text": "Siemens 3T Trio Tim",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -1994,7 +2041,8 @@
                   "start": 107,
                   "end": 109,
                   "text": "3T",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.99,
@@ -2028,7 +2076,8 @@
                   "start": 200,
                   "end": 217,
                   "text": "gradient-echo EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -2062,7 +2111,8 @@
                   "start": 220,
                   "end": 226,
                   "text": "2D EPI",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.92,
@@ -2096,7 +2146,8 @@
                   "start": 300,
                   "end": 310,
                   "text": "TR = 2.2 s",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.97,
@@ -2116,7 +2167,8 @@
                   "start": 340,
                   "end": 354,
                   "text": "flip angle 80°",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -2140,7 +2192,8 @@
                   "start": 400,
                   "end": 419,
                   "text": "4 x 4 x 4 mm voxels",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.96,
@@ -2214,7 +2267,8 @@
                   "start": 320,
                   "end": 330,
                   "text": "TE = 27 ms",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -2275,7 +2329,8 @@
                   "start": 440,
                   "end": 451,
                   "text": "818 volumes",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -2295,7 +2350,8 @@
                   "start": 420,
                   "end": 429,
                   "text": "36 slices",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.94,
@@ -2371,7 +2427,8 @@
                   "start": 460,
                   "end": 493,
                   "text": "interleaved ascending slice order",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.88,
@@ -2645,8 +2702,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.5.2",
-          "written_under": "0.5.2",
+          "schema_version": "0.5.3",
+          "written_under": "0.5.3",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -2696,7 +2753,8 @@
                   "start": 950,
                   "end": 967,
                   "text": "fMRIPrep pipeline",
-                  "section": "Methods"
+                  "section": "Methods",
+                  "repairs": []
                 }
               ],
               "confidence": 0.95,
@@ -2723,7 +2781,8 @@
                       "start": 1500,
                       "end": 1511,
                       "text": "FSL MCFLIRT",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.95,
@@ -2874,7 +2933,8 @@
                       "start": 1550,
                       "end": 1568,
                       "text": "FWHM 6 mm Gaussian",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.94,
@@ -2898,7 +2958,8 @@
                       "start": 1570,
                       "end": 1592,
                       "text": "smoothed in MNI volume",
-                      "section": "Methods"
+                      "section": "Methods",
+                      "repairs": []
                     }
                   ],
                   "confidence": 0.9,

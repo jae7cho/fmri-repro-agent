@@ -146,6 +146,7 @@ class FieldRow:
     left_missing_reason: str | None = None  # LeftMissing.reason, for protocol hole callouts
     searched_terms: list[str] | None = None
     deferral_refs: list[str] | None = None
+    span_repairs: list[str] | None = None  # Span.repairs (0.5.3): the named substitutions, tier 6
     span_recovered: bool = False  # Extracted.span_recovered: the quote matched only after the
     # corrupted-source tolerant tier repaired mangled PDF text. Carried to the report because a
     # span located by repair is weaker evidence than a clean match, and a flag no surface reads
@@ -218,6 +219,8 @@ def _row_from_field(
     if ext.status == "EXTRACTED":
         row.span_text = ext.spans[0].text
         row.span_recovered = bool(getattr(ext, "span_recovered", False))
+        repairs = list(getattr(ext.spans[0], "repairs", None) or [])
+        row.span_repairs = repairs or None
     if ext.status in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION"):
         row.searched_terms = list(ext.searched_terms)
     if ext.status == "DEFERRED_TO_CITATION":
@@ -342,10 +345,19 @@ def _fmt_value(value: Any) -> str:
 _REPAIRED_SPAN_NOTE = "[quote matched after source-text repair]"
 
 
+def _repair_note(row: FieldRow) -> str:
+    """The repaired-span note, naming tier 6's substitutions when the span carries them (2026-10-28,
+    the author's item 1): ``quote matched after source-text repair: \u00d7→/C2, \u00d7→/C2``."""
+    note = _REPAIRED_SPAN_NOTE[1:-1]
+    if row.span_repairs:
+        note += ": " + ", ".join(row.span_repairs)
+    return note
+
+
 def _from_paper_tag(row: FieldRow) -> str:
     """``[from paper]``, widened when the span was recovered rather than cleanly matched."""
     if row.span_recovered:
-        return f"[from paper — {_REPAIRED_SPAN_NOTE[1:-1]}]"
+        return f"[from paper — {_repair_note(row)}]"
     return "[from paper]"
 
 
@@ -359,7 +371,7 @@ def _truncate_quote(text: str) -> str:
 def _fmt_field_text(row: FieldRow) -> str:
     """The right-hand value/explanation per the five display states."""
     if row.state == EXTRACTED:
-        tag = "" if not row.span_recovered else f"   {_REPAIRED_SPAN_NOTE}"
+        tag = "" if not row.span_recovered else f"   [{_repair_note(row)}]"
         return (
             f"from paper: {_fmt_value(row.value)}   «{_truncate_quote(row.span_text or '')}»{tag}"
         )

@@ -16,8 +16,17 @@ exact/near tier failed (so it can never move a currently-resolving span). A tier
 NOT handled by tier 5: the font-specific multiplication-sign (U+00D7) -> ``/C2`` glyph mangle seen
 in a few papers (agtzidis/gordon/poldrack/wheaton). ``/C<digit>`` are font glyph codes that map to
 DIFFERENT glyphs across papers, so treating ``/C2`` as that glyph globally risks a WRONG match --
-which would violate the never-fuzzy invariant. It is deliberately excluded; those dimension-quote
-drops stay unrecovered rather than risk a mis-attribution.
+which would violate the never-fuzzy invariant. Tier 5 still refuses it.
+
+Tier 6 (the named source-text repair, added 2026-10-28 under the author's item 1 of
+``DESIGN_coverage_expansion.md`` B14) answers that reason the way ``DELTA_glyph_leak_span_recovery.md``
+proposed: a ``/C<digits>`` run in the SOURCE may match exactly one character of the quote with no
+claim about which glyph it is; binder's ``ª`` may match the quote's ``fi``; and a SYMBOL in the quote
+(``> < = ≤ ≥ ± ~ ≈ °``) may match a letter or digit in the source at that position (the text layer
+printing ``>`` as ``4``). Bounded to :data:`_MAX_REPAIRS` substitutions per quote, substring-only
+otherwise, unique or nothing, re-verified fail-closed, and reported: the span carries the
+substitutions by name (``Span.repairs``) and ``recovered=True`` marks it "matched after source-text
+repair". ``ﬁ``/``ﬂ`` keep folding silently at tier 3 (NFKD), as they always have.
 """
 
 from __future__ import annotations
@@ -160,11 +169,12 @@ def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
 class SpanResolution:
     span: Span | None  # None if the quote couldn't be located
     failure_reason: str | None  # "quote_not_found" | "quote_ambiguous" | None on success
-    recovered: bool = False  # True iff located ONLY by the corrupted-source tolerant tier (5)
+    recovered: bool = False  # True iff located ONLY by a tolerant tier (5, or 6 with repairs)
+    repairs: tuple[str, ...] = ()  # tier 6 only: the named substitutions, in quote order
 
 
-def _make_span(text: str, start: int, end: int) -> Span:
-    return Span(start=start, end=end, text=text[start:end], section=None)
+def _make_span(text: str, start: int, end: int, repairs: tuple[str, ...] = ()) -> Span:
+    return Span(start=start, end=end, text=text[start:end], section=None, repairs=list(repairs))
 
 
 def _collapse_with_map(s: str) -> tuple[str, list[int]]:
@@ -334,7 +344,152 @@ def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
     if ac > 1:
         return SpanResolution(None, "quote_ambiguous")
 
+    # 6. The named source-text repair (2026-10-28; module note). Reached only after tier 5 failed,
+    #    on the same deletion-normalized strings, so a quote any earlier tier resolves never enters
+    #    here. Each candidate start walks the quote with at most _MAX_REPAIRS substitution events;
+    #    exactly one successful start is accepted, re-verified on the recovered original slice.
+    q_a_text, q_a_map = _delete_with_map(n_quote.lower())
+    _, q_off = normalize_with_offset_map(quote)
+    quote_chars = [quote[q_off[q_a_map[j]]] for j in range(len(q_a_text))]
+    marks = _repair_marks(text, n_text, t_off, a_map, len(agg_text))
+    hits: list[tuple[int, int, tuple[str, ...]]] = []
+    for i0 in _repair_candidate_starts(agg_text, agg_quote, marks):
+        walked = _repair_walk(agg_text, i0, agg_quote, quote_chars, text, t_off, a_map, marks)
+        if walked is not None:
+            hits.append((i0, walked[0], walked[1]))
+            if len(hits) > 1:
+                return SpanResolution(None, "quote_ambiguous")
+    if len(hits) == 1:
+        i0, i_end, events = hits[0]
+        n_start, n_end = a_map[i0], a_map[i_end - 1] + 1
+        orig_start, orig_end = t_off[n_start], t_off[n_end]
+        if orig_end <= orig_start:
+            return SpanResolution(None, "quote_not_found")
+        # fail-closed re-verification: the recovered original slice, prepared the same way, must
+        # walk the whole quote from its first character to its last with the same events.
+        reslice = text[orig_start:orig_end]
+        re_n, re_off = normalize_with_offset_map(reslice)
+        re_agg, re_map = _delete_with_map(re_n.lower())
+        re_marks = _repair_marks(reslice, re_n, re_off, re_map, len(re_agg))
+        re_walk = _repair_walk(re_agg, 0, agg_quote, quote_chars, reslice, re_off, re_map, re_marks)
+        if re_walk is None or re_walk[0] != len(re_agg) or re_walk[1] != events:
+            return SpanResolution(None, "quote_not_found")
+        return SpanResolution(
+            _make_span(text, orig_start, orig_end, events), None, recovered=True, repairs=events
+        )
+
     return SpanResolution(None, "quote_not_found")
+
+
+# --- Tier 6 helpers -----------------------------------------------------------------------------
+
+#: Symbols a model writes where the text layer printed a letter or a digit (``>`` as ``4``, ``<``
+#: as ``o``). A quote character in this set may stand for ONE alphanumeric source character.
+_REPAIR_SYMBOLS: frozenset[str] = frozenset("<>=≤≥±~≈°")
+#: The bound: a quote needing more substitutions than this is not recovered.
+_MAX_REPAIRS = 3
+#: A font glyph code pypdf leaks into the text layer (``/C2`` for ×, ``/C0`` ...), ONE glyph slot.
+_GLYPH_CODE = re.compile(r"/C\d+")
+#: The one ligature glyph the corpus leaks that NFKD folds to the wrong letter (binder: ``ª`` for fi).
+_LIGATURE_GLYPHS: dict[str, str] = {"ª": "fi"}
+
+
+def _repair_marks(
+    text: str, n_text: str, t_off: list[int], a_map: list[int], agg_len: int
+) -> tuple[dict[int, tuple[int, str]], dict[int, str]]:
+    """In aggregated coordinates: ``runs[i] = (length, original run text)`` for every ``/C<digits>``
+    run starting at ``i`` (marked on the NORMALIZED text, where the whitespace that delimits a code
+    still exists -- the DELTA's ordering constraint), and ``ligs[i] = quote letters`` for every
+    position whose original character is a leaked ligature glyph."""
+    in_run: dict[int, int] = {}
+    for rid, m in enumerate(_GLYPH_CODE.finditer(n_text)):
+        for k in range(m.start(), m.end()):
+            in_run[k] = rid
+    runs: dict[int, tuple[int, str]] = {}
+    ligs: dict[int, str] = {}
+    i = 0
+    while i < agg_len:
+        ni = a_map[i]
+        run_id = in_run.get(ni)
+        if run_id is not None:
+            j = i
+            while j < agg_len and in_run.get(a_map[j]) == run_id:
+                j += 1
+            runs[i] = (j - i, text[t_off[a_map[i]] : t_off[a_map[j - 1]] + 1])
+            i = j
+            continue
+        orig = text[t_off[ni]]
+        if orig in _LIGATURE_GLYPHS:
+            ligs[i] = _LIGATURE_GLYPHS[orig]
+        i += 1
+    return runs, ligs
+
+
+def _repair_candidate_starts(
+    agg_text: str, agg_quote: str, marks: tuple[dict[int, tuple[int, str]], dict[int, str]]
+) -> list[int]:
+    """Start positions at which a repaired match could begin: an exact first character, a glyph
+    run, a ligature glyph the quote spells out, or an alphanumeric under a leading quote symbol."""
+    runs, ligs = marks
+    if not agg_quote:
+        return []
+    q0 = agg_quote[0]
+    out: list[int] = []
+    for i, ch in enumerate(agg_text):
+        if (
+            ch == q0
+            or i in runs
+            or (i in ligs and agg_quote.startswith(ligs[i]))
+            or (q0 in _REPAIR_SYMBOLS and ch.isalnum())
+        ):
+            out.append(i)
+    return out
+
+
+def _repair_walk(
+    agg_text: str,
+    i0: int,
+    agg_quote: str,
+    quote_chars: list[str],
+    text: str,
+    t_off: list[int],
+    a_map: list[int],
+    marks: tuple[dict[int, tuple[int, str]], dict[int, str]],
+) -> tuple[int, tuple[str, ...]] | None:
+    """Walk the whole quote against ``agg_text`` from ``i0`` with at most ``_MAX_REPAIRS``
+    substitution events. Returns ``(end index, events)`` or ``None``. Events are named as the
+    quote's character(s) → the source's character(s), in quote order."""
+    runs, ligs = marks
+    i, j = i0, 0
+    events: list[str] = []
+    n_text, n_quote = len(agg_text), len(agg_quote)
+    while j < n_quote:
+        if i >= n_text:
+            return None
+        if i in runs:
+            length, raw = runs[i]
+            events.append(f"{quote_chars[j]}→{raw}")
+            i += length
+            j += 1
+        elif i in ligs and agg_quote.startswith(ligs[i], j):
+            letters = ligs[i]
+            events.append(f"{letters}→{text[t_off[a_map[i]]]}")
+            i += 1
+            j += len(letters)
+        elif agg_text[i] == agg_quote[j]:
+            i += 1
+            j += 1
+        elif agg_quote[j] in _REPAIR_SYMBOLS and agg_text[i].isalnum():
+            events.append(f"{quote_chars[j]}→{text[t_off[a_map[i]]]}")
+            i += 1
+            j += 1
+        else:
+            return None
+        if len(events) > _MAX_REPAIRS:
+            return None
+    if not events:
+        return None  # an exact match here would have resolved at tier 5
+    return i, tuple(events)
 
 
 _TRAILING_SENTENCE_PUNCT = ".!?"

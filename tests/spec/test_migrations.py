@@ -88,8 +88,8 @@ def test_migrate_fills_new_nuisance_fields_and_stamps():
 
 
 def test_migrate_current_doc_is_passthrough():
-    out = parse_any_version(migrate_to_current({"schema_version": "0.5.2", **_native_min()}))
-    assert out.schema_version == "0.5.2"
+    out = parse_any_version(migrate_to_current({"schema_version": "0.5.3", **_native_min()}))
+    assert out.schema_version == "0.5.3"
     assert out.migration is None  # a native/current doc is not marked migrated
 
 
@@ -119,11 +119,11 @@ def test_migrate_0_3_0_to_current_restamps():
     out = migrate_to_current(src)
 
     assert src == original  # read-only: input never mutated
-    assert out["schema_version"] == "0.5.2"
+    assert out["schema_version"] == "0.5.3"
     assert out["written_under"] == "0.3.0"  # a 0.3.0-stamped source is observed, not inferred
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.3.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.5.2/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.5.3/v1"
     # No nuisance-field mutation: the sentinel reason from _missing (not the migrator's
     # "field_not_in_schema_version") survives, proving the setdefault backfill did not fire.
     nuis = next(s for s in out["steps"] if s["kind"] == "nuisance_regression")
@@ -140,13 +140,13 @@ def test_migrate_0_4_0_to_current_restamps():
     original = copy.deepcopy(src)
     out = migrate_to_current(src)
     assert src == original  # read-only
-    assert out["schema_version"] == "0.5.2"
+    assert out["schema_version"] == "0.5.3"
     assert out["written_under"] == "0.4.0"
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.4.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.5.2/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.5.3/v1"
     # parses cleanly under the current model
-    assert parse_any_version(src).schema_version == "0.5.2"
+    assert parse_any_version(src).schema_version == "0.5.3"
 
 
 def _extracted_member(member: str) -> dict[str, Any]:
@@ -244,8 +244,8 @@ def test_migrate_0_4_1_to_0_5_0_lifts_all_five_retyped_fields_and_carries_false_
     }
     # the MISSING temporal method carries forward with NO value (false-missing, structurally retyped)
     assert "value" not in out["steps"][3]["method"]["extraction"]
-    assert out["schema_version"] == "0.5.2"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.5.2/v1"
+    assert out["schema_version"] == "0.5.3"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.5.3/v1"
 
     # the whole doc round-trips cleanly under the current model, verbatim preserved on every arm
     prep = parse_any_version(src)
@@ -277,7 +277,7 @@ def _native_min() -> dict[str, Any]:
 def test_parse_any_version_migrates_and_parses():
     prep = parse_any_version(_v020_doc_with_nuisance())
     assert isinstance(prep, Preprocessing)
-    assert prep.schema_version == "0.5.2"
+    assert prep.schema_version == "0.5.3"
     assert prep.written_under == "0.2.0" and prep.written_under_inferred is True
     assert prep.migration is not None and prep.migration.migrated_from == "0.2.0"
     nr = next(s for s in prep.steps if s.kind == "nuisance_regression")
