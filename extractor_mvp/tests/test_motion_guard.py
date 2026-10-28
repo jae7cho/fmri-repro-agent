@@ -450,3 +450,64 @@ def test_routed_tool_stays_routed_without_exactly_one_listed_package(quote: str)
     assert pf.extraction.status == "MISSING_FROM_PAPER"
     assert pf.inference.reason == f"{MOTION_VALUE_ROUTED}:ica_aroma"
     assert diag is not None and diag.failure_reason == f"{MOTION_VALUE_ROUTED}:ica_aroma"
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-28 -- F7: one package table, read from the KB; ruling 1: the level reads one sentence
+# ---------------------------------------------------------------------------
+def test_the_fallback_reads_the_knowledge_base_package_table() -> None:
+    from fmri_defaults_kb import listed_package_tokens
+
+    from extractor_mvp.motion_guard import _listed_packages
+
+    assert _listed_packages() == listed_package_tokens()
+    assert set(_listed_packages()) == {"afni", "fsl", "spm", "ants", "brainvoyager"}
+
+
+@pytest.mark.parametrize(
+    ("text", "value", "level"),
+    [
+        # the two-sentence span of cole's shape: the package sentence, then the step list
+        (
+            "Preprocessing was performed using ToolKit9 and a surface package. We performed slice "
+            "timing correction, motion correction and normalization.",
+            "ToolKit",
+            "package",
+        ),
+        # the same span read whole (no value) still carries the operation phrase
+        (
+            "Preprocessing was performed using ToolKit9 and a surface package. We performed slice "
+            "timing correction, motion correction and normalization.",
+            None,
+            "step",
+        ),
+        # the step sentence names the tool: step
+        (
+            "Using ToolKit 9, images were realigned to the first image of each run.",
+            "ToolKit",
+            "step",
+        ),
+        # the value is absent from the text: the whole text is read
+        ("Images were realigned. The analysis used ToolKit.", "Nowhere", "step"),
+    ],
+)
+def test_attribution_reads_the_sentence_that_contains_the_value_token(
+    text: str, value: str | None, level: str
+) -> None:
+    from extractor_mvp.motion_guard import attribution_from_quote
+
+    assert attribution_from_quote(text, value) == level
+
+
+def test_sentence_containing_returns_the_value_sentence_or_the_whole_text() -> None:
+    from extractor_mvp.motion_guard import sentence_containing
+
+    text = "First sentence names AFNI48 here. Second sentence lists motion correction."
+    assert (
+        sentence_containing(text, "AFNI") == "First sentence names AFNI48 here."
+    )  # ruling 5 digits
+    assert (
+        sentence_containing(text, "motion correction") == "Second sentence lists motion correction."
+    )
+    assert sentence_containing(text, None) == text
+    assert sentence_containing("", "AFNI") == ""

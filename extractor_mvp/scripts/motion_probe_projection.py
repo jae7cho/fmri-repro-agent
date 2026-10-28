@@ -98,7 +98,8 @@ def _derived_attribution(rec: dict[str, Any], row: int | str) -> str:
         return ""
     if str(rec.get("diagnostic_reason") or "").startswith(MOTION_VALUE_ROUTED_FALLBACK):
         return "package"
-    return attribution_from_quote(rec.get("span_text"))
+    # ruling 1 of 2026-10-28: the sentence that contains the value token, not the whole span
+    return attribution_from_quote(rec.get("span_text"), rec.get("verbatim") or rec.get("raw_value"))
 
 
 def _split_binding(binding: str | None) -> tuple[str | None, str]:

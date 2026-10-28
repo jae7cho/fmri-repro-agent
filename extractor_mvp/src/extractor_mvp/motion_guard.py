@@ -49,11 +49,19 @@ MOTION_VALUE_ROUTED = "motion_value_routed_structured_noise"
 #: ``f"{MOTION_VALUE_ROUTED_FALLBACK}:{tool}->{package}"``.
 MOTION_VALUE_ROUTED_FALLBACK = "motion_value_routed_fallback_to_package"
 
-#: The realignment-capable list of protocol v1.8 (CALL 1), by lower-cased token. A digit run after
-#: the name is the text layer's citation artefact (ruling 5) or, for SPM only, the version that is
-#: part of the name token (SPM8, SPM12); the value returned keeps the digits for SPM and drops them
-#: for the others, which is how the labels write these packages.
-LISTED_PACKAGES: tuple[str, ...] = ("afni", "fsl", "spm", "ants", "brainvoyager")
+
+#: The realignment-capable list of protocol v1.8 (CALL 1), by lower-cased token, READ FROM THE
+#: KNOWLEDGE BASE since 2026-10-28 (DESIGN_motion_inference_arm.md F7): kb/tools/<package>.yaml is
+#: the one table both the inference arm's package basis and this fallback consult. The token is the
+#: package's tool_id; the flag says whether digits after it are part of the name (SPM8, SPM12) or
+#: the text layer's citation artefact (AFNI48, ruling 5). The 2026-10-26 docstring's "no KB" line
+#: is superseded for this one lookup; the check still compares the model's own value with the
+#: model's own quote and reads no paper text.
+def _listed_packages() -> dict[str, bool]:
+    from fmri_defaults_kb import listed_package_tokens
+
+    return listed_package_tokens()
+
 
 #: The frozen heuristic's operation-phrase list (scripts/motion_value_kind.py, prereg :97-99),
 #: COPIED here because that module is a script, not a package; tests/test_motion_guard.py holds the
@@ -143,11 +151,72 @@ def motion_post_check(value: str | None, quote: str | None) -> str | None:
     return None
 
 
-def attribution_from_quote(quote: str | None) -> str:
-    """The attribution level derived on the processed layer (Amendment 11): ``"step"`` if the quoted
-    sentence contains an operation phrase from the frozen heuristic's list, else ``"package"``.
+_SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+(?=[A-Z(\[\d])")
+
+
+def sentence_containing(text: str | None, value: str | None) -> str:
+    """The sentence of ``text`` that contains the value's first token (token-equivalent, ruling 5
+    tolerated), or the whole text when the value is absent or not found. The author's ruling of
+    2026-10-28: the derived level reads the sentence that contains the value token, not the whole
+    span -- a quote running from the package sentence into a step list carried the list's operation
+    phrase and read as ``step`` (cole, 8 of 10 under the frozen stanza)."""
+    if not text:
+        return ""
+    v = _tokens(value or "")
+    if not v:
+        return text
+    for sentence in _SENTENCE_SPLIT.split(text):
+        if any(_stem_equivalent(v[0], tok) for tok in _tokens(sentence)):
+            return sentence
+    return text
+
+
+#: The frozen heuristic's TOOL-SHAPE rules (scripts/motion_value_kind.py, prereg :101-104 with
+#: Amendment 2 ruling 5), COPIED here for the same reason as the phrase list: the script is not a
+#: package, and the inference arm (motion_inference.py) must know a named tool from a phrase without
+#: importing it. tests/test_motion_guard.py holds every constant equal to the script's (C21).
+_TOOL_TOKENS_FROZEN: tuple[str, ...] = (
+    "MCFLIRT",
+    "mcflirt",
+    "3dvolreg",
+    "Realign",
+    "FLIRT",
+    "applywarp",
+    "ICA-AROMA",
+    "align_epi_anat",
+    "fMRIPrep",
+    "C-PAC",
+    "Freesurfer",
+    "SPM8",
+    "SPM12",
+)
+_NOT_TOOL_INITIALISMS_FROZEN: frozenset[str] = frozenset(
+    ["BOLD", "CSF", "EPI", "FD", "FOV", "GM", "MNI", "RMS", "ROI", "SNR", "TR", "WM"]
+)
+_INITIALISM_FROZEN = re.compile("\\b[A-Z]{2,}\\b")
+_VERSIONED_FROZEN = re.compile("[A-Za-z]+\\s*v?\\d+(?:\\.\\d+)*")
+
+
+def is_tool_shaped_frozen(value: str | None) -> bool:
+    """``motion_value_kind.is_tool_shaped``, verbatim: a listed token, an initialism of two or more
+    capitals that is not an acquisition acronym, or a letters-then-digits version token."""
+    if not value:
+        return False
+    if any(tok in value for tok in _TOOL_TOKENS_FROZEN):
+        return True
+    if any(
+        m.group(0) not in _NOT_TOOL_INITIALISMS_FROZEN for m in _INITIALISM_FROZEN.finditer(value)
+    ):
+        return True
+    return bool(_VERSIONED_FROZEN.search(value))
+
+
+def attribution_from_quote(quote: str | None, value: str | None = None) -> str:
+    """The attribution level derived on the processed layer (Amendment 11): ``"step"`` if the
+    sentence that contains the value token carries an operation phrase from the frozen heuristic's
+    list, else ``"package"``. Without a value the whole quote is read (the pre-ruling behaviour).
     Reported against the labels' column R as an agreement count; never scored."""
-    low = (quote or "").lower()
+    low = sentence_containing(quote, value).lower()
     return "step" if any(p in low for p in _OPERATION_PHRASES_FROZEN) else "package"
 
 
@@ -158,12 +227,13 @@ def listed_package_in_quote(quote: str | None) -> str | None:
     others return the bare name."""
     if not quote:
         return None
+    packages = _listed_packages()
     found: dict[str, str] = {}
     for raw_tok in re.findall(r"[A-Za-z0-9]+", normalize_with_offset_map(quote)[0]):
         low = raw_tok.lower()
-        for name in LISTED_PACKAGES:
+        for name, version_token in packages.items():
             if low == name or (low.startswith(name) and low[len(name) :].isdigit()):
-                found.setdefault(name, raw_tok if name == "spm" else raw_tok[: len(name)])
+                found.setdefault(name, raw_tok if version_token else raw_tok[: len(name)])
                 break
     if len(found) != 1:
         return None

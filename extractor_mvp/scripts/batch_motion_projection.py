@@ -90,7 +90,7 @@ def _row(doc: dict[str, Any]) -> dict[str, Any]:
         level = (
             "package"
             if dbase == MOTION_VALUE_ROUTED_FALLBACK
-            else attribution_from_quote(span.get("text"))
+            else attribution_from_quote(span.get("text"), verbatim)  # ruling 1 of 2026-10-28
         )
     else:
         level = ""
