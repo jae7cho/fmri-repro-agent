@@ -3533,3 +3533,58 @@ with tests and mutations shown:
 Held-out text unread throughout; ids and field states only. 529 passed in extractor_mvp (not live),
 234 root (one spec case moved from the unflagged list with a dated note); hooks clean in both repos.
 Commits here: `79953e4`, `bc09a80`, `b3104a7`, `f3df35d`, `9e146a7`, `1bd8308`, then this entry.
+
+## 2026-10-28 (evening) — coverage expansion: the eleven uncovered D.3 rows
+
+**What was asked.** Design first, then build, then run, under eight rulings given 2026-10-28 (R1–R8,
+recorded verbatim in `docs/design/DESIGN_coverage_expansion.md` §0): extraction for all eleven
+mandatory D.3 rows the extractor never examined, in two shared calls with their own pinned prompts;
+`performed` first on every step; the four states and the quote through the one span path with the
+support check by field type; the structured-noise tools on their own row; a per-row render with a
+validation tag; every kind emitted; no labels; the three existing hashes unmoved. Held-out text
+unread throughout; the three enter through the model only, their reports read as states and counts.
+
+- `9c5359d` — the design doc: Part A read-only (D.3's own per-row items transcribed from the
+  report for the eleven rows, the spec's fields beside them — no class carried `performed`; nine
+  D.3 items had no field; `_assemble`'s eight-kind list, the two call sites, the coverage predicate,
+  the render sites, the walkers, the pin's three hashes confirmed untouched); Part B under R1–R8,
+  with the schema fork recorded (B9: the new fields OPTIONAL so the stored records render
+  unchanged, against required-with-migration which would move all 19 reports and fire a latent
+  predicate defect on `field_not_in_schema_version`) and the identity gate derived (19 identical).
+- `86cba81` — the build. Spec 0.5.2: `performed` first and the D.3 items on the thirteen kinds, the
+  closed Literals retyped to `SpecifiedTerm[X]` with a 0.5.1→0.5.2 hop, the examples regenerated,
+  the schema exported (the large-file hook raised to 1 MB with a dated note: 523 KB). The calls:
+  `coverage_fields.py` (38 + 25 fields with alias tables keyed by dotted id) and
+  `coverage_extractor.py` (`TEMPORAL_VOLUME_PROMPT` `9e523824…`, `SPATIAL_PROMPT` `17742cbb…`);
+  `_process_field` gains `value_kind` (term, term_list, number, int, bool, text) with the support
+  check by type; performed=no makes the parameters `step_not_performed`; `_assemble` emits
+  eighteen kinds; the batch records `wall_time_s`; render gains the per-row section with the
+  validation tag and the 14-row header, emitted only when a record carries an expanded step. Pin
+  test: five hashes, the three old ones asserted as literals. 549 extractor (not live), 234 root;
+  hooks clean. **Identity gate** derived 19 identical and run: 19 identical against `9c5359d`
+  (the pre-build code); negative control `d31e8b7` 0 identical, 19 changed. **Five mutations**, each
+  diff shown non-empty before the run and each file restored after: the performed=no override
+  removed (1 test fails), the expanded condition inverted (11), an alias table emptied (1), the
+  spatial call skipped (13), the performed_no row state disabled (2).
+- The run, `coverage_v1` (`results/batch_coverage_v1`, gitignored): 2026-10-28, 22:26:59–22:47:00
+  UTC under `86cba81`, the launcher manifest carrying the five prompt hashes, the config's sha256,
+  start, end and exit 0, gated before any record was read; 19 records, 18 success, liu_2005
+  `methods_not_found` as before. `f6ffd03` — the findings: every mandatory row targeted on every
+  paper; per row over the 16 contaminated papers addressed / performed=no / deferred / unverifiable /
+  not reported (the artifact row addressed on 14, smoothing on 10, coregistration on 10; T1 on 5;
+  slice timing 5 with 1 stated negative; censoring 3 with 1 stated negative; intensity correction and
+  distortion 3 each); the held-out three as 42 row-cells summed (addressed 10, performed=no 2,
+  deferred 1, unverifiable 7, not reported 22); 1,008 coverage cells on the sixteen: 175 extracted,
+  10 deferred, 738 not stated, 25 behind a stated negative, 38 unsupported by their quote, 22 with an
+  unresolved quote; wall time 50–84 s per paper for the four calls, 1,196.85 s over 19 (the corpus
+  run's two-call batch took 8 min 35 s of launcher clock against 20 min 1 s). The three reports
+  (ciric, chen, poldrack) were pasted in full in the session. Found, not pre-declared: a boolean's
+  quote need not be about the step (chen's slice-timing `performed` quotes the de-spiking sentence —
+  B3's no-token-check limitation, now observed), an alias miss by underscore spelling, sibling kinds
+  listed without their name on one row line, the text layer's unresolved quotes on poldrack (9),
+  power (6) and binder (4). Held for the author: the boolean's quote rule; the sibling-kind wording;
+  the underscore alias.
+
+No labels and no accuracy figure for the eleven rows; the three existing hashes unmoved; held-out
+text unread; ids, states and counts only. 549 passed in extractor_mvp (not live), 234 root; hooks
+clean. Commits here: `9c5359d`, `86cba81`, `f6ffd03`, then this entry.
