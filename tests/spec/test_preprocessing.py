@@ -718,12 +718,9 @@ def test_distortion_correction_intended_fieldmap_not_applicable_accepted() -> No
 # Covers Fix 3: fields demoted to inference_applicable=False (version_default-
 # only candidates; flip to True when the KB lands).
 _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
-    (
-        MotionCorrection,
-        "method",
-        SpecifiedTerm(resolved="mcflirt", resolution="resolved"),
-        SpecifiedTerm[MotionCorrectionMethod],
-    ),
+    # MotionCorrection.method was the first case here until 2026-10-28: its FieldMeta flipped to
+    # inference_applicable=True by the author's ruling F5 (docs/design/DESIGN_motion_inference_arm.md;
+    # dated catalog entry), so an InferredDefault on it is now accepted -- see the flagged case below.
     (DistortionCorrection, "method", "topup", str),
     (Coregistration, "method", "flirt_bbr", str),
     (ICADenoise, "method", "fix", str),

@@ -257,6 +257,7 @@ def process_paper(
     )
 
     resolutions: list[ResolutionRecord] = []
+    motion_inference: list[Any] = []  # the motion method's inference record (2026-10-28)
     try:
         preprocessing, diagnostics, deferrals = extract(
             paper,
@@ -264,6 +265,7 @@ def process_paper(
             citation_resolver=citation_resolver,
             paper_date=paper.pdf_date,
             resolutions=resolutions,
+            motion_inference_out=motion_inference,
         )
     except _CODE_DEFECTS:
         # A tool defect, not this paper's problem. Let it abort the run loudly rather than write 19
@@ -301,7 +303,12 @@ def process_paper(
     report: str | None = None
     render_error: str | None = None
     try:
-        report = to_report(preprocessing, source=paper_id, methods_slice=methods)
+        report = to_report(
+            preprocessing,
+            source=paper_id,
+            methods_slice=methods,
+            motion_inference=(motion_inference[0] if motion_inference else None),
+        )
     except _CODE_DEFECTS:
         # Same split, and sharper here: the comment above argues to_report is pure and
         # deterministic, so a code defect in it is identical on every paper by construction.
@@ -326,6 +333,10 @@ def process_paper(
         "counts": counts,
         "preprocessing": prep_dump,
         "diagnostics": [dataclasses.asdict(d) for d in diagnostics],
+        # The motion method's inference record (DESIGN_motion_inference_arm.md): both paths of F1
+        # travel here with basis and source -- the arm proper is also on the field; the
+        # described_only diagnostic lives ONLY here.
+        "motion_inference": (motion_inference[0].as_dict() if motion_inference else None),
         # SUCCESS-path capture: raw LLM value + resolved value/alias for each
         # successfully-extracted targeted field (diagnostic-only; see ResolutionRecord).
         "resolutions": [dataclasses.asdict(r) for r in resolutions],

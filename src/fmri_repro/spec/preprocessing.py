@@ -147,9 +147,13 @@ SLICE_TIME_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
 
 
 MOTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
+    # 2026-10-28 (docs/spec/preprocessing_catalog_v0.1.0.md §3, dated entry): the method's
+    # inference arm is filled from a recognized base pipeline's documented realignment program or a
+    # package-attributed tool (docs/design/DESIGN_motion_inference_arm.md, the author's F5). Was
+    # False from v0.1.0: "extracted-or-missing unless a base pipeline supplies a defensible default".
     "method": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        inference_applicable=True,
         source="derived",
     ),
     "reference_scan": FieldMeta(

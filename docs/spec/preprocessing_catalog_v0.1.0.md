@@ -69,6 +69,7 @@ Pipeline Configurator may fill (basis in parens); all others are extracted-or-mi
   `similarity_metric` (normalized correlation / mutual information / …), `interpolation`,
   `nonrigid: bool` (+ transform type if true), `fieldmap_unwarping: bool` (+ method), `slice_to_volume: bool`
 - **Infer:** similarity_metric (field_convention), interpolation (field_convention), reference_scan (field_convention).
+- **Infer (added 2026-10-28, the author's ruling F5 in `docs/design/DESIGN_motion_inference_arm.md`):** method — the realignment program from a recognized base pipeline's documented default (`version_default` at a certain version; `date_inferred_version` at 0.75 when the KB marks the program stable across the inferred range) or from a package the paper names for its preprocessing as a whole (`derived`, 0.70, from `base_pipeline.name`). Only when the extraction arm carries no tool; for a `described_only` extraction the same inference travels as a diagnostic on the processed layer, since the provenance contract forbids an inferred default beside an EXTRACTED field. Reported as "tool not stated; AESPA infers X", never as reported.
 
 ### 4. `distortion_correction`
 - **Prov:** D.3 *Gradient distortion correction* + *Distortion correction* (mandatory). Boundary:

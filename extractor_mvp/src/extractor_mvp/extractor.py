@@ -1687,6 +1687,7 @@ def _resolve_deferrals(
     *,
     paper_date: date | None,
     citation_resolver: CitationResolver | None,
+    motion_inference_out: list[Any] | None = None,
 ) -> Preprocessing:
     """Apply one-hop deferral resolution to a single Preprocessing.
 
@@ -1731,6 +1732,18 @@ def _resolve_deferrals(
             if resolved:
                 preprocessing = _apply_resolved_citations(preprocessing, resolved)
 
+    # The motion method's inference arm (docs/design/DESIGN_motion_inference_arm.md, the author's
+    # rulings of 2026-10-28), after the base pipeline's version is settled: a recognized pipeline's
+    # documented realignment program or a package the paper names for its preprocessing as a whole.
+    # Fills deferred-to-pipeline and missing on the arm proper; a described_only phrase gets the
+    # same inference as a diagnostic on the processed layer (F1), returned through the sink so the
+    # batch can store and render it. Never touches the extraction arm; no model call.
+    from extractor_mvp.motion_inference import infer_motion_method
+
+    preprocessing, motion_record = infer_motion_method(preprocessing)
+    if motion_inference_out is not None:
+        motion_inference_out.append(motion_record)
+
     return preprocessing
 
 
@@ -1742,6 +1755,7 @@ def extract(
     citation_resolver: CitationResolver | None = None,
     paper_date: date | None = None,
     resolutions: list[ResolutionRecord] | None = None,
+    motion_inference_out: list[Any] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction with one-hop deferral resolution.
 
@@ -1769,5 +1783,6 @@ def extract(
         deferral_records,
         paper_date=paper_date,
         citation_resolver=citation_resolver,
+        motion_inference_out=motion_inference_out,
     )
     return preprocessing, diagnostics, deferral_records

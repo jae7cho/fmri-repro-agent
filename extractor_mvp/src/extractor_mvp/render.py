@@ -669,6 +669,49 @@ def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> 
     return label
 
 
+#: The inference clause of the motion method's line (DESIGN_motion_inference_arm.md §4; the
+#: author's wording, 2026-10-28): the paper's words first, then what AESPA infers, with basis and
+#: source -- never presented as reported. Identical for the arm proper (the inferred default on the
+#: field) and for the described_only diagnostic (the record beside the stored result).
+_MOTION_INFERS = "   — tool not stated; AESPA infers {program} ({basis_type}, {source})"
+
+
+def _motion_method_line(row: FieldRow, label: str, record: Any | None) -> str:
+    """The ``motion_correction.method`` protocol line, with the inference clause when the arm is
+    filled (state INFERRED) or a described_only diagnostic record travels with the result."""
+    if row.state == INFERRED_DEFAULT:
+        if row.extraction_status == DEFERRED_TO_CITATION:
+            refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+            words = f"deferred to {refs}"
+        else:
+            words = "not stated"
+        source = (
+            (
+                getattr(record, "source", None)
+                if record is not None and getattr(record, "path", None) == "arm"
+                else None
+            )
+            or getattr(row.basis, "note", None)
+            or "(source not recorded)"
+        )
+        return f"{label} = {words}" + _MOTION_INFERS.format(
+            program=(getattr(row.value, "verbatim", None) or _fmt_value(row.value)),
+            basis_type=row.basis_type,
+            source=source,
+        )
+    line = _protocol_main(row, label, equals_for_extracted=True)
+    if (
+        row.state == EXTRACTED
+        and record is not None
+        and getattr(record, "path", None) == "diagnostic"
+        and getattr(record, "program", None)
+    ):
+        line += _MOTION_INFERS.format(
+            program=record.program, basis_type=record.basis_type, source=record.source
+        )
+    return line
+
+
 def _protocol_note_lines(row: FieldRow) -> list[str]:
     """The indented basis-note line(s) that follow an INFERRED bullet (else none)."""
     if row.state == INFERRED_DEFAULT:
@@ -681,6 +724,7 @@ def to_protocol(
     source: str | None = None,
     *,
     methods_slice: MethodsSlice | None = None,
+    motion_inference: Any | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -760,7 +804,10 @@ def to_protocol(
         lines.append(f"### {n}. {step.kind}   (COBIDAS: {cobidas_row})")
         for r in (row for row in rows if row.group == step.kind):
             param = r.path.split(".", 1)[1] if "." in r.path else r.path
-            lines.append(f"- {_protocol_main(r, param, equals_for_extracted=True)}")
+            if r.path == "motion_correction.method":
+                lines.append(f"- {_motion_method_line(r, param, motion_inference)}")
+            else:
+                lines.append(f"- {_protocol_main(r, param, equals_for_extracted=True)}")
             lines.extend(f"    {note}" for note in _protocol_note_lines(r))
         lines.append("")
 
@@ -780,6 +827,7 @@ def to_report(
     source: str | None = None,
     *,
     methods_slice: MethodsSlice | None = None,
+    motion_inference: Any | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -788,7 +836,9 @@ def to_report(
     partial views (:func:`to_field_table`, :func:`to_field_bullets`) walk ``flatten()``
     rows only and silently omit such rows; they are not reports.
     """
-    return to_protocol(preprocessing, source, methods_slice=methods_slice)
+    return to_protocol(
+        preprocessing, source, methods_slice=methods_slice, motion_inference=motion_inference
+    )
 
 
 #: Surfaces a caller may present as "the report". The guard test parametrizes over this
