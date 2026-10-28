@@ -37,7 +37,14 @@ from __future__ import annotations
 
 import re
 
-from extractor_mvp.span_resolver import normalize_with_offset_map
+from extractor_mvp.coverage_fields import (
+    COVERAGE_BOOL_FIELDS,
+    COVERAGE_LIST_FIELDS,
+    COVERAGE_NUMERIC_FIELDS,
+    COVERAGE_SUPPORT_TABLES,
+    COVERAGE_TEXT_FIELDS,
+)
+from extractor_mvp.span_resolver import _first_use_variants, normalize_with_offset_map
 from extractor_mvp.synonym_resolver import (
     INTENSITY_CONVENTION_SYNONYMS,
     SURFACE_REGISTRATION_SYNONYMS,
@@ -218,4 +225,72 @@ def step_value_supported(dotted: str, value: object, quote: str) -> bool | None:
         if verbatim is None:
             return False
         return literal_value_supported(dotted, str(verbatim), resolved, str(resolution), quote)
+    return None
+
+
+# ---------------------------------------------------------------------------
+# The coverage calls' fields (DESIGN_coverage_expansion.md B3; the author's ruling R3, 2026-10-28):
+# the value-support check BY FIELD TYPE -- alias table for a term, every item for a list of terms,
+# digit-exact for a number, the motion matcher for free text, no token check for a boolean.
+# ---------------------------------------------------------------------------
+
+
+def _term_supported(dotted: str, item: object, quote: str) -> bool:
+    table, underspecified = COVERAGE_SUPPORT_TABLES[dotted]
+    verbatim = getattr(item, "verbatim", None)
+    if verbatim is None:
+        return False
+    resolved = getattr(item, "resolved", None)
+    resolution = str(getattr(item, "resolution", "unrecognized"))
+    if resolved is not None and resolved in table:
+        candidates = [str(resolved), *table[resolved]]
+    elif resolved is not None:
+        return True
+    elif resolution == "underspecified":
+        return any(phrase_in_quote(c, quote, family_term=True) for c in underspecified or [])
+    else:
+        candidates = [str(verbatim)]
+    return any(phrase_in_quote(c, quote) for c in candidates)
+
+
+def free_text_supported(value: str, quote: str) -> bool:
+    """The motion matcher (motion_guard.quote_supports_value_inflected), restated here so the
+    coverage check does not import the motion module: the value's tokens occur in the quote as one
+    contiguous run, word form tolerated for alphabetic tokens, digits exact; a ``Name (ACRONYM)``
+    first-use value is accepted through any of its variants."""
+    q = tokens(quote)
+    if not q:
+        return False
+    for variant in _first_use_variants(value):
+        v = tokens(variant)
+        if not v or len(v) > len(q):
+            continue
+        if any(
+            all(token_equivalent(v[j], q[i + j]) for j in range(len(v)))
+            for i in range(len(q) - len(v) + 1)
+        ):
+            return True
+    return False
+
+
+def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | None:
+    """The check ``_process_field`` applies to an EXTRACTED coverage-call field.
+
+    ``None`` for a boolean (nothing to find) or a field this module does not know; ``True`` when
+    supported; ``False`` when the value must be demoted to :data:`VALUE_UNSUPPORTED`.
+    """
+    if dotted in COVERAGE_BOOL_FIELDS:
+        return None
+    if dotted in COVERAGE_NUMERIC_FIELDS:
+        try:
+            return number_in_quote(float(value), quote)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return False
+    if dotted in COVERAGE_TEXT_FIELDS:
+        return free_text_supported(str(value), quote) if value is not None else False
+    if dotted in COVERAGE_LIST_FIELDS:
+        items = list(value) if isinstance(value, (list, tuple)) else []
+        return bool(items) and all(_term_supported(dotted, it, quote) for it in items)
+    if dotted in COVERAGE_SUPPORT_TABLES:
+        return _term_supported(dotted, value, quote)
     return None

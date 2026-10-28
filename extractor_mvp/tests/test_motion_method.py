@@ -93,7 +93,14 @@ def test_exactly_one_motion_call_per_paper_on_the_single_acquisition_path() -> N
         counter=counter,
     )
     extract_preprocessing(_paper(), "m", client=client)
-    assert counter == {"PreprocessingExtraction": 1, "MotionMethodExtraction": 1}, counter
+    # 2026-10-28: the two coverage calls join the path (DESIGN_coverage_expansion.md B8); still
+    # exactly ONE motion call, which is what this test is about.
+    assert counter == {
+        "PreprocessingExtraction": 1,
+        "MotionMethodExtraction": 1,
+        "TemporalVolumeExtraction": 1,
+        "SpatialExtraction": 1,
+    }, counter
 
 
 def test_both_calls_are_made_with_the_same_sampling_settings() -> None:
@@ -124,8 +131,12 @@ def test_both_calls_are_made_with_the_same_sampling_settings() -> None:
             calls=calls,
         ),
     )
+    # 2026-10-28: the two coverage calls sit between the motion call and the shared one; every
+    # call is made the same way (the coverage test asserts the same over the four).
     assert [c["response_model"] for c in calls] == [
         "MotionMethodExtraction",
+        "TemporalVolumeExtraction",
+        "SpatialExtraction",
         "PreprocessingExtraction",
     ], calls
     for c in calls:

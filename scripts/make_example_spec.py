@@ -48,15 +48,20 @@ from fmri_repro.spec.core import (
 )
 from fmri_repro.spec.preprocessing import (
     Despike,
+    DespikeMethod,
+    Detrend,
     MotionCorrection,
     MotionCorrectionMethod,
+    MotionExpansion,
     NonsteadystateRemoval,
     NuisanceRegression,
     PipelineRef,
     Preprocessing,
+    SmoothingSpace,
     SpatialSmoothing,
     SpecifiedTerm,
     TemporalFiltering,
+    TissueRegressor,
 )
 from fmri_repro.spec.provenance import (
     Deferral,
@@ -691,10 +696,14 @@ def _hnu_preprocessing() -> Preprocessing:
                 ),
             ),
             Despike(
-                method=ProvenancedField[str](
+                method=ProvenancedField[SpecifiedTerm[DespikeMethod]](
                     field_id="method",
-                    extraction=Extracted[str](
-                        value="afni_3dDespike",
+                    extraction=Extracted[SpecifiedTerm[DespikeMethod]](
+                        value=SpecifiedTerm(
+                            verbatim="afni_3dDespike",
+                            resolved="afni_3dDespike",
+                            resolution="resolved",
+                        ),
                         spans=[_span("AFNI 3dDespike", 1140)],
                         confidence=0.9,
                     ),
@@ -725,19 +734,30 @@ def _hnu_preprocessing() -> Preprocessing:
                 slice_to_volume=_missing("slice_to_volume", bool),
             ),
             NuisanceRegression(
-                motion_expansion=ProvenancedField[str](
+                motion_expansion=ProvenancedField[SpecifiedTerm[MotionExpansion]](
                     field_id="motion_expansion",
-                    extraction=Extracted[str](
-                        value="friston24",
+                    extraction=Extracted[SpecifiedTerm[MotionExpansion]](
+                        value=SpecifiedTerm(
+                            verbatim="friston24", resolved="friston24", resolution="resolved"
+                        ),
                         spans=[_span("24 motion regressors (Friston)", 1300)],
                         confidence=0.92,
                     ),
                     inference=NotApplicable(),
                 ),
-                tissue_regressors=ProvenancedField[list[str]](
+                tissue_regressors=ProvenancedField[list[SpecifiedTerm[TissueRegressor]]](
                     field_id="tissue_regressors",
-                    extraction=Extracted[list[str]](
-                        value=["white_matter", "ventricles"],
+                    extraction=Extracted[list[SpecifiedTerm[TissueRegressor]]](
+                        value=[
+                            SpecifiedTerm(
+                                verbatim="white_matter",
+                                resolved="white_matter",
+                                resolution="resolved",
+                            ),
+                            SpecifiedTerm(
+                                verbatim="ventricles", resolved="ventricles", resolution="resolved"
+                            ),
+                        ],
                         spans=[_span("WM + CSF regression", 1340)],
                         confidence=0.9,
                     ),
@@ -745,10 +765,12 @@ def _hnu_preprocessing() -> Preprocessing:
                 ),
                 physio_regressors=_missing("physio_regressors", str),
                 physio_n_regressors=_missing("physio_n_regressors", int),
-                detrend=ProvenancedField[str](
+                detrend=ProvenancedField[SpecifiedTerm[Detrend]](
                     field_id="detrend",
-                    extraction=Extracted[str](
-                        value="linear",
+                    extraction=Extracted[SpecifiedTerm[Detrend]](
+                        value=SpecifiedTerm(
+                            verbatim="linear", resolved="linear", resolution="resolved"
+                        ),
                         spans=[_span("linear detrend", 1380)],
                         confidence=0.9,
                     ),
@@ -872,10 +894,12 @@ def _msc_preprocessing() -> Preprocessing:
                     ),
                     inference=NotApplicable(),
                 ),
-                space=ProvenancedField[str](
+                space=ProvenancedField[SpecifiedTerm[SmoothingSpace]](
                     field_id="space",
-                    extraction=Extracted[str](
-                        value="mni_volume",
+                    extraction=Extracted[SpecifiedTerm[SmoothingSpace]](
+                        value=SpecifiedTerm(
+                            verbatim="mni_volume", resolved="mni_volume", resolution="resolved"
+                        ),
                         spans=[_span("smoothed in MNI volume", 1570)],
                         confidence=0.9,
                     ),

@@ -22,10 +22,13 @@ from extractor_mvp.parsed_paper import ParsedPaper
 def _iter_provenanced_fields(preprocessing: Any) -> list[tuple[str, Any]]:
     out: list[tuple[str, Any]] = []
     for step in preprocessing.steps:
+        structural = getattr(type(step), "STRUCTURAL_FIELDS", frozenset({"kind"}))
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in structural:
+                continue  # ``kind`` and the structural pointers (distortion's intended_fieldmap)
             pf = getattr(step, fname)
+            if pf is None:
+                continue  # schema 0.5.2: an optional field absent from an older document
             if hasattr(pf, "extraction"):
                 out.append((f"{step.kind}.{pf.field_id}", pf))
     return out

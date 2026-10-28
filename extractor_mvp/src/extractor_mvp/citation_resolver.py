@@ -51,10 +51,13 @@ ExtractorCallable = Callable[[ParsedPaper], tuple[Preprocessing, list, list]]
 def _iter_fields(preprocessing: Preprocessing) -> Iterator[tuple[str, Any]]:
     """Yield (dotted_path, ProvenancedField) for every real field (skips ``kind``)."""
     for step in preprocessing.steps:
+        structural = getattr(type(step), "STRUCTURAL_FIELDS", frozenset({"kind"}))
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in structural:
+                continue  # ``kind`` and the structural pointers (distortion's intended_fieldmap)
             pf = getattr(step, fname)
+            if pf is None:
+                continue  # schema 0.5.2: an optional field absent from an older document
             yield f"{step.kind}.{pf.field_id}", pf
 
 

@@ -31,6 +31,12 @@ if TYPE_CHECKING:
 
 from fmri_repro.spec.preprocessing import (
     BrainExtraction,
+    CompCor,
+    Coregistration,
+    Despike,
+    DistortionCorrection,
+    ICADenoise,
+    IntensityCorrection,
     IntensityNormalization,
     IntensityNormalizationConvention,
     MotionCorrection,
@@ -38,11 +44,15 @@ from fmri_repro.spec.preprocessing import (
     MotionInterpolation,
     MotionReferenceScan,
     MotionSimilarityMetric,
+    NonsteadystateRemoval,
     NuisanceRegression,
     PipelineRef,
     Preprocessing,
+    Scrub,
     Segmentation,
+    SliceTimeCorrection,
     SpatialNormalization,
+    SpatialSmoothing,
     SpecifiedTerm,
     SurfaceProjection,
     SurfaceRegistration,
@@ -63,6 +73,7 @@ from fmri_repro.spec.provenance import (
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field, model_validator
 
+from extractor_mvp.coverage_fields import SPECS_BY_KIND
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.motion_guard import (
     MOTION_VALUE_ROUTED_FALLBACK,
@@ -70,7 +81,7 @@ from extractor_mvp.motion_guard import (
     motion_post_check,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.quote_support import step_value_supported
+from extractor_mvp.quote_support import coverage_value_supported, step_value_supported
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
 
@@ -493,8 +504,16 @@ def _process_field(
     text: str,
     value_context: float | None = None,
     use_synonym_table: bool = True,
+    value_kind: str | None = None,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None = None,
 ) -> tuple[ProvenancedField, ExtractionDiagnostic | None, DeferralRecord | None]:
     """Turn one LLM FieldExtractionResult into a ProvenancedField.
+
+    ``value_kind`` (2026-10-28, the coverage calls -- DESIGN_coverage_expansion.md B3): when given,
+    one of ``term`` / ``term_list`` / ``number`` / ``int`` / ``bool`` / ``text`` picks the coercion
+    and the quote-support check (``quote_support.coverage_value_supported``), and ``synonyms`` is
+    the field's own alias table keyed by its DOTTED id, never the bare-id map. ``None`` keeps the
+    seven shared fields' path exactly as it was.
 
     Returns ``(provenanced_field, optional diagnostic, optional deferral record)``.
     ``field_id`` is the bare step attribute name (a step invariant); ``dotted`` is
@@ -514,7 +533,44 @@ def _process_field(
     # guard with a raise (not assert) so -O keeps it and value narrows to str.
     if fe.value is None or fe.verbatim_quote is None:
         raise ValueError("extracted FieldExtractionResult must set value and verbatim_quote")
-    if literal_type is not None:
+    value: Any
+    if value_kind is not None:
+        # The coverage calls' coercions, one literal reason per failure so test_render.py's reason
+        # scan reads them here (a local bound to a function return is refused there).
+        if value_kind == "bool":
+            parsed = _parse_yes_no(fe.value)
+            if parsed is None:
+                return (
+                    _missing_pf(field_id, t, "value_not_boolean"),
+                    ExtractionDiagnostic(dotted, "value_not_boolean", fe.value, fe.verbatim_quote),
+                    None,
+                )
+            value = parsed
+        elif value_kind in ("number", "int"):
+            number = _parse_number(fe.value, integer=value_kind == "int")
+            if number is None:
+                return (
+                    _missing_pf(field_id, t, "value_not_numeric"),
+                    ExtractionDiagnostic(dotted, "value_not_numeric", fe.value, fe.verbatim_quote),
+                    None,
+                )
+            value = number
+        elif value_kind == "term":
+            value = _resolve_term(str(fe.value), literal_type, synonyms)
+        elif value_kind == "term_list":
+            items = _split_terms(str(fe.value))
+            if not items:
+                return (
+                    _missing_pf(field_id, t, "value_not_in_literal"),
+                    ExtractionDiagnostic(
+                        dotted, "value_not_in_literal", fe.value, fe.verbatim_quote
+                    ),
+                    None,
+                )
+            value = [_resolve_term(item, literal_type, synonyms) for item in items]
+        else:  # "text": the paper's words, kept whole
+            value = str(fe.value).strip()
+    elif literal_type is not None:
         # 0.5.0 retype: recording NEVER depends on resolution succeeding. The paper's verbatim
         # term is always kept; ``resolved`` is filled only when the resolver produced a member,
         # and ``res_status`` records the resolver's verdict. A term the resolver cannot map is now
@@ -554,7 +610,7 @@ def _process_field(
             resolved, res_status = fe.value, "resolved"  # no synonym table; exact member only
         else:
             resolved, res_status = None, "unrecognized"
-        value: Any = SpecifiedTerm(verbatim=verbatim, resolved=resolved, resolution=res_status)
+        value = SpecifiedTerm(verbatim=verbatim, resolved=resolved, resolution=res_status)
     else:
         try:
             value = float(fe.value)
@@ -602,7 +658,11 @@ def _process_field(
     # number when the number is in it, digit-exact. The motion field is not covered here (it has its
     # own post-check in extract_motion_method) and None means "not a checked field". One literal
     # reason at one _missing_pf call, so tests/test_render.py's reason scan can see it.
-    supported = step_value_supported(dotted, value, resolution.span.text)
+    supported = (
+        coverage_value_supported(dotted, value, resolution.span.text)
+        if value_kind is not None
+        else step_value_supported(dotted, value, resolution.span.text)
+    )
     if supported is False:
         return (
             _missing_pf(field_id, t, "value_unsupported_by_quote"),
@@ -614,6 +674,77 @@ def _process_field(
         None,
         None,
     )
+
+
+_YES = frozenset({"yes", "y", "true", "performed", "applied", "1"})
+_NO = frozenset({"no", "n", "false", "not performed", "not applied", "0"})
+
+
+def _parse_yes_no(raw: object) -> bool | None:
+    """``yes`` / ``no`` (and the obvious spellings) to a bool; anything else is ``None``."""
+    if isinstance(raw, bool):
+        return raw
+    token = str(raw).strip().lower().rstrip(".")
+    if token in _YES:
+        return True
+    if token in _NO:
+        return False
+    return None
+
+
+_LEADING_NUMBER = re.compile(r"^\s*(-?\d+(?:[.,]\d+)?)")
+
+
+def _parse_number(raw: object, *, integer: bool) -> float | int | None:
+    """A number from the model's string: the whole string, else its leading number (``3rd`` ->
+    3, ``0.5 mm`` -> 0.5). An integer field refuses a fractional value."""
+    text = str(raw).strip().replace(",", "")
+    try:
+        number = float(text)
+    except ValueError:
+        m = _LEADING_NUMBER.match(text)
+        if m is None:
+            return None
+        number = float(m.group(1).replace(",", "."))
+    if integer:
+        return int(number) if number.is_integer() else None
+    return number
+
+
+_TERM_SPLIT = re.compile(r"\s*(?:,|;|/|\band\b|\+)\s*")
+
+
+def _split_terms(raw: str) -> list[str]:
+    """A comma/and-separated list value into its items, empty items dropped."""
+    return [item.strip() for item in _TERM_SPLIT.split(raw) if item.strip()]
+
+
+def _resolve_term(
+    verbatim: str,
+    literal_type: Any,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+) -> SpecifiedTerm:
+    """The 0.5.0 recording rule for a coverage-call term: the paper's words always kept; resolved
+    through the field's own table when one is given, else by exact membership."""
+    if synonyms is not None:
+        syns, under = synonyms
+        res = resolve_to_literal(verbatim, syns, under, None)
+        if res.status == "resolved":
+            return SpecifiedTerm(verbatim=verbatim, resolved=res.resolved, resolution="resolved")
+        if verbatim in typing.get_args(literal_type):
+            return SpecifiedTerm(verbatim=verbatim, resolved=verbatim, resolution="resolved")
+        if res.status == "underspecified":
+            return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="underspecified")
+        return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
+    if verbatim in typing.get_args(literal_type):
+        return SpecifiedTerm(verbatim=verbatim, resolved=verbatim, resolution="resolved")
+    return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
+
+
+def _step_not_performed_pf(field_id: str, t: Any) -> ProvenancedField:
+    """A parameter of a step the paper states was NOT performed (R2, 2026-10-28): not a gap about
+    the paper and not an extractor limitation -- its own reason, rendered "not applicable"."""
+    return _missing_pf(field_id, t, "step_not_performed")
 
 
 def _process_deferred(
@@ -907,27 +1038,36 @@ def _assemble(
     pf: dict[str, ProvenancedField],
     base_pipeline: ProvenancedField[PipelineRef] | MissingFromPaper,
     motion_method: ProvenancedField | None = None,
+    coverage: dict[str, dict[str, ProvenancedField]] | None = None,
 ) -> Preprocessing:
     """Wrap the extracted/missing fields into a schema-valid Preprocessing block.
 
     Fields the MVP does not target are present as MissingFromPaper so each step
     validates. ``base_pipeline`` comes from :func:`_build_base_pipeline`; a bare
     MissingFromPaper is wrapped here into the required ProvenancedField coupling.
+
+    ``coverage`` (2026-10-28, DESIGN_coverage_expansion.md B6, the author's ruling R6): the two
+    coverage calls' fields by kind and bare id. Every one of the thirteen kinds of the eleven
+    uncovered D.3 rows is emitted whether or not the calls were made; a field the calls did not
+    supply -- the per-acquisition path, which makes none of them, exactly as it makes no motion
+    call -- is ``not_targeted_by_mvp``, ``performed`` included, never a source-absence reason.
     """
     # field_id MUST be the bare step attribute name (step invariant).
     untargeted = "not_targeted_by_mvp"
-    # Anatomical-target steps (v0.3.0), schema-present but not targeted by the MVP. Placed
-    # before spatial normalization per pipeline order (COBIDAS §4.3) — canonically they sit
-    # just before coregistration, which _assemble does not yet build, so spatial is the
-    # earliest present consumer of their outputs.
-    brain_extraction = BrainExtraction(
-        method=_missing_pf("method", str, untargeted),
-        manual_edits=_missing_pf("manual_edits", bool, untargeted),
-    )
-    segmentation = Segmentation(
-        method=_missing_pf("method", str, untargeted),
-        tissue_classes=_missing_pf("tissue_classes", list, untargeted),
-    )
+    cov = coverage or {}
+
+    def _cov(kind: str, field_id: str, t: Any) -> ProvenancedField:
+        supplied = cov.get(kind, {}).get(field_id)
+        return supplied if supplied is not None else _missing_pf(field_id, t, untargeted)
+
+    def _build(kind: str, cls: Any, **structural: Any) -> Any:
+        return cls(
+            **{spec.field_id: _cov(kind, spec.field_id, spec.t) for spec in SPECS_BY_KIND[kind]},
+            **structural,
+        )
+
+    brain_extraction = _build("brain_extraction", BrainExtraction)
+    segmentation = _build("segmentation", Segmentation)
     spatial = SpatialNormalization(
         target_space=pf["target_space"],
         resolution_mm=pf["resolution_mm"],
@@ -943,19 +1083,11 @@ def _assemble(
         vol2surf_sampling=_missing_pf("vol2surf_sampling", str, untargeted),
         cifti=_missing_pf("cifti", str, untargeted),
     )
-    # NuisanceRegression (COBIDAS-mandatory) is emitted as a decision point even though the
-    # MVP targets none of its fields: a silently absent step tells the replicator nothing,
-    # whereas an all-unassessed step surfaces that a high-variance choice exists here. Placed
-    # after surface_projection, before intensity_normalization (catalog order 8 -> 9c).
-    nuisance_regression = NuisanceRegression(
-        motion_expansion=_missing_pf("motion_expansion", str, untargeted),
-        tissue_regressors=_missing_pf("tissue_regressors", list, untargeted),
-        physio_regressors=_missing_pf("physio_regressors", str, untargeted),
-        physio_n_regressors=_missing_pf("physio_n_regressors", int, untargeted),
-        detrend=_missing_pf("detrend", str, untargeted),
-        method=_missing_pf("method", str, untargeted),
-        filtering_integrated=_missing_pf("filtering_integrated", bool, untargeted),
-    )
+    # NuisanceRegression (COBIDAS-mandatory) was emitted as a decision point before any of its
+    # fields was targeted; since 2026-10-28 call T supplies them (R4: the structured-noise tools and
+    # the regressors land on their own row). Still placed after surface_projection, before
+    # intensity_normalization (catalog order 8 -> 9c).
+    nuisance_regression = _build("nuisance_regression", NuisanceRegression)
     intensity = IntensityNormalization(
         convention=pf["intensity_convention"],
         value=pf["intensity_value"],
@@ -998,17 +1130,32 @@ def _assemble(
         unwarping_method=_missing_pf("unwarping_method", str, untargeted),
         slice_to_volume=_missing_pf("slice_to_volume", bool, untargeted),
     )
+    # The eighteen kinds, in catalog order with the eight that were emitted before 2026-10-28 kept
+    # in their earlier relative order (DESIGN_coverage_expansion.md B6). temporal_filtering has no
+    # D.3 row and stays unemitted.
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
         steps=[
+            _build("nonsteadystate_removal", NonsteadystateRemoval),
+            _build("slice_time_correction", SliceTimeCorrection),
             brain_extraction,
             segmentation,
             motion_correction,
+            _build(
+                "distortion_correction", DistortionCorrection, intended_fieldmap=NotApplicable()
+            ),
+            _build("coregistration", Coregistration),
+            _build("intensity_correction", IntensityCorrection),
             spatial,
             surface,
+            _build("ica_denoise", ICADenoise),
+            _build("compcor", CompCor),
             nuisance_regression,
+            _build("despike", Despike),
+            _build("scrub", Scrub),
             intensity,
+            _build("spatial_smoothing", SpatialSmoothing),
             temporal_standardization,
         ],
     )
@@ -1478,6 +1625,7 @@ def _extract_from_prompt(
     client: Any | None,
     resolutions: list[ResolutionRecord] | None = None,
     motion_method: ProvenancedField | None = None,
+    coverage: dict[str, dict[str, ProvenancedField]] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Run one LLM extraction call + the shared post-processing pipeline.
 
@@ -1558,7 +1706,7 @@ def _extract_from_prompt(
     if bp_deferral is not None:
         deferrals.append(bp_deferral)
 
-    return _assemble(pf, base_pipeline, motion_method), diagnostics, deferrals
+    return _assemble(pf, base_pipeline, motion_method, coverage), diagnostics, deferrals
 
 
 def extract_preprocessing(
@@ -1585,6 +1733,13 @@ def extract_preprocessing(
     motion_method, motion_diag, motion_deferral = extract_motion_method(
         parsed_paper, model, client=client
     )
+    # The two coverage calls (2026-10-28, DESIGN_coverage_expansion.md B1/B8, the author's rulings
+    # R1 and R8): temporal/volume, then spatial, on the SAME slice, the same client, the same
+    # sampling settings. Four calls per paper on this path; none of the three extra ones on the
+    # per-acquisition path. Imported here because coverage_extractor imports this module.
+    from extractor_mvp.coverage_extractor import extract_coverage
+
+    coverage = extract_coverage(parsed_paper, model, client=client)
     prep, diagnostics, deferrals = _extract_from_prompt(
         parsed_paper,
         model,
@@ -1592,11 +1747,14 @@ def extract_preprocessing(
         client,
         resolutions,
         motion_method,
+        coverage.fields,
     )
     if motion_diag is not None:
         diagnostics.append(motion_diag)
     if motion_deferral is not None:
         deferrals.append(motion_deferral)
+    diagnostics.extend(coverage.diagnostics)
+    deferrals.extend(coverage.deferrals)
     return prep, diagnostics, deferrals
 
 
@@ -1634,10 +1792,13 @@ def _apply_resolved_citations(
     new_steps = []
     for step in preprocessing.steps:
         updates: dict[str, Any] = {}
+        structural = getattr(type(step), "STRUCTURAL_FIELDS", frozenset({"kind"}))
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in structural:
+                continue  # ``kind`` and the structural pointers (distortion's intended_fieldmap)
             pf = getattr(step, fname)
+            if pf is None:
+                continue  # schema 0.5.2: an optional field absent from an older document
             inferred = resolved.get(f"{step.kind}.{pf.field_id}")
             if inferred is not None and pf.extraction.status != "EXTRACTED":
                 updates[fname] = type(pf)(
@@ -1667,10 +1828,13 @@ _LAYER2_FIELD_IDS: frozenset[str] = frozenset(
 def _any_step_fields_left_missing(preprocessing: Preprocessing) -> bool:
     """True if any of the six targeted Layer-2 fields still have LEFT_MISSING inference."""
     for step in preprocessing.steps:
+        structural = getattr(type(step), "STRUCTURAL_FIELDS", frozenset({"kind"}))
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in structural:
+                continue  # ``kind`` and the structural pointers (distortion's intended_fieldmap)
             pf = getattr(step, fname)
+            if pf is None:
+                continue  # schema 0.5.2: an optional field absent from an older document
             if pf.field_id in _LAYER2_FIELD_IDS and pf.inference.status == "LEFT_MISSING":
                 return True
     return False

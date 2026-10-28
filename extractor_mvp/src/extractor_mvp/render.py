@@ -81,6 +81,10 @@ from extractor_mvp.cobidas import (
     DIVERGENCE_KINDS,
     RowCoverage,
     assess_coverage,
+    is_expanded,
+    mapped_rows,
+    row_state,
+    validation_tag,
 )
 from extractor_mvp.methods_finder import MethodsSlice
 
@@ -326,7 +330,9 @@ def _fmt_value(value: Any) -> str:
     if isinstance(value, SpecifiedTerm):
         return _fmt_specified_term(value)
     if isinstance(value, (list, tuple)):
-        return ", ".join(str(v) for v in value)
+        return ", ".join(
+            _fmt_specified_term(v) if isinstance(v, SpecifiedTerm) else str(v) for v in value
+        )
     return str(value)
 
 
@@ -502,6 +508,12 @@ _REASON_BUCKET: dict[str, str] = {
     # The step-field quote-support check (quote_support.py, 2026-10-26): the quote grounded; no alias
     # of the value (or the number) is in it. A statement about the extractor's evidence.
     "value_unsupported_by_quote": "not_covered",
+    # The coverage calls (2026-10-28, DESIGN_coverage_expansion.md B2/B3). A parameter of a step the
+    # paper STATES was not performed is neither a gap about the paper nor a tool limitation: its own
+    # bucket, emitted only when non-zero. A non-yes/no for a boolean is the same shape as a
+    # non-number for a number field.
+    "step_not_performed": "not_applicable",
+    "value_not_boolean": "unmappable",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -567,6 +579,9 @@ _REASON_LINE: dict[str, str] = {
         "a value was returned but the quoted sentence does not state it or a known form of it — "
         "check the source yourself"
     ),
+    # Must NOT read as a gap: the paper said the step was not done (R2, 2026-10-28).
+    "step_not_performed": "not applicable — the paper states this step was not performed",
+    "value_not_boolean": "extractor returned a non-yes/no value for this field — enter manually",
 }
 
 #: Completeness-header gap buckets: (bucket key, display label), fixed order, non-zero only.
@@ -574,6 +589,7 @@ _BUCKET_HEADER: tuple[tuple[str, str], ...] = (
     ("not_reported", "not reported in source"),
     ("unmappable", "reported but unmappable to controlled vocabulary"),
     ("not_covered", "not covered by extractor"),
+    ("not_applicable", "not applicable (step stated as not performed)"),
     ("unclassified", "unclassified"),
 )
 
@@ -892,11 +908,25 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
         if any(rc.row.row_id == "software" for rc in mand_not_reported)
         else ""
     )
+    # The expanded coverage (2026-10-28, DESIGN_coverage_expansion.md B5, the author's ruling R5):
+    # only a record that carries an expanded step (``performed`` present on some kind) gets the
+    # performed=no segment and the per-row section below, so every record written before schema
+    # 0.5.2 renders byte-identically -- the same trade the unverifiable breakdown made.
+    expanded = is_expanded(preprocessing)
+    states = {rc.row.row_id: row_state(rc, rows) for rc in coverage} if expanded else {}
     lines.append(f"Mandatory rows: {len(mandatory)}")
-    lines.append(
-        f"  Assessed by AESPA: {len(mand_assessed)}  →  "
-        f"addressed {len(mand_addressed)} · not reported {len(mand_not_reported)}{violation}"
-    )
+    if expanded:
+        n_perf_no = sum(1 for rc in mand_assessed if states[rc.row.row_id] == "performed_no")
+        lines.append(
+            f"  Assessed by AESPA: {len(mand_assessed)}  →  "
+            f"addressed {len(mand_addressed) - n_perf_no} · performed=no {n_perf_no} · "
+            f"not reported {len(mand_not_reported)}{violation}"
+        )
+    else:
+        lines.append(
+            f"  Assessed by AESPA: {len(mand_assessed)}  →  "
+            f"addressed {len(mand_addressed)} · not reported {len(mand_not_reported)}{violation}"
+        )
     # The breakdown is emitted ONLY when the second fact is present, the way _BUCKET_HEADER emits
     # non-zero segments only. A report with nothing unverifiable is byte-identical to before this
     # change, which is what the re-render identity gate checks.
@@ -945,6 +975,9 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
             "from text. The one unconditional, citable COBIDAS claim here is the Software row.)"
         )
     lines.append("")
+
+    if expanded:
+        lines.extend(_expanded_rows_section(mandatory, states, rows))
 
     def _tag(rc: RowCoverage) -> str:
         # Distinct wording from the field-level "not assessed by current extractor" callout:
@@ -1036,6 +1069,48 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
         lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+#: The row-state labels of the expanded coverage section (cobidas.ROW_STATES, in words).
+_ROW_STATE_LABEL: dict[str, str] = {
+    "reported": "reported",
+    "performed_no": "performed: no",
+    "deferred": "deferred",
+    "unverifiable": "examined; the extractor could not verify what it found",
+    "not_reported": "not reported",
+    "not_assessed": "not assessed",
+}
+
+
+def _expanded_rows_section(
+    mandatory: list[RowCoverage], states: dict[str, str], rows: list[FieldRow]
+) -> list[str]:
+    """One line per mandatory row, D.3 order (R5): the aspect, the validation tag, the row state,
+    the row's reported values (EXTRACTED and DEFERRED fields only) and the first extracted field's
+    quote, truncated as the step lines truncate theirs."""
+    out: list[str] = ["### Rows (every mandatory row; the tag says whether labels exist for it)"]
+    for rc in mandatory:
+        state = states[rc.row.row_id]
+        mapped = mapped_rows(rc, rows)
+        values: list[str] = []
+        quote: str | None = None
+        for r in mapped:
+            param = r.path.split(".", 1)[1] if "." in r.path else r.path
+            if r.state == EXTRACTED:
+                values.append(f"{param} = {_fmt_value(r.value)}")
+                if quote is None and r.span_text:
+                    quote = r.span_text
+            elif r.state == DEFERRED_TO_CITATION:
+                refs = ", ".join(r.deferral_refs or []) or "(unspecified)"
+                values.append(f"{param}: deferred to {refs}")
+        line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
+        if values:
+            line += ": " + "; ".join(values)
+        if quote:
+            line += f"  «{_truncate_quote(quote)}»"
+        out.append(line)
+    out.append("")
+    return out
 
 
 def _base_pipeline_name(preprocessing: Preprocessing) -> str | None:

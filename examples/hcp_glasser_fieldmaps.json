@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.5.1",
+  "schema_version": "0.5.2",
   "run": {
     "run_id": "00000000000000000000000000000002",
     "created_at": "2026-05-21T00:00:00Z",
@@ -2236,8 +2236,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.5.1",
-          "written_under": "0.5.1",
+          "schema_version": "0.5.2",
+          "written_under": "0.5.2",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -2429,11 +2429,17 @@
             },
             {
               "kind": "nuisance_regression",
+              "performed": null,
+              "regressor_list": null,
               "motion_expansion": {
                 "field_id": "motion_expansion",
                 "extraction": {
                   "status": "EXTRACTED",
-                  "value": "friston24",
+                  "value": {
+                    "verbatim": "friston24",
+                    "resolved": "friston24",
+                    "resolution": "resolved"
+                  },
                   "spans": [
                     {
                       "start": 1300,
@@ -2454,8 +2460,16 @@
                 "extraction": {
                   "status": "EXTRACTED",
                   "value": [
-                    "white_matter",
-                    "ventricles"
+                    {
+                      "verbatim": "white_matter",
+                      "resolved": "white_matter",
+                      "resolution": "resolved"
+                    },
+                    {
+                      "verbatim": "ventricles",
+                      "resolved": "ventricles",
+                      "resolution": "resolved"
+                    }
                   ],
                   "spans": [
                     {
@@ -2472,6 +2486,8 @@
                   "status": "NOT_APPLICABLE"
                 }
               },
+              "tissue_definition": null,
+              "tissue_signal_definition": null,
               "physio_regressors": {
                 "field_id": "physio_regressors",
                 "extraction": {
@@ -2504,7 +2520,11 @@
                 "field_id": "detrend",
                 "extraction": {
                   "status": "EXTRACTED",
-                  "value": "linear",
+                  "value": {
+                    "verbatim": "linear",
+                    "resolved": "linear",
+                    "resolution": "resolved"
+                  },
                   "spans": [
                     {
                       "start": 1380,
@@ -2693,6 +2713,8 @@
             },
             {
               "kind": "spatial_smoothing",
+              "performed": null,
+              "method": null,
               "fwhm_mm": {
                 "field_id": "fwhm_mm",
                 "extraction": {
@@ -2717,7 +2739,11 @@
                 "field_id": "space",
                 "extraction": {
                   "status": "EXTRACTED",
-                  "value": "template_surface",
+                  "value": {
+                    "verbatim": "template_surface",
+                    "resolved": "template_surface",
+                    "resolution": "resolved"
+                  },
                   "spans": [
                     {
                       "start": 1530,

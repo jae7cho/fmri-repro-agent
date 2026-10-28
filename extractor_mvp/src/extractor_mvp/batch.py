@@ -21,6 +21,7 @@ import dataclasses
 import json
 import re
 import sys
+import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -158,10 +159,13 @@ def _tally(preprocessing: Any) -> dict[str, int]:
         "n_value_not_in_literal": 0,
     }
     for step in preprocessing.steps:
+        structural = getattr(type(step), "STRUCTURAL_FIELDS", frozenset({"kind"}))
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in structural:
+                continue  # ``kind`` and the structural pointers (distortion's intended_fieldmap)
             pf = getattr(step, fname)
+            if pf is None:
+                continue  # schema 0.5.2: an optional field absent from an older document
             # Inference-arm fills (orthogonal to the extraction buckets: a resolved
             # per-field deferral is both DEFERRED extraction and INFERRED inference).
             if pf.inference.status == "INFERRED_DEFAULT":
@@ -258,6 +262,9 @@ def process_paper(
 
     resolutions: list[ResolutionRecord] = []
     motion_inference: list[Any] = []  # the motion method's inference record (2026-10-28)
+    # Wall time of ``extract`` alone -- the four model calls, assembly and deferral resolution; not
+    # the PDF parse or the render (DESIGN_coverage_expansion.md B8). Stored as ``wall_time_s``.
+    t0 = time.perf_counter()
     try:
         preprocessing, diagnostics, deferrals = extract(
             paper,
@@ -316,6 +323,8 @@ def process_paper(
     except Exception as exc:
         render_error = f"{type(exc).__name__}: {exc}"
 
+    wall_time_s = round(time.perf_counter() - t0, 3)
+
     counts = _tally(preprocessing)
     prep_dump = preprocessing.model_dump(mode="json")
     _translate_spans(prep_dump, methods.start_offset)
@@ -330,6 +339,7 @@ def process_paper(
             "suspicious": methods.suspicious,
         },
         "likely_multi_acquisition": multi,
+        "wall_time_s": wall_time_s,
         "counts": counts,
         "preprocessing": prep_dump,
         "diagnostics": [dataclasses.asdict(d) for d in diagnostics],

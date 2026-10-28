@@ -119,6 +119,11 @@ class SpecifiedTerm(BaseModel, Generic[T]):  # noqa: UP046
 
 
 NONSTEADYSTATE_REMOVAL_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "n_nonsteadystate_discarded": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -128,6 +133,21 @@ NONSTEADYSTATE_REMOVAL_FIELD_META: dict[str, FieldMeta] = {
 
 
 SLICE_TIME_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "method": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "interpolation_order": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "reference": FieldMeta(
         justification_axis="both",
         inference_applicable=True,
@@ -207,6 +227,11 @@ MOTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
 # ``intended_fieldmap`` is structural (an AcquisitionRef | NotApplicable),
 # not provenanced — excluded from this registry.
 DISTORTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "source": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -223,6 +248,16 @@ DISTORTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
 # Anatomical-target steps (v0.3.0): brain_extraction + segmentation, admitted per the
 # catalog (both COBIDAS D.3 mandatory) because functional steps consume their outputs.
 BRAIN_EXTRACTION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "parameters": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
         inference_applicable=False,
@@ -237,6 +272,11 @@ BRAIN_EXTRACTION_FIELD_META: dict[str, FieldMeta] = {
 
 
 SEGMENTATION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
         inference_applicable=False,
@@ -251,6 +291,16 @@ SEGMENTATION_FIELD_META: dict[str, FieldMeta] = {
 
 
 COREGISTRATION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "nonlinear_transform_type": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "transform": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -275,6 +325,11 @@ COREGISTRATION_FIELD_META: dict[str, FieldMeta] = {
 
 
 INTENSITY_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "target": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -359,6 +414,11 @@ SURFACE_PROJECTION_FIELD_META: dict[str, FieldMeta] = {
 
 
 ICA_DENOISE_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "method": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -383,6 +443,11 @@ ICA_DENOISE_FIELD_META: dict[str, FieldMeta] = {
 
 
 COMPCOR_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "variant": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -410,6 +475,26 @@ COMPCOR_FIELD_META: dict[str, FieldMeta] = {
 # extracted-or-missing. Motion-expansion order is high-variance and
 # prior-leaky (Extractor never infers it).
 NUISANCE_REGRESSION_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "regressor_list": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "tissue_definition": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "tissue_signal_definition": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "motion_expansion": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -449,6 +534,11 @@ NUISANCE_REGRESSION_FIELD_META: dict[str, FieldMeta] = {
 
 
 DESPIKE_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
     "method": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -463,6 +553,16 @@ DESPIKE_FIELD_META: dict[str, FieldMeta] = {
 
 
 SCRUB_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "method": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "criterion": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -559,6 +659,16 @@ INTENSITY_NORMALIZATION_FIELD_META: dict[str, FieldMeta] = {
 
 
 SPATIAL_SMOOTHING_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 2026-10-28 (R2, DESIGN_coverage_expansion.md): performed first
+        justification_axis="cobidas",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "method": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "fwhm_mm": FieldMeta(
         justification_axis="both",
         inference_applicable=False,
@@ -620,6 +730,11 @@ def _validate_step_invariants(
         if name in structural:
             continue
         pf = getattr(step, name)
+        if pf is None:
+            # 2026-10-28, schema 0.5.2: an OPTIONAL field absent from a document written under an
+            # earlier schema (DESIGN_coverage_expansion.md B9). Nothing to check; the registry still
+            # names it (bijection is on names).
+            continue
         if pf.field_id != name:
             raise ValueError(
                 f"field_id mismatch: attribute {name!r} has field_id {pf.field_id!r}, "
@@ -652,6 +767,11 @@ def _validate_step_invariants(
 # 1. NonsteadystateRemoval — COBIDAS T1 stabilization
 class NonsteadystateRemoval(BaseModel):
     kind: Literal["nonsteadystate_removal"] = "nonsteadystate_removal"
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
     n_nonsteadystate_discarded: ProvenancedField[int]
 
     cobidas_row: ClassVar[str] = "T1_stabilization"
@@ -668,13 +788,22 @@ class NonsteadystateRemoval(BaseModel):
 SliceTimingReference = Literal["first", "middle", "specific_slice", "specific_time"]
 SliceTimingRelativeToMC = Literal["before", "after"]
 SliceTimingInterpolation = Literal["linear", "spline", "sinc"]
+# 2026-10-28: D.3 asks the slice-timing software/method; the tool field this class lacked.
+SliceTimingMethod = Literal["fsl_slicetimer", "spm_slice_timing", "afni_3dtshift", "other"]
 
 
 class SliceTimeCorrection(BaseModel):
     kind: Literal["slice_time_correction"] = "slice_time_correction"
-    reference: ProvenancedField[SliceTimingReference]
-    relative_to_motion_correction: ProvenancedField[SliceTimingRelativeToMC]
-    interpolation: ProvenancedField[SliceTimingInterpolation]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[SliceTimingMethod]] | None = None
+    reference: ProvenancedField[SpecifiedTerm[SliceTimingReference]]
+    relative_to_motion_correction: ProvenancedField[SpecifiedTerm[SliceTimingRelativeToMC]]
+    interpolation: ProvenancedField[SpecifiedTerm[SliceTimingInterpolation]]
+    interpolation_order: ProvenancedField[int] | None = None
 
     cobidas_row: ClassVar[str] = "slice_time_correction"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -728,8 +857,13 @@ DistortionMethod = Literal["topup", "fugue", "gradunwarp", "sdc_fieldmapless", "
 
 class DistortionCorrection(BaseModel):
     kind: Literal["distortion_correction"] = "distortion_correction"
-    source: ProvenancedField[DistortionSource]
-    method: ProvenancedField[DistortionMethod]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    source: ProvenancedField[SpecifiedTerm[DistortionSource]]
+    method: ProvenancedField[SpecifiedTerm[DistortionMethod]]
     intended_fieldmap: AcquisitionRef | NotApplicable
 
     cobidas_row: ClassVar[str] = "distortion_correction"
@@ -752,7 +886,15 @@ BrainExtractionMethod = Literal[
 
 class BrainExtraction(BaseModel):
     kind: Literal["brain_extraction"] = "brain_extraction"
-    method: ProvenancedField[BrainExtractionMethod]  # TOOL
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[BrainExtractionMethod]]  # TOOL
+    # D.3 "Parameter choices (e.g. BET's fractional intensity threshold)": free text, the paper's
+    # words (the catalog's deferral of this item is overridden by R1).
+    parameters: ProvenancedField[str] | None = None
     manual_edits: ProvenancedField[bool]  # canonical
 
     cobidas_row: ClassVar[str] = "brain_extraction"
@@ -776,8 +918,13 @@ TissueClass = Literal["gray_matter", "white_matter", "csf"]
 
 class Segmentation(BaseModel):
     kind: Literal["segmentation"] = "segmentation"
-    method: ProvenancedField[SegmentationMethod]  # TOOL
-    tissue_classes: ProvenancedField[list[TissueClass]]  # canonical
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[SegmentationMethod]]  # TOOL
+    tissue_classes: ProvenancedField[list[SpecifiedTerm[TissueClass]]]  # canonical
 
     cobidas_row: ClassVar[str] = "segmentation"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -800,10 +947,17 @@ CoregistrationInterpolation = Literal["linear", "spline", "sinc", "other"]
 
 class Coregistration(BaseModel):
     kind: Literal["coregistration"] = "coregistration"
-    transform: ProvenancedField[CoregistrationTransform]
-    method: ProvenancedField[CoregistrationMethod]
-    cost_function: ProvenancedField[CoregistrationCostFunction]
-    interpolation: ProvenancedField[CoregistrationInterpolation]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    transform: ProvenancedField[SpecifiedTerm[CoregistrationTransform]]
+    # D.3 "if nonlinear, type of transformation": free text, the paper's words.
+    nonlinear_transform_type: ProvenancedField[str] | None = None
+    method: ProvenancedField[SpecifiedTerm[CoregistrationMethod]]
+    cost_function: ProvenancedField[SpecifiedTerm[CoregistrationCostFunction]]
+    interpolation: ProvenancedField[SpecifiedTerm[CoregistrationInterpolation]]
 
     cobidas_row: ClassVar[str] = "function_structure_intrasubject_coregistration"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -822,8 +976,13 @@ IntensityCorrectionMethod = Literal["n4", "fast_bias", "other"]
 
 class IntensityCorrection(BaseModel):
     kind: Literal["intensity_correction"] = "intensity_correction"
-    target: ProvenancedField[IntensityCorrectionTarget]
-    method: ProvenancedField[IntensityCorrectionMethod]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    target: ProvenancedField[SpecifiedTerm[IntensityCorrectionTarget]]
+    method: ProvenancedField[SpecifiedTerm[IntensityCorrectionMethod]]
 
     cobidas_row: ClassVar[str] = "intensity_correction"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -913,7 +1072,12 @@ ICADenoiseMethod = Literal["fix", "aroma"]
 
 class ICADenoise(BaseModel):
     kind: Literal["ica_denoise"] = "ica_denoise"
-    method: ProvenancedField[ICADenoiseMethod]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[ICADenoiseMethod]]
     training_set: ProvenancedField[str]
     threshold: ProvenancedField[float]
     aggressive: ProvenancedField[bool]
@@ -934,7 +1098,12 @@ CompCorVariant = Literal["a", "t"]
 
 class CompCor(BaseModel):
     kind: Literal["compcor"] = "compcor"
-    variant: ProvenancedField[CompCorVariant]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    variant: ProvenancedField[SpecifiedTerm[CompCorVariant]]
     n_components: ProvenancedField[int]
     variance_threshold: ProvenancedField[float]
     mask_source: ProvenancedField[str]
@@ -970,12 +1139,23 @@ NuisanceRegressionMethod = Literal[
 
 class NuisanceRegression(BaseModel):
     kind: Literal["nuisance_regression"] = "nuisance_regression"
-    motion_expansion: ProvenancedField[MotionExpansion]
-    tissue_regressors: ProvenancedField[list[TissueRegressor]]
-    physio_regressors: ProvenancedField[PhysioRegressor]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    # D.3 "specify regressors used": the regressors as the paper lists them, free text.
+    regressor_list: ProvenancedField[str] | None = None
+    motion_expansion: ProvenancedField[SpecifiedTerm[MotionExpansion]]
+    tissue_regressors: ProvenancedField[list[SpecifiedTerm[TissueRegressor]]]
+    # D.3 "Tissue definition (e.g., a priori seed, automatic segmentation, spatial regression)" and
+    # "Signal definition (e.g., mean of voxels, first singular vector)": free text, the paper's words.
+    tissue_definition: ProvenancedField[str] | None = None
+    tissue_signal_definition: ProvenancedField[str] | None = None
+    physio_regressors: ProvenancedField[SpecifiedTerm[PhysioRegressor]]
     physio_n_regressors: ProvenancedField[int]
-    detrend: ProvenancedField[Detrend]
-    method: ProvenancedField[NuisanceRegressionMethod]  # TOOL (v0.3.0)
+    detrend: ProvenancedField[SpecifiedTerm[Detrend]]
+    method: ProvenancedField[SpecifiedTerm[NuisanceRegressionMethod]]  # TOOL (v0.3.0)
     filtering_integrated: ProvenancedField[bool]
     """Whether temporal bandpass filtering was applied SIMULTANEOUSLY within the same
     regression model (True; one step, e.g. AFNI 3dTproject) versus as a SEPARATE sequential
@@ -1001,7 +1181,12 @@ DespikeMethod = Literal["afni_3dDespike", "other"]
 
 class Despike(BaseModel):
     kind: Literal["despike"] = "despike"
-    method: ProvenancedField[DespikeMethod]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[DespikeMethod]]
     threshold: ProvenancedField[float]
 
     cobidas_row: ClassVar[str] = "volume_censoring"
@@ -1018,14 +1203,22 @@ class Despike(BaseModel):
 ScrubCriterion = Literal["fd_power", "fd_jenkinson", "dvars", "bold_pct"]
 ScrubRemediation = Literal["censor", "interpolate"]
 ScrubInterpolationMethod = Literal["spline", "spectral", "other"]
+# 2026-10-28: D.3 asks the censoring software/method; the tool field this class lacked.
+ScrubMethod = Literal["afni_3dtproject", "fsl_motion_outliers", "custom", "other"]
 
 
 class Scrub(BaseModel):
     kind: Literal["scrub"] = "scrub"
-    criterion: ProvenancedField[ScrubCriterion]
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[ScrubMethod]] | None = None
+    criterion: ProvenancedField[SpecifiedTerm[ScrubCriterion]]
     threshold: ProvenancedField[float]
-    remediation: ProvenancedField[ScrubRemediation]
-    interpolation_method: ProvenancedField[ScrubInterpolationMethod]
+    remediation: ProvenancedField[SpecifiedTerm[ScrubRemediation]]
+    interpolation_method: ProvenancedField[SpecifiedTerm[ScrubInterpolationMethod]]
 
     cobidas_row: ClassVar[str] = "volume_censoring"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -1153,14 +1346,30 @@ class IntensityNormalization(BaseModel):
 SmoothingSpace = Literal["native_volume", "native_surface", "mni_volume", "template_surface"]
 SmoothingKernelType = Literal["gaussian", "other"]
 SmoothingApproach = Literal["fixed_kernel", "iterate_to_fwhm"]
+# 2026-10-28: D.3 asks the smoothing software/method; the tool field this class lacked.
+SmoothingMethod = Literal[
+    "fsl_susan",
+    "fsl_fslmaths",
+    "spm_smooth",
+    "afni_3dmerge",
+    "afni_3dblurtofwhm",
+    "workbench",
+    "other",
+]
 
 
 class SpatialSmoothing(BaseModel):
     kind: Literal["spatial_smoothing"] = "spatial_smoothing"
+    # 2026-10-28, schema 0.5.2 (DESIGN_coverage_expansion.md B2/B3/B9): ``performed`` first, the D.3
+    # items this class lacked, and the closed Literals retyped to SpecifiedTerm[X] (the 0.5.0/0.5.1
+    # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
+    # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
+    performed: ProvenancedField[bool] | None = None
+    method: ProvenancedField[SpecifiedTerm[SmoothingMethod]] | None = None
     fwhm_mm: ProvenancedField[float]
-    space: ProvenancedField[SmoothingSpace]
-    kernel_type: ProvenancedField[SmoothingKernelType]
-    approach: ProvenancedField[SmoothingApproach]
+    space: ProvenancedField[SpecifiedTerm[SmoothingSpace]]
+    kernel_type: ProvenancedField[SpecifiedTerm[SmoothingKernelType]]
+    approach: ProvenancedField[SpecifiedTerm[SmoothingApproach]]
 
     cobidas_row: ClassVar[str] = "spatial_smoothing"
     STRUCTURAL_FIELDS: ClassVar[frozenset[str]] = frozenset({"kind"})
@@ -1266,7 +1475,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.5.1"
+SCHEMA_VERSION = "0.5.2"
 
 
 class MigrationInfo(BaseModel):
@@ -1302,7 +1511,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.5.1"] = "0.5.1"
+    schema_version: Literal["0.5.2"] = "0.5.2"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

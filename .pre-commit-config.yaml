@@ -7,6 +7,11 @@ repos:
       - id: check-yaml
       - id: check-toml
       - id: check-added-large-files
+        # 2026-10-28: the exported study_spec-0.5.2.schema.json is 523 KB (0.5.1 was under the
+        # 500 KB default; the thirteen kinds' new optional fields and the SpecifiedTerm retype
+        # grew it). The exported schema is a committed artifact (one per version), so the limit
+        # is raised to 1 MB rather than the artifact dropped.
+        args: [--maxkb=1024]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.13

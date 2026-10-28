@@ -98,6 +98,8 @@ def stub_client(
     motion: object | None = None,
     counter: dict | None = None,
     calls: list | None = None,
+    temporal: object | None = None,
+    spatial: object | None = None,
 ):
     """A fake client that serves BOTH calls by dispatching on ``response_model``.
 
@@ -118,9 +120,14 @@ def stub_client(
     """
     from types import SimpleNamespace
 
+    from extractor_mvp.coverage_extractor import SpatialExtraction, TemporalVolumeExtraction
     from extractor_mvp.extractor import MotionMethodExtraction
 
     motion_payload = motion if motion is not None else motion_missing()
+    # The two coverage calls (2026-10-28): all-missing by default, so a test that cares only about
+    # the shared or the motion call keeps its shape; a coverage test passes its own payloads.
+    temporal_payload = temporal if temporal is not None else TemporalVolumeExtraction()
+    spatial_payload = spatial if spatial is not None else SpatialExtraction()
 
     def create(*, response_model=None, **kwargs):
         name = getattr(response_model, "__name__", str(response_model))
@@ -139,6 +146,10 @@ def stub_client(
             )
         if response_model is MotionMethodExtraction:
             return motion_payload
+        if response_model is TemporalVolumeExtraction:
+            return temporal_payload
+        if response_model is SpatialExtraction:
+            return spatial_payload
         return payload
 
     return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))

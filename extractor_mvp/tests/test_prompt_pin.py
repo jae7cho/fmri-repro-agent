@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import re
 
+from extractor_mvp.coverage_extractor import SPATIAL_PROMPT, TEMPORAL_VOLUME_PROMPT
 from extractor_mvp.extractor import (
     EXTRACTION_PROMPT,
     MOTION_METHOD_PROMPT,
@@ -155,6 +156,13 @@ _PINNED = {
     #: b0093774... The chain: b0093774... -> 8df070da... (v6) -> d353fb47... (v7) -> b0093774...
     #: The superseded values stay on their runs' records. NO FURTHER ITERATION before the corpus run.
     "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
+    #: The two coverage calls, pinned 2026-10-28 at their first build (DESIGN_coverage_expansion.md,
+    #: the author's ruling R8): call T (temporal/volume) and call S (spatial). New constants in a new
+    #: module, so the three hashes above do not move -- that is what R8 asks this test to show. The
+    #: first run under these hashes is the vintage ``coverage_v1``; a change here is a new vintage,
+    #: with a dated note, never an edit to make a test pass.
+    "TEMPORAL_VOLUME_PROMPT": "9e52382403967e42ed37cb7f9f2d7a3ac324509d8d2bf6affdc68f11a3837a64",
+    "SPATIAL_PROMPT": "17742cbb8f49cfcbf95ccdcce73a715b8fd669ee7a9285f7d6363b438cb23ffa",
 }
 
 _VINTAGE_NOTE = (
@@ -173,6 +181,8 @@ def test_both_model_facing_prompts_are_hash_pinned() -> None:
         ("EXTRACTION_PROMPT", EXTRACTION_PROMPT),
         ("PER_ACQUISITION_EXTRACTION_PROMPT", PER_ACQUISITION_EXTRACTION_PROMPT),
         ("MOTION_METHOD_PROMPT", MOTION_METHOD_PROMPT),
+        ("TEMPORAL_VOLUME_PROMPT", TEMPORAL_VOLUME_PROMPT),
+        ("SPATIAL_PROMPT", SPATIAL_PROMPT),
     ):
         got = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         assert got == _PINNED[name], f"{name} changed: {got} != {_PINNED[name]}{_VINTAGE_NOTE}"
@@ -251,3 +261,19 @@ def test_the_decision_rule_section_is_where_the_taxonomy_lives() -> None:
     assert "ReHo" in section
     assert "ICA/PCA components" in section
     assert "statistical map" in section
+
+
+def test_the_three_pre_existing_hashes_did_not_move_with_the_coverage_calls() -> None:
+    """R8 (2026-10-28), as a literal: the values the three constants were pinned at BEFORE the
+    coverage build, so a coverage change that touched a shared constant fails here by name, not
+    only through the table above."""
+    assert _PINNED["EXTRACTION_PROMPT"] == (
+        "31a050b291161c31d5b535b2411234df12b484039a436b7a85df6b4081b77535"
+    )
+    assert _PINNED["PER_ACQUISITION_EXTRACTION_PROMPT"] == (
+        "04ba3cb76b55342cee2ed2fd8b62fb515226fdb21511c6803f380d51913c4648"
+    )
+    assert _PINNED["MOTION_METHOD_PROMPT"] == (
+        "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
+    )
+    assert len(_PINNED) == 5

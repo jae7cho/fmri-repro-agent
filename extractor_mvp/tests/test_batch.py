@@ -42,7 +42,9 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     # stub answers it status="missing" -> not_stated_in_text, which is correct for FULL_TEXT (it
     # says nothing about realignment). The other nine motion fields are untargeted and are NOT
     # counted here — this column counts source absences, not coverage gaps.
-    assert r.n_missing_not_stated == 6
+    # 6 -> 69, 2026-10-28: the stub answers the two coverage calls all-missing as well, so their
+    # 38 + 25 = 63 fields are not_stated_in_text beside the six (DESIGN_coverage_expansion.md B1).
+    assert r.n_missing_not_stated == 69
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 

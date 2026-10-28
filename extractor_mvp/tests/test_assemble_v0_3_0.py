@@ -17,30 +17,35 @@ if TYPE_CHECKING:
 def test_assemble_includes_anatomical_steps_before_spatial(assembled: Preprocessing):
     prep = assembled
     kinds = [s.kind for s in prep.steps]
-    # R7a, 2026-10-19: motion_correction is emitted between segmentation and spatial_normalization
-    # (ruling C turned the row on). What this pins is the ORDER, which is the spec's own step order.
-    assert kinds[:4] == [
-        "brain_extraction",
-        "segmentation",
-        "motion_correction",
-        "spatial_normalization",
-    ]
+    # 2026-10-28 (DESIGN_coverage_expansion.md B6): the anatomical pair still precedes motion and
+    # spatial normalization; the T1 and slice-timing kinds now come first, in catalog order.
+    assert kinds.index("brain_extraction") < kinds.index("segmentation")
+    assert kinds.index("segmentation") < kinds.index("motion_correction")
+    assert kinds.index("motion_correction") < kinds.index("spatial_normalization")
 
 
 def test_assemble_step_list_unchanged(assembled: Preprocessing):
-    # _assemble emits exactly these kinds in this order. If this changes, the coverage
-    # denominator reasoning is affected.
-    #
-    # 7 -> 8, 2026-10-19: motion_correction joins, because ruling C turns the motion row on. This
-    # is the first change to this list since the COBIDAS coverage work, which was emitter-side only.
+    # Eighteen kinds since 2026-10-28 (the author's ruling R6: every kind of the eleven uncovered
+    # D.3 rows is emitted, fields carrying states); the eight emitted before keep their relative
+    # order. temporal_filtering has no D.3 row and stays unemitted.
     assert [s.kind for s in assembled.steps] == [
+        "nonsteadystate_removal",
+        "slice_time_correction",
         "brain_extraction",
         "segmentation",
         "motion_correction",
+        "distortion_correction",
+        "coregistration",
+        "intensity_correction",
         "spatial_normalization",
         "surface_projection",
+        "ica_denoise",
+        "compcor",
         "nuisance_regression",
+        "despike",
+        "scrub",
         "intensity_normalization",
+        "spatial_smoothing",
         "temporal_standardization",
     ]
 
@@ -53,7 +58,7 @@ def test_assemble_new_steps_fields_are_untargeted(assembled: Preprocessing):
     for kind in ("brain_extraction", "segmentation", "nuisance_regression"):
         step = by_kind[kind]
         for name in type(step).model_fields:
-            if name == "kind":
+            if name in type(step).STRUCTURAL_FIELDS:
                 continue
             field = getattr(step, name)
             assert field.extraction.status == "MISSING_FROM_PAPER"
@@ -80,4 +85,13 @@ def test_protocol_renders_new_steps_generically(assembled: Preprocessing):
     # A REAL single-acquisition run gives 28, not 29: ``method`` comes from its own call and so
     # carries a real reason instead of not_targeted_by_mvp. The two numbers differing is the point —
     # this fixture asserts the untargeted skeleton, not a run.
-    assert out.count("not examined by the extractor") == 29
+    #
+    # 29 -> 81, 2026-10-28 (DESIGN_coverage_expansion.md B6). The fixture makes no coverage call
+    # either, so every field of the thirteen kinds is untargeted: the ten newly emitted kinds carry
+    # 2 + 6 + 3 + 6 + 3 + 5 + 5 + 3 + 6 + 6 = 45 fields (nonsteadystate_removal, slice_time_correction,
+    # distortion_correction, coregistration, intensity_correction, ica_denoise, compcor, despike,
+    # scrub, spatial_smoothing), and the three already-emitted kinds gained 2 + 1 + 4 = 7
+    # (brain_extraction: performed, parameters; segmentation: performed; nuisance_regression:
+    # performed, regressor_list, tissue_definition, tissue_signal_definition). 29 + 45 + 7 = 81.
+    # A real run gives fewer: the coverage calls supply real reasons for those 52 fields.
+    assert out.count("not examined by the extractor") == 81

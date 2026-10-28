@@ -330,3 +330,71 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
             )
         )
     return out
+
+
+# ---------------------------------------------------------------------------
+# The expanded coverage (DESIGN_coverage_expansion.md B5; the author's ruling R5, 2026-10-28):
+# a validation tag per row and a five-way row state, read only from FieldRows and RowCoverage.
+# ---------------------------------------------------------------------------
+
+#: The rows with a ground-truth protocol and a workbook behind them; every other row is unvalidated.
+VALIDATED_ROWS: frozenset[str] = frozenset(
+    {"software", "intersubject_registration", "motion_correction"}
+)
+
+ROW_STATES: tuple[str, ...] = (
+    "reported",
+    "performed_no",
+    "deferred",
+    "unverifiable",
+    "not_reported",
+    "not_assessed",
+)
+
+
+def validation_tag(row_id: str) -> str:
+    return "validated against labels" if row_id in VALIDATED_ROWS else "unvalidated"
+
+
+def is_expanded(preprocessing: Any) -> bool:
+    """True iff the record carries an expanded step: any step whose ``performed`` is present. A
+    document written before schema 0.5.2 has none, and renders exactly as before."""
+    return any(getattr(step, "performed", None) is not None for step in preprocessing.steps)
+
+
+def mapped_rows(rc: RowCoverage, rows: list[Any]) -> list[Any]:  # list[render.FieldRow]
+    """The flattened rows a D.3 row is read from: the base_pipeline rows for Software, else the rows
+    of the row's spec kinds."""
+    if rc.row.row_id == "software":
+        return [r for r in rows if r.group == "base_pipeline"]
+    return [r for r in rows if r.group in rc.row.spec_kinds]
+
+
+def row_state(rc: RowCoverage, rows: list[Any]) -> str:
+    """One of :data:`ROW_STATES`, exclusive, in this order: ``performed_no`` (every EXTRACTED
+    ``performed`` on the row is False and nothing else on it reports), ``reported`` (addressed with
+    an EXTRACTED field), ``deferred`` (addressed by deferral only), ``unverifiable``,
+    ``not_reported`` (covered, nothing reported), ``not_assessed``."""
+    mapped = mapped_rows(rc, rows)
+    if rc.row.row_id != "software":
+        negatives = [
+            r
+            for r in mapped
+            if r.path.endswith(".performed")
+            and r.extraction_status == "EXTRACTED"
+            and r.value is False
+        ]
+        others = [
+            r for r in mapped if r not in negatives and r.extraction_status in _ADDRESSING_STATUSES
+        ]
+        if negatives and not others:
+            return "performed_no"
+    if rc.addressed:
+        if any(r.extraction_status == "EXTRACTED" for r in mapped):
+            return "reported"
+        return "deferred"
+    if rc.unverifiable:
+        return "unverifiable"
+    if rc.covered_by_extractor:
+        return "not_reported"
+    return "not_assessed"

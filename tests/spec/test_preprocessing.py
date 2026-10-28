@@ -139,6 +139,22 @@ def _pf_extracted_term(field_id: str, member: Any, member_type: Any) -> Provenan
     )
 
 
+def _pf_extracted_term_list(
+    field_id: str, members: list[Any], member_type: Any
+) -> ProvenancedField:
+    """EXTRACTED list-of-terms field (0.5.2: tissue_classes, tissue_regressors)."""
+    return _pf_extracted(
+        field_id,
+        [SpecifiedTerm(verbatim=m, resolved=m, resolution="resolved") for m in members],
+        list[SpecifiedTerm[member_type]],
+    )
+
+
+def _term(member: str) -> SpecifiedTerm:
+    """An INFERRED term: resolved member, verbatim None (0.5.0: nothing was stated)."""
+    return SpecifiedTerm(verbatim=None, resolved=member, resolution="resolved")
+
+
 def _pf_inferred(
     field_id: str,
     value: Any,
@@ -245,7 +261,7 @@ def _surface_projection(target_surface: str = "fsLR_32k") -> SurfaceProjection:
 
 def _ica_denoise(method: str = "fix") -> ICADenoise:
     return ICADenoise(
-        method=_pf_extracted("method", method, str),
+        method=_pf_extracted_term("method", method, pp_mod.ICADenoiseMethod),
         training_set=_pf_missing("training_set", str),
         threshold=_pf_missing("threshold", float),
         aggressive=_pf_missing("aggressive", bool),
@@ -263,15 +279,17 @@ def _compcor() -> CompCor:
 
 def _nuisance_regression(motion_expansion: str = "friston24") -> NuisanceRegression:
     return NuisanceRegression(
-        motion_expansion=_pf_extracted("motion_expansion", motion_expansion, str),
-        tissue_regressors=_pf_extracted(
+        motion_expansion=_pf_extracted_term(
+            "motion_expansion", motion_expansion, pp_mod.MotionExpansion
+        ),
+        tissue_regressors=_pf_extracted_term_list(
             "tissue_regressors",
             ["white_matter", "ventricles"],
-            list[str],
+            pp_mod.TissueRegressor,
         ),
         physio_regressors=_pf_missing("physio_regressors", str),
         physio_n_regressors=_pf_missing("physio_n_regressors", int),
-        detrend=_pf_extracted("detrend", "linear", str),
+        detrend=_pf_extracted_term("detrend", "linear", pp_mod.Detrend),
         method=_pf_missing("method", str),
         filtering_integrated=_pf_missing("filtering_integrated", bool),
     )
@@ -279,16 +297,16 @@ def _nuisance_regression(motion_expansion: str = "friston24") -> NuisanceRegress
 
 def _despike() -> Despike:
     return Despike(
-        method=_pf_extracted("method", "afni_3dDespike", str),
+        method=_pf_extracted_term("method", "afni_3dDespike", pp_mod.DespikeMethod),
         threshold=_pf_missing("threshold", float),
     )
 
 
 def _scrub() -> Scrub:
     return Scrub(
-        criterion=_pf_extracted("criterion", "fd_power", str),
+        criterion=_pf_extracted_term("criterion", "fd_power", pp_mod.ScrubCriterion),
         threshold=_pf_extracted("threshold", 0.2, float),
-        remediation=_pf_extracted("remediation", "censor", str),
+        remediation=_pf_extracted_term("remediation", "censor", pp_mod.ScrubRemediation),
         interpolation_method=_pf_missing("interpolation_method", str),
     )
 
@@ -344,7 +362,7 @@ def _intensity_normalization() -> IntensityNormalization:
 def _spatial_smoothing(fwhm: float = 6.0, space: str = "mni_volume") -> SpatialSmoothing:
     return SpatialSmoothing(
         fwhm_mm=_pf_extracted("fwhm_mm", fwhm, float),
-        space=_pf_extracted("space", space, str),
+        space=_pf_extracted_term("space", space, pp_mod.SmoothingSpace),
         kernel_type=_pf_missing("kernel_type", str),
         approach=_pf_missing("approach", str),
     )
@@ -721,14 +739,21 @@ _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
     # MotionCorrection.method was the first case here until 2026-10-28: its FieldMeta flipped to
     # inference_applicable=True by the author's ruling F5 (docs/design/DESIGN_motion_inference_arm.md;
     # dated catalog entry), so an InferredDefault on it is now accepted -- see the flagged case below.
-    (DistortionCorrection, "method", "topup", str),
-    (Coregistration, "method", "flirt_bbr", str),
-    (ICADenoise, "method", "fix", str),
-    (NuisanceRegression, "motion_expansion", "friston24", str),
-    (Despike, "method", "afni_3dDespike", str),
-    (Scrub, "criterion", "fd_power", str),
+    # 2026-10-28, schema 0.5.2: these fields are SpecifiedTerm-typed now (DESIGN_coverage_expansion.md
+    # B9), so the inferred value is a resolved term, verbatim None (nothing was stated).
+    (DistortionCorrection, "method", _term("topup"), SpecifiedTerm[pp_mod.DistortionMethod]),
+    (Coregistration, "method", _term("flirt_bbr"), SpecifiedTerm[pp_mod.CoregistrationMethod]),
+    (ICADenoise, "method", _term("fix"), SpecifiedTerm[pp_mod.ICADenoiseMethod]),
+    (
+        NuisanceRegression,
+        "motion_expansion",
+        _term("friston24"),
+        SpecifiedTerm[pp_mod.MotionExpansion],
+    ),
+    (Despike, "method", _term("afni_3dDespike"), SpecifiedTerm[pp_mod.DespikeMethod]),
+    (Scrub, "criterion", _term("fd_power"), SpecifiedTerm[pp_mod.ScrubCriterion]),
     (SpatialSmoothing, "fwhm_mm", 6.0, float),
-    (CompCor, "variant", "a", str),
+    (CompCor, "variant", _term("a"), SpecifiedTerm[pp_mod.CompCorVariant]),
     # Note: target_space, target_surface, convention, effective_band_hz
     # were flipped to inference_applicable=True once the fmri-defaults-kb
     # pipeline registry + kb_client.base_pipeline integration landed.
@@ -781,11 +806,11 @@ def test_inferred_default_on_flagged_kernel_type_accepted() -> None:
     per the catalog — INFERRED_DEFAULT under ceiling must round-trip."""
     smoothing = SpatialSmoothing(
         fwhm_mm=_pf_extracted("fwhm_mm", 6.0, float),
-        space=_pf_extracted("space", "mni_volume", str),
+        space=_pf_extracted_term("space", "mni_volume", pp_mod.SmoothingSpace),
         kernel_type=_pf_inferred(
             "kernel_type",
-            "gaussian",
-            str,
+            _term("gaussian"),
+            SpecifiedTerm[pp_mod.SmoothingKernelType],
             basis=FieldConventionBasis(source="catalog default"),
             confidence=0.4,
         ),
@@ -802,8 +827,8 @@ def test_inferred_default_on_flagged_slice_time_interpolation_accepted() -> None
         relative_to_motion_correction=_pf_missing("relative_to_motion_correction", str),
         interpolation=_pf_inferred(
             "interpolation",
-            "spline",
-            str,
+            _term("spline"),
+            SpecifiedTerm[pp_mod.SliceTimingInterpolation],
             basis=FieldConventionBasis(source="catalog default"),
             confidence=0.4,
         ),
@@ -1520,16 +1545,16 @@ def test_empty_preprocessing_with_functional_rejected() -> None:
 
 def _brain_extraction(method: str = "bet") -> pp_mod.BrainExtraction:
     return pp_mod.BrainExtraction(
-        method=_pf_extracted("method", method, str),
+        method=_pf_extracted_term("method", method, pp_mod.BrainExtractionMethod),
         manual_edits=_pf_missing("manual_edits", bool),
     )
 
 
 def _segmentation() -> pp_mod.Segmentation:
     return pp_mod.Segmentation(
-        method=_pf_extracted("method", "fsl_fast", str),
-        tissue_classes=_pf_extracted(
-            "tissue_classes", ["gray_matter", "white_matter", "csf"], list
+        method=_pf_extracted_term("method", "fsl_fast", pp_mod.SegmentationMethod),
+        tissue_classes=_pf_extracted_term_list(
+            "tissue_classes", ["gray_matter", "white_matter", "csf"], pp_mod.TissueClass
         ),
     )
 
@@ -1555,11 +1580,11 @@ def test_v0_3_0_nuisance_regression_method_and_filtering_integrated_roundtrip() 
             physio_regressors=_pf_missing("physio_regressors", str),
             physio_n_regressors=_pf_missing("physio_n_regressors", int),
             detrend=_pf_missing("detrend", str),
-            method=_pf_extracted("method", "afni_3dtproject", str),
+            method=_pf_extracted_term("method", "afni_3dtproject", pp_mod.NuisanceRegressionMethod),
             filtering_integrated=_pf_extracted("filtering_integrated", integrated, bool),
         )
         back = pp_mod.NuisanceRegression.model_validate_json(nr.model_dump_json())
-        assert back.method.extraction.value == "afni_3dtproject"
+        assert back.method.extraction.value.resolved == "afni_3dtproject"
         assert back.filtering_integrated.extraction.value is integrated
 
 
@@ -1595,22 +1620,22 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
     # BrainExtraction: manual_edits carries a wrong field_id -> validator raises.
     with pytest.raises(ValidationError, match="field_id mismatch"):
         pp_mod.BrainExtraction(
-            method=_pf_extracted("method", "bet", str),
+            method=_pf_extracted_term("method", "bet", pp_mod.BrainExtractionMethod),
             manual_edits=_pf_missing("WRONG", bool),
         )
     # Segmentation: tissue_classes carries a wrong field_id -> validator raises.
     with pytest.raises(ValidationError, match="field_id mismatch"):
         pp_mod.Segmentation(
-            method=_pf_extracted("method", "fsl_fast", str),
+            method=_pf_extracted_term("method", "fsl_fast", pp_mod.SegmentationMethod),
             tissue_classes=_pf_missing("WRONG", list),
         )
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.1) is the live root.
+    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.5.2) is the live root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.1"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.5.2"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1620,12 +1645,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.5.1"
-    assert prep.written_under == "0.5.1"
+    assert prep.schema_version == "0.5.2"
+    assert prep.written_under == "0.5.2"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.1"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.5.2"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1633,7 +1658,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.5.1",
+            written_under="0.5.2",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),

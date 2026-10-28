@@ -248,7 +248,9 @@ call uses). The field inventory is D.3's items, granular; **new** marks a field 
 | `intensity_correction` | **performed**, target, method |
 | `spatial_smoothing` | **performed**, **method** (tool), fwhm_mm (number), kernel_type, approach, space |
 
-Thirty-nine fields on T, twenty-five on S. Gradient distortion correction is folded into
+Thirty-eight fields on T, twenty-five on S. *(Erratum, 2026-10-28, at the build: the first
+committed text of this line said thirty-nine; the table above sums to 2 + 6 + 3 + 6 + 5 + 5 + 11 =
+38, which is what the response model carries.)* Gradient distortion correction is folded into
 `distortion_correction` (R1): `source = gradient_nonlinearity` is the gradient case, and the
 registry keeps both rows mapped to the one kind (`cobidas.py:60-69`), so a report on that kind
 credits both rows — recorded, and the single-row credit test in C names this pair as the one

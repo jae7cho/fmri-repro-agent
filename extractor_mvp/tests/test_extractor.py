@@ -54,8 +54,8 @@ def _all_resolvable() -> PreprocessingExtraction:
 def _field(preprocessing: Any, dotted: str) -> Any:
     for step in preprocessing.steps:
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in type(step).STRUCTURAL_FIELDS:
+                continue  # ``kind`` and the structural pointers (2026-10-28: distortion is emitted)
             pf = getattr(step, fname)
             if f"{step.kind}.{pf.field_id}" == dotted:
                 return pf

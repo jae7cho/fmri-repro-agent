@@ -51,6 +51,33 @@ MIGRATION_FLOOR = "0.2.0"
 # is the structural signature of a pre-0.2.0 (0.1.0) document.
 _PRE_FLOOR_MARKER = "voxel_temporal_zscore"
 _ADDED_IN_0_3_0 = ("method", "filtering_integrated")  # required fields NuisanceRegression gained
+
+# 0.5.1 -> 0.5.2 (2026-10-28, DESIGN_coverage_expansion.md B9): the thirteen step kinds of the eleven
+# uncovered D.3 rows retype their closed Literals to SpecifiedTerm[X] (lists: list[SpecifiedTerm[X]])
+# and gain OPTIONAL fields (``performed`` first, then the D.3 items they lacked). The retype is the
+# structural half (bare members lift, as in 0.5.0); the new fields are additive (absent on a 0.5.1
+# document, nothing is synthesised -- a native 0.5.2 record carries them because _assemble sets them).
+# Kind -> the retyped field(s) it carries.
+_RETYPED_IN_0_5_2: dict[str, tuple[str, ...]] = {
+    "slice_time_correction": ("reference", "relative_to_motion_correction", "interpolation"),
+    "distortion_correction": ("source", "method"),
+    "brain_extraction": ("method",),
+    "segmentation": ("method", "tissue_classes"),
+    "coregistration": ("transform", "method", "cost_function", "interpolation"),
+    "intensity_correction": ("target", "method"),
+    "ica_denoise": ("method",),
+    "compcor": ("variant",),
+    "nuisance_regression": (
+        "motion_expansion",
+        "tissue_regressors",
+        "physio_regressors",
+        "detrend",
+        "method",
+    ),
+    "despike": ("method",),
+    "scrub": ("criterion", "remediation", "interpolation_method"),
+    "spatial_smoothing": ("space", "kernel_type", "approach"),
+}
 # 0.4.1 -> 0.5.0: the five literal_type fields retype from a bare Literal member to
 # SpecifiedTerm{verbatim, resolved, resolution}. Step kind -> the retyped field(s) it carries.
 _RETYPED_IN_0_5_0: dict[str, tuple[str, ...]] = {
@@ -111,6 +138,9 @@ def _lift_value(v: Any) -> Any:
     an already-lifted dict value is returned unchanged."""
     if isinstance(v, dict):
         return v
+    if isinstance(v, list):
+        # 0.5.2: a list-of-members field (tissue_classes, tissue_regressors) lifts item by item.
+        return [_lift_value(x) for x in v]
     return {"verbatim": v, "resolved": v, "resolution": "resolved"}
 
 
@@ -195,7 +225,21 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # to transform. (If motion_correction is ever emitted by the extractor, a future doc-transform hop
     # must lift its literal_type fields like the 0.5.0 block above.)
     #
-    # Both re-stamp hops and the 0.5.0 transform fall through to the single stamp write below;
+    # 0.5.1 -> 0.5.2 (STRUCTURAL on the retyped fields, ADDITIVE on the new ones; 2026-10-28,
+    # DESIGN_coverage_expansion.md B9): lift bare members on the thirteen kinds' retyped fields. Every
+    # stored run record carries those fields only as MissingFromPaper fillers (the extractor never
+    # targeted them before this build), so the lift is a no-op there and the documents render
+    # unchanged; the committed examples are regenerated from their scripts rather than migrated. The
+    # new OPTIONAL fields are NOT synthesised: a migrated document simply does not carry them, and
+    # ``written_under`` says why.
+    if _version_tuple(source) < _version_tuple("0.5.2"):
+        for step in out.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            for fid in _RETYPED_IN_0_5_2.get(step.get("kind", ""), ()):
+                _lift_to_specified_term(step.get(fid))
+
+    # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
     out["written_under"] = source

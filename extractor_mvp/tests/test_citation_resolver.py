@@ -133,8 +133,8 @@ def _deferred_prep() -> Any:
 def _find(prep: Any, dotted: str) -> Any:
     for step in prep.steps:
         for fname in type(step).model_fields:
-            if fname == "kind":
-                continue
+            if fname in type(step).STRUCTURAL_FIELDS:
+                continue  # ``kind`` and the structural pointers (2026-10-28: distortion is emitted)
             pf = getattr(step, fname)
             if f"{step.kind}.{pf.field_id}" == dotted:
                 return pf

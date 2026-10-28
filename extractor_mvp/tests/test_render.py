@@ -19,6 +19,7 @@ from fmri_repro.spec.preprocessing import (
     Preprocessing,
     SpatialNormalization,
     SpatialSmoothing,
+    SpecifiedTerm,
 )
 from fmri_repro.spec.provenance import (
     BASIS_CEILINGS,
@@ -126,7 +127,9 @@ def _synthetic_preprocessing() -> Preprocessing:
     smoothing = SpatialSmoothing(
         fwhm_mm=_extracted("fwhm_mm", 6.0),  # EXTRACTED
         space=_missing_left("space"),  # MISSING + LEFT_MISSING -> MISSING_FROM_PAPER
-        kernel_type=_missing_inferred("kernel_type", "gaussian"),  # MISSING + INFERRED_DEFAULT
+        kernel_type=_missing_inferred(
+            "kernel_type", SpecifiedTerm(verbatim=None, resolved="gaussian", resolution="resolved")
+        ),  # MISSING + INFERRED_DEFAULT; 0.5.2: a SpecifiedTerm, rendering as the bare member
         approach=_deferred_left("approach", "Esteban 2019"),  # DEFERRED + LEFT_MISSING
     )
     # base_pipeline: pipeline identity INFERRED; its version DEFERRED (different states).
@@ -254,7 +257,7 @@ def test_synthetic_row_payloads():
     assert extracted.span_text and "verbatim" in extracted.span_text
 
     inferred = by_path["spatial_smoothing.kernel_type"]
-    assert inferred.value == "gaussian"
+    assert inferred.value.resolved == "gaussian"  # 0.5.2: a SpecifiedTerm
     assert inferred.basis_type == "version_default"
     assert inferred.confidence == 0.9
 
@@ -391,6 +394,11 @@ def test_to_json_matches_model_dump_json():
 # ---------------------------------------------------------------------------
 
 
+def _term(member: str) -> SpecifiedTerm:
+    """A stated, resolved term (0.5.2: the smoothing Literals are SpecifiedTerm-typed)."""
+    return SpecifiedTerm(verbatim=member, resolved=member, resolution="resolved")
+
+
 def _one_step() -> SpatialSmoothing:
     """A minimal valid step so the Preprocessing is well-formed."""
     return SpatialSmoothing(
@@ -457,7 +465,9 @@ def test_to_field_table_shows_inferred_line(capsys):
     smoothing = SpatialSmoothing(
         fwhm_mm=_extracted("fwhm_mm", 6.0),
         space=_missing_left("space"),
-        kernel_type=_missing_inferred("kernel_type", "gaussian"),  # MISSING + INFERRED_DEFAULT
+        kernel_type=_missing_inferred(
+            "kernel_type", SpecifiedTerm(verbatim=None, resolved="gaussian", resolution="resolved")
+        ),  # MISSING + INFERRED_DEFAULT; 0.5.2: a SpecifiedTerm, rendering as the bare member
         approach=_missing_left("approach"),
     )
     base_pipeline = ProvenancedField(
@@ -577,8 +587,9 @@ def _one_field_spec(reason_field: ProvenancedField) -> Preprocessing:
     smoothing = SpatialSmoothing(
         fwhm_mm=_extracted("fwhm_mm", 6.0),
         space=reason_field,
-        kernel_type=_extracted("kernel_type", "gaussian"),
-        approach=_extracted("approach", "fixed_kernel"),
+        # 0.5.2 (2026-10-28): the two closed Literals are SpecifiedTerm-typed now.
+        kernel_type=_extracted("kernel_type", _term("gaussian")),
+        approach=_extracted("approach", _term("fixed_kernel")),
     )
     return Preprocessing(applies_to=_applies_to(), base_pipeline=NotApplicable(), steps=[smoothing])
 

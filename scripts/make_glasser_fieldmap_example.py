@@ -44,15 +44,19 @@ from fmri_repro.spec.core import (
     Thresholding,
 )
 from fmri_repro.spec.preprocessing import (
+    Detrend,
+    MotionExpansion,
     NuisanceRegression,
     PipelineRef,
     Preprocessing,
+    SmoothingSpace,
     SpatialSmoothing,
     SpecifiedTerm,
     SurfaceProjection,
     SurfaceRegistration,
     TargetSurface,
     TemporalFiltering,
+    TissueRegressor,
 )
 from fmri_repro.spec.provenance import (
     DateInferredVersionBasis,
@@ -582,10 +586,12 @@ def _hcp_preprocessing() -> Preprocessing:
                 ),
             ),
             NuisanceRegression(
-                motion_expansion=ProvenancedField[str](
+                motion_expansion=ProvenancedField[SpecifiedTerm[MotionExpansion]](
                     field_id="motion_expansion",
-                    extraction=Extracted[str](
-                        value="friston24",
+                    extraction=Extracted[SpecifiedTerm[MotionExpansion]](
+                        value=SpecifiedTerm(
+                            verbatim="friston24", resolved="friston24", resolution="resolved"
+                        ),
                         spans=[
                             Span(
                                 start=1300,
@@ -598,10 +604,19 @@ def _hcp_preprocessing() -> Preprocessing:
                     ),
                     inference=NotApplicable(),
                 ),
-                tissue_regressors=ProvenancedField[list[str]](
+                tissue_regressors=ProvenancedField[list[SpecifiedTerm[TissueRegressor]]](
                     field_id="tissue_regressors",
-                    extraction=Extracted[list[str]](
-                        value=["white_matter", "ventricles"],
+                    extraction=Extracted[list[SpecifiedTerm[TissueRegressor]]](
+                        value=[
+                            SpecifiedTerm(
+                                verbatim="white_matter",
+                                resolved="white_matter",
+                                resolution="resolved",
+                            ),
+                            SpecifiedTerm(
+                                verbatim="ventricles", resolved="ventricles", resolution="resolved"
+                            ),
+                        ],
                         spans=[
                             Span(
                                 start=1340,
@@ -624,10 +639,12 @@ def _hcp_preprocessing() -> Preprocessing:
                     extraction=MissingFromPaper(searched_terms=[], sections_searched=[_METHODS]),
                     inference=LeftMissing(reason="not reported"),
                 ),
-                detrend=ProvenancedField[str](
+                detrend=ProvenancedField[SpecifiedTerm[Detrend]](
                     field_id="detrend",
-                    extraction=Extracted[str](
-                        value="linear",
+                    extraction=Extracted[SpecifiedTerm[Detrend]](
+                        value=SpecifiedTerm(
+                            verbatim="linear", resolved="linear", resolution="resolved"
+                        ),
                         spans=[
                             Span(
                                 start=1380,
@@ -730,10 +747,14 @@ def _hcp_preprocessing() -> Preprocessing:
                     ),
                     inference=NotApplicable(),
                 ),
-                space=ProvenancedField[str](
+                space=ProvenancedField[SpecifiedTerm[SmoothingSpace]](
                     field_id="space",
-                    extraction=Extracted[str](
-                        value="template_surface",
+                    extraction=Extracted[SpecifiedTerm[SmoothingSpace]](
+                        value=SpecifiedTerm(
+                            verbatim="template_surface",
+                            resolved="template_surface",
+                            resolution="resolved",
+                        ),
                         spans=[
                             Span(
                                 start=1530,
