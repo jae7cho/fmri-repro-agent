@@ -178,3 +178,16 @@ Derived before the run as **19 identical** (neither run changes code; B writes u
   both outside what a stanza iteration may now touch; whether the derived level should read only the
   sentence that names the package when a quote spans two sentences (cole); and what the next
   pre-registration, if any, asks of a stanza that is now frozen.
+
+## Rulings — 2026-10-28, by the author, recorded the day they were given
+
+1. **The derived level reads the sentence that contains the value token, not the whole span** — a
+   code fix with a replay; no new vintage. (cole's 8 disagreements above were a two-sentence span.)
+   **Replayed 2026-10-28, after the fix:** the projection was re-emitted from the same records; cole's 8
+   row-2 draws now derive `package`, agreeing with column R, and no other row of the 190 changed. The
+   version-7 projection re-emits byte-identical. The level line above becomes **46 agree, 0 disagree,
+   44 without a level**; the records are untouched.
+2. **liu_2005 gets a recorder run on its de-interleaved slice**, K=10, under prereg Amendment 14,
+   reported beside this result and never pooled with it; its clean cell is already spent.
+3. **The wrapper-named shape (chen, oconnor, weber) is not a stanza item**: the inference arm handles
+   it through `base_pipeline` (`DESIGN_motion_inference_arm.md`).
