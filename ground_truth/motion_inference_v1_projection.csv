@@ -1,0 +1,31 @@
+# PROJECTION of the motion method's inference arm applied to a stored batch (a processed
+# vintage, no model call). Emitted by extractor_mvp/scripts/apply_motion_inference.py -- do not
+# hand-edit. Per paper: the path (arm / diagnostic / none / never), basis name and type,
+# confidence, alternatives, the inferred program (a knowledge-base value, not paper text). For
+# the clean three: the path only. DIAGNOSTIC, NOT EVALUATIVE: counts of papers filled per
+# basis; no accuracy figure may be computed from this file.
+# vintage                    : batch_motion_corpus_v1_inferred (from batch_motion_corpus_v1)
+# head                       : d5528849bd5763531a631517e9a92b925f5585a3
+# motion_method_prompt_sha256: b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+# projection generated_utc   : 2026-10-28T18:39:06+00:00
+#
+paper_id,class,path,basis_name,basis_type,confidence,n_alternatives,program,reason_base
+power_2014,probe,none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+binder_1999,probe,none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+liu_2013,probe,diagnostic,pipeline,version_default,0.95,0,3dvolreg,described_only
+derosa_2025,probe,never,,,,0,,named_tool
+agtzidis_2020,probe,arm,package,derived,0.7,0,Realign,the inference arm proper
+poldrack_2015,probe,none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+ciric_2017,probe,never,,,,0,,named_tool
+braun_2015,probe,none,,,,0,,"deferred to a paper, not a pipeline"
+viduarre_2017,probe,none,,,,0,,"deferred to a paper, not a pipeline"
+vanderwal_2016,probe,none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+cole_2013,probe,none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+gordon_2014,probe,never,,,,0,,named_tool
+mueller_2021,probe,diagnostic,package,derived,0.7,0,Realign,described_only
+chen_2015,"co-adjudicated, not probed",diagnostic,pipeline,date_inferred_version,0.75,0,3dvolreg,described_only
+oconnor_2017,"co-adjudicated, not probed",none,,,,0,,no recognized pipeline with a usable version and no listed package on base_pipeline.name
+weber_2024,"co-adjudicated, not probed",diagnostic,pipeline,date_inferred_version,0.75,0,3dvolreg,described_only
+liu_2005,clean,none,,,,,,
+tang_2025,clean,diagnostic,,,,,,
+wheaton_2004,clean,diagnostic,,,,,,
