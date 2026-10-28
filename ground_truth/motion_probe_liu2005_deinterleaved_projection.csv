@@ -1,0 +1,36 @@
+# PROJECTION of the motion_correction.method reachability probe, run 2026-10-28.
+# Emitted by extractor_mvp/scripts/motion_probe_projection.py -- do not hand-edit. Regenerate from the
+# run's results/<run>/motion_probe/*.jsonl.
+#
+# WHY A PROJECTION AND NOT THE RUN. The per-draw records under extractor_mvp/results/ carry the
+# model's returned value and quote, which are SENTENCES FROM THE PAPERS. The corpus is not in this
+# repository for licensing reasons, so tracking those strings would redistribute what the corpus
+# deliberately withholds. This projection therefore carries NO quote text and NO value text: only the
+# status, the derived heuristic class, the state-map row, and the span OFFSETS. Anyone holding the
+# corpus can recover the text from the offsets; anyone who does not, cannot.
+#
+# DIAGNOSTIC, NOT EVALUATIVE. No rate, fraction or accuracy figure is computed here or may be
+# computed from it (prereg :9-10, :158-159). The probe tests whether a state is EXPRESSIBLE.
+# Counts only. See the matching docs/findings/motion-probe-*-results.md for the outcome against the
+# pre-declared readings, and the pre-registration for what may and may not be concluded.
+#
+# model                      : bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0, temperature 0.0, max_retries 2
+# K                          : 10 per paper, 1 papers, 10 draws
+# motion_method_prompt_sha256: b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+# span_resolver vintage      : 3cb396e 2026-07-16, working tree clean
+# heuristic                  : extractor_mvp/scripts/motion_value_kind.py (prereg Amendment 2 ruling 5)
+# state map                  : prereg Amendment 1, six rows
+# run generated_utc          : 2026-10-28T18:56:22+00:00
+# projection generated_utc   : 2026-10-28T18:57:34+00:00
+#
+paper_id,draw,raw_status,heuristic_class,state_map_row,predicted_label_state,span_resolved,span_start,span_end,left_missing_reason,deferral_target_kind,completion_attempts,reask_occurred,wall_seconds,model_state,model_vs_heuristic,attribution
+liu_2005,1,extracted,undecided,3,undecided,no,,,motion_value_unsupported_by_quote,,1,no,13.452,named_tool,undecided,
+liu_2005,2,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,11.953,described_only,agree,
+liu_2005,3,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,12.273,described_only,agree,
+liu_2005,4,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,13.376,described_only,agree,
+liu_2005,5,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,13.59,described_only,agree,
+liu_2005,6,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,12.039,described_only,agree,
+liu_2005,7,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,12.349,described_only,agree,
+liu_2005,8,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,14.308,described_only,agree,
+liu_2005,9,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,10.856,described_only,agree,
+liu_2005,10,extracted,operation_phrase,1,described_only,yes,553,757,,,1,no,11.805,described_only,agree,

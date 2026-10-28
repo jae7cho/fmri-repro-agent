@@ -1254,3 +1254,8 @@ corpus run); drafted by Claude Code; ratified by commit.**
   or the corpus result.
 - **Unchanged.** The stanza is frozen; no iteration. The slice file itself is not read by anyone
   but the recorder.
+
+> **Run 2026-10-28 (18:54–18:56 UTC; HEAD `9e146a7`; manifest gated on the hash, the licence, the
+> paper and the slice's sha256).** Reading **(a)**: unresolved spans 0 of 10 on the slice against
+> 10 of 10 in the corpus run — the text layer was the cause. Label match 0 of 10 on both layers, a
+> count. Reported beside the corpus line in `motion-corpus-v1-results.md`; never pooled.

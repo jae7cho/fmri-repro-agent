@@ -109,6 +109,28 @@ such status in the run; in the recorder every one of its ten quotes failed to re
 the resolver cannot match is a cause the stanza does not own; whether the de-interleaved slice
 would change the result is a separate, pre-declared run under a new amendment, not this one.
 
+## liu_2005 on its de-interleaved slice — Amendment 14, beside the corpus line, never pooled
+
+**A separate run, read as states and counts only.** 2026-10-28, 18:54:15–18:56:22 UTC, K=10, the
+recorder on `ground_truth/liu_2005_deinterleaved_methods.txt` (sha256 `cfc82ed8…`, recorded in the
+manifest) under the frozen stanza `b0093774…`, licence `Amendment 14`, HEAD `9e146a7`; the manifest
+gated on all of these before any record was read. Projection
+[ground_truth/motion_probe_liu2005_deinterleaved_projection.csv](../../ground_truth/motion_probe_liu2005_deinterleaved_projection.csv),
+no text (every raw string of the records derived by script, 0 present).
+
+| | corpus run (the PDF's own text layer) | this run (the de-interleaved slice) |
+|---|---|---|
+| state-map rows of 10 | row 1 ×10 | row 1 ×9, row 3 ×1 (excluded by name) |
+| processed layer | MissingFromPaper ×10, `extraction_quote_unresolved` | Extracted ×9; MissingFromPaper ×1, `motion_value_unsupported_by_quote` (its quote resolved) |
+| unresolved spans | 10 of 10 | **0 of 10** |
+| matches the label (`named_tool`, level per column R) | 0 of 10 | 0 of 10; no row-2 draw, so no level |
+| reasks / errors | 0 / 0 | 0 / 0 |
+
+**Amendment 14's reading (a) holds:** on a text layer the resolver can match, every quote resolves.
+The corpus run's ten unresolved quotes were the text layer's, a cause the stanza does not own. The
+label does not match on either layer, which is a different fact and is reported as the count it is.
+Neither run is pooled with the other; the corpus line above stands as the corpus result.
+
 ## Named lines — the whole run, both layers
 
 - **R:** draws 190; reasks 0; errors 0; unresolved spans 20 (agtzidis 10, liu_2005 10); model binding
