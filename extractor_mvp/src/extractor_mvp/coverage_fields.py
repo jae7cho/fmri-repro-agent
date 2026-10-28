@@ -14,6 +14,8 @@ nothing from the extractor.
 from __future__ import annotations
 
 import dataclasses
+import hashlib
+import json
 from typing import Any, Literal
 
 from fmri_repro.spec.preprocessing import (
@@ -683,6 +685,175 @@ CALL_S_SPECS: tuple[CoverageFieldSpec, ...] = (
 )
 
 COVERAGE_SPECS: tuple[CoverageFieldSpec, ...] = CALL_T_SPECS + CALL_S_SPECS
+
+#: The FROZEN per-step phrase lists for ``performed`` (2026-10-28, the author's item 2,
+#: DESIGN_coverage_expansion.md B14): a ``performed`` quote must contain one of its step's phrases
+#: (token-run matched, word form tolerated) or the cell is unverifiable. Written from D.3's wording
+#: and the corpus's own sentences in coverage_v1 (the contaminated sixteen only: four phrases were
+#: added after the replay surfaced vanderwal's "dropped", weber's hyphenated "slice-time", gordon's
+#: "partialling out" and mueller's "removing the effects"), then frozen: the pin test holds the sha256
+#: of this table, and a change here is a dated vintage event. Fitted to those sentences; said so.
+PERFORMED_PHRASES: dict[str, tuple[str, ...]] = {
+    "nonsteadystate_removal": (
+        "discarded",
+        "discard",
+        "removed",
+        "removal",
+        "dummy",
+        "initial volumes",
+        "first volumes",
+        "steady state",
+        "steady-state",
+        "equilibration",
+        "equilibrium",
+        "saturation",
+        "first minute",
+        "dropped",
+        "seconds were",
+    ),
+    "slice_time_correction": (
+        "slice timing",
+        "slice-timing",
+        "slice time",
+        "slice-time",
+        "slice acquisition",
+        "acquisition timing",
+        "timing among image slices",
+        "temporally align",
+        "slicetimer",
+        "3dTshift",
+        "slice time correction",
+        "slicetime",
+        "slice-time correction",
+    ),
+    "despike": ("despiking", "despiked", "despike", "de-spiking", "spikes", "spike", "3dDespike"),
+    "scrub": (
+        "scrubbing",
+        "scrubbed",
+        "scrub",
+        "censoring",
+        "censored",
+        "censor",
+        "framewise",
+        "frame-wise",
+        "motion outlier",
+        "volumes were removed",
+        "volumes were excluded",
+        "frames",
+        "DVARS",
+        "interpolated",
+        "motion censoring",
+    ),
+    "ica_denoise": ("ICA", "AROMA", "FIX", "independent component", "independent components"),
+    "compcor": ("CompCor", "aCompCor", "tCompCor", "principal component", "PCA", "components"),
+    "nuisance_regression": (
+        "regressed",
+        "regression",
+        "regress",
+        "regressors",
+        "regressor",
+        "nuisance",
+        "confound",
+        "confounds",
+        "covariates",
+        "covariate",
+        "partialling out",
+        "partialled out",
+        "physiological noise",
+        "removing the effects",
+    ),
+    "brain_extraction": (
+        "skull",
+        "skull-stripped",
+        "skull stripping",
+        "brain extraction",
+        "brain-extracted",
+        "brain extracted",
+        "brain mask",
+        "BET",
+        "3dSkullStrip",
+        "non-brain",
+        "nonbrain",
+        "extracted the brain",
+        "brain extraction tool",
+    ),
+    "segmentation": (
+        "segmented",
+        "segmentation",
+        "segment",
+        "tissue class",
+        "tissue classes",
+        "tissue probability",
+        "gray matter",
+        "grey matter",
+        "white matter",
+        "CSF",
+        "cerebrospinal fluid",
+        "tissue priors",
+        "tissue segmentation",
+    ),
+    "coregistration": (
+        "coregistration",
+        "coregistered",
+        "co-registration",
+        "co-registered",
+        "registered",
+        "registration",
+        "aligned",
+        "alignment",
+        "BBR",
+        "boundary-based",
+        "boundary based",
+        "FLIRT",
+        "bbregister",
+    ),
+    "distortion_correction": (
+        "distortion",
+        "distortions",
+        "field map",
+        "fieldmap",
+        "field-map",
+        "unwarping",
+        "unwarped",
+        "unwarp",
+        "topup",
+        "susceptibility",
+        "gradient nonlinearity",
+        "gradient nonlinearities",
+        "gradient non-linearity",
+        "B0",
+        "inhomogeneities",
+        "inhomogeneity",
+    ),
+    "intensity_correction": (
+        "bias",
+        "bias field",
+        "bias-field",
+        "inhomogeneity",
+        "inhomogeneities",
+        "intensity correction",
+        "non-uniformity",
+        "nonuniformity",
+        "N4",
+        "N3",
+        "odd and even",
+        "interleaved",
+        "intensity normalization of the structural",
+    ),
+    "spatial_smoothing": (
+        "smoothed",
+        "smoothing",
+        "smooth",
+        "FWHM",
+        "kernel",
+        "blurred",
+        "blurring",
+        "blur",
+    ),
+}
+PERFORMED_PHRASES_SHA256: str = hashlib.sha256(
+    json.dumps(PERFORMED_PHRASES, sort_keys=True).encode("utf-8")
+).hexdigest()
 
 #: Dotted id -> (synonyms, underspecified) for every term and term_list field: the one table both
 #: resolution and the quote-support check read (R3: "alias table for Literals").

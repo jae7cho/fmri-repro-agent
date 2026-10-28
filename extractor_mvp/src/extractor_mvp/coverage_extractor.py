@@ -47,17 +47,22 @@ For EACH step below, decide `<step>_performed` FIRST:
   sentence that says so. "extracted" with value "no" when the text states the step was NOT done
   ("no slice-timing correction was applied", "data were not smoothed"); verbatim_quote = the
   sentence stating that. A stated negative is a report.
-- "deferred" when the text says the step -- or the preprocessing as a whole -- followed a cited
-  publication or a named pipeline and states nothing itself about the step: deferral_sentence =
-  that sentence; ref_string = the citation or the pipeline name as written; target_kind =
-  "pipeline" for a named pipeline, else "paper".
-- "missing" when the text is silent about the step.
+- "missing" when the text is silent about the step, AND when the text says the step -- or the
+  preprocessing as a whole -- followed a cited publication or a named pipeline without stating
+  anything itself about the step. `<step>_performed` is NEVER "deferred": a deferral is not a
+  statement that the step was performed. In that case the step's PARAMETER fields are "deferred":
+  deferral_sentence = that sentence; ref_string = the citation or the pipeline name as written;
+  target_kind = "pipeline" for a named pipeline, else "paper".
+
+The quote for `<step>_performed` must be the sentence that names THIS step (the slice-timing
+sentence for slice timing, the smoothing sentence for smoothing); a sentence about a different step
+does not support it and is discarded.
 
 The step's parameter fields are asked ONLY when `<step>_performed` is "yes" or unstated:
 - performed "no" -> every parameter field of that step is "missing".
-- performed "yes", "deferred" or "missing" -> a parameter the text states in its own words is
-  "extracted"; one it does not state is "missing"; one it attributes to a citation or a named
-  pipeline without stating it is "deferred" (same rule as above).
+- performed "yes" or "missing" -> a parameter the text states in its own words is "extracted";
+  one it does not state is "missing"; one it attributes to a citation or a named pipeline
+  without stating it is "deferred" (same rule as above).
 
 FIREWALL: extract only what the paper STATES. Do NOT infer a tool, a value or whether a step was
 performed from a pipeline's identity (fMRIPrep, HCP, CCS, C-PAC, ...), from a lab's conventions,
@@ -264,14 +269,31 @@ def _missing_field() -> FieldExtractionResult:
     return FieldExtractionResult(status="missing")
 
 
+def _no_deferred_performed(model: BaseModel) -> BaseModel:
+    """``performed`` is never deferred (the author's item 2, 2026-10-28): a deferral is not a
+    statement that the step was performed. A violation is a validation error -- under instructor,
+    a reask -- never a silent coercion."""
+    for name in type(model).model_fields:
+        if name.endswith("_performed") and getattr(model, name).status == "deferred":
+            raise ValueError(
+                f"{name}: performed is never 'deferred' -- use 'missing' when the text defers the "
+                "step and states nothing itself; defer the step's parameter fields instead"
+            )
+    return model
+
+
 def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[BaseModel]:
-    """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any."""
-    from pydantic import create_model
+    """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any; the
+    never-deferred rule on every ``performed`` field."""
+    from pydantic import create_model, model_validator
 
     fields: dict[str, Any] = {
         spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field)) for spec in specs
     }
-    return create_model(name, **fields)
+    validators: dict[str, Any] = {
+        "_no_deferred_performed": model_validator(mode="after")(_no_deferred_performed)
+    }
+    return create_model(name, __validators__=validators, **fields)
 
 
 #: The LLM output schemas of the two calls, built from the field table so the two cannot drift.

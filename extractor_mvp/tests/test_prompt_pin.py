@@ -16,6 +16,7 @@ import hashlib
 import re
 
 from extractor_mvp.coverage_extractor import SPATIAL_PROMPT, TEMPORAL_VOLUME_PROMPT
+from extractor_mvp.coverage_fields import PERFORMED_PHRASES_SHA256
 from extractor_mvp.extractor import (
     EXTRACTION_PROMPT,
     MOTION_METHOD_PROMPT,
@@ -161,9 +162,19 @@ _PINNED = {
     #: module, so the three hashes above do not move -- that is what R8 asks this test to show. The
     #: first run under these hashes is the vintage ``coverage_v1``; a change here is a new vintage,
     #: with a dated note, never an edit to make a test pass.
-    "TEMPORAL_VOLUME_PROMPT": "9e52382403967e42ed37cb7f9f2d7a3ac324509d8d2bf6affdc68f11a3837a64",
-    "SPATIAL_PROMPT": "17742cbb8f49cfcbf95ccdcce73a715b8fd669ee7a9285f7d6363b438cb23ffa",
+    #: UPDATED 2026-10-28 (later the same day), the author's item 2 (DESIGN_coverage_expansion.md
+    #: B14): ``performed`` is never "deferred" -- the deferral case moved to the parameters and the
+    #: quote must be the sentence that names the step. Superseded values, the coverage_v1 vintage:
+    #: TEMPORAL_VOLUME_PROMPT 9e52382403967e42ed37cb7f9f2d7a3ac324509d8d2bf6affdc68f11a3837a64,
+    #: SPATIAL_PROMPT 17742cbb8f49cfcbf95ccdcce73a715b8fd669ee7a9285f7d6363b438cb23ffa.
+    "TEMPORAL_VOLUME_PROMPT": "c2617933046fb988e99e01e1bbb48f08fbb8449456a371009d281d601dfc9beb",
+    "SPATIAL_PROMPT": "95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80",
 }
+
+#: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):
+#: sha256 of ``json.dumps(PERFORMED_PHRASES, sort_keys=True)``. Written from D.3's wording and the
+#: coverage_v1 sentences of the contaminated sixteen, then frozen; a change is a dated event here.
+_PINNED_PERFORMED_PHRASES = "85566a83441d91338076acf3f7c321afc6d735524bae55c734971cbab1ccc32f"
 
 _VINTAGE_NOTE = (
     "\n\nThis hash pins a prompt that is SENT TO THE MODEL. A change here changes what every "
@@ -277,3 +288,10 @@ def test_the_three_pre_existing_hashes_did_not_move_with_the_coverage_calls() ->
         "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
     )
     assert len(_PINNED) == 5
+
+
+def test_the_performed_phrase_table_is_frozen() -> None:
+    assert PERFORMED_PHRASES_SHA256 == _PINNED_PERFORMED_PHRASES, (
+        "PERFORMED_PHRASES changed: a performed cell's support now depends on a different table. "
+        "Update the pin only with a dated note recording what changed and which vintage it supersedes."
+    )

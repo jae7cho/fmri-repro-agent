@@ -21,8 +21,18 @@ from extractor_mvp.cobidas import (
     is_expanded,
     row_state,
 )
-from extractor_mvp.coverage_extractor import SpatialExtraction, TemporalVolumeExtraction
-from extractor_mvp.coverage_fields import COVERAGE_KINDS, COVERAGE_SPECS, SPECS_BY_KIND
+from extractor_mvp.coverage_extractor import (
+    SPATIAL_PROMPT,
+    TEMPORAL_VOLUME_PROMPT,
+    SpatialExtraction,
+    TemporalVolumeExtraction,
+)
+from extractor_mvp.coverage_fields import (
+    COVERAGE_KINDS,
+    COVERAGE_SPECS,
+    PERFORMED_PHRASES,
+    SPECS_BY_KIND,
+)
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     PreprocessingExtraction,
@@ -264,25 +274,47 @@ def test_performed_yes_with_its_quote_reports_the_row_and_the_values_render() ->
     assert "«Images were smoothed with a 6 mm FWHM Gaussian kernel.»" in out
 
 
-def test_performed_deferred_defers_the_row() -> None:
-    prep = _run(
-        spatial=SpatialExtraction(
-            coregistration_performed=FieldExtractionResult(
-                status="deferred",
-                deferral_sentence=_S["defer"],
-                ref_string="Glasser et al. (2013)",
-                target_kind="paper",
-            )
-        )
+def test_performed_is_never_deferred_but_a_parameter_may_be() -> None:
+    """The author's item 2 (2026-10-28): a deferred ``performed`` is a validation error (a reask
+    under instructor); the deferral belongs on the step's parameters, which still defer the row."""
+    import pytest
+
+    deferred = FieldExtractionResult(
+        status="deferred",
+        deferral_sentence=_S["defer"],
+        ref_string="Glasser et al. (2013)",
+        target_kind="paper",
     )
+    with pytest.raises(ValueError, match="never 'deferred'"):
+        SpatialExtraction(coregistration_performed=deferred)
+    with pytest.raises(ValueError, match="never 'deferred'"):
+        TemporalVolumeExtraction(scrub_performed=deferred)
+    prep = _run(spatial=SpatialExtraction(coregistration_method=deferred))
     cov = _coverage(prep)
     assert cov["coregistration"].addressed is True
     assert row_state(cov["coregistration"], render.flatten(prep)) == "deferred"
     out = render.to_cobidas_coverage(prep)
     assert (
-        "coregistration [unvalidated] — deferred: performed: deferred to Glasser et al. (2013)"
-        in out
+        "coregistration [unvalidated] — deferred: method: deferred to Glasser et al. (2013)" in out
     )
+    rule = 'performed` is NEVER "deferred"'
+    assert rule in SPATIAL_PROMPT and rule in TEMPORAL_VOLUME_PROMPT
+
+
+def test_a_performed_quote_must_name_its_step() -> None:
+    """Item 2: the boolean's quote must carry a phrase from the step's frozen list; chen's
+    slice-timing ``performed`` quoting the de-spiking sentence is the observed case."""
+    ok = _run(spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["smooth"])))
+    assert _field(ok, "spatial_smoothing", "performed").extraction.value is True
+    bad = _run(spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["bet"])))
+    _unverifiable(bad, "spatial_smoothing", "spatial_smoothing", "performed")
+    # a stated negative is checked the same way: the sentence must be about the step
+    neg = _run(spatial=SpatialExtraction(smoothing_performed=_ex("no", _S["no_smooth"])))
+    assert _field(neg, "spatial_smoothing", "performed").extraction.value is False
+    # the other booleans keep no token check
+    other = _run(spatial=SpatialExtraction(brain_extraction_manual_edits=_ex("yes", _S["smooth"])))
+    assert _field(other, "brain_extraction", "manual_edits").extraction.value is True
+    assert set(PERFORMED_PHRASES) == set(COVERAGE_KINDS)
 
 
 # ---------------------------------------------------------------------------

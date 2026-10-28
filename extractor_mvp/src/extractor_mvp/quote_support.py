@@ -43,6 +43,7 @@ from extractor_mvp.coverage_fields import (
     COVERAGE_NUMERIC_FIELDS,
     COVERAGE_SUPPORT_TABLES,
     COVERAGE_TEXT_FIELDS,
+    PERFORMED_PHRASES,
 )
 from extractor_mvp.span_resolver import _first_use_variants, normalize_with_offset_map
 from extractor_mvp.synonym_resolver import (
@@ -280,6 +281,8 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
     supported; ``False`` when the value must be demoted to :data:`VALUE_UNSUPPORTED`.
     """
     if dotted in COVERAGE_BOOL_FIELDS:
+        if dotted.endswith(".performed"):
+            return performed_phrase_supported(dotted.split(".", 1)[0], quote)
         return None
     if dotted in COVERAGE_NUMERIC_FIELDS:
         try:
@@ -294,3 +297,11 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
     if dotted in COVERAGE_SUPPORT_TABLES:
         return _term_supported(dotted, value, quote)
     return None
+
+
+def performed_phrase_supported(kind: str, quote: str) -> bool:
+    """R3 as amended by the author's item 2 (2026-10-28): a ``performed`` quote supports the boolean
+    only when it contains one of its step's FROZEN phrases (coverage_fields.PERFORMED_PHRASES), taken
+    whole, token-run matched with word forms tolerated. A quote about a different step -- chen's
+    slice-timing ``performed`` quoting the de-spiking sentence -- fails and renders unverifiable."""
+    return any(phrase_in_quote(phrase, quote) for phrase in PERFORMED_PHRASES.get(kind, ()))
