@@ -3488,3 +3488,48 @@ been. **No corpus-wide rate.** The three clean cells are spent.
 
 Commits: `bc18447`, `8099063`, `3dc1ac4`, then this entry. Under `ALLOW_WORKHOURS_COMMIT=1`, invoked by
 the author in the message that started the run.
+
+---
+
+## 2026-10-28 — the inference arm
+
+**Under the author's override, invoked in the message.** The design doc with the author's three
+rulings from the corpus run and the seven fork rulings, and the reach pre-declared per paper and per
+basis before the build (`79953e4`; the corpus findings carry the rulings). Then the build, each step
+with tests and mutations shown:
+
+- **Knowledge base** (`fmri-defaults-kb`, editable here): `6a608f5` — `kb/tools/`, five package
+  documents with a realignment program and a source each, the reader (`recognize_tool`,
+  `realignment_program`, `listed_package_tokens`), the validator choosing a tools document's
+  schema by content; `fd4da34` — `realignment_tool` ranges in the five pipeline documents
+  (fMRIPrep and HCP MCFLIRT stable; CCS 3dvolreg script-sourced; C-PAC 3dvolreg in two ranges,
+  0.3.x recorded but not stable, 1.x stable; the FCP scripts document new, so `recognize` learns
+  it), `get_realignment_tool` and `realignment_tool_over`; `802195e` its DEVLOG; pushed, CI green.
+- `bc09a80` — `motion_guard`: the value-in-quote fallback reads the KB's package table (F7, one
+  source; derosa's 70 routed draws still fall back to FSL); **ruling 1**, the derived level reads the
+  sentence that contains the value token — replayed, the corpus projection re-emitted from the same
+  records changes cole's 8 row-2 rows from `step` to `package`, agreeing with column R, and nothing
+  else, the version-7 projection byte-identical; the frozen tool-shape rules copied with a test
+  holding them equal.
+- `b3104a7` — the inference arm: `motion_inference.infer_motion_method` under F1–F4 (the arm proper
+  for deferred-to-pipeline and missing; the same inference as a diagnostic on the processed layer for
+  `described_only`, the contract untouched; never for a named tool; P at 0.95 or 0.75 on a stable
+  range; T at 0.70 from `base_pipeline.name`; a certain pipeline wins, else the package, the loser
+  always an alternative), wired at the end of `_resolve_deferrals`, stored by the batch, rendered as
+  "tool not stated; AESPA infers X (basis, source)" with identical wording on both paths; F5's flag
+  flip with a dated catalog entry. Identity gate derived 19 identical and run 19 identical; negative
+  control 0 / 19.
+- `f3df35d` — the arm applied to `batch_motion_corpus_v1` as a processed vintage, no model call:
+  arm 1 (agtzidis, SPM12 → Realign), diagnostic 5 (liu_2013 by the FCP scripts at 0.95; chen and
+  weber at 0.75; mueller by SPM12), never 3, none 7 — vanderwal's conditional fill did not fire (its
+  C-PAC range is the 0.3.x one the KB marks not stable) and oconnor's did not (its stated version
+  `0.4.0` is not a listed C-PAC release, a KB timeline gap); the clean three 2 of 3 filled,
+  filled-or-not only. Fifteen of sixteen as pre-declared.
+- `9e146a7` — Amendment 14 and the recorder's `--slice-file` under its own licence; then the run
+  (`1bd8308`): liu_2005 on its de-interleaved slice, K=10, gated on the hash, the licence, the paper and
+  the slice's sha256 — **every quote resolves** (0 of 10 unresolved against 10 of 10 in the corpus
+  run), the label match 0 of 10 on both layers, reported beside the corpus line and never pooled.
+
+Held-out text unread throughout; ids and field states only. 529 passed in extractor_mvp (not live),
+234 root (one spec case moved from the unflagged list with a dated note); hooks clean in both repos.
+Commits here: `79953e4`, `bc09a80`, `b3104a7`, `f3df35d`, `9e146a7`, `1bd8308`, then this entry.
