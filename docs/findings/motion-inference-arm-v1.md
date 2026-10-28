@@ -61,6 +61,11 @@ with vanderwal's conditional fill not firing and oconnor's missing.
 - **A version the paper states can be absent from the KB's release timeline** (oconnor's `0.4.0`): a
   certain version that the registry cannot look up yields no basis at all, not a lower-confidence
   one. Whether the timeline should carry pre-1.0 releases beyond the tagged ones is a KB question.
+  **Checked 2026-10-28** (`gh api repos/FCP-INDI/C-PAC/tags`, and the releases page): the project's tags
+  run v0.3.9 → v0.3.9.1 (2015-04-02) → v1.0.0 (2016-11-03); **no 0.4.0 tag or release exists.** oconnor
+  states a version the project never released under that tag. Nothing is added to the KB timeline (a
+  dated note in `kb/pipelines/cpac.yaml` records the check), the vintage fill is not re-run, and
+  oconnor stays `none` under neither basis. The gap is the paper's version string, not the timeline.
 - **Every pipeline-basis fill was a diagnostic**, because every paper whose base pipeline resolves had
   a `described_only` motion extraction; the one arm-proper fill came from a package on a `missing`
   field. The contract conflation F1 names is the common case on this corpus, not the exception.
@@ -83,7 +88,8 @@ negative control `--against d31e8b7` 0 identical, 19 changed.
 ## Status
 
 - Labels unchanged. No stanza change (frozen at `b0093774…`). No model call.
-- Held for the author: the KB timeline gap at C-PAC `0.4.0`; whether vanderwal's 0.3.x range should
+- Resolved 2026-10-28: C-PAC `0.4.0` is not a release (above); oconnor's cell stays `none`.
+- Held for the author: whether vanderwal's 0.3.x range should
   be verified so the conditional fill can fire; the structural split of "performed" and "method"
   after 2026-11-09, which F1 records as the fix for the conflation that makes the diagnostic path
   the common case.
