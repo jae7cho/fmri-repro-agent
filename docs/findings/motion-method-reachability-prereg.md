@@ -1223,3 +1223,34 @@ including the projection headers. Every table names the vintage and `b0093774…
 count is its own line. The identity gate against HEAD is derived as **19 identical** (neither run
 changes code; B writes under its own `output_dir`) and run with the negative control (`d31e8b7` → 0
 identical, 19 changed) after the batch.
+
+## Amendment 14 (2026-10-28) — liu_2005 on its de-interleaved slice: one recorder run, reported beside the corpus result, never pooled
+
+**Written BEFORE the run. Ruled by the author on 2026-10-28 (the second of three rulings from the
+corpus run); drafted by Claude Code; ratified by commit.**
+
+- **Why.** In the corpus run liu_2005's ten quotes all failed to resolve and the batch's methods finder
+  fell back to the full text: a text layer the resolver cannot match, a cause the stanza does not
+  own (`motion-corpus-v1-results.md`). The repository carries a de-interleaved methods slice of this
+  paper (`ground_truth/liu_2005_deinterleaved_methods.txt`, 987 bytes), fed directly by the
+  target_space pending run. This amendment licenses **one** recorder run on that slice, K=10, under
+  the frozen stanza `b0093774…`, so that the corpus result can be read beside a result on a text
+  layer the resolver can match.
+- **What is licensed, exactly.** `scripts/motion_probe.py` with `--papers liu_2005 --corpus-run
+  "Amendment 14" --slice-file ground_truth/liu_2005_deinterleaved_methods.txt`: the slice's text is
+  the paper (``find_methods_section`` bypassed), the manifest records the licence, the slice path and
+  its sha256, and the run refuses any other paper, any other licence, or a missing file. **The clean
+  cell is already spent** (Amendment 13); this run does not re-spend it and is not a second corpus
+  draw. Results dir `results/motion_probe_liu2005_deinterleaved/`, gated on the stanza hash before
+  any record is read.
+- **How it is read.** As the clean three are read: **states and counts only** — the state-map rows of
+  10, the processed layer's arms and reason bases as counts, matching draws against the label (named_tool,
+  the value in column C, the level in column R, by script), level agreement as a count. No value,
+  offset, quote, reason detail or text. Reported in a dated section of the corpus findings **beside**
+  liu_2005's corpus line, and **never pooled** with the corpus run's draws or with any other run.
+- **Pre-declared readings.** (a) The quotes resolve on this slice (unresolved spans 0 of 10) — the
+  text layer was the cause; or (b) they do not — the cause lies elsewhere and is reported as found.
+  Under (a), the label match is reported as a count; neither outcome changes the label, the stanza
+  or the corpus result.
+- **Unchanged.** The stanza is frozen; no iteration. The slice file itself is not read by anyone
+  but the recorder.

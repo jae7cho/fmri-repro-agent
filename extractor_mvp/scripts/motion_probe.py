@@ -203,9 +203,35 @@ _PROBE_SET: tuple[str, ...] = (
 #: session; no second run on them without a further amendment.
 _CORPUS_RUN_LICENCE: str | None = "Amendment 13"
 
+#: Amendment 14 (2026-10-28): ONE more recorder run on a held-out paper -- liu_2005 on its
+#: de-interleaved methods slice (ground_truth/liu_2005_deinterleaved_methods.txt), K=10, reported
+#: beside the corpus result and never pooled; its clean cell is already spent. Accepted only with
+#: --slice-file and --papers liu_2005 together; the manifest records the slice's path and sha256.
+_DEINTERLEAVED_RUN_LICENCE: str | None = "Amendment 14"
+_DEINTERLEAVED_PAPER = "liu_2005"
 
-def _refuse_unless_licensed(corpus_run: str | None, held: list[str]) -> None:
-    """Raise before any client is built unless the held-out ids are licensed for this run."""
+
+def _refuse_unless_licensed(
+    corpus_run: str | None, held: list[str], *, slice_file: Path | None = None
+) -> None:
+    """Raise before any client is built unless the held-out ids are licensed for this run.
+
+    Two licences: the corpus run's (`_CORPUS_RUN_LICENCE`, any held-out id, no slice file) and the
+    de-interleaved run's (`_DEINTERLEAVED_RUN_LICENCE`, exactly `_DEINTERLEAVED_PAPER`, with
+    --slice-file). Any other combination is refused.
+    """
+    if (
+        _DEINTERLEAVED_RUN_LICENCE is not None
+        and corpus_run == _DEINTERLEAVED_RUN_LICENCE
+        and slice_file is not None
+        and held == [_DEINTERLEAVED_PAPER]
+    ):
+        return
+    if corpus_run == _DEINTERLEAVED_RUN_LICENCE and _DEINTERLEAVED_RUN_LICENCE is not None:
+        raise SystemExit(
+            f"refused: {_DEINTERLEAVED_RUN_LICENCE!r} licenses only --papers {_DEINTERLEAVED_PAPER} "
+            "together with --slice-file (the de-interleaved slice), nothing else."
+        )
     if _CORPUS_RUN_LICENCE is None or corpus_run != _CORPUS_RUN_LICENCE:
         why = (
             "no corpus-run licence is recorded in this file"
@@ -335,11 +361,23 @@ class _CountingClient:
         return self._client
 
 
-def _paper(paper_id: str) -> ParsedPaper:
-    """Load and slice exactly as ``batch.process_paper`` does, so the probe measures the same input."""
+def _paper(paper_id: str, slice_file: Path | None = None) -> ParsedPaper:
+    """Load and slice exactly as ``batch.process_paper`` does, so the probe measures the same input.
+
+    With ``slice_file`` (Amendment 14) the file's text IS the slice: ``find_methods_section`` is
+    bypassed, as the target_space pending run did for the same paper. The text goes to the model
+    and into the records, as every slice does; nothing here prints it.
+    """
     path = _CORPUS / _PROBE_PAPERS[paper_id]["pdf"]
     if not path.is_file():
         raise SystemExit(f"corpus PDF missing: {path}")
+    if slice_file is not None:
+        return ParsedPaper(
+            text=slice_file.read_text(encoding="utf-8"),
+            source=paper_id,
+            parser="pypdf",
+            pdf_date=pdf_creation_date(path),
+        )
     text, parser = load_pdf_text(path)
     if parser == "failed" or not text:
         raise SystemExit(f"pdf text extraction failed: {path}")
@@ -405,7 +443,7 @@ def _record(
     )
 
 
-def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
+def _provenance(k: int, papers: list[str], slice_file: Path | None = None) -> dict[str, Any]:
     """Emitted, not hand-written, and recomputed at emit time."""
     return {
         "artifact": "motion_correction.method reachability probe — per-draw records",
@@ -419,6 +457,11 @@ def _provenance(k: int, papers: list[str]) -> dict[str, Any]:
         "papers": papers,
         "corpus_run_licence": _CORPUS_RUN_LICENCE,
         "held_out_admitted": sorted(set(papers) & _HELD_OUT),
+        "deinterleaved_run_licence": _DEINTERLEAVED_RUN_LICENCE,
+        "slice_file": (str(slice_file) if slice_file is not None else None),
+        "slice_file_sha256": (
+            hashlib.sha256(slice_file.read_bytes()).hexdigest() if slice_file is not None else None
+        ),
         # THE point of this header. prereg C2 ("committed BEFORE the run") and C21 ("the vocabulary
         # may not be extended after seeing output") are only checkable if every draw names the
         # stanza it ran under. C11 licenses iterating the wording on these six papers; doing so
@@ -475,6 +518,13 @@ def main(argv: list[str] | None = None) -> int:
         help="admit the held-out ids: must equal _CORPUS_RUN_LICENCE, which the licensing "
         "amendment sets in the same commit. Refused while no licence is recorded.",
     )
+    ap.add_argument(
+        "--slice-file",
+        type=Path,
+        default=None,
+        help="Amendment 14 only: a text file used as the methods slice in place of the PDF's; "
+        "requires --papers liu_2005 and --corpus-run 'Amendment 14'.",
+    )
     ap.add_argument("--results-dir", required=True, type=Path)
     args = ap.parse_args(argv)
 
@@ -488,15 +538,24 @@ def main(argv: list[str] | None = None) -> int:
             f"{len(_PROBE_PAPERS)} papers of the corpus: {sorted(_PROBE_PAPERS)}."
         )
     held = sorted(set(args.papers) & _HELD_OUT)
+    if args.slice_file is not None and (
+        list(args.papers) != [_DEINTERLEAVED_PAPER] or args.corpus_run != _DEINTERLEAVED_RUN_LICENCE
+    ):
+        raise SystemExit(
+            f"refused: --slice-file is for --papers {_DEINTERLEAVED_PAPER} under --corpus-run "
+            f"{_DEINTERLEAVED_RUN_LICENCE!r} only (prereg Amendment 14)."
+        )
+    if args.slice_file is not None and not args.slice_file.is_file():
+        raise SystemExit(f"refused: slice file missing: {args.slice_file}")
     if held:
-        _refuse_unless_licensed(args.corpus_run, held)
+        _refuse_unless_licensed(args.corpus_run, held, slice_file=args.slice_file)
 
     out_dir = args.results_dir / "motion_probe"
     out_dir.mkdir(parents=True, exist_ok=True)
     counting = _CountingClient()
 
     for paper_id in args.papers:
-        paper = _paper(paper_id)
+        paper = _paper(paper_id, args.slice_file)
         rows: list[dict[str, Any]] = []
         for draw in range(1, args.k + 1):
             counting.reset()
@@ -573,7 +632,8 @@ def main(argv: list[str] | None = None) -> int:
 
     manifest = out_dir / "manifest.json"
     manifest.write_text(
-        json.dumps(_provenance(args.k, list(args.papers)), indent=2) + "\n", encoding="utf-8"
+        json.dumps(_provenance(args.k, list(args.papers), args.slice_file), indent=2) + "\n",
+        encoding="utf-8",
     )
     print(f"\nprovenance header -> {manifest}")
     return 0

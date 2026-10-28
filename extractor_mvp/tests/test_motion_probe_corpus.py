@@ -39,7 +39,10 @@ class _NoClient:
         raise AssertionError("a client was built: the refusal did not precede it")
 
 
-def _no_read(paper_id: str) -> Any:
+_ORIGINAL_PAPER = motion_probe._paper  # captured at import, before the autouse stub replaces it
+
+
+def _no_read(paper_id: str, slice_file: Path | None = None) -> Any:
     raise AssertionError(f"_paper({paper_id!r}) was called: a test asked for a paper's text")
 
 
@@ -378,3 +381,106 @@ def test_projection_emits_the_derived_column_only_when_records_carry_a_diagnosti
             if not line.startswith("#")
         )
         assert ("attribution" in header.split(",")) is expect
+
+
+# --- Amendment 14 (2026-10-28): liu_2005 on its de-interleaved slice, one licensed run ------------
+
+
+def test_the_deinterleaved_licence_admits_only_liu_2005_with_a_slice_file(
+    tmp_path: Path,
+) -> None:
+    slice_file = tmp_path / "slice.txt"
+    slice_file.write_text("a synthetic methods slice; no paper text", encoding="utf-8")
+    # the licensed combination reaches the (stub) client before any read
+    with pytest.raises(AssertionError, match="a client was built"):
+        _main(
+            [
+                "--papers",
+                "liu_2005",
+                "--corpus-run",
+                "Amendment 14",
+                "--slice-file",
+                str(slice_file),
+            ],
+            tmp_path / "accepted",
+        )
+    # every other combination is refused before a client: another paper, no slice file, the
+    # corpus licence with a slice file, a missing slice file, two papers
+    for args, match in (
+        (
+            [
+                "--papers",
+                "tang_2025",
+                "--corpus-run",
+                "Amendment 14",
+                "--slice-file",
+                str(slice_file),
+            ],
+            "liu_2005",
+        ),
+        (["--papers", "liu_2005", "--corpus-run", "Amendment 14"], "Amendment 14"),
+        (
+            [
+                "--papers",
+                "liu_2005",
+                "--corpus-run",
+                "Amendment 13",
+                "--slice-file",
+                str(slice_file),
+            ],
+            "liu_2005",
+        ),
+        (
+            [
+                "--papers",
+                "liu_2005",
+                "--corpus-run",
+                "Amendment 14",
+                "--slice-file",
+                str(tmp_path / "nope"),
+            ],
+            "missing",
+        ),
+        (
+            [
+                "--papers",
+                "liu_2005",
+                "power_2014",
+                "--corpus-run",
+                "Amendment 14",
+                "--slice-file",
+                str(slice_file),
+            ],
+            "liu_2005",
+        ),
+    ):
+        out = tmp_path / "never"
+        with pytest.raises(SystemExit, match=match):
+            _main(args, out)
+        assert not out.exists()
+
+
+def test_the_slice_file_replaces_the_pdf_slice_and_is_recorded_in_the_manifest(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``_paper`` with a slice file returns the file's text as the paper (no PDF slicing), and the
+    provenance header carries the slice path and its sha256."""
+    import hashlib
+
+    slice_file = tmp_path / "slice.txt"
+    slice_file.write_text("synthetic slice text", encoding="utf-8")
+    monkeypatch.setattr(
+        motion_probe,
+        "load_pdf_text",
+        lambda p: (_ for _ in ()).throw(AssertionError("the PDF was sliced")),
+    )
+    monkeypatch.setattr(motion_probe, "pdf_creation_date", lambda p: None)
+    monkeypatch.setattr(motion_probe, "_CORPUS", tmp_path)
+    (tmp_path / "Liu_2005.pdf").write_bytes(b"%PDF-stub")
+    paper = _ORIGINAL_PAPER("liu_2005", slice_file)
+    assert paper.text == "synthetic slice text" and paper.source == "liu_2005"
+    header = motion_probe._provenance(10, ["liu_2005"], slice_file)
+    assert header["slice_file"] == str(slice_file)
+    assert header["slice_file_sha256"] == hashlib.sha256(b"synthetic slice text").hexdigest()
+    assert header["deinterleaved_run_licence"] == "Amendment 14"
+    assert motion_probe._provenance(10, ["power_2014"])["slice_file"] is None
