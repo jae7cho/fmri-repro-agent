@@ -79,6 +79,14 @@ says nothing about a step, that step is "missing" (or "deferred" when the text d
 pipeline). A software PACKAGE named for the analysis as a whole (SPM, FSL, AFNI) is not a
 statement that any particular step was performed.
 
+SCOPE (report v2, 2026-10-29): only the preprocessing of the functional (BOLD) data. A sentence
+about the structural (T1/T2) image's own preprocessing does not fill a functional field, except
+where a step is about the structural image (brain extraction, segmentation, intensity correction
+of the structural image). Covariates of a first-level statistical model (task regressors, motion or
+trend covariates entered in the GLM) are analysis, not preprocessing: they do not fill nuisance
+regression or detrend. If the text describes both, use the preprocessing one and say which in the
+quote you choose.
+
 Typed fields: use the canonical value when the paper's term maps to one; otherwise return the
 paper's term VERBATIM. Numbers as strings, digits as the paper writes them ("0.5", "6", "3").
 Yes/no fields: exactly "yes" or "no". List fields: the items separated by commas, canonical where

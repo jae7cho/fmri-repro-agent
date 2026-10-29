@@ -969,3 +969,15 @@ def test_the_kb_never_fills_the_band_until_the_kb_build(monkeypatch: Any) -> Non
         citation_resolver=None,
     )
     assert ("temporal_filtering", "effective_band_hz") in seen["skip"]
+
+
+def test_both_coverage_prompts_carry_the_scope_rule() -> None:
+    """report v2 step 4 (2026-10-29): BOLD preprocessing only; structural preprocessing and
+    first-level model covariates are out, and the prompt says so."""
+    for prompt in (TEMPORAL_VOLUME_PROMPT, SPATIAL_PROMPT):
+        assert (
+            "SCOPE (report v2, 2026-10-29): only the preprocessing of the functional (BOLD) data."
+            in prompt
+        )
+        assert "Covariates of a first-level statistical model" in prompt
+        assert "they do not fill nuisance\nregression or detrend" in prompt

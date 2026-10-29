@@ -174,7 +174,9 @@ _PINNED = {
     #: 18b47abfb9aca06c195686567f59394ff5984a4969ca4721021ac74fcdc4ef19.
     #: UPDATED 2026-10-29, report v2 step 3 (DESIGN_report_v2.md §1a): call T asks temporal filtering (performed, band, filter type, order, relative to regression, applied to). Superseded TEMPORAL_VOLUME_PROMPT value:
     #: 8c46e26a78af72505b2d8c4331d9c79ef0baed8d00f0cdf7152b1df5b57028be.
-    "TEMPORAL_VOLUME_PROMPT": "8f21ca02c0d660a8364c53d63f40735260a13731fd15d2b6de90e44e75d56795",
+    #: UPDATED 2026-10-29, report v2 step 4 (DESIGN_report_v2.md §2): the SCOPE paragraph in both coverage prompts (BOLD preprocessing only; structural preprocessing and first-level model covariates out). Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: 8f21ca02c0d660a8364c53d63f40735260a13731fd15d2b6de90e44e75d56795.
+    "TEMPORAL_VOLUME_PROMPT": "2129f31135fb0e7f9256a23e2fc962217dc432c668281494be056eb92ccce3fe",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -184,7 +186,9 @@ _PINNED = {
     #: dd46672b9cc43b6eb2d64c115138b2a559c82a581b4e9d3909c4308d1c2feff6.
     #: UPDATED 2026-10-29, report v2 step 2 (DESIGN_report_v2.md §1c): call S asks software_mentions (name, version, used_for, quote). Superseded SPATIAL_PROMPT value:
     #: b29d4c06d72b4092e25d6edc78dab6595316fee36eebde6aaad675166b871a0b.
-    "SPATIAL_PROMPT": "2291c503605d2d887463f119cc2b5218533fa132b11f575cb6c0f9efd0899ea2",
+    #: UPDATED 2026-10-29, report v2 step 4 (DESIGN_report_v2.md §2): the SCOPE paragraph in both coverage prompts (BOLD preprocessing only; structural preprocessing and first-level model covariates out). Superseded SPATIAL_PROMPT value:
+    #: 2291c503605d2d887463f119cc2b5218533fa132b11f575cb6c0f9efd0899ea2.
+    "SPATIAL_PROMPT": "6d9f03681daf28300de60e23ec0512c9e1deb43e19969ebc927a5e3e60417b66",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):
