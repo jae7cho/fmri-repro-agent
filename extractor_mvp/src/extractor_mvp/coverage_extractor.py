@@ -226,11 +226,14 @@ type); cost function; interpolation method. This is the EPI-to-T1 (functional-to
 registration of the same subject -- NOT registration to a template or atlas (a different row),
 NOT between-volume motion correction.
 coregistration_performed: was the functional image registered to the subject's structural image?
-coregistration_method: canonical flirt_bbr, flirt, spm_coreg, bbregister, ants, other.
+coregistration_method: the TOOL that performed the registration (FLIRT, bbregister, SPM
+  Coregister, ANTs, ...): canonical flirt, bbregister, spm_coreg, ants, other. A cost function is
+  NOT a tool: "boundary-based registration (BBR)" is the cost function below, and the method is
+  the tool it ran in, if the text names one; otherwise the method is missing.
 coregistration_transform: canonical rigid, affine, nonlinear.
 coregistration_nonlinear_transform_type: when nonlinear, its type, the paper's words.
-coregistration_cost_function: canonical correlation_ratio, mutual_information, boundary_based,
-  ssd; verbatim otherwise.
+coregistration_cost_function: canonical bbr, mutual_information, correlation_ratio, other;
+  verbatim otherwise.
 coregistration_interpolation: canonical linear, spline, sinc, other.
 
 ## Distortion correction (distortion_correction) -- field AND gradient nonlinearity

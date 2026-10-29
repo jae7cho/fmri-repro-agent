@@ -168,7 +168,10 @@ _PINNED = {
     #: TEMPORAL_VOLUME_PROMPT 9e52382403967e42ed37cb7f9f2d7a3ac324509d8d2bf6affdc68f11a3837a64,
     #: SPATIAL_PROMPT 17742cbb8f49cfcbf95ccdcce73a715b8fd669ee7a9285f7d6363b438cb23ffa.
     "TEMPORAL_VOLUME_PROMPT": "c2617933046fb988e99e01e1bbb48f08fbb8449456a371009d281d601dfc9beb",
-    "SPATIAL_PROMPT": "95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80",
+    #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
+    #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
+    #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
+    "SPATIAL_PROMPT": "4ac7b0cbd47d895b6c4f280f077485fe916785a58d7c8876723a23bf9f59f78d",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):

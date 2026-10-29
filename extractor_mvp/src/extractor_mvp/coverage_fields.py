@@ -279,13 +279,10 @@ COREG_TRANSFORM: dict[str, list[str]] = {
     "nonlinear": ["nonlinear", "non-linear"],
 }
 COREG_METHOD: dict[str, list[str]] = {
-    "flirt_bbr": [
-        "FLIRT BBR",
-        "FLIRT with BBR",
-        "BBR",
-        "boundary-based registration",
-        "boundary based registration",
-    ],
+    # item 4 (2026-10-28): method = the TOOL. The bare "BBR" / "boundary-based registration" forms
+    # left this table -- they are the cost function (COREG_COST) -- so a paper naming only BBR has
+    # a cost function and no tool, not a tool named flirt_bbr.
+    "flirt_bbr": ["FLIRT BBR", "FLIRT with BBR", "FLIRT (BBR)"],
     "flirt": ["FLIRT"],
     "spm_coreg": ["SPM coregister", "coregister", "SPM"],
     "bbregister": ["bbregister"],
@@ -295,7 +292,9 @@ COREG_METHOD: dict[str, list[str]] = {
 COREG_COST: dict[str, list[str]] = {
     "correlation_ratio": ["correlation ratio"],
     "mutual_information": ["mutual information", "normalized mutual information"],
-    "boundary_based": ["boundary-based", "boundary based", "BBR"],
+    # item 4 (2026-10-28): the prompt's canonical token is "bbr"; the spec member stays
+    # boundary_based (no schema change).
+    "boundary_based": ["bbr", "boundary-based", "boundary based", "boundary-based registration"],
     "ssd": ["sum of squared differences", "least squares", "SSD"],
 }
 DISTORTION_SOURCE: dict[str, list[str]] = {

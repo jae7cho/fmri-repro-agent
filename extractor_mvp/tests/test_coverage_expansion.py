@@ -556,3 +556,54 @@ def test_detrend_takes_the_highest_order_the_quote_names() -> None:
     )
     assert _field(prep2, "nuisance_regression", "detrend").extraction.value.resolved == "quadratic"
     assert not any(d.failure_reason.startswith("detrend_highest") for d in diags2)
+
+
+# ---------------------------------------------------------------------------
+# Item 4 (2026-10-28): coregistration method = the tool; the cost function has its own vocabulary
+# ---------------------------------------------------------------------------
+
+
+def test_bbr_is_a_cost_function_not_a_method() -> None:
+    prep = _run(
+        spatial=SpatialExtraction(
+            coregistration_method=_ex("boundary-based registration", _S["coreg"]),
+            coregistration_cost_function=_ex("bbr", _S["coreg"]),
+        )
+    )
+    # the cost-function phrase no longer resolves as a METHOD: kept verbatim, unrecognized
+    method = _field(prep, "coregistration", "method").extraction.value
+    assert (method.resolved, method.resolution) == (None, "unrecognized")
+    assert method.verbatim == "boundary-based registration"
+    cost = _field(prep, "coregistration", "cost_function").extraction.value
+    assert cost.resolved == "boundary_based"
+    tool = _run(spatial=SpatialExtraction(coregistration_method=_ex("FLIRT", _S["coreg"])))
+    assert _field(tool, "coregistration", "method").extraction.value.resolved == "flirt"
+    assert "canonical bbr, mutual_information, correlation_ratio, other" in SPATIAL_PROMPT
+    assert "A cost function is\n  NOT a tool" in SPATIAL_PROMPT
+
+
+# ---------------------------------------------------------------------------
+# Item 6 (2026-10-28): kind-prefixed fields on rows with sibling kinds
+# ---------------------------------------------------------------------------
+
+
+def test_rows_with_sibling_kinds_name_the_kind_on_each_field() -> None:
+    prep = _run(
+        temporal=TemporalVolumeExtraction(
+            ica_performed=_ex("yes", _S["ica"]),
+            compcor_performed=_ex("yes", _S["compcor"]),
+            compcor_n_components=_ex("5", _S["compcor"]),
+            despike_performed=_ex("no", "No spatial smoothing was applied."),  # unverifiable
+            scrub_performed=_ex("yes", _S["scrub"]),
+        ),
+        spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["smooth"])),
+    )
+    out = render.to_cobidas_coverage(prep)
+    assert (
+        "Artifact and structured noise removal [unvalidated] — reported: ica_denoise.performed = True; "
+        "compcor.performed = True; compcor.n_components = 5" in out
+    )
+    assert "Volume censoring [unvalidated] — reported: scrub.performed = True" in out
+    # a one-kind row stays bare
+    assert "Spatial smoothing [unvalidated] — reported: performed = True" in out
+    assert "spatial_smoothing.performed" not in out

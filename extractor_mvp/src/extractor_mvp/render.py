@@ -1106,8 +1106,13 @@ def _expanded_rows_section(
         mapped = mapped_rows(rc, rows)
         values: list[str] = []
         quote: str | None = None
+        # Item 6 (2026-10-28): a row mapped to more than one kind names the kind on each field
+        # ("ica_denoise.performed = True; compcor.variant = a"); a one-kind row stays bare.
+        prefixed = len(rc.row.spec_kinds) > 1
         for r in mapped:
             param = r.path.split(".", 1)[1] if "." in r.path else r.path
+            if prefixed:
+                param = f"{r.group}.{param}"
             if r.state == EXTRACTED:
                 values.append(f"{param} = {_fmt_value(r.value)}")
                 if quote is None and r.span_text:
