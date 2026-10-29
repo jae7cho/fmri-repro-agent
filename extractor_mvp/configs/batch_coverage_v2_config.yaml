@@ -1,0 +1,62 @@
+# coverage_v2 -- the nineteen re-run after the six follow-ups the author ordered on 2026-10-28
+# (DESIGN_coverage_expansion.md B14): the span resolver's named repair tier (schema 0.5.3),
+# performed never deferred and its quote checked against a frozen per-step phrase table, the alias
+# fixes, the coregistration definitions, the record-level multiple_pipelines question, kind-prefixed
+# rows. The two coverage prompts carry new hashes (TEMPORAL_VOLUME_PROMPT 18b47abf..., SPATIAL_PROMPT
+# dd46672b...); the shared prompt and the frozen motion stanza b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837
+# are unchanged. EXACT mirror of batch_coverage_v1_config.yaml (the same 19 paper_ids/paths, the SAME
+# model); only output_dir differs. Four model calls per paper on the single-acquisition path.
+#
+# EVERY field this run writes is the new named vintage coverage_v2; nothing is pooled with coverage_v1
+# or any earlier vintage -- the per-row table is reported BESIDE coverage_v1's, never merged. The
+# three held-out papers enter through the model only; their reports are read as states and counts.
+#
+# IDENTITY GATE: unchanged from coverage_v1's derivation -- the stored acceptance records carry none
+# of the new fields and no span of theirs is repaired (span_repair_replay.py: 2 of their cells are
+# agtzidis's, which the gate's stored .md already renders as unresolved; the gate re-renders from the
+# stored JSON, whose spans are fixed), so
+#   scripts/rerender_reports.py --results-dir results/batch_a1_acceptance --against <pre-item-1 HEAD>
+#       -> 19 identical, 0 changed;   --against d31e8b7 -> 0 identical, 19 changed.
+# output_dir is gitignored. The launcher writes launcher_manifest.json beside the output: HEAD, the
+# five prompt hashes, the phrase table's hash, this file's sha256, the model, start and end, exit code.
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_coverage_v2
+papers:
+- paper_id: agtzidis_2020
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Agtzidis_2020.pdf
+- paper_id: braun_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Braun_2015.pdf
+- paper_id: chen_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Chen_2015.pdf
+- paper_id: ciric_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Ciric_2017.pdf
+- paper_id: cole_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cole_2013.pdf
+- paper_id: derosa_2025
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/DeRosa_2025.pdf
+- paper_id: gordon_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Gordon_2014.pdf
+- paper_id: liu_2005
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2005.pdf
+- paper_id: liu_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf
+- paper_id: mueller_2021
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Mueller_2021.pdf
+- paper_id: oconnor_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/OConnor_2017.pdf
+- paper_id: poldrack_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Poldrack_2015.pdf
+- paper_id: power_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf
+- paper_id: tang_2025
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Tang_2025.pdf
+- paper_id: vanderwal_2016
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Vanderwal_2016.pdf
+- paper_id: viduarre_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Viduarre_2017.pdf
+- paper_id: weber_2024
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Weber_2024.pdf
+- paper_id: wheaton_2004
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Wheaton_2004.pdf
+- paper_id: binder_1999
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Binder_1999.pdf
