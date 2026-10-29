@@ -1087,6 +1087,7 @@ def _assemble(
     motion_method: ProvenancedField | None = None,
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
     software_mentions: list[ProvenancedField] | None = None,
+    step_order: tuple[list[str], list[Any]] | None = None,
 ) -> Preprocessing:
     """Wrap the extracted/missing fields into a schema-valid Preprocessing block.
 
@@ -1184,35 +1185,74 @@ def _assemble(
     # The eighteen kinds, in catalog order with the eight that were emitted before 2026-10-28 kept
     # in their earlier relative order (DESIGN_coverage_expansion.md B6). temporal_filtering has no
     # D.3 row and stays unemitted.
+    template_steps = [
+        _build("nonsteadystate_removal", NonsteadystateRemoval),
+        _build("slice_time_correction", SliceTimeCorrection),
+        brain_extraction,
+        segmentation,
+        motion_correction,
+        _build("distortion_correction", DistortionCorrection, intended_fieldmap=NotApplicable()),
+        _build("coregistration", Coregistration),
+        _build("intensity_correction", IntensityCorrection),
+        spatial,
+        surface,
+        _build("ica_denoise", ICADenoise),
+        _build("compcor", CompCor),
+        nuisance_regression,
+        # report v2 §1a (2026-10-29): beyond COBIDAS, between regression and censoring
+        _build("temporal_filtering", TemporalFiltering),
+        _build("despike", Despike),
+        _build("scrub", Scrub),
+        intensity,
+        _build("spatial_smoothing", SpatialSmoothing),
+        temporal_standardization,
+    ]
+    steps, order_source, order_spans = _apply_step_order(template_steps, step_order)
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
         software_mentions=software_mentions,
-        steps=[
-            _build("nonsteadystate_removal", NonsteadystateRemoval),
-            _build("slice_time_correction", SliceTimeCorrection),
-            brain_extraction,
-            segmentation,
-            motion_correction,
-            _build(
-                "distortion_correction", DistortionCorrection, intended_fieldmap=NotApplicable()
-            ),
-            _build("coregistration", Coregistration),
-            _build("intensity_correction", IntensityCorrection),
-            spatial,
-            surface,
-            _build("ica_denoise", ICADenoise),
-            _build("compcor", CompCor),
-            nuisance_regression,
-            # report v2 §1a (2026-10-29): beyond COBIDAS, between regression and censoring
-            _build("temporal_filtering", TemporalFiltering),
-            _build("despike", Despike),
-            _build("scrub", Scrub),
-            intensity,
-            _build("spatial_smoothing", SpatialSmoothing),
-            temporal_standardization,
-        ],
+        step_order_source=order_source,
+        step_order_spans=order_spans,
+        steps=steps,
     )
+
+
+def _step_reported(step: Any) -> bool:
+    """A step the record reports as done: an EXTRACTED or DEFERRED field other than a
+    ``performed = False``."""
+    for name in type(step).model_fields:
+        if name in type(step).STRUCTURAL_FIELDS:
+            continue
+        pf = getattr(step, name)
+        if pf is None:
+            continue
+        status = pf.extraction.status
+        if status == "DEFERRED_TO_CITATION":
+            return True
+        if status == "EXTRACTED" and not (name == "performed" and pf.extraction.value is False):
+            return True
+    return False
+
+
+def _apply_step_order(
+    template_steps: list[Any], step_order: tuple[list[str], list[Any]] | None
+) -> tuple[list[Any], Literal["paper", "partial", "template"] | None, list[Any] | None]:
+    """report v2 §1d (2026-10-29): the paper's stated order first, the rest in template order.
+
+    ``None`` (no coverage calls were made -- the per-acquisition path, or a caller that predates
+    report v2) keeps the template and records no source, so such a record renders as before."""
+    if step_order is None:
+        return template_steps, None, None
+    kinds, spans = step_order
+    if not kinds:
+        return template_steps, "template", None
+    by_kind = {s.kind: s for s in template_steps}
+    ordered = [by_kind[k] for k in kinds if k in by_kind]
+    rest = [s for s in template_steps if s.kind not in kinds]
+    reported_unordered = [s for s in rest if _step_reported(s)]
+    source: Literal["paper", "partial"] = "partial" if reported_unordered else "paper"
+    return ordered + rest, source, list(spans)
 
 
 # Fork C: per-acquisition scope prefix prepended to the v3 extraction prompt.
@@ -1681,6 +1721,7 @@ def _extract_from_prompt(
     motion_method: ProvenancedField | None = None,
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
     software_mentions: list[ProvenancedField] | None = None,
+    step_order: tuple[list[str], list[Any]] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Run one LLM extraction call + the shared post-processing pipeline.
 
@@ -1762,7 +1803,7 @@ def _extract_from_prompt(
         deferrals.append(bp_deferral)
 
     return (
-        _assemble(pf, base_pipeline, motion_method, coverage, software_mentions),
+        _assemble(pf, base_pipeline, motion_method, coverage, software_mentions, step_order),
         diagnostics,
         deferrals,
     )
@@ -1815,6 +1856,7 @@ def extract_preprocessing(
         motion_method,
         coverage.fields,
         coverage.software,
+        (coverage.step_order, coverage.step_order_spans),
     )
     if motion_diag is not None:
         diagnostics.append(motion_diag)

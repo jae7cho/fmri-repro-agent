@@ -40,7 +40,7 @@ from typing import Annotated, ClassVar, Generic, Literal, Self, TypeVar
 
 from pydantic import BaseModel, Field, model_validator
 
-from fmri_repro.spec.provenance import NotApplicable, ProvenancedField
+from fmri_repro.spec.provenance import NotApplicable, ProvenancedField, Span
 from fmri_repro.spec.refs import AcquisitionRef, FieldMeta
 
 # ---------------------------------------------------------------------------
@@ -1574,6 +1574,13 @@ class Preprocessing(BaseModel):
     # with its own quote. OPTIONAL: absent on a document written before 0.6.0 and on the
     # per-acquisition path, which then keeps the base-pipeline-only Software row.
     software_mentions: list[ProvenancedField[SoftwareMention]] | None = None
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1d): where ``steps``' order came from. "paper": the
+    # paper states the order of every step it reports; "partial": it orders some, the rest follow
+    # in template order; "template": it states none and the list order is the catalog's, which a
+    # reader must not take as the paper's. ``step_order_spans`` are the sentences that state it.
+    # OPTIONAL: absent on a document written before 0.6.0.
+    step_order_source: Literal["paper", "partial", "template"] | None = None
+    step_order_spans: list[Span] | None = None
 
     @model_validator(mode="after")
     def _default_written_under(self) -> Self:

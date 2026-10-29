@@ -176,7 +176,9 @@ _PINNED = {
     #: 8c46e26a78af72505b2d8c4331d9c79ef0baed8d00f0cdf7152b1df5b57028be.
     #: UPDATED 2026-10-29, report v2 step 4 (DESIGN_report_v2.md §2): the SCOPE paragraph in both coverage prompts (BOLD preprocessing only; structural preprocessing and first-level model covariates out). Superseded TEMPORAL_VOLUME_PROMPT value:
     #: 8f21ca02c0d660a8364c53d63f40735260a13731fd15d2b6de90e44e75d56795.
-    "TEMPORAL_VOLUME_PROMPT": "2129f31135fb0e7f9256a23e2fc962217dc432c668281494be056eb92ccce3fe",
+    #: UPDATED 2026-10-29, report v2 step 5 (DESIGN_report_v2.md §1d): call T asks step_order (the paper's order, every sentence stating it). Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: 2129f31135fb0e7f9256a23e2fc962217dc432c668281494be056eb92ccce3fe.
+    "TEMPORAL_VOLUME_PROMPT": "b2feb797352b95d0dc17e39d5edd13b1c74aac0a6c3a6c1a759b18a6ea7f5830",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.

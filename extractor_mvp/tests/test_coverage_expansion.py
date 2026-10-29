@@ -981,3 +981,69 @@ def test_both_coverage_prompts_carry_the_scope_rule() -> None:
         )
         assert "Covariates of a first-level statistical model" in prompt
         assert "they do not fill nuisance\nregression or detrend" in prompt
+
+
+# ---------------------------------------------------------------------------
+# report v2 step 5 (2026-10-29): step order from the paper, else the template with a note
+# ---------------------------------------------------------------------------
+
+_ORDER = (
+    "Time-courses were regressed against the white matter and CSF signals, then band-pass filtered, "
+    "then spatially smoothed with a 6 mm kernel."
+)
+
+
+def _run_order(
+    kinds: list[str], quotes: list[str], spatial: Any = None, **fields: Any
+) -> tuple[Preprocessing, list[Any]]:
+    from extractor_mvp.coverage_extractor import StepOrderResult
+
+    paper = ParsedPaper(text=TEXT + " " + _ORDER, source="t", parser="manual")
+    prep, diags, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(
+                step_order=StepOrderResult(kinds=kinds, verbatim_quotes=quotes), **fields
+            ),
+            spatial=spatial,
+        ),
+    )
+    return prep, diags
+
+
+def test_a_stated_order_reorders_the_steps_and_the_header_says_so() -> None:
+    prep, _ = _run_order(
+        ["nuisance_regression", "temporal_filtering", "spatial_smoothing"],
+        [_ORDER],
+        nuisance_performed=_ex("yes", _ORDER),
+        filter_performed=_ex("yes", _ORDER),
+    )
+    kinds = [s.kind for s in prep.steps]
+    assert kinds[:3] == ["nuisance_regression", "temporal_filtering", "spatial_smoothing"]
+    assert len(kinds) == 19
+    assert prep.step_order_source == "paper"
+    out = render.to_report(prep)
+    assert "## Preprocessing steps (order as stated in the paper)" in out
+    assert "Order stated in: «Time-courses were regressed" in out
+
+
+def test_a_reported_step_outside_the_stated_order_makes_it_partial() -> None:
+    prep, _ = _run_order(
+        ["nuisance_regression", "temporal_filtering"],
+        [_ORDER],
+        spatial=SpatialExtraction(smoothing_performed=_ex("yes", _ORDER)),
+    )
+    assert prep.step_order_source == "partial"
+    assert "the rest follow in template order" in render.to_report(prep)
+
+
+def test_no_order_or_an_unresolved_sentence_keeps_the_template_and_says_so() -> None:
+    prep, _ = _run_order([], [])
+    assert prep.step_order_source == "template"
+    assert "template order — the paper does not state an order" in render.to_report(prep)
+    prep2, diags = _run_order(["nuisance_regression", "spatial_smoothing"], ["a sentence nowhere"])
+    assert prep2.step_order_source == "template"
+    assert any(d.failure_reason.startswith("step_order_quote_unresolved") for d in diags)
+    assert prep2.steps[0].kind == "nonsteadystate_removal"

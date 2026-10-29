@@ -213,6 +213,17 @@ nuisance_detrend: canonical linear, quadratic, none; verbatim otherwise.
 nuisance_filtering_integrated: "yes" if temporal filtering was applied WITHIN the same regression
   (simultaneously, e.g. AFNI 3dTproject), "no" if as a separate step, missing if not stated.
 
+## The order of the steps (step_order) -- a record-level question
+step_order: the preprocessing steps IN THE ORDER THE PAPER STATES THEM, as a list of these names:
+  nonsteadystate_removal, slice_time_correction, brain_extraction, segmentation, motion_correction,
+  distortion_correction, coregistration, intensity_correction, spatial_normalization,
+  surface_projection, ica_denoise, compcor, nuisance_regression, temporal_filtering, despike,
+  scrub, intensity_normalization, spatial_smoothing, temporal_standardization.
+  Give an order only where the text states one: a numbered or sequenced list, "then", "followed
+  by", "after", or steps narrated one after another as a procedure. verbatim_quotes = every
+  sentence that states the order, each copied exactly. Leave step_order empty when the text names
+  steps without stating their order.
+
 ## Temporal filtering (temporal_filtering) -- beyond COBIDAS D.3, asked because a replication needs it
 filter_performed: was the BOLD time series temporally filtered (band-pass, high-pass, low-pass)?
 filter_band_hz: the band in Hz as "low-high" ("0.01-0.1"); a high-pass only as "low-" ("0.008-");
@@ -355,8 +366,17 @@ def _response_model(
 
 
 #: The LLM output schemas of the two calls, built from the field table so the two cannot drift.
+class StepOrderResult(BaseModel):
+    """The order of preprocessing steps as the paper states it (call T; DESIGN_report_v2.md §1d)."""
+
+    kinds: list[str] = Field(default_factory=list)
+    verbatim_quotes: list[str] = Field(default_factory=list)
+
+
 TemporalVolumeExtraction: type[BaseModel] = _response_model(
-    "TemporalVolumeExtraction", CALL_T_SPECS
+    "TemporalVolumeExtraction",
+    CALL_T_SPECS,
+    {"step_order": (StepOrderResult | None, None)},
 )
 SpatialExtraction: type[BaseModel] = _response_model(
     "SpatialExtraction",
@@ -377,6 +397,10 @@ class CoverageExtraction:
     record: dict[str, dict[str, ProvenancedField]] = dataclasses.field(default_factory=dict)
     #: report v2 §1c: every software mention call S returned, each its own provenanced field.
     software: list[ProvenancedField] = dataclasses.field(default_factory=list)
+    #: report v2 §1d: the stated order (kinds) and the resolved sentences stating it; empty when the
+    #: paper states none or a sentence did not resolve (then the template order, said so).
+    step_order: list[str] = dataclasses.field(default_factory=list)
+    step_order_spans: list[Any] = dataclasses.field(default_factory=list)
 
     def multiple_pipelines_dump(self) -> dict[str, dict[str, Any]]:
         """The record-level answers as plain dicts, the shape the batch stores and the renderer reads."""
@@ -568,6 +592,68 @@ def _process_software(extraction: BaseModel, text: str, out: CoverageExtraction)
         )
 
 
+#: The step kinds a paper's order may name: every kind the assembler emits.
+ORDERABLE_KINDS: tuple[str, ...] = (
+    "nonsteadystate_removal",
+    "slice_time_correction",
+    "brain_extraction",
+    "segmentation",
+    "motion_correction",
+    "distortion_correction",
+    "coregistration",
+    "intensity_correction",
+    "spatial_normalization",
+    "surface_projection",
+    "ica_denoise",
+    "compcor",
+    "nuisance_regression",
+    "temporal_filtering",
+    "despike",
+    "scrub",
+    "intensity_normalization",
+    "spatial_smoothing",
+    "temporal_standardization",
+)
+
+
+def _process_step_order(extraction: BaseModel, text: str, out: CoverageExtraction) -> None:
+    """report v2 §1d: the stated order is kept only when EVERY sentence the model cites for it
+    resolves (F1e); unknown kinds are dropped, repeats kept at first position. Otherwise the order is
+    left empty and a diagnostic says why -- the template order then stands, labelled as such."""
+    result = getattr(extraction, "step_order", None)
+    if result is None or not result.kinds:
+        return
+    kinds: list[str] = []
+    for k in result.kinds:
+        k = k.strip()
+        if k in ORDERABLE_KINDS and k not in kinds:
+            kinds.append(k)
+    if len(kinds) < 2:
+        return
+    spans = []
+    for q in result.verbatim_quotes:
+        res = resolve_quote(q, text)
+        if res.span is None:
+            out.diagnostics.append(
+                ExtractionDiagnostic(
+                    "record.step_order",
+                    f"step_order_quote_unresolved:{res.failure_reason}",
+                    ",".join(kinds),
+                    q,
+                )
+            )
+            return
+        spans.append(res.span)
+    if not spans:
+        out.diagnostics.append(
+            ExtractionDiagnostic(
+                "record.step_order", "step_order_quote_missing", ",".join(kinds), None
+            )
+        )
+        return
+    out.step_order, out.step_order_spans = kinds, spans
+
+
 def _apply_not_performed(out: CoverageExtraction) -> None:
     """R2: when a kind's ``performed`` is EXTRACTED ``False``, its parameters are
     ``step_not_performed`` whatever the model returned for them."""
@@ -611,6 +697,7 @@ def extract_coverage(
     _process_record(temporal, "T", parsed_paper.text, out)
     _process_record(spatial, "S", parsed_paper.text, out)
     _process_software(spatial, parsed_paper.text, out)
+    _process_step_order(temporal, parsed_paper.text, out)
     _apply_not_performed(out)
     _apply_detrend_highest_order(out)
     return out

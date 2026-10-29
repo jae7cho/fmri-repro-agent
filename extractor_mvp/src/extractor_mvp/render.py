@@ -856,7 +856,26 @@ def to_protocol(
     lines.append("")
 
     # --- Steps in pipeline (list) order ---
-    lines.append("## Preprocessing steps (pipeline order)")
+    # report v2 §1d (2026-10-29): say where the order came from. A record written before 0.6.0
+    # carries no source and keeps the old header, byte for byte.
+    order_source = getattr(preprocessing, "step_order_source", None)
+    if order_source is None:
+        lines.append("## Preprocessing steps (pipeline order)")
+    elif order_source == "paper":
+        lines.append("## Preprocessing steps (order as stated in the paper)")
+    elif order_source == "partial":
+        lines.append(
+            "## Preprocessing steps (the paper's order for the steps it orders; the rest follow in "
+            "template order, which the paper does not state)"
+        )
+    else:
+        lines.append(
+            "## Preprocessing steps (template order — the paper does not state an order; a reader "
+            "must not assume one)"
+        )
+    if order_source in ("paper", "partial") and preprocessing.step_order_spans:
+        quotes = "  ".join(f"«{_truncate_quote(sp.text)}»" for sp in preprocessing.step_order_spans)
+        lines.append(f"Order stated in: {quotes}")
     lines.append("")
     variants = _multiple_pipelines_line(multiple_pipelines)
     if variants:

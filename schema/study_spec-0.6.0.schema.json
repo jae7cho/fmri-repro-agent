@@ -12654,6 +12654,38 @@
           "default": null,
           "title": "Software Mentions"
         },
+        "step_order_source": {
+          "anyOf": [
+            {
+              "enum": [
+                "paper",
+                "partial",
+                "template"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Order Source"
+        },
+        "step_order_spans": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/Span"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Step Order Spans"
+        },
         "steps": {
           "items": {
             "discriminator": {
