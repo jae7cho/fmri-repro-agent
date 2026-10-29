@@ -305,3 +305,15 @@ def performed_phrase_supported(kind: str, quote: str) -> bool:
     whole, token-run matched with word forms tolerated. A quote about a different step -- chen's
     slice-timing ``performed`` quoting the de-spiking sentence -- fails and renders unverifiable."""
     return any(phrase_in_quote(phrase, quote) for phrase in PERFORMED_PHRASES.get(kind, ()))
+
+
+def version_in_quote(version: str, quote: str) -> bool:
+    """report v2 §1c (2026-10-29): a software version is supported when it occurs in the quote as a
+    whole version string, digit-exact, optionally written with a "v"/"version" prefix ("5.3" in
+    "FreeSurfer v5.3"; not in "15.3" or "5.30"). The token matcher cannot do this: "v5.3" tokenises
+    as "v5" and "3"."""
+    v = version.strip().lstrip("vV").strip()
+    if not v:
+        return False
+    pattern = r"(?<![0-9A-Za-z.])(?:v|version\s*)?" + re.escape(v) + r"(?![0-9])(?!\.[0-9])"
+    return re.search(pattern, quote, re.IGNORECASE) is not None

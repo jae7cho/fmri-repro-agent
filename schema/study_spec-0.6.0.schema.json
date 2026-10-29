@@ -927,6 +927,60 @@
       "title": "AlternativeInference[SliceOrientation]",
       "type": "object"
     },
+    "AlternativeInference_SoftwareMention_": {
+      "properties": {
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "value": {
+          "$ref": "#/$defs/SoftwareMention"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence"
+      ],
+      "title": "AlternativeInference[SoftwareMention]",
+      "type": "object"
+    },
     "AlternativeInference_SpecifiedTerm_Literal__MNI152NLin6Asym____MNI152NLin2009cAsym____Talairach____native_volume____study_specific____other____": {
       "properties": {
         "basis": {
@@ -4835,6 +4889,45 @@
       "title": "Extracted[SliceOrientation]",
       "type": "object"
     },
+    "Extracted_SoftwareMention_": {
+      "properties": {
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "span_recovered": {
+          "default": false,
+          "title": "Span Recovered",
+          "type": "boolean"
+        },
+        "spans": {
+          "items": {
+            "$ref": "#/$defs/Span"
+          },
+          "minItems": 1,
+          "title": "Spans",
+          "type": "array"
+        },
+        "status": {
+          "const": "EXTRACTED",
+          "default": "EXTRACTED",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SoftwareMention"
+        }
+      },
+      "required": [
+        "value",
+        "spans",
+        "confidence"
+      ],
+      "title": "Extracted[SoftwareMention]",
+      "type": "object"
+    },
     "Extracted_SpecifiedTerm_Literal__MNI152NLin6Asym____MNI152NLin2009cAsym____Talairach____native_volume____study_specific____other____": {
       "properties": {
         "confidence": {
@@ -8278,6 +8371,74 @@
         "alternative_inferences"
       ],
       "title": "InferredDefault[SliceOrientation]",
+      "type": "object"
+    },
+    "InferredDefault_SoftwareMention_": {
+      "properties": {
+        "alternative_inferences": {
+          "items": {
+            "$ref": "#/$defs/AlternativeInference_SoftwareMention_"
+          },
+          "title": "Alternative Inferences",
+          "type": "array"
+        },
+        "basis": {
+          "discriminator": {
+            "mapping": {
+              "date_inferred_version": "#/$defs/DateInferredVersionBasis",
+              "derived": "#/$defs/DerivedBasis",
+              "field_convention": "#/$defs/FieldConventionBasis",
+              "lab_prior": "#/$defs/LabPriorBasis",
+              "prior_publication": "#/$defs/PriorPublicationBasis",
+              "version_default": "#/$defs/VersionDefaultBasis"
+            },
+            "propertyName": "basis_type"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/VersionDefaultBasis"
+            },
+            {
+              "$ref": "#/$defs/DateInferredVersionBasis"
+            },
+            {
+              "$ref": "#/$defs/PriorPublicationBasis"
+            },
+            {
+              "$ref": "#/$defs/LabPriorBasis"
+            },
+            {
+              "$ref": "#/$defs/FieldConventionBasis"
+            },
+            {
+              "$ref": "#/$defs/DerivedBasis"
+            }
+          ],
+          "title": "Basis"
+        },
+        "confidence": {
+          "maximum": 1.0,
+          "minimum": 0.0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "status": {
+          "const": "INFERRED_DEFAULT",
+          "default": "INFERRED_DEFAULT",
+          "title": "Status",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/SoftwareMention"
+        }
+      },
+      "required": [
+        "value",
+        "basis",
+        "confidence",
+        "alternative_inferences"
+      ],
+      "title": "InferredDefault[SoftwareMention]",
       "type": "object"
     },
     "InferredDefault_SpecifiedTerm_Literal__MNI152NLin6Asym____MNI152NLin2009cAsym____Talairach____native_volume____study_specific____other____": {
@@ -12156,6 +12317,21 @@
           "title": "Schema Version",
           "type": "string"
         },
+        "software_mentions": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/ProvenancedField_SoftwareMention_"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Software Mentions"
+        },
         "steps": {
           "items": {
             "discriminator": {
@@ -13184,6 +13360,65 @@
         "inference"
       ],
       "title": "ProvenancedField[SliceOrientation]",
+      "type": "object"
+    },
+    "ProvenancedField_SoftwareMention_": {
+      "properties": {
+        "extraction": {
+          "discriminator": {
+            "mapping": {
+              "DEFERRED_TO_CITATION": "#/$defs/DeferredToCitation",
+              "EXTRACTED": "#/$defs/Extracted_SoftwareMention_",
+              "MISSING_FROM_PAPER": "#/$defs/MissingFromPaper"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Extracted_SoftwareMention_"
+            },
+            {
+              "$ref": "#/$defs/MissingFromPaper"
+            },
+            {
+              "$ref": "#/$defs/DeferredToCitation"
+            }
+          ],
+          "title": "Extraction"
+        },
+        "field_id": {
+          "title": "Field Id",
+          "type": "string"
+        },
+        "inference": {
+          "discriminator": {
+            "mapping": {
+              "INFERRED_DEFAULT": "#/$defs/InferredDefault_SoftwareMention_",
+              "LEFT_MISSING": "#/$defs/LeftMissing",
+              "NOT_APPLICABLE": "#/$defs/NotApplicable"
+            },
+            "propertyName": "status"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/InferredDefault_SoftwareMention_"
+            },
+            {
+              "$ref": "#/$defs/LeftMissing"
+            },
+            {
+              "$ref": "#/$defs/NotApplicable"
+            }
+          ],
+          "title": "Inference"
+        }
+      },
+      "required": [
+        "field_id",
+        "extraction",
+        "inference"
+      ],
+      "title": "ProvenancedField[SoftwareMention]",
       "type": "object"
     },
     "ProvenancedField_SpecifiedTerm_Literal__MNI152NLin6Asym____MNI152NLin2009cAsym____Talairach____native_volume____study_specific____other____": {
@@ -16334,6 +16569,44 @@
         "interpolation"
       ],
       "title": "SliceTimeCorrection",
+      "type": "object"
+    },
+    "SoftwareMention": {
+      "description": "One piece of software the paper names (0.6.0, 2026-10-29, DESIGN_report_v2.md \u00a71c).\n\n``name`` as written; ``version`` only when the paper states a SEPARATE version string (a version\nfused into the name, \"SPM12\", stays in the name -- the Q1 rule); ``used_for`` the paper's words\nfor what it was used for, when stated. Feeds the rebuilt Software row (D.3: \"for each software\nused, be sure to include version and revision number\").",
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "used_for": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Used For"
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Version"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "title": "SoftwareMention",
       "type": "object"
     },
     "Span": {

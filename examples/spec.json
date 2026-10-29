@@ -1973,7 +1973,8 @@
                 }
               }
             }
-          ]
+          ],
+          "software_mentions": null
         }
       ],
       "first_level": {},
@@ -2998,7 +2999,8 @@
                 }
               }
             }
-          ]
+          ],
+          "software_mentions": null
         }
       ],
       "first_level": {},

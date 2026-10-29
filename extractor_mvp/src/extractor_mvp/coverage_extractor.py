@@ -19,7 +19,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from fmri_repro.spec.preprocessing import Detrend, SpecifiedTerm
+from fmri_repro.spec.preprocessing import Detrend, SoftwareMention, SpecifiedTerm
 from fmri_repro.spec.provenance import Extracted, ProvenancedField
 from pydantic import BaseModel, Field
 
@@ -37,13 +37,15 @@ from extractor_mvp.extractor import (
     DeferralRecord,
     ExtractionDiagnostic,
     _extracted_pf,
+    _missing_pf,
     _performed_cannot_defer_pf,
     _process_field,
     _step_not_performed_pf,
     build_client,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.quote_support import phrase_in_quote
+from extractor_mvp.quote_support import free_text_supported, phrase_in_quote, version_in_quote
+from extractor_mvp.span_resolver import resolve_quote
 
 _SHARED_RULES = """\
 ## How every step is handled
@@ -271,6 +273,16 @@ intensity_correction_performed: was a bias-field (intensity inhomogeneity) corre
 intensity_correction_target: canonical bias_field, interleaved_slice.
 intensity_correction_method: canonical n4, fast_bias, other; verbatim otherwise.
 
+## Software the paper names (software_mentions)
+D.3 asks, for each software used, its version and revision number.
+software_mentions: a list with one entry per distinct piece of software the methods text names --
+  packages, toolboxes, pipelines, in-house code named as such -- for ANY part of the methods:
+  name = as written; version = only a SEPARATE version string the text states ("FreeSurfer v5.3"
+  -> version "5.3"; a version fused into the name, as in "SPM12", stays in the name and version
+  is empty); used_for = the paper's own words for what it was used for, if the sentence says;
+  verbatim_quote = the sentence naming it, copied exactly. Software cited only in the
+  introduction or discussion is not listed. An empty list when the text names none.
+
 ## Spatial smoothing (spatial_smoothing)
 D.3 asks: name of software/method; size and type of smoothing kernel; filtering approach (fixed
 kernel or iterative smoothing until a fixed FWHM); the space in which smoothing is performed.
@@ -293,7 +305,18 @@ def _missing_field() -> FieldExtractionResult:
     return FieldExtractionResult(status="missing")
 
 
-def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[BaseModel]:
+class SoftwareMentionResult(BaseModel):
+    """One software mention as the model returns it (call S; DESIGN_report_v2.md §1c)."""
+
+    name: str
+    version: str | None = None
+    used_for: str | None = None
+    verbatim_quote: str
+
+
+def _response_model(
+    name: str, specs: tuple[CoverageFieldSpec, ...], extra: dict[str, Any] | None = None
+) -> type[BaseModel]:
     """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any.
 
     NO validator (the author's ruling of 2026-10-29): a rule about one field must never be able to
@@ -308,6 +331,7 @@ def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[Bas
         spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field))
         for spec in specs + RECORD_SPECS
     }
+    fields.update(extra or {})
     return create_model(name, **fields)
 
 
@@ -315,7 +339,11 @@ def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[Bas
 TemporalVolumeExtraction: type[BaseModel] = _response_model(
     "TemporalVolumeExtraction", CALL_T_SPECS
 )
-SpatialExtraction: type[BaseModel] = _response_model("SpatialExtraction", CALL_S_SPECS)
+SpatialExtraction: type[BaseModel] = _response_model(
+    "SpatialExtraction",
+    CALL_S_SPECS,
+    {"software_mentions": (list[SoftwareMentionResult], Field(default_factory=list))},
+)
 
 
 @dataclasses.dataclass
@@ -328,6 +356,8 @@ class CoverageExtraction:
     diagnostics: list[ExtractionDiagnostic]
     deferrals: list[DeferralRecord]
     record: dict[str, dict[str, ProvenancedField]] = dataclasses.field(default_factory=dict)
+    #: report v2 §1c: every software mention call S returned, each its own provenanced field.
+    software: list[ProvenancedField] = dataclasses.field(default_factory=list)
 
     def multiple_pipelines_dump(self) -> dict[str, dict[str, Any]]:
         """The record-level answers as plain dicts, the shape the batch stores and the renderer reads."""
@@ -456,6 +486,69 @@ def _process_record(extraction: BaseModel, call: str, text: str, out: CoverageEx
             out.deferrals.append(deferral)
 
 
+def _process_software(extraction: BaseModel, text: str, out: CoverageExtraction) -> None:
+    """report v2 §1c: each mention's quote resolves through the one span path; the name (whole, its
+    first-use variants allowed) and the version (digit-exact tokens) must be in the quote or the
+    mention is unverifiable; a ``used_for`` not in the quote is dropped with a diagnostic, the
+    mention kept. Duplicates by case-folded name are dropped."""
+    seen: set[str] = set()
+    for item in getattr(extraction, "software_mentions", None) or []:
+        key = " ".join(item.name.lower().split())
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        dotted = f"software_mentions.{item.name}"
+        res = resolve_quote(item.verbatim_quote, text)
+        if res.span is None:
+            out.software.append(
+                _missing_pf(
+                    "software_mention",
+                    SoftwareMention,
+                    f"extraction_quote_unresolved:{res.failure_reason}",
+                )
+            )
+            out.diagnostics.append(
+                ExtractionDiagnostic(
+                    dotted,
+                    f"extraction_quote_unresolved:{res.failure_reason}",
+                    item.name,
+                    item.verbatim_quote,
+                )
+            )
+            continue
+        support = item.verbatim_quote if res.repairs else res.span.text
+        ok = free_text_supported(item.name, support) and (
+            not item.version or version_in_quote(item.version, support)
+        )
+        if not ok:
+            out.software.append(
+                _missing_pf("software_mention", SoftwareMention, "value_unsupported_by_quote")
+            )
+            out.diagnostics.append(
+                ExtractionDiagnostic(
+                    dotted, "value_unsupported_by_quote", item.name, item.verbatim_quote
+                )
+            )
+            continue
+        used_for = item.used_for
+        if used_for and not free_text_supported(used_for, support):
+            out.diagnostics.append(
+                ExtractionDiagnostic(
+                    dotted, "software_used_for_unsupported", used_for, item.verbatim_quote
+                )
+            )
+            used_for = None
+        out.software.append(
+            _extracted_pf(
+                "software_mention",
+                SoftwareMention,
+                SoftwareMention(name=item.name, version=item.version or None, used_for=used_for),
+                res.span,
+                res.recovered,
+            )
+        )
+
+
 def _apply_not_performed(out: CoverageExtraction) -> None:
     """R2: when a kind's ``performed`` is EXTRACTED ``False``, its parameters are
     ``step_not_performed`` whatever the model returned for them."""
@@ -498,6 +591,7 @@ def extract_coverage(
     _process(spatial, CALL_S_SPECS, parsed_paper.text, out)
     _process_record(temporal, "T", parsed_paper.text, out)
     _process_record(spatial, "S", parsed_paper.text, out)
+    _process_software(spatial, parsed_paper.text, out)
     _apply_not_performed(out)
     _apply_detrend_highest_order(out)
     return out

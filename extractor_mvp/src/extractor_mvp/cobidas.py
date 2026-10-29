@@ -201,6 +201,9 @@ class RowCoverage:
     #: collapse them (DELTA_base_pipeline_diagnostic.md §4a). Defaulted so the only construction
     #: site stays the only thing that has to know about it.
     unverifiable: bool = False
+    #: report v2 §1c (2026-10-29): the Software row when SOME named software carries a version and
+    #: some does not. Not addressed, covered; rendered "partially reported" with the names.
+    partial: bool = False
 
     def __post_init__(self) -> None:
         """``unverifiable`` implies NOT ``covered_by_extractor``.
@@ -286,7 +289,51 @@ def _software_coverage(
     return base_row.extraction_status == "EXTRACTED", True, False
 
 
-def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> list[RowCoverage]:
+@dataclasses.dataclass(frozen=True)
+class Mention:
+    """One piece of software for the Software row: from ``software_mentions`` or the base pipeline."""
+
+    name: str
+    version: str | None
+    used_for: str | None
+
+
+def software_mentions_for_row(
+    rows: list[Any], software_mentions: list[Any] | None
+) -> tuple[list[Mention], int]:
+    """(verified mentions, count of unverifiable ones). The base pipeline joins as one mention when
+    its name was extracted and no listed mention already carries that name. ``([], 0)`` when the
+    record carries no ``software_mentions`` (written before 0.6.0, or the per-acquisition path)."""
+    if software_mentions is None:
+        return [], 0
+    verified: list[Mention] = []
+    unverified = 0
+    for pf in software_mentions:
+        if pf.extraction.status == "EXTRACTED":
+            v = pf.extraction.value
+            verified.append(Mention(v.name, v.version, v.used_for))
+        else:
+            unverified += 1
+    base_row = next((r for r in rows if r.path == "base_pipeline"), None)
+    version_row = next((r for r in rows if r.path == "base_pipeline.version"), None)
+    if base_row is not None and base_row.extraction_status == "EXTRACTED" and base_row.value:
+        name = str(getattr(base_row.value, "name", "") or "")
+        names = {" ".join(m.name.lower().split()) for m in verified}
+        if name and " ".join(name.lower().split()) not in names:
+            version = (
+                str(version_row.value)
+                if version_row is not None and version_row.extraction_status == "EXTRACTED"
+                else None
+            )
+            verified.append(Mention(name, version, "base pipeline"))
+    return verified, unverified
+
+
+def assess_coverage(
+    rows: list[Any],
+    version_extraction_status: str | None,
+    software_mentions: list[Any] | None = None,
+) -> list[RowCoverage]:
     """Assess every D.3 row from flattened ``FieldRow`` rows + the base_pipeline.version
     extraction status. Extraction arm ONLY — an INFERRED_DEFAULT value is not a *report*.
 
@@ -303,10 +350,24 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
 
     out: list[RowCoverage] = []
     for cr in COBIDAS_D3_ROWS:
+        partial = False
         if cr.row_id == "software":
             addressed, covered, unverifiable = _software_coverage(
                 base_row, version_extraction_status
             )
+            # report v2 §1c (2026-10-29): when the record carries software_mentions, the row is read
+            # over EVERY named software, not the base pipeline alone. All versioned -> addressed;
+            # none -> not reported (the unconditional violation); some -> partially reported. No
+            # verified mention but some unverifiable -> unverifiable. Nothing named at all -> the
+            # base-pipeline rule above stands.
+            verified, n_unverified = software_mentions_for_row(rows, software_mentions)
+            if verified:
+                with_version = [m for m in verified if m.version]
+                covered, unverifiable = True, False
+                addressed = len(with_version) == len(verified)
+                partial = 0 < len(with_version) < len(verified)
+            elif n_unverified:
+                addressed, covered, unverifiable = False, False, True
         else:
             mapped = [r for k in cr.spec_kinds for r in by_kind.get(k, [])]
             # PRECEDENCE, ruled 2026-10-19 (DELTA_conditional_row_unverifiable.md §2): addressed,
@@ -331,6 +392,7 @@ def assess_coverage(rows: list[Any], version_extraction_status: str | None) -> l
                 addressed=addressed,
                 covered_by_extractor=covered,
                 unverifiable=unverifiable,
+                partial=partial,
             )
         )
     return out
@@ -348,6 +410,7 @@ VALIDATED_ROWS: frozenset[str] = frozenset(
 
 ROW_STATES: tuple[str, ...] = (
     "reported",
+    "partially_reported",
     "performed_no",
     "deferred",
     "unverifiable",
@@ -393,6 +456,8 @@ def row_state(rc: RowCoverage, rows: list[Any]) -> str:
         ]
         if negatives and not others:
             return "performed_no"
+    if rc.partial:
+        return "partially_reported"
     if rc.addressed:
         if any(r.extraction_status == "EXTRACTED" for r in mapped):
             return "reported"

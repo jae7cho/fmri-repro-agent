@@ -1054,6 +1054,7 @@ def _assemble(
     base_pipeline: ProvenancedField[PipelineRef] | MissingFromPaper,
     motion_method: ProvenancedField | None = None,
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
+    software_mentions: list[ProvenancedField] | None = None,
 ) -> Preprocessing:
     """Wrap the extracted/missing fields into a schema-valid Preprocessing block.
 
@@ -1151,6 +1152,7 @@ def _assemble(
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
+        software_mentions=software_mentions,
         steps=[
             _build("nonsteadystate_removal", NonsteadystateRemoval),
             _build("slice_time_correction", SliceTimeCorrection),
@@ -1641,6 +1643,7 @@ def _extract_from_prompt(
     resolutions: list[ResolutionRecord] | None = None,
     motion_method: ProvenancedField | None = None,
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
+    software_mentions: list[ProvenancedField] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Run one LLM extraction call + the shared post-processing pipeline.
 
@@ -1721,7 +1724,11 @@ def _extract_from_prompt(
     if bp_deferral is not None:
         deferrals.append(bp_deferral)
 
-    return _assemble(pf, base_pipeline, motion_method, coverage), diagnostics, deferrals
+    return (
+        _assemble(pf, base_pipeline, motion_method, coverage, software_mentions),
+        diagnostics,
+        deferrals,
+    )
 
 
 def extract_preprocessing(
@@ -1770,6 +1777,7 @@ def extract_preprocessing(
         resolutions,
         motion_method,
         coverage.fields,
+        coverage.software,
     )
     if motion_diag is not None:
         diagnostics.append(motion_diag)

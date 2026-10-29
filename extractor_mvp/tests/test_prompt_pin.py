@@ -180,7 +180,9 @@ _PINNED = {
     #: 4ac7b0cbd47d895b6c4f280f077485fe916785a58d7c8876723a23bf9f59f78d.
     #: UPDATED 2026-10-29, report v2 step 1 (DESIGN_report_v2.md §1b): six fields become lists; their prompt lines ask for comma-separated lists. Superseded SPATIAL_PROMPT value:
     #: dd46672b9cc43b6eb2d64c115138b2a559c82a581b4e9d3909c4308d1c2feff6.
-    "SPATIAL_PROMPT": "b29d4c06d72b4092e25d6edc78dab6595316fee36eebde6aaad675166b871a0b",
+    #: UPDATED 2026-10-29, report v2 step 2 (DESIGN_report_v2.md §1c): call S asks software_mentions (name, version, used_for, quote). Superseded SPATIAL_PROMPT value:
+    #: b29d4c06d72b4092e25d6edc78dab6595316fee36eebde6aaad675166b871a0b.
+    "SPATIAL_PROMPT": "2291c503605d2d887463f119cc2b5218533fa132b11f575cb6c0f9efd0899ea2",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):

@@ -1493,6 +1493,19 @@ class MigrationInfo(BaseModel):
     migrator_version: str  # identifier of the migrator that produced this document
 
 
+class SoftwareMention(BaseModel):
+    """One piece of software the paper names (0.6.0, 2026-10-29, DESIGN_report_v2.md §1c).
+
+    ``name`` as written; ``version`` only when the paper states a SEPARATE version string (a version
+    fused into the name, "SPM12", stays in the name -- the Q1 rule); ``used_for`` the paper's words
+    for what it was used for, when stated. Feeds the rebuilt Software row (D.3: "for each software
+    used, be sure to include version and revision number")."""
+
+    name: str
+    version: str | None = None
+    used_for: str | None = None
+
+
 class Preprocessing(BaseModel):
     """One ordered preprocessing pipeline applied to one or more functional
     acquisitions in the same :class:`ReplicationSpec`.
@@ -1523,6 +1536,10 @@ class Preprocessing(BaseModel):
     applies_to: list[AcquisitionRef] = Field(min_length=1)
     base_pipeline: ProvenancedField[PipelineRef] | NotApplicable
     steps: list[PreprocStep] = Field(default_factory=list)
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1c): every piece of software the paper names, each
+    # with its own quote. OPTIONAL: absent on a document written before 0.6.0 and on the
+    # per-acquisition path, which then keeps the base-pipeline-only Software row.
+    software_mentions: list[ProvenancedField[SoftwareMention]] | None = None
 
     @model_validator(mode="after")
     def _default_written_under(self) -> Self:

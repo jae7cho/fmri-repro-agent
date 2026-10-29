@@ -84,6 +84,7 @@ from extractor_mvp.cobidas import (
     is_expanded,
     mapped_rows,
     row_state,
+    software_mentions_for_row,
     validation_tag,
 )
 from extractor_mvp.methods_finder import MethodsSlice
@@ -929,7 +930,15 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     """
     rows = flatten(preprocessing)
     version_row = next((r for r in rows if r.path == "base_pipeline.version"), None)
-    coverage = assess_coverage(rows, version_row.extraction_status if version_row else None)
+    version_status = version_row.extraction_status if version_row else None
+    # software_mentions passed only when the record carries them (0.6.0), so a record written
+    # before then takes exactly the call it always took
+    coverage = (
+        assess_coverage(rows, version_status, preprocessing.software_mentions)
+        if preprocessing.software_mentions is not None
+        else assess_coverage(rows, version_status)
+    )
+    mentions, _n_unverified = software_mentions_for_row(rows, preprocessing.software_mentions)
     by_id = {rc.row.row_id: rc for rc in coverage}
 
     lines: list[str] = ["## COBIDAS D.3 coverage (preprocessing)", ""]
@@ -967,10 +976,15 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     lines.append(f"Mandatory rows: {len(mandatory)}")
     if expanded:
         n_perf_no = sum(1 for rc in mand_assessed if states[rc.row.row_id] == "performed_no")
+        n_partial = sum(1 for rc in mand_assessed if rc.partial)
+        partial_seg = f"partially reported {n_partial} · " if n_partial else ""
+        partial_violation = (
+            " (incl. Software — unconditional violation)" if n_partial and not violation else ""
+        )
         lines.append(
             f"  Assessed by AESPA: {len(mand_assessed)}  →  "
-            f"addressed {len(mand_addressed) - n_perf_no} · performed=no {n_perf_no} · "
-            f"not reported {len(mand_not_reported)}{violation}"
+            f"addressed {len(mand_addressed) - n_perf_no} · {partial_seg}performed=no {n_perf_no} · "
+            f"not reported {len(mand_not_reported) - n_partial}{violation}{partial_violation}"
         )
     else:
         lines.append(
@@ -1027,7 +1041,7 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     lines.append("")
 
     if expanded:
-        lines.extend(_expanded_rows_section(mandatory, states, rows))
+        lines.extend(_expanded_rows_section(mandatory, states, rows, mentions))
 
     def _tag(rc: RowCoverage) -> str:
         # Distinct wording from the field-level "not assessed by current extractor" callout:
@@ -1058,7 +1072,15 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
             if base_row is not None and base_row.extraction_status == "DEFERRED_TO_CITATION"
             else None
         )
-        if deferred_refs:
+        if mentions:
+            # report v2 §1c: the row is read over every named software; name the ones without a
+            # version, and the ones with one, so the action is concrete.
+            lacking = [m.name for m in mentions if not m.version]
+            having = [f"{m.name} {m.version}" for m in mentions if m.version]
+            detail = "Software named without a version: " + ", ".join(lacking) + "."
+            if having:
+                detail += " Named with a version: " + ", ".join(having) + "."
+        elif deferred_refs:
             # rstrip the terminator: refs are author-shaped strings and some already end
             # in a period ("Glasser et al."), which would render as "et al..".
             joined = ", ".join(deferred_refs).rstrip(".")
@@ -1124,6 +1146,7 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
 #: The row-state labels of the expanded coverage section (cobidas.ROW_STATES, in words).
 _ROW_STATE_LABEL: dict[str, str] = {
     "reported": "reported",
+    "partially_reported": "partially reported",
     "performed_no": "performed: no",
     "deferred": "deferred",
     "unverifiable": "examined; the extractor could not verify what it found",
@@ -1133,7 +1156,10 @@ _ROW_STATE_LABEL: dict[str, str] = {
 
 
 def _expanded_rows_section(
-    mandatory: list[RowCoverage], states: dict[str, str], rows: list[FieldRow]
+    mandatory: list[RowCoverage],
+    states: dict[str, str],
+    rows: list[FieldRow],
+    mentions: list[Any] | None = None,
 ) -> list[str]:
     """One line per mandatory row, D.3 order (R5): the aspect, the validation tag, the row state,
     the row's reported values (EXTRACTED and DEFERRED fields only) and the first extracted field's
@@ -1158,6 +1184,13 @@ def _expanded_rows_section(
             elif r.state == DEFERRED_TO_CITATION:
                 refs = ", ".join(r.deferral_refs or []) or "(unspecified)"
                 values.append(f"{param}: deferred to {refs}")
+        if rc.row.row_id == "software" and mentions:
+            # report v2 §1c: every named software, with its version or the lack of one.
+            values = [
+                (f"{m.name} {m.version}" if m.version else f"{m.name} (no version)")
+                + (f" — {m.used_for}" if m.used_for else "")
+                for m in mentions
+            ]
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)

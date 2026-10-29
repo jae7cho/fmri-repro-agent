@@ -2824,7 +2824,8 @@
                 }
               }
             }
-          ]
+          ],
+          "software_mentions": null
         }
       ],
       "first_level": {},

@@ -792,3 +792,94 @@ def test_a_number_is_checked_on_the_repaired_text_when_the_span_was_repaired() -
         ),
     )
     assert _field(bad, "scrub", "threshold").inference.reason == "value_unsupported_by_quote"
+
+
+# ---------------------------------------------------------------------------
+# report v2 step 2 (2026-10-29): software_mentions and the rebuilt Software row
+# ---------------------------------------------------------------------------
+
+_SW_TEXT = (
+    "Cortical surfaces were reconstructed with FreeSurfer v5.3. "
+    "The data were mapped to a common space using BioImage Suite software. "
+    "Statistics were computed in R version 4.1.0."
+)
+
+
+def _run_sw(mentions: list[Any]) -> Preprocessing:
+    from extractor_mvp.coverage_extractor import SoftwareMentionResult
+
+    paper = ParsedPaper(text=_SW_TEXT, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            spatial=SpatialExtraction(
+                software_mentions=[SoftwareMentionResult(**m) for m in mentions]
+            ),
+        ),
+    )
+    return prep
+
+
+_FS = {
+    "name": "FreeSurfer",
+    "version": "5.3",
+    "used_for": "Cortical surfaces were reconstructed",
+    "verbatim_quote": "Cortical surfaces were reconstructed with FreeSurfer v5.3.",
+}
+_BIS = {
+    "name": "BioImage Suite",
+    "verbatim_quote": "The data were mapped to a common space using BioImage Suite software.",
+}
+_R = {
+    "name": "R",
+    "version": "4.1.0",
+    "verbatim_quote": "Statistics were computed in R version 4.1.0.",
+}
+
+
+def test_some_software_without_a_version_is_partially_reported_and_named() -> None:
+    prep = _run_sw([_FS, _BIS])
+    assert [pf.extraction.value.name for pf in prep.software_mentions] == [
+        "FreeSurfer",
+        "BioImage Suite",
+    ]
+    rc = _coverage_with_mentions(prep)["software"]
+    assert (rc.addressed, rc.partial, rc.covered_by_extractor) == (False, True, True)
+    out = render.to_cobidas_coverage(prep)
+    assert "partially reported 1" in out
+    assert (
+        "- Software [validated against labels] — partially reported: FreeSurfer 5.3 — Cortical surfaces were reconstructed; BioImage Suite (no version)"
+        in out
+    )
+    assert (
+        "Software named without a version: BioImage Suite. Named with a version: FreeSurfer 5.3."
+        in out
+    )
+
+
+def test_every_software_versioned_addresses_the_row() -> None:
+    rc = _coverage_with_mentions(_run_sw([_FS, _R]))["software"]
+    assert (rc.addressed, rc.partial) == (True, False)
+
+
+def test_a_version_not_in_the_quote_makes_the_mention_unverifiable() -> None:
+    bad = dict(_FS, version="6.0")
+    prep = _run_sw([bad])
+    pf = prep.software_mentions[0]
+    assert pf.extraction.status == "MISSING_FROM_PAPER"
+    assert pf.inference.reason == "value_unsupported_by_quote"
+    rc = _coverage_with_mentions(prep)["software"]
+    assert (rc.addressed, rc.covered_by_extractor, rc.unverifiable) == (False, False, True)
+
+
+def test_a_used_for_not_in_the_quote_is_dropped_and_the_mention_kept() -> None:
+    prep = _run_sw([dict(_FS, used_for="tissue segmentation")])
+    v = prep.software_mentions[0].extraction.value
+    assert (v.name, v.version, v.used_for) == ("FreeSurfer", "5.3", None)
+
+
+def _coverage_with_mentions(prep: Preprocessing) -> dict[str, Any]:
+    rows = render.flatten(prep)
+    return {rc.row.row_id: rc for rc in assess_coverage(rows, None, prep.software_mentions)}
