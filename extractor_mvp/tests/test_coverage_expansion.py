@@ -539,8 +539,42 @@ def test_magnetic_field_inhomogeneities_resolve_to_a_susceptibility_fieldmap() -
             distortion_source=_ex("magnetic field inhomogeneities", _S["inhomo"])
         )
     )
-    term = _field(prep, "distortion_correction", "source").extraction.value
-    assert (term.resolved, term.resolution) == ("susceptibility_fieldmap", "resolved")
+    terms = _field(prep, "distortion_correction", "source").extraction.value
+    assert [(t.resolved, t.resolution) for t in terms] == [("susceptibility_fieldmap", "resolved")]
+
+
+def test_a_listed_field_holds_every_source_the_paper_states() -> None:
+    """report v2 §1b (2026-10-29): Gracia-Tabuenca corrects susceptibility AND gradient
+    nonlinearity; the distortion source holds both, each item support-checked."""
+    quote = "Distortion correction for magnetic field inhomogeneities used a field map."
+    two = "fMRI volumes were corrected for susceptibility distortion and gradient nonlinearity distortions."
+    paper = ParsedPaper(text=TEXT + " " + two, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            spatial=SpatialExtraction(
+                distortion_source=_ex("susceptibility, gradient nonlinearity", two)
+            ),
+        ),
+    )
+    terms = _field(prep, "distortion_correction", "source").extraction.value
+    assert [t.resolved for t in terms] == ["susceptibility_fieldmap", "gradient_nonlinearity"]
+    bad, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            spatial=SpatialExtraction(
+                distortion_source=_ex("susceptibility, gradient nonlinearity", quote)
+            ),
+        ),
+    )
+    assert (
+        _field(bad, "distortion_correction", "source").inference.reason
+        == "value_unsupported_by_quote"
+    )
 
 
 def test_volterra_resolves_to_friston24() -> None:

@@ -170,13 +170,17 @@ _PINNED = {
     #: UPDATED 2026-10-28, the author's item 5: a record-level multiple_pipelines question (with
     #: quote and count) on both calls. Superseded TEMPORAL_VOLUME_PROMPT value (item 2):
     #: c2617933046fb988e99e01e1bbb48f08fbb8449456a371009d281d601dfc9beb.
-    "TEMPORAL_VOLUME_PROMPT": "18b47abfb9aca06c195686567f59394ff5984a4969ca4721021ac74fcdc4ef19",
+    #: UPDATED 2026-10-29, report v2 step 1 (DESIGN_report_v2.md §1b): six fields become lists; their prompt lines ask for comma-separated lists. Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: 18b47abfb9aca06c195686567f59394ff5984a4969ca4721021ac74fcdc4ef19.
+    "TEMPORAL_VOLUME_PROMPT": "8c46e26a78af72505b2d8c4331d9c79ef0baed8d00f0cdf7152b1df5b57028be",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
     #: UPDATED 2026-10-28, item 5 (see above). Superseded SPATIAL_PROMPT value (item 4):
     #: 4ac7b0cbd47d895b6c4f280f077485fe916785a58d7c8876723a23bf9f59f78d.
-    "SPATIAL_PROMPT": "dd46672b9cc43b6eb2d64c115138b2a559c82a581b4e9d3909c4308d1c2feff6",
+    #: UPDATED 2026-10-29, report v2 step 1 (DESIGN_report_v2.md §1b): six fields become lists; their prompt lines ask for comma-separated lists. Superseded SPATIAL_PROMPT value:
+    #: dd46672b9cc43b6eb2d64c115138b2a559c82a581b4e9d3909c4308d1c2feff6.
+    "SPATIAL_PROMPT": "b29d4c06d72b4092e25d6edc78dab6595316fee36eebde6aaad675166b871a0b",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):

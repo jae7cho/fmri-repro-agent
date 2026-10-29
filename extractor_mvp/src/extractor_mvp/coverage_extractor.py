@@ -160,7 +160,7 @@ scrub_performed: were motion-contaminated VOLUMES removed or interpolated (scrub
   RUNS by a motion criterion is NOT censoring (that is a subject exclusion rule) -> missing.
 scrub_method: the tool named for the censoring. Canonical afni_3dtproject, fsl_motion_outliers,
   custom (an in-house implementation the text describes), other.
-scrub_criterion: canonical fd_power (framewise displacement, Power), fd_jenkinson (RMS relative
+scrub_criterion: a comma-separated list (FD and DVARS are often combined) from fd_power (framewise displacement, Power), fd_jenkinson (RMS relative
   displacement, Jenkinson), dvars, bold_pct (percentage BOLD change); the paper's term verbatim
   otherwise.
 scrub_threshold: the threshold number as written ("0.5" for "FD > 0.5 mm"); the quote carries the
@@ -175,11 +175,11 @@ each type: motion parameters (expansion basis and order); tissue signals (tissue
 definition, signal definition); physiological signals (modeling choices, number of regressors)."
 Three kinds, each with its own performed:
 ica_performed: was ICA-based denoising (ICA-FIX, ICA-AROMA, or another ICA cleanup) applied?
-ica_method: canonical fix, aroma; verbatim otherwise.  ica_training_set: the FIX training set as
+ica_method: a comma-separated list from fix, aroma; verbatim items otherwise.  ica_training_set: the FIX training set as
   named.  ica_threshold: the classifier threshold number.  ica_aggressive: "yes" if the aggressive
   variant, "no" if non-aggressive, missing if not stated.
 compcor_performed: was CompCor (anatomical or temporal) applied?
-compcor_variant: canonical a (aCompCor), t (tCompCor).  compcor_n_components: the number of
+compcor_variant: a comma-separated list from a (aCompCor), t (tCompCor).  compcor_n_components: the number of
   components as an integer string.  compcor_variance_threshold: the variance fraction/percentage
   as written.  compcor_mask_source: how the noise mask was defined, the paper's words.
 nuisance_performed: were nuisance signals REGRESSED from the time series (motion parameters,
@@ -196,7 +196,8 @@ nuisance_tissue_definition: how the tissue masks were defined (a priori seed, au
   segmentation, eroded masks, ...), the paper's words.
 nuisance_tissue_signal_definition: how the signal was computed (mean of voxels, first singular
   vector / principal component, ...), the paper's words.
-nuisance_physio_regressors: canonical retroicor, rvt, none; verbatim otherwise.
+nuisance_physio_regressors: a comma-separated list from retroicor, rvt, none; verbatim items
+  otherwise.
 nuisance_physio_n_regressors: the number of physiological regressors as an integer string.
 nuisance_detrend: canonical linear, quadratic, none; verbatim otherwise.
 nuisance_filtering_integrated: "yes" if temporal filtering was applied WITHIN the same regression
@@ -256,9 +257,9 @@ D.3 asks: "Use of any distortion correction due to field or gradient nonlinearit
 distortion correction is reported here too.
 distortion_performed: was any distortion correction applied (field-map based, fieldmap-less, or
   gradient-nonlinearity unwarping)?
-distortion_source: canonical susceptibility_fieldmap (a field map / phase difference / spin-echo
+distortion_source: a comma-separated list -- a paper may correct both -- from susceptibility_fieldmap (a field map / phase difference / spin-echo
   pair), gradient_nonlinearity (gradient distortion), fieldmap_less (SyN-based or similar).
-distortion_method: canonical topup, fugue, gradunwarp, sdc_fieldmapless, other; verbatim
+distortion_method: a comma-separated list from topup, fugue, gradunwarp, sdc_fieldmapless, other; verbatim
   otherwise.
 
 ## Intensity correction (intensity_correction)

@@ -862,8 +862,9 @@ class DistortionCorrection(BaseModel):
     # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
     # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
     performed: ProvenancedField[bool] | None = None
-    source: ProvenancedField[SpecifiedTerm[DistortionSource]]
-    method: ProvenancedField[SpecifiedTerm[DistortionMethod]]
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
+    source: ProvenancedField[list[SpecifiedTerm[DistortionSource]]]
+    method: ProvenancedField[list[SpecifiedTerm[DistortionMethod]]]
     intended_fieldmap: AcquisitionRef | NotApplicable
 
     cobidas_row: ClassVar[str] = "distortion_correction"
@@ -1077,7 +1078,8 @@ class ICADenoise(BaseModel):
     # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
     # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
     performed: ProvenancedField[bool] | None = None
-    method: ProvenancedField[SpecifiedTerm[ICADenoiseMethod]]
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
+    method: ProvenancedField[list[SpecifiedTerm[ICADenoiseMethod]]]
     training_set: ProvenancedField[str]
     threshold: ProvenancedField[float]
     aggressive: ProvenancedField[bool]
@@ -1103,7 +1105,8 @@ class CompCor(BaseModel):
     # pattern). The new fields are OPTIONAL: a 0.5.1 document parses with them absent and renders
     # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
     performed: ProvenancedField[bool] | None = None
-    variant: ProvenancedField[SpecifiedTerm[CompCorVariant]]
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
+    variant: ProvenancedField[list[SpecifiedTerm[CompCorVariant]]]
     n_components: ProvenancedField[int]
     variance_threshold: ProvenancedField[float]
     mask_source: ProvenancedField[str]
@@ -1152,7 +1155,8 @@ class NuisanceRegression(BaseModel):
     # "Signal definition (e.g., mean of voxels, first singular vector)": free text, the paper's words.
     tissue_definition: ProvenancedField[str] | None = None
     tissue_signal_definition: ProvenancedField[str] | None = None
-    physio_regressors: ProvenancedField[SpecifiedTerm[PhysioRegressor]]
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
+    physio_regressors: ProvenancedField[list[SpecifiedTerm[PhysioRegressor]]]
     physio_n_regressors: ProvenancedField[int]
     detrend: ProvenancedField[SpecifiedTerm[Detrend]]
     method: ProvenancedField[SpecifiedTerm[NuisanceRegressionMethod]]  # TOOL (v0.3.0)
@@ -1215,7 +1219,8 @@ class Scrub(BaseModel):
     # unchanged; a natively written 0.5.2 record carries every one (_assemble sets them).
     performed: ProvenancedField[bool] | None = None
     method: ProvenancedField[SpecifiedTerm[ScrubMethod]] | None = None
-    criterion: ProvenancedField[SpecifiedTerm[ScrubCriterion]]
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
+    criterion: ProvenancedField[list[SpecifiedTerm[ScrubCriterion]]]
     threshold: ProvenancedField[float]
     remediation: ProvenancedField[SpecifiedTerm[ScrubRemediation]]
     interpolation_method: ProvenancedField[SpecifiedTerm[ScrubInterpolationMethod]]
@@ -1475,7 +1480,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.5.3"
+SCHEMA_VERSION = "0.6.0"
 
 
 class MigrationInfo(BaseModel):
@@ -1511,7 +1516,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.5.3"] = "0.5.3"
+    schema_version: Literal["0.6.0"] = "0.6.0"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

@@ -58,6 +58,35 @@ _ADDED_IN_0_3_0 = ("method", "filtering_integrated")  # required fields Nuisance
 # structural half (bare members lift, as in 0.5.0); the new fields are additive (absent on a 0.5.1
 # document, nothing is synthesised -- a native 0.5.2 record carries them because _assemble sets them).
 # Kind -> the retyped field(s) it carries.
+# 0.5.3 -> 0.6.0 (STRUCTURAL; 2026-10-29, DESIGN_report_v2.md §1b): these single-valued fields become
+# lists, because papers list more than one (Gracia-Tabuenca: susceptibility AND gradient
+# nonlinearity). A stored scalar is lifted to a one-item list, which renders identically.
+_LISTED_IN_0_6_0: dict[str, tuple[str, ...]] = {
+    "distortion_correction": ("source", "method"),
+    "ica_denoise": ("method",),
+    "compcor": ("variant",),
+    "nuisance_regression": ("physio_regressors",),
+    "scrub": ("criterion",),
+}
+
+
+def _lift_to_list(field: Any) -> None:
+    """In place: wrap a scalar value in a one-item list on whichever arm carries a value."""
+    if not isinstance(field, dict):
+        return
+    ext = field.get("extraction")
+    if isinstance(ext, dict) and ext.get("status") == "EXTRACTED":
+        if not isinstance(ext.get("value"), list):
+            ext["value"] = [ext.get("value")]
+    inf = field.get("inference")
+    if isinstance(inf, dict) and inf.get("status") == "INFERRED_DEFAULT":
+        if not isinstance(inf.get("value"), list):
+            inf["value"] = [inf.get("value")]
+        for alt in inf.get("alternative_inferences") or []:
+            if isinstance(alt, dict) and not isinstance(alt.get("value"), list):
+                alt["value"] = [alt.get("value")]
+
+
 _RETYPED_IN_0_5_2: dict[str, tuple[str, ...]] = {
     "slice_time_correction": ("reference", "relative_to_motion_correction", "interpolation"),
     "distortion_correction": ("source", "method"),
@@ -243,6 +272,16 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # B14 item 1): ``Span`` gains ``repairs: list[str]`` with an empty default, the named source-text
     # repairs the resolver applied. A 0.5.2 document's spans parse with an empty list.
     #
+    # 0.5.3 -> 0.6.0 (STRUCTURAL; 2026-10-29, DESIGN_report_v2.md §1b): lift the listed fields'
+    # scalars to one-item lists. Runs after the 0.5.2 lift, so a bare member is first made a
+    # SpecifiedTerm and then wrapped.
+    if _version_tuple(source) < _version_tuple("0.6.0"):
+        for step in out.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            for fid in _LISTED_IN_0_6_0.get(step.get("kind", ""), ()):
+                _lift_to_list(step.get(fid))
+
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
