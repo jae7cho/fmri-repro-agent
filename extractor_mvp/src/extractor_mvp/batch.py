@@ -263,6 +263,7 @@ def process_paper(
     resolutions: list[ResolutionRecord] = []
     motion_inference: list[Any] = []  # the motion method's inference record (2026-10-28)
     coverage_out: list[Any] = []  # the coverage calls' record-level answers (item 5, 2026-10-28)
+    verifier_out: list[Any] = []  # the checking pass's record (report v2 §3, 2026-10-29)
     # Wall time of ``extract`` alone -- the four model calls, assembly and deferral resolution; not
     # the PDF parse or the render (DESIGN_coverage_expansion.md B8). Stored as ``wall_time_s``.
     t0 = time.perf_counter()
@@ -275,6 +276,7 @@ def process_paper(
             resolutions=resolutions,
             motion_inference_out=motion_inference,
             coverage_out=coverage_out,
+            verifier_out=verifier_out,
         )
     except _CODE_DEFECTS:
         # A tool defect, not this paper's problem. Let it abort the run loudly rather than write 19
@@ -309,7 +311,9 @@ def process_paper(
     # Narrowly guarded: to_report is pure and deterministic, but an exception escaping here
     # would discard a paid-for extraction before run_batch writes it. The failure is recorded
     # and printed, never swallowed.
-    multiple_pipelines = coverage_out[0].multiple_pipelines_dump() if coverage_out else None
+    verifier = verifier_out[0] if verifier_out else None
+    # F3a (2026-10-29): the multiple_pipelines answer comes from the checking pass now
+    multiple_pipelines = (verifier or {}).get("multiple_pipelines")
     report: str | None = None
     render_error: str | None = None
     try:
@@ -319,6 +323,7 @@ def process_paper(
             methods_slice=methods,
             motion_inference=(motion_inference[0] if motion_inference else None),
             multiple_pipelines=multiple_pipelines,
+            verifier=verifier,
         )
     except _CODE_DEFECTS:
         # Same split, and sharper here: the comment above argues to_report is pure and
@@ -355,6 +360,9 @@ def process_paper(
         # more than one preprocessing variant, with quote and count -- stored as dumped fields by
         # call so the renderer and the re-render script read one shape.
         "multiple_pipelines": multiple_pipelines,
+        # report v2 §3 (2026-10-29): the checking pass, verdicts by field path; the extraction arms
+        # above are untouched by it
+        "verifier": verifier,
         # SUCCESS-path capture: raw LLM value + resolved value/alias for each
         # successfully-extracted targeted field (diagnostic-only; see ResolutionRecord).
         "resolutions": [dataclasses.asdict(r) for r in resolutions],

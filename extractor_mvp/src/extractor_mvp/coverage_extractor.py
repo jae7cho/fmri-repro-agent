@@ -236,7 +236,6 @@ filter_applied_to: what was filtered when it is not the BOLD data itself (e.g. "
   covariates"), the paper's words; missing when the BOLD data were filtered.
 
 """
-    + _RECORD_RULES
     + _OUTPUT_STATUS
 )
 
@@ -326,7 +325,6 @@ smoothing_approach: canonical fixed_kernel, iterate_to_fwhm.
 smoothing_space: canonical native_volume, native_surface, mni_volume, template_surface.
 
 """
-    + _RECORD_RULES
     + _OUTPUT_STATUS
 )
 
@@ -359,7 +357,8 @@ def _response_model(
 
     fields: dict[str, Any] = {
         spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field))
-        for spec in specs + RECORD_SPECS
+        # F3a (2026-10-29): the record-level multiple_pipelines question moved to the verifier
+        for spec in specs
     }
     fields.update(extra or {})
     return create_model(name, **fields)
@@ -694,8 +693,6 @@ def extract_coverage(
         raw_out.extend([temporal, spatial])
     _process(temporal, CALL_T_SPECS, parsed_paper.text, out)
     _process(spatial, CALL_S_SPECS, parsed_paper.text, out)
-    _process_record(temporal, "T", parsed_paper.text, out)
-    _process_record(spatial, "S", parsed_paper.text, out)
     _process_software(spatial, parsed_paper.text, out)
     _process_step_order(temporal, parsed_paper.text, out)
     _apply_not_performed(out)

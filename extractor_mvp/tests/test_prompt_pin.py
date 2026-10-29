@@ -23,6 +23,7 @@ from extractor_mvp.extractor import (
     PER_ACQUISITION_EXTRACTION_PROMPT,
 )
 from extractor_mvp.subject_validator import _PROMPT_TAXONOMY
+from extractor_mvp.verifier import VERIFIER_PROMPT
 
 #: sha256 of the two constants actually sent to the model, pinned 2026-10-21 at HEAD ef10931.
 #: UPDATING EITHER VALUE IS A VINTAGE EVENT. See the failure message below.
@@ -178,7 +179,9 @@ _PINNED = {
     #: 8f21ca02c0d660a8364c53d63f40735260a13731fd15d2b6de90e44e75d56795.
     #: UPDATED 2026-10-29, report v2 step 5 (DESIGN_report_v2.md §1d): call T asks step_order (the paper's order, every sentence stating it). Superseded TEMPORAL_VOLUME_PROMPT value:
     #: 2129f31135fb0e7f9256a23e2fc962217dc432c668281494be056eb92ccce3fe.
-    "TEMPORAL_VOLUME_PROMPT": "b2feb797352b95d0dc17e39d5edd13b1c74aac0a6c3a6c1a759b18a6ea7f5830",
+    #: UPDATED 2026-10-29, report v2 step 6 (DESIGN_report_v2.md §3, F3a): the multiple_pipelines question leaves calls T and S for the checking pass. Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: b2feb797352b95d0dc17e39d5edd13b1c74aac0a6c3a6c1a759b18a6ea7f5830.
+    "TEMPORAL_VOLUME_PROMPT": "5832804631604a8d92c0154c8798cae4772a08b766824d00410f8b43ae8f44ee",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -190,7 +193,12 @@ _PINNED = {
     #: b29d4c06d72b4092e25d6edc78dab6595316fee36eebde6aaad675166b871a0b.
     #: UPDATED 2026-10-29, report v2 step 4 (DESIGN_report_v2.md §2): the SCOPE paragraph in both coverage prompts (BOLD preprocessing only; structural preprocessing and first-level model covariates out). Superseded SPATIAL_PROMPT value:
     #: 2291c503605d2d887463f119cc2b5218533fa132b11f575cb6c0f9efd0899ea2.
-    "SPATIAL_PROMPT": "6d9f03681daf28300de60e23ec0512c9e1deb43e19969ebc927a5e3e60417b66",
+    #: UPDATED 2026-10-29, report v2 step 6 (DESIGN_report_v2.md §3, F3a): the multiple_pipelines question leaves calls T and S for the checking pass. Superseded SPATIAL_PROMPT value:
+    #: 6d9f03681daf28300de60e23ec0512c9e1deb43e19969ebc927a5e3e60417b66.
+    "SPATIAL_PROMPT": "697c868be398f23b4cd9e86a7a557e42771d89f3b5ba1e3563aa49d13536ab2a",
+    #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
+    #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
+    "VERIFIER_PROMPT": "42cb343c7b2f4fea94fa47cb0f25146640f5f1101896ba8b67a79c31e2956a70",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):
@@ -218,6 +226,7 @@ def test_both_model_facing_prompts_are_hash_pinned() -> None:
         ("MOTION_METHOD_PROMPT", MOTION_METHOD_PROMPT),
         ("TEMPORAL_VOLUME_PROMPT", TEMPORAL_VOLUME_PROMPT),
         ("SPATIAL_PROMPT", SPATIAL_PROMPT),
+        ("VERIFIER_PROMPT", VERIFIER_PROMPT),
     ):
         got = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
         assert got == _PINNED[name], f"{name} changed: {got} != {_PINNED[name]}{_VINTAGE_NOTE}"
@@ -311,7 +320,7 @@ def test_the_three_pre_existing_hashes_did_not_move_with_the_coverage_calls() ->
     assert _PINNED["MOTION_METHOD_PROMPT"] == (
         "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"
     )
-    assert len(_PINNED) == 5
+    assert len(_PINNED) == 6  # 2026-10-29: + VERIFIER_PROMPT
 
 
 def test_the_performed_phrase_table_is_frozen() -> None:

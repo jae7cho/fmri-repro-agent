@@ -2036,8 +2036,12 @@ def extract(
     resolutions: list[ResolutionRecord] | None = None,
     motion_inference_out: list[Any] | None = None,
     coverage_out: list[Any] | None = None,
+    verifier_out: list[Any] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction with one-hop deferral resolution.
+
+    ``verifier_out`` (report v2 §3, 2026-10-29): pass a list to run the checking pass on the
+    finished draft (one more call) and receive its record; the default None makes no call.
 
     ``resolutions`` (optional): forwarded to :func:`extract_preprocessing` to collect
     per-field :class:`ResolutionRecord`s (raw LLM value + resolved value/alias) for
@@ -2065,4 +2069,8 @@ def extract(
         citation_resolver=citation_resolver,
         motion_inference_out=motion_inference_out,
     )
+    if verifier_out is not None:
+        from extractor_mvp.verifier import run_verifier
+
+        verifier_out.append(run_verifier(parsed_paper, preprocessing, model, client=client))
     return preprocessing, diagnostics, deferral_records

@@ -764,10 +764,66 @@ def _multiple_pipelines_line(answers: dict[str, Any] | None) -> str | None:
         n = f"count {count['value']}" if count.get("status") == "EXTRACTED" else "count not stated"
         spans = flag.get("spans") or []
         quote = f"  «{_truncate_quote(spans[0]['text'])}»" if spans else ""
-        parts.append(f"call {call}: yes, {n}{quote}")
+        who = "checking pass" if call == "V" else f"call {call}"
+        parts.append(f"{who}: yes, {n}{quote}")
     if not parts:
         return None
     return "> ⚠ More than one preprocessing variant is described — " + "; ".join(parts)
+
+
+def _verdict_for(row: FieldRow, verifier: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not verifier or verifier.get("status") != "ok":
+        return None
+    found: dict[str, Any] | None = verifier.get("fields", {}).get(row.path)
+    return found
+
+
+def _with_verdict(main: str, row: FieldRow, verifier: dict[str, Any] | None) -> str:
+    """report v2 §3 (2026-10-29): the checking pass beside the field. ``wrong`` demotes the drafted
+    value to a flag -- the value stays on the line, never replaced; ``missed`` names what the paper
+    states; a verdict whose sentence did not resolve is shown as unverified and does nothing."""
+    from extractor_mvp.verifier import effective
+
+    v = _verdict_for(row, verifier)
+    if v is None:
+        return f"- {main}"
+    eff = effective(v)
+    sentence = f" «{_truncate_quote(v['relied_on'])}»" if v.get("relied_on") else ""
+    if eff == "supported":
+        return f"- {main}   [check: supported]"
+    if eff == "wrong":
+        better = f"; should be: {v['better_value']}" if v.get("better_value") else ""
+        return f"- ⚑ {main}   — checking pass: WRONG — {v.get('reason', '')}{better}{sentence}"
+    if eff == "missed":
+        return (
+            f"- {main}   — checking pass: MISSED — the paper states: "
+            f"{v.get('better_value') or '(see sentence)'}{sentence}"
+        )
+    return f"- {main}   [check: unverified verdict — its sentence did not resolve]"
+
+
+def _verifier_summary_line(verifier: dict[str, Any] | None, rows: list[FieldRow]) -> str | None:
+    """One header line: the checking pass's counts, marked unvalidated; or that it was unavailable."""
+    if verifier is None:
+        return None
+    if verifier.get("status") != "ok":
+        return (
+            "Checking pass: unavailable — no field was checked "
+            f"({verifier.get('error') or 'no record'})."
+        )
+    from extractor_mvp.verifier import effective
+
+    counts = {"supported": 0, "wrong": 0, "missed": 0, "unverified": 0}
+    for v in verifier.get("fields", {}).values():
+        eff = effective(v)
+        counts[eff if eff in counts else "unverified"] += 1
+    n_lines = int(verifier.get("n_draft_lines") or 0)
+    not_checked = max(0, n_lines - sum(counts.values()))
+    return (
+        "Checking pass (unvalidated — spot-checked against a human reading before it is trusted): "
+        f"supported {counts['supported']} · wrong {counts['wrong']} · missed {counts['missed']} · "
+        f"unverified {counts['unverified']} · not checked {not_checked}"
+    )
 
 
 def _protocol_note_lines(row: FieldRow) -> list[str]:
@@ -784,6 +840,7 @@ def to_protocol(
     methods_slice: MethodsSlice | None = None,
     motion_inference: Any | None = None,
     multiple_pipelines: dict[str, Any] | None = None,
+    verifier: dict[str, Any] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -853,6 +910,9 @@ def to_protocol(
         if bucket_counts[bucket]:
             segments.append(f"{bucket_counts[bucket]} {label}")
     lines.append("Completeness: " + " · ".join(segments))
+    check_line = _verifier_summary_line(verifier, rows)
+    if check_line:
+        lines.append(check_line)
     lines.append("")
 
     # --- Steps in pipeline (list) order ---
@@ -887,14 +947,15 @@ def to_protocol(
         for r in (row for row in rows if row.group == step.kind):
             param = r.path.split(".", 1)[1] if "." in r.path else r.path
             if r.path == "motion_correction.method":
-                lines.append(f"- {_motion_method_line(r, param, motion_inference)}")
+                main = _motion_method_line(r, param, motion_inference)
             else:
-                lines.append(f"- {_protocol_main(r, param, equals_for_extracted=True)}")
+                main = _protocol_main(r, param, equals_for_extracted=True)
+            lines.append(_with_verdict(main, r, verifier))
             lines.extend(f"    {note}" for note in _protocol_note_lines(r))
         lines.append("")
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
-    lines.append(to_cobidas_coverage(preprocessing).rstrip())
+    lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -911,6 +972,7 @@ def to_report(
     methods_slice: MethodsSlice | None = None,
     motion_inference: Any | None = None,
     multiple_pipelines: dict[str, Any] | None = None,
+    verifier: dict[str, Any] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -925,6 +987,7 @@ def to_report(
         methods_slice=methods_slice,
         motion_inference=motion_inference,
         multiple_pipelines=multiple_pipelines,
+        verifier=verifier,
     )
 
 
@@ -937,7 +1000,9 @@ def to_report(
 REPORT_SURFACES: tuple[Callable[..., str], ...] = (to_report, to_protocol)
 
 
-def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
+def to_cobidas_coverage(
+    preprocessing: Preprocessing, verifier: dict[str, Any] | None = None
+) -> str:
     """A COBIDAS D.3 (preprocessing) coverage section over ``flatten()``.
 
     Deterministic, pure, no LLM/IO. Grounds the ``not covered by extractor`` figure in the
@@ -951,14 +1016,22 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     rows = flatten(preprocessing)
     version_row = next((r for r in rows if r.path == "base_pipeline.version"), None)
     version_status = version_row.extraction_status if version_row else None
+    # F1d (2026-10-29): software the checking pass says was not used for preprocessing
+    excluded = frozenset(
+        " ".join(name.lower().split())
+        for name, use in ((verifier or {}).get("software") or {}).items()
+        if use is False
+    )
     # software_mentions passed only when the record carries them (0.6.0), so a record written
     # before then takes exactly the call it always took
     coverage = (
-        assess_coverage(rows, version_status, preprocessing.software_mentions)
+        assess_coverage(rows, version_status, preprocessing.software_mentions, excluded)
         if preprocessing.software_mentions is not None
         else assess_coverage(rows, version_status)
     )
-    mentions, _n_unverified = software_mentions_for_row(rows, preprocessing.software_mentions)
+    mentions, _n_unverified = software_mentions_for_row(
+        rows, preprocessing.software_mentions, excluded
+    )
     by_id = {rc.row.row_id: rc for rc in coverage}
 
     lines: list[str] = ["## COBIDAS D.3 coverage (preprocessing)", ""]
@@ -1061,7 +1134,7 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
     lines.append("")
 
     if expanded:
-        lines.extend(_expanded_rows_section(mandatory, states, rows, mentions))
+        lines.extend(_expanded_rows_section(mandatory, states, rows, mentions, verifier, excluded))
 
     def _tag(rc: RowCoverage) -> str:
         # Distinct wording from the field-level "not assessed by current extractor" callout:
@@ -1165,6 +1238,7 @@ def to_cobidas_coverage(preprocessing: Preprocessing) -> str:
 
 #: The row-state labels of the expanded coverage section (cobidas.ROW_STATES, in words).
 _ROW_STATE_LABEL: dict[str, str] = {
+    "flagged": "flagged by the checking pass",
     "reported": "reported",
     "partially_reported": "partially reported",
     "performed_no": "performed: no",
@@ -1180,6 +1254,8 @@ def _expanded_rows_section(
     states: dict[str, str],
     rows: list[FieldRow],
     mentions: list[Any] | None = None,
+    verifier: dict[str, Any] | None = None,
+    excluded: frozenset[str] = frozenset(),
 ) -> list[str]:
     """One line per mandatory row, D.3 order (R5): the aspect, the validation tag, the row state,
     the row's reported values (EXTRACTED and DEFERRED fields only) and the first extracted field's
@@ -1211,11 +1287,24 @@ def _expanded_rows_section(
                 + (f" — {m.used_for}" if m.used_for else "")
                 for m in mentions
             ]
+        # report v2 §3 / F3b (2026-10-29): a row whose every addressing field the checking pass marks
+        # wrong reads "flagged"; a missed field is named.
+        from extractor_mvp.verifier import effective
+
+        addressing = [r for r in mapped if r.state in (EXTRACTED, DEFERRED_TO_CITATION)]
+        verdicts = {r.path: effective(_verdict_for(r, verifier)) for r in mapped}
+        if addressing and all(verdicts.get(r.path) == "wrong" for r in addressing):
+            state = "flagged"
+        missed = [r.path.split(".", 1)[1] for r in mapped if verdicts.get(r.path) == "missed"]
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)
         if quote:
             line += f"  «{_truncate_quote(quote)}»"
+        if rc.row.row_id == "software" and excluded:
+            line += f"  (not counted, not preprocessing per the checking pass: {', '.join(sorted(excluded))})"
+        if missed:
+            line += f"  [missed per the checking pass: {', '.join(missed)}]"
         out.append(line)
     # report v2 §1a (2026-10-29): temporal filtering, beyond COBIDAS -- shown, never counted.
     tf_rows = [r for r in rows if r.group == "temporal_filtering"]

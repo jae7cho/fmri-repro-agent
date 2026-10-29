@@ -299,7 +299,9 @@ class Mention:
 
 
 def software_mentions_for_row(
-    rows: list[Any], software_mentions: list[Any] | None
+    rows: list[Any],
+    software_mentions: list[Any] | None,
+    excluded: frozenset[str] = frozenset(),
 ) -> tuple[list[Mention], int]:
     """(verified mentions, count of unverifiable ones). The base pipeline joins as one mention when
     its name was extracted and no listed mention already carries that name. ``([], 0)`` when the
@@ -311,6 +313,10 @@ def software_mentions_for_row(
     for pf in software_mentions:
         if pf.extraction.status == "EXTRACTED":
             v = pf.extraction.value
+            # F1d (2026-10-29): a mention the checking pass says was not used for preprocessing is
+            # shown but not counted toward the row.
+            if " ".join(v.name.lower().split()) in excluded:
+                continue
             verified.append(Mention(v.name, v.version, v.used_for))
         else:
             unverified += 1
@@ -333,6 +339,7 @@ def assess_coverage(
     rows: list[Any],
     version_extraction_status: str | None,
     software_mentions: list[Any] | None = None,
+    excluded_software: frozenset[str] = frozenset(),
 ) -> list[RowCoverage]:
     """Assess every D.3 row from flattened ``FieldRow`` rows + the base_pipeline.version
     extraction status. Extraction arm ONLY — an INFERRED_DEFAULT value is not a *report*.
@@ -360,7 +367,9 @@ def assess_coverage(
             # none -> not reported (the unconditional violation); some -> partially reported. No
             # verified mention but some unverifiable -> unverifiable. Nothing named at all -> the
             # base-pipeline rule above stands.
-            verified, n_unverified = software_mentions_for_row(rows, software_mentions)
+            verified, n_unverified = software_mentions_for_row(
+                rows, software_mentions, excluded_software
+            )
             if verified:
                 with_version = [m for m in verified if m.version]
                 covered, unverifiable = True, False
