@@ -200,9 +200,17 @@ INTENSITY_CONVENTION_SYNONYMS: dict[str, list[str]] = {
 # --- resolution -------------------------------------------------------------
 
 
+def _fold_separators(s: str) -> str:
+    """Underscore, hyphen and space are one separator (the author's item 3, 2026-10-28): a model
+    writing ``cerebrospinal_fluid`` or ``boundary-based`` meets an alias written with spaces."""
+    return " ".join(s.replace("_", " ").replace("-", " ").split())
+
+
 def _alias_matches(alias: str, raw_lower: str, value_context: float | None) -> bool:
     """``term@VALUE`` matches only when value_context == VALUE; plain ``term``
-    matches whenever it is a case-insensitive substring of the raw text."""
+    matches whenever it is a case-insensitive substring of the raw text, with underscore,
+    hyphen and space read as the same separator on both sides."""
+    raw_folded = _fold_separators(raw_lower)
     if "@" in alias:
         term, _, val = alias.rpartition("@")
         if value_context is None:
@@ -212,8 +220,8 @@ def _alias_matches(alias: str, raw_lower: str, value_context: float | None) -> b
                 return False
         except ValueError:
             return False
-        return term.lower() in raw_lower
-    return alias.lower() in raw_lower
+        return _fold_separators(term.lower()) in raw_folded
+    return _fold_separators(alias.lower()) in raw_folded
 
 
 def resolve_to_literal(

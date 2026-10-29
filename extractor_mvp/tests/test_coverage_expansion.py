@@ -56,7 +56,10 @@ TEXT = (
     "Volumes with FD > 0.5 mm were censored. "
     "ICA-AROMA was applied. "
     "aCompCor with 5 components was used. "
-    "Preprocessing otherwise followed Glasser et al. (2013)."
+    "Preprocessing otherwise followed Glasser et al. (2013). "
+    "Linear and quadratic trends were removed from the time series. "
+    "Distortion correction for magnetic field inhomogeneities used a field map. "
+    "Nuisance regressors included 24 movement regressors derived by Volterra expansion."
 )
 _S = {
     "t1": "The first 4 volumes were discarded to allow for signal equilibration.",
@@ -73,6 +76,9 @@ _S = {
     "ica": "ICA-AROMA was applied.",
     "compcor": "aCompCor with 5 components was used.",
     "defer": "Preprocessing otherwise followed Glasser et al. (2013).",
+    "trends": "Linear and quadratic trends were removed from the time series.",
+    "inhomo": "Distortion correction for magnetic field inhomogeneities used a field map.",
+    "volterra": "Nuisance regressors included 24 movement regressors derived by Volterra expansion.",
 }
 
 
@@ -481,3 +487,72 @@ def test_every_spec_has_an_alias_table_only_when_it_is_a_term() -> None:
         assert (spec.literal_type is not None) == (spec.value_kind in ("term", "term_list")), (
             spec.attr
         )
+
+
+# ---------------------------------------------------------------------------
+# Item 3 (2026-10-28): the alias fixes
+# ---------------------------------------------------------------------------
+
+
+def test_underscore_space_and_hyphen_are_one_separator_in_alias_matching() -> None:
+    prep = _run(
+        spatial=SpatialExtraction(
+            segmentation_tissue_classes=_ex(
+                "gray_matter, white-matter, cerebrospinal_fluid", _S["seg"]
+            )
+        )
+    )
+    items = _field(prep, "segmentation", "tissue_classes").extraction.value
+    assert [i.resolved for i in items] == ["gray_matter", "white_matter", "csf"]
+    prep2 = _run(
+        spatial=SpatialExtraction(coregistration_cost_function=_ex("boundary_based", _S["coreg"]))
+    )
+    assert (
+        _field(prep2, "coregistration", "cost_function").extraction.value.resolved
+        == "boundary_based"
+    )
+
+
+def test_magnetic_field_inhomogeneities_resolve_to_a_susceptibility_fieldmap() -> None:
+    prep = _run(
+        spatial=SpatialExtraction(
+            distortion_source=_ex("magnetic field inhomogeneities", _S["inhomo"])
+        )
+    )
+    term = _field(prep, "distortion_correction", "source").extraction.value
+    assert (term.resolved, term.resolution) == ("susceptibility_fieldmap", "resolved")
+
+
+def test_volterra_resolves_to_friston24() -> None:
+    prep = _run(
+        temporal=TemporalVolumeExtraction(
+            nuisance_motion_expansion=_ex("Volterra expansion", _S["volterra"])
+        )
+    )
+    term = _field(prep, "nuisance_regression", "motion_expansion").extraction.value
+    assert (term.verbatim, term.resolved) == ("Volterra expansion", "friston24")
+
+
+def test_detrend_takes_the_highest_order_the_quote_names() -> None:
+    prep, diags, _ = extract_preprocessing(
+        _paper(),
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(nuisance_detrend=_ex("linear", _S["trends"])),
+        ),
+    )
+    term = _field(prep, "nuisance_regression", "detrend").extraction.value
+    assert (term.verbatim, term.resolved) == ("linear", "quadratic")
+    assert any(d.failure_reason == "detrend_highest_order_named:linear->quadratic" for d in diags)
+    # already the highest: untouched, no diagnostic
+    prep2, diags2, _ = extract_preprocessing(
+        _paper(),
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(nuisance_detrend=_ex("quadratic", _S["trends"])),
+        ),
+    )
+    assert _field(prep2, "nuisance_regression", "detrend").extraction.value.resolved == "quadratic"
+    assert not any(d.failure_reason.startswith("detrend_highest") for d in diags2)

@@ -189,6 +189,9 @@ MOTION_EXPANSION: dict[str, list[str]] = {
         "six parameters",
         "6-parameter",
     ],
+    # item 3 (2026-10-28): a Volterra expansion of the six parameters IS the 24-parameter model
+    # (Friston et al. 1996), so "Volterra" resolves to friston24; the ``volterra`` member keeps no
+    # alias of its own and is reached only by the exact token.
     "friston24": [
         "24 motion",
         "Friston",
@@ -197,8 +200,10 @@ MOTION_EXPANSION: dict[str, list[str]] = {
         "24 regressors",
         "24 head motion",
         "24 nuisance",
+        "24 movement",
+        "Volterra",
     ],
-    "volterra": ["Volterra"],
+    "volterra": [],
 }
 TISSUE_REGRESSOR: dict[str, list[str]] = {
     "whole_brain": ["global signal", "whole brain", "whole-brain", "GSR", "global mean", "global"],
@@ -302,6 +307,12 @@ DISTORTION_SOURCE: dict[str, list[str]] = {
         "B0",
         "phase difference",
         "spin echo",
+        # item 3 (2026-10-28): "magnetic field inhomogeneit*" -- both word forms, and the bare
+        # "field inhomogeneit*" a paper writes without "magnetic"
+        "magnetic field inhomogeneity",
+        "magnetic field inhomogeneities",
+        "field inhomogeneity",
+        "field inhomogeneities",
     ],
     "gradient_nonlinearity": [
         "gradient nonlinearity",
@@ -365,13 +376,15 @@ SMOOTHING_SPACE: dict[str, list[str]] = {
     ],
     "native_surface": ["native surface"],
     "mni_volume": ["MNI", "MNI volume", "standard space", "template space", "Talairach"],
+    # item 3 (2026-10-28), found by the replay: the bare alias "surface" resolved weber's exact
+    # member "native_surface" to template_surface (the underscore kept "native surface" from
+    # matching). Removed; the specific forms remain.
     "template_surface": [
         "fsaverage",
         "fsLR",
         "fs_LR",
         "template surface",
         "grayordinate",
-        "surface",
         "cortical surface",
     ],
 }

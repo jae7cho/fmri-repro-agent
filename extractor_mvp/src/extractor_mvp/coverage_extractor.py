@@ -19,6 +19,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
+from fmri_repro.spec.preprocessing import Detrend, SpecifiedTerm
 from fmri_repro.spec.provenance import Extracted, ProvenancedField
 from pydantic import BaseModel, Field
 
@@ -26,6 +27,7 @@ from extractor_mvp.coverage_fields import (
     CALL_S_SPECS,
     CALL_T_SPECS,
     COVERAGE_KINDS,
+    DETREND,
     SPECS_BY_KIND,
     CoverageFieldSpec,
 )
@@ -33,11 +35,13 @@ from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     DeferralRecord,
     ExtractionDiagnostic,
+    _extracted_pf,
     _process_field,
     _step_not_performed_pf,
     build_client,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
+from extractor_mvp.quote_support import phrase_in_quote
 
 _SHARED_RULES = """\
 ## How every step is handled
@@ -352,6 +356,49 @@ def _process(
             out.deferrals.append(deferral)
 
 
+#: The detrend orders, lowest to highest (the author's item 3, 2026-10-28): the field takes the
+#: HIGHEST order the quoted sentence names, whatever single order the model returned.
+_DETREND_ORDER: tuple[str, ...] = ("none", "linear", "quadratic")
+DETREND_HIGHEST_ORDER = "detrend_highest_order_named"
+
+
+def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
+    """``nuisance_regression.detrend``: when the located quote names a higher order than the value
+    resolved to ("linear or quadratic trends" with value "linear"), the resolved member becomes the
+    highest order named; the paper's words stay as verbatim; a diagnostic records the move."""
+    pf = out.fields.get("nuisance_regression", {}).get("detrend")
+    if pf is None or not isinstance(pf.extraction, Extracted):
+        return
+    term = pf.extraction.value
+    quote = pf.extraction.spans[0].text
+    named = [
+        member
+        for member in _DETREND_ORDER
+        if any(phrase_in_quote(alias, quote) for alias in DETREND.get(member, ()))
+    ]
+    if not named:
+        return
+    highest = max(named, key=_DETREND_ORDER.index)
+    current = getattr(term, "resolved", None)
+    if current is not None and _DETREND_ORDER.index(current) >= _DETREND_ORDER.index(highest):
+        return
+    out.fields["nuisance_regression"]["detrend"] = _extracted_pf(
+        "detrend",
+        SpecifiedTerm[Detrend],
+        SpecifiedTerm(verbatim=term.verbatim, resolved=highest, resolution="resolved"),
+        pf.extraction.spans[0],
+        pf.extraction.span_recovered,
+    )
+    out.diagnostics.append(
+        ExtractionDiagnostic(
+            "nuisance_regression.detrend",
+            f"{DETREND_HIGHEST_ORDER}:{current}->{highest}",
+            term.verbatim,
+            quote,
+        )
+    )
+
+
 def _apply_not_performed(out: CoverageExtraction) -> None:
     """R2: when a kind's ``performed`` is EXTRACTED ``False``, its parameters are
     ``step_not_performed`` whatever the model returned for them."""
@@ -393,4 +440,5 @@ def extract_coverage(
     _process(temporal, CALL_T_SPECS, parsed_paper.text, out)
     _process(spatial, CALL_S_SPECS, parsed_paper.text, out)
     _apply_not_performed(out)
+    _apply_detrend_highest_order(out)
     return out
