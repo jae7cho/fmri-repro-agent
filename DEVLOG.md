@@ -3648,3 +3648,31 @@ the three enter through the model only, their reports read as states and counts.
 Held-out text unread throughout; ids, states and counts only. 572 passed in extractor_mvp (not
 live), 234 root; hooks clean. Commits here: `3850723`, `3361c1c`, `5ba8d04`, `ec7519a`, `a3ce6e3`,
 `90392e4`, `44c60db`, `47788b4`, then this entry.
+
+## 2026-10-29 — the validator bug, the repaired-text check, ciric re-drawn; two unseen papers
+
+**What was asked.** The author named two problems in coverage_v2: the never-deferred validator (a
+reask) cost ciric_2017 its whole report — "A rule about one field should never be able to remove a
+paper's entire report" — and the number check read the unrepaired text, so poldrack's ">0.25"
+(printed "40.25") failed. Also a correction to Claude Code's reading: chen's slice-timing
+`performed` was right; the report shows only the start of the quote. Then: run `aespa-report` on
+papers the tool has never seen and read the reports.
+
+- `5af8be9` — `performed` deferred is a post-check on the processed layer (`performed_cannot_defer`,
+  unverifiable, the deferral kept as a diagnostic, nothing sent back to the model); the support
+  check reads the model's quote when tier 6 located the span; three mutations killed. Replay over
+  every stored result: poldrack's v2 `scrub.threshold` moves (>→4); ciric's v1 distortion source
+  moves through the earlier alias fix; 0 held-out; 11 repaired cells still supported. ciric_2017
+  re-drawn alone under the coverage_v2 hashes (refused otherwise) into `batch_coverage_v2`, recorded
+  as a re-draw after a code fix (`redraw_ciric_manifest.json`, a `redraw` block; the summary keeps
+  the first draw's failure): success, 85 s; the v2 table regenerated over 16 in the findings
+  addendum. The other 18 v2 records were drawn before the fixes and are not re-processed.
+- `fec812b` — two unseen papers (Gracia-Tabuenca 2024, Shen 2013) through `aespa-report`, read against
+  each methods text: eight things wrong, ranked — no temporal filtering, a template step order
+  labelled as the paper's, structural sentences filling functional fields, task-GLM covariates read
+  as preprocessing, a phrase-table miss ("orthogonalized"), the Software row blind to FreeSurfer v5.3
+  and BioImage Suite, two over-resolutions, the multi-pipeline warning. The author's caveat: a model
+  of the same family reading two papers is a bug list, not a measurement.
+
+Held-out text unread. 573 passed in extractor_mvp (not live), 234 root; hooks clean. Commits here:
+`5af8be9`, `fec812b`, then this entry.
