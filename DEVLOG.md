@@ -3588,3 +3588,63 @@ unread throughout; the three enter through the model only, their reports read as
 No labels and no accuracy figure for the eleven rows; the three existing hashes unmoved; held-out
 text unread; ids, states and counts only. 549 passed in extractor_mvp (not live), 234 root; hooks
 clean. Commits here: `9c5359d`, `86cba81`, `f6ffd03`, then this entry.
+
+## 2026-10-28 (night) — the six follow-ups, and coverage_v2
+
+**What was asked.** After the coverage_v1 run: ratify the optional-fields fork; then six items in
+order, each with tests, mutations and a replay where no model call is needed; then the nineteen
+re-run as coverage_v2 with the per-row table beside coverage_v1's. Held-out text unread throughout;
+the three enter through the model only, their reports read as states and counts.
+
+- The fork ratified and the six items recorded verbatim in `DESIGN_coverage_expansion.md` B9/B14.
+- `3850723` — **item 1**, tier 6 of the span resolver: a `/C<digits>` glyph run matches one quote
+  character (the DELTA's wildcard, no claim which glyph), binder's `ª` matches `fi`, a quote symbol
+  matches a source letter or digit; at most 3 per quote, unique or nothing, re-verified, named on
+  `Span.repairs` (schema 0.5.3, a re-stamp) and rendered "quote matched after source-text repair:
+  ×→/C2, ×→/C2". `ﬁ`/`ﬂ` keep folding silently at tier 3. Replay over every stored result and every
+  recorded draw: 0 previously-resolved cells changed; 93 contaminated cells moved (agtzidis's
+  ×→/C2 on 5 batch cells and 74 draws across nine runs, binder's 4 smoothing cells, poldrack's 2
+  scrub cells); 0 on the held-out three. Four mutations: three killed, the re-verification drop
+  survived (redundant by construction, kept as tier 5's precedent).
+- `3361c1c` — **item 2**: `performed` never deferred (a model validator, a reask; the prompts move
+  the deferral to the parameters) and a performed quote must carry a phrase from a frozen per-step
+  table (pinned by sha256; four phrases added after the replay on the contaminated sentences,
+  declared fitted). Replay: 3 contaminated cells move to unverifiable (power's coregistration and
+  intensity correction, weber's nuisance), 8 deferred performed cells the validator now refuses;
+  the held-out three 0 and 0.
+- `5ba8d04` — **item 3**: underscore, space and hyphen one separator in alias matching (the shared
+  seven fields included); "magnetic field inhomogeneit*" on susceptibility_fieldmap; Volterra →
+  friston24; detrend takes the highest order the quote names (a diagnostic records the move). The
+  replay found one wrong alias and it was removed (bare "surface" had resolved weber's exact member
+  `native_surface` to template_surface). Replay: 230 stored terms re-resolve identically; moves:
+  chen's underscore item → csf, three Volterra cells → friston24, weber's space → native_surface,
+  ciric's detrend linear → quadratic; the held-out three 0 and 0.
+- `ec7519a` — **items 4 and 6**: coregistration method = the tool, cost_function = bbr |
+  mutual_information | correlation_ratio | other (SPATIAL_PROMPT 4ac7b0cb…; no coregistration cell
+  moves on replay); kind-prefixed fields on rows with sibling kinds (re-render replay: 30 Rows lines
+  change on the contaminated papers, 4 on the held-out three, 0 reports change outside the section).
+- `a3ce6e3` — **item 5**: `multiple_pipelines` with quote and count on both calls, stored beside the
+  record and rendered as a header line on the steps section when true; TEMPORAL_VOLUME_PROMPT
+  18b47abf…, SPATIAL_PROMPT dd46672b… (every superseded hash retained in the pin with a dated note).
+- `90392e4` the coverage_v2 config; the re-render script made arm-safe for the gate.
+- `44c60db` — the re-render script passes `multiple_pipelines` only when the stored record carries
+  it, so the identity gate's `--against` arm (which predates the keyword) keeps working: 19 identical
+  against `da7fe97`, 0 of 19 against `d31e8b7`.
+- The run, `coverage_v2` (`results/batch_coverage_v2`, gitignored): 2026-10-29, 00:09:38–00:30:18
+  UTC, the manifest with the five prompt hashes, the phrase table's hash, the config's sha256, exit
+  0. **18 records of 19: ciric_2017 `extraction_failed`** — `brain_extraction_performed` came back
+  deferred on the first completion and both reasks, instructor raised, the batch recorded the
+  failure. The validator's cost on this day; ciric not re-run; held for the author (coerce with a
+  diagnostic, or a larger reask budget). `47788b4` — the findings, the per-row table over the 15
+  contaminated papers BESIDE coverage_v1's 16, never merged: Intersubject registration 11 → 13 and
+  Motion correction not-reported 1 → 0 (agtzidis's ×→/C2 spans resolve), Brain extraction deferred
+  3 → 1, Intensity correction 3 → 1 (power's normalization sentence unverifiable under the phrase
+  rule), Software unverifiable 0 → 2 (the shared call's own movement); eleven repaired spans on the
+  contaminated papers (agtzidis 5, binder 4, poldrack 2 — including "<" as "o", twice), 0 on the
+  held-out three; `multiple_pipelines` yes on liu_2013 and weber (counts not stated); wall time
+  1,196.85 → 1,145.82 s over the recorded papers. The chen and poldrack reports were pasted in full
+  in the session; ciric has no report.
+
+Held-out text unread throughout; ids, states and counts only. 572 passed in extractor_mvp (not
+live), 234 root; hooks clean. Commits here: `3850723`, `3361c1c`, `5ba8d04`, `ec7519a`, `a3ce6e3`,
+`90392e4`, `44c60db`, `47788b4`, then this entry.
