@@ -3676,3 +3676,33 @@ papers the tool has never seen and read the reports.
 
 Held-out text unread. 573 passed in extractor_mvp (not live), 234 root; hooks clean. Commits here:
 `5af8be9`, `fec812b`, then this entry.
+
+## 2026-10-29 (afternoon) — report v2: a looser format and a checking pass; coverage_v3
+
+**What was asked.** The author ratified `DESIGN_report_v2.md` with all eleven forks as recommended, F2
+included ("leave the shared prompt alone and let the verifier flag those cases"), and ordered the
+build in six steps, each with tests, mutations and a replay where no model call is needed; then
+coverage_v3 on the 16 contaminated papers and the two unseen papers, with the unseen papers'
+verifier verdicts withheld until the author confirms their own reading is recorded.
+
+- `edaea4c` — the design, with the ratification recorded.
+- `d888930` — schema 0.6.0: six fields become lists, a lift hop; replay 19 identical on three vintages.
+- `b131c01` — `software_mentions` and the Software row over every named software ("partially reported").
+- `4edbf49` — temporal filtering on call T, beyond COBIDAS; the band never trips the spec's validator;
+  the KB held off the band (F1a).
+- `708c37a` — the scope paragraph in both coverage prompts.
+- `a9484da` — step order from the paper (every sentence must resolve), else the template, said so.
+- `6560bfb` — the checking pass: one more call; supported / wrong / missed with a quote-checked sentence;
+  wrong demotes to a flag, never replaces; it can never fail a paper; multiple_pipelines moved here;
+  software not used for preprocessing shown, not counted. Identity gate 19 identical against HEAD,
+  0 of 19 against d31e8b7. Mutations across the six steps: 14, every one killed.
+- `03fa079` — coverage_v3 (2026-10-29 14:44:57–15:30:42 UTC, the staged build, tree `1e46ed66`): 18 of 18
+  success; the Software row partially reported on 5 of 16; checking pass on the 16 — supported 1,164,
+  wrong 89, missed 47, unverified 12, unvalidated; chen's slice timing supported (right); poldrack's
+  threshold fixed live; ciric's multi-pipeline answer still yes. Wall time 93–291 s per paper (the
+  checking pass 37–210 s of it). The unseen papers' reports were shown with the checking pass hidden;
+  their verdicts are withheld here.
+
+Committed after 17:00 ET as one commit per step from tree snapshots taken as each step passed (the
+commit hook blocks 09:00–17:00). Held-out text unread; the held-out three not run. 590 passed in
+extractor_mvp (not live), 235 root; hooks clean. Commits here: `edaea4c`–`03fa079`, then this entry.
