@@ -740,6 +740,29 @@ def _motion_method_line(row: FieldRow, label: str, record: Any | None) -> str:
     return line
 
 
+def _multiple_pipelines_line(answers: dict[str, Any] | None) -> str | None:
+    """Item 5 (2026-10-28): one header line on the steps section when either coverage call
+    answered that the text describes more than one preprocessing variant. ``answers`` is the
+    stored shape -- ``{call: {"multiple_pipelines": <dumped field>, "pipeline_variant_count": <dumped
+    field>}}`` -- so the batch and the re-render script render the same line."""
+    if not answers:
+        return None
+    parts: list[str] = []
+    for call in sorted(answers):
+        fields = answers[call] or {}
+        flag = (fields.get("multiple_pipelines") or {}).get("extraction") or {}
+        if flag.get("status") != "EXTRACTED" or flag.get("value") is not True:
+            continue
+        count = (fields.get("pipeline_variant_count") or {}).get("extraction") or {}
+        n = f"count {count['value']}" if count.get("status") == "EXTRACTED" else "count not stated"
+        spans = flag.get("spans") or []
+        quote = f"  «{_truncate_quote(spans[0]['text'])}»" if spans else ""
+        parts.append(f"call {call}: yes, {n}{quote}")
+    if not parts:
+        return None
+    return "> ⚠ More than one preprocessing variant is described — " + "; ".join(parts)
+
+
 def _protocol_note_lines(row: FieldRow) -> list[str]:
     """The indented basis-note line(s) that follow an INFERRED bullet (else none)."""
     if row.state == INFERRED_DEFAULT:
@@ -753,6 +776,7 @@ def to_protocol(
     *,
     methods_slice: MethodsSlice | None = None,
     motion_inference: Any | None = None,
+    multiple_pipelines: dict[str, Any] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -827,6 +851,10 @@ def to_protocol(
     # --- Steps in pipeline (list) order ---
     lines.append("## Preprocessing steps (pipeline order)")
     lines.append("")
+    variants = _multiple_pipelines_line(multiple_pipelines)
+    if variants:
+        lines.append(variants)
+        lines.append("")
     for n, step in enumerate(preprocessing.steps, start=1):
         cobidas_row = getattr(type(step), "cobidas_row", None)
         lines.append(f"### {n}. {step.kind}   (COBIDAS: {cobidas_row})")
@@ -856,6 +884,7 @@ def to_report(
     *,
     methods_slice: MethodsSlice | None = None,
     motion_inference: Any | None = None,
+    multiple_pipelines: dict[str, Any] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -865,7 +894,11 @@ def to_report(
     rows only and silently omit such rows; they are not reports.
     """
     return to_protocol(
-        preprocessing, source, methods_slice=methods_slice, motion_inference=motion_inference
+        preprocessing,
+        source,
+        methods_slice=methods_slice,
+        motion_inference=motion_inference,
+        multiple_pipelines=multiple_pipelines,
     )
 
 

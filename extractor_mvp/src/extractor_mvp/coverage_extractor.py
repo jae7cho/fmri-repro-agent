@@ -28,6 +28,7 @@ from extractor_mvp.coverage_fields import (
     CALL_T_SPECS,
     COVERAGE_KINDS,
     DETREND,
+    RECORD_SPECS,
     SPECS_BY_KIND,
     CoverageFieldSpec,
 )
@@ -83,6 +84,18 @@ they map, verbatim otherwise.
 The value must be stated IN the verbatim_quote: quote the sentence that carries it, not a nearby
 one. verbatim_quote and deferral_sentence are copied EXACTLY from the text, character for
 character; a field whose quote cannot be found is discarded.
+"""
+
+_RECORD_RULES = """\
+## More than one preprocessing variant (a record-level question, asked once per call)
+multiple_pipelines: "yes" if the methods text describes MORE THAN ONE preprocessing variant for
+  the functional data -- two pipelines compared, a main pipeline and an alternative, different
+  preprocessing for different datasets or analyses; verbatim_quote = the sentence that introduces
+  the alternative. "missing" when one preprocessing is described. Never "no" and never
+  "deferred".
+pipeline_variant_count: when multiple_pipelines is "yes", the number of variants described, as an
+  integer string, quoting the sentence that lets it be counted; "missing" otherwise.
+
 """
 
 _OUTPUT_STATUS = """\
@@ -189,6 +202,7 @@ nuisance_filtering_integrated: "yes" if temporal filtering was applied WITHIN th
   (simultaneously, e.g. AFNI 3dTproject), "no" if as a separate step, missing if not stated.
 
 """
+    + _RECORD_RULES
     + _OUTPUT_STATUS
 )
 
@@ -268,6 +282,7 @@ smoothing_approach: canonical fixed_kernel, iterate_to_fwhm.
 smoothing_space: canonical native_volume, native_surface, mni_volume, template_surface.
 
 """
+    + _RECORD_RULES
     + _OUTPUT_STATUS
 )
 
@@ -295,7 +310,8 @@ def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[Bas
     from pydantic import create_model, model_validator
 
     fields: dict[str, Any] = {
-        spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field)) for spec in specs
+        spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field))
+        for spec in specs + RECORD_SPECS
     }
     validators: dict[str, Any] = {
         "_no_deferred_performed": model_validator(mode="after")(_no_deferred_performed)
@@ -312,11 +328,21 @@ SpatialExtraction: type[BaseModel] = _response_model("SpatialExtraction", CALL_S
 
 @dataclasses.dataclass
 class CoverageExtraction:
-    """The two calls' processed fields by kind and bare id, with their diagnostics and deferrals."""
+    """The two calls' processed fields by kind and bare id, with their diagnostics and deferrals;
+    ``record`` holds the record-level answers by call ("T" / "S") -- item 5's
+    ``multiple_pipelines`` and ``pipeline_variant_count``."""
 
     fields: dict[str, dict[str, ProvenancedField]]
     diagnostics: list[ExtractionDiagnostic]
     deferrals: list[DeferralRecord]
+    record: dict[str, dict[str, ProvenancedField]] = dataclasses.field(default_factory=dict)
+
+    def multiple_pipelines_dump(self) -> dict[str, dict[str, Any]]:
+        """The record-level answers as plain dicts, the shape the batch stores and the renderer reads."""
+        return {
+            call: {name: pf.model_dump(mode="json") for name, pf in fields.items()}
+            for call, fields in self.record.items()
+        }
 
 
 def _call(
@@ -402,6 +428,28 @@ def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
     )
 
 
+def _process_record(extraction: BaseModel, call: str, text: str, out: CoverageExtraction) -> None:
+    """Item 5: the two record-level fields of one call, through the same span path."""
+    for spec in RECORD_SPECS:
+        fe: FieldExtractionResult = getattr(extraction, spec.attr)
+        pf, diag, deferral = _process_field(
+            spec.field_id,
+            f"record.{spec.field_id}",
+            fe,
+            None,
+            spec.t,
+            text,
+            None,
+            use_synonym_table=False,
+            value_kind=spec.value_kind,
+        )
+        out.record.setdefault(call, {})[spec.field_id] = pf
+        if diag is not None:
+            out.diagnostics.append(diag)
+        if deferral is not None:
+            out.deferrals.append(deferral)
+
+
 def _apply_not_performed(out: CoverageExtraction) -> None:
     """R2: when a kind's ``performed`` is EXTRACTED ``False``, its parameters are
     ``step_not_performed`` whatever the model returned for them."""
@@ -442,6 +490,8 @@ def extract_coverage(
         raw_out.extend([temporal, spatial])
     _process(temporal, CALL_T_SPECS, parsed_paper.text, out)
     _process(spatial, CALL_S_SPECS, parsed_paper.text, out)
+    _process_record(temporal, "T", parsed_paper.text, out)
+    _process_record(spatial, "S", parsed_paper.text, out)
     _apply_not_performed(out)
     _apply_detrend_highest_order(out)
     return out

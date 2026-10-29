@@ -111,7 +111,13 @@ def main(argv: list[str] | None = None) -> int:
             json.dumps(doc, indent=2, default=str) + "\n", encoding="utf-8"
         )
         (dst / f"{pid}.md").write_text(
-            to_report(preprocessing, source=pid, motion_inference=record), encoding="utf-8"
+            to_report(
+                preprocessing,
+                source=pid,
+                motion_inference=record,
+                multiple_pipelines=doc.get("multiple_pipelines"),
+            ),
+            encoding="utf-8",
         )
         rows.append(_row(pid, rec))
     head = subprocess.run(

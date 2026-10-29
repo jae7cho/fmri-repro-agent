@@ -1715,8 +1715,13 @@ def extract_preprocessing(
     *,
     client: Any | None = None,
     resolutions: list[ResolutionRecord] | None = None,
+    coverage_out: list[Any] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction -> (Preprocessing, diagnostics, deferral records).
+
+    ``coverage_out`` (item 5, 2026-10-28): pass a list to receive the ``CoverageExtraction`` the
+    two coverage calls produced, for the record-level ``multiple_pipelines`` answers the batch
+    stores beside the record. Same idiom as ``motion_inference_out``; default None is a no-op.
 
     ``resolutions`` (optional): pass a list to collect per-field
     :class:`ResolutionRecord`s for successfully-extracted targeted fields (raw LLM
@@ -1740,6 +1745,8 @@ def extract_preprocessing(
     from extractor_mvp.coverage_extractor import extract_coverage
 
     coverage = extract_coverage(parsed_paper, model, client=client)
+    if coverage_out is not None:
+        coverage_out.append(coverage)
     prep, diagnostics, deferrals = _extract_from_prompt(
         parsed_paper,
         model,
@@ -1920,6 +1927,7 @@ def extract(
     paper_date: date | None = None,
     resolutions: list[ResolutionRecord] | None = None,
     motion_inference_out: list[Any] | None = None,
+    coverage_out: list[Any] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction with one-hop deferral resolution.
 
@@ -1940,7 +1948,7 @@ def extract(
     The extraction arms and the returned ``deferral_records`` are unchanged.
     """
     preprocessing, diagnostics, deferral_records = extract_preprocessing(
-        parsed_paper, model, client=client, resolutions=resolutions
+        parsed_paper, model, client=client, resolutions=resolutions, coverage_out=coverage_out
     )
     preprocessing = _resolve_deferrals(
         preprocessing,

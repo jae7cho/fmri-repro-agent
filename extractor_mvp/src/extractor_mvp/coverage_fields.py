@@ -698,6 +698,14 @@ CALL_S_SPECS: tuple[CoverageFieldSpec, ...] = (
 
 COVERAGE_SPECS: tuple[CoverageFieldSpec, ...] = CALL_T_SPECS + CALL_S_SPECS
 
+#: Record-level fields asked on BOTH calls (the author's item 5, 2026-10-28): whether the text
+#: describes more than one preprocessing variant, with its quote, and how many. They land on the
+#: record, not on a step (kind ``record``), and render as a header line on the steps section.
+RECORD_SPECS: tuple[CoverageFieldSpec, ...] = (
+    _spec("T", "multiple_pipelines", "record", "multiple_pipelines", "bool"),
+    _spec("T", "pipeline_variant_count", "record", "pipeline_variant_count", "int"),
+)
+
 #: The FROZEN per-step phrase lists for ``performed`` (2026-10-28, the author's item 2,
 #: DESIGN_coverage_expansion.md B14): a ``performed`` quote must contain one of its step's phrases
 #: (token-run matched, word form tolerated) or the cell is unverifiable. Written from D.3's wording
@@ -875,7 +883,7 @@ COVERAGE_SUPPORT_TABLES: dict[str, tuple[dict[str, list[str]], list[str] | None]
     if s.value_kind in ("term", "term_list")
 }
 COVERAGE_NUMERIC_FIELDS: frozenset[str] = frozenset(
-    s.dotted for s in COVERAGE_SPECS if s.value_kind in ("number", "int")
+    s.dotted for s in COVERAGE_SPECS + RECORD_SPECS if s.value_kind in ("number", "int")
 )
 COVERAGE_TEXT_FIELDS: frozenset[str] = frozenset(
     s.dotted for s in COVERAGE_SPECS if s.value_kind == "text"
@@ -884,7 +892,7 @@ COVERAGE_LIST_FIELDS: frozenset[str] = frozenset(
     s.dotted for s in COVERAGE_SPECS if s.value_kind == "term_list"
 )
 COVERAGE_BOOL_FIELDS: frozenset[str] = frozenset(
-    s.dotted for s in COVERAGE_SPECS if s.value_kind == "bool"
+    s.dotted for s in COVERAGE_SPECS + RECORD_SPECS if s.value_kind == "bool"
 )
 
 #: kind -> its specs, in order (``performed`` first on every kind).

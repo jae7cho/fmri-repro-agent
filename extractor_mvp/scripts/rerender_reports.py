@@ -142,7 +142,14 @@ def _render_one(json_path: Path) -> str:
     # and diverge only under corruption, which is the case worth catching.
     # Bound to a local first: the pre-commit mypy hook runs with additional_dependencies: []
     # and so sees to_report as untyped, making a bare return a no-any-return error.
-    report: str = to_report(preprocessing, source=data["paper_id"], methods_slice=methods)
+    report: str = to_report(
+        preprocessing,
+        source=data["paper_id"],
+        methods_slice=methods,
+        # item 5 (2026-10-28): the record-level answers travel in the stored JSON; absent on
+        # records written before coverage_v2, which then render exactly as they did
+        multiple_pipelines=data.get("multiple_pipelines"),
+    )
     return report
 
 

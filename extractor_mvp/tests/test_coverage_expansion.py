@@ -607,3 +607,97 @@ def test_rows_with_sibling_kinds_name_the_kind_on_each_field() -> None:
     # a one-kind row stays bare
     assert "Spatial smoothing [unvalidated] — reported: performed = True" in out
     assert "spatial_smoothing.performed" not in out
+
+
+# ---------------------------------------------------------------------------
+# Item 5 (2026-10-28): multiple_pipelines on both calls, a header line on the steps section
+# ---------------------------------------------------------------------------
+
+_VARIANTS = (
+    "Two preprocessing variants (n = 2) were compared: with and without global signal regression."
+)
+
+
+def _run_with_record(temporal: Any = None, spatial: Any = None) -> tuple[Any, dict | None, str]:
+    text = TEXT + " " + _VARIANTS
+    paper = ParsedPaper(text=text, source="t", parser="manual")
+    coverage_out: list[Any] = []
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(_prep_payload(), temporal=temporal, spatial=spatial),
+        coverage_out=coverage_out,
+    )
+    dump = coverage_out[0].multiple_pipelines_dump() if coverage_out else None
+    return prep, dump, render.to_report(prep, source="t", multiple_pipelines=dump)
+
+
+def test_both_calls_carry_the_record_level_fields_and_a_yes_renders_a_header() -> None:
+    for model in (TemporalVolumeExtraction, SpatialExtraction):
+        assert {"multiple_pipelines", "pipeline_variant_count"} <= set(model.model_fields)
+    prep, dump, out = _run_with_record(
+        temporal=TemporalVolumeExtraction(
+            multiple_pipelines=_ex("yes", _VARIANTS), pipeline_variant_count=_ex("2", _VARIANTS)
+        )
+    )
+    assert dump is not None
+    assert dump["T"]["multiple_pipelines"]["extraction"]["status"] == "EXTRACTED"
+    assert dump["T"]["multiple_pipelines"]["extraction"]["value"] is True
+    assert dump["T"]["pipeline_variant_count"]["extraction"]["value"] == 2
+    assert dump["S"]["multiple_pipelines"]["extraction"]["status"] == "MISSING_FROM_PAPER"
+    head = out.split("### 1.")[0]
+    assert "> ⚠ More than one preprocessing variant is described — call T: yes, count 2" in head
+    assert "«Two preprocessing variants (n = 2) were compared" in head
+    assert "call S" not in head
+    # the record-level answers are not step fields: no step carries them
+    assert all("multiple_pipelines" not in type(s).model_fields for s in prep.steps)
+
+
+def test_no_variant_answer_renders_no_header_and_a_count_not_in_its_quote_is_dropped() -> None:
+    _, dump, out = _run_with_record()
+    assert dump is not None and "⚠ More than one" not in out
+    assert (
+        render.to_report(_run().__class__ and _run(), source="t", multiple_pipelines=None).count(
+            "⚠ More"
+        )
+        == 0
+    )
+    _, dump2, out2 = _run_with_record(
+        spatial=SpatialExtraction(
+            multiple_pipelines=_ex("yes", _VARIANTS), pipeline_variant_count=_ex("3", _VARIANTS)
+        )
+    )
+    assert dump2["S"]["pipeline_variant_count"]["extraction"]["status"] == "MISSING_FROM_PAPER"
+    assert "call S: yes, count not stated" in out2
+
+
+def test_the_rerender_script_passes_the_stored_answers_through(tmp_path: Any) -> None:
+    import json
+    import sys
+
+    sys.path.insert(0, str(__import__("pathlib").Path(render.__file__).parents[2] / "scripts"))
+    from rerender_reports import _render_one
+
+    prep, dump, _out = _run_with_record(
+        temporal=TemporalVolumeExtraction(multiple_pipelines=_ex("yes", _VARIANTS))
+    )
+    stored = {
+        "paper_id": "t",
+        "methods": {
+            "found_via": "header_match",
+            "matched_header": "Methods",
+            "start_offset": 0,
+            "end_offset": 10,
+            "slice_ratio": 0.5,
+            "ended_at": None,
+            "suspicious": False,
+        },
+        "preprocessing": prep.model_dump(mode="json"),
+        "multiple_pipelines": dump,
+    }
+    f = tmp_path / "t.json"
+    f.write_text(json.dumps(stored))
+    assert "⚠ More than one preprocessing variant" in _render_one(f)
+    stored.pop("multiple_pipelines")
+    f.write_text(json.dumps(stored))
+    assert "⚠ More than one preprocessing variant" not in _render_one(f)
