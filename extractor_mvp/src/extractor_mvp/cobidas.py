@@ -467,3 +467,28 @@ def row_state(rc: RowCoverage, rows: list[Any]) -> str:
     if rc.covered_by_extractor:
         return "not_reported"
     return "not_assessed"
+
+
+def kind_state(kind_rows: list[Any]) -> str:
+    """report v2 §1a (2026-10-29): the row state of a beyond-COBIDAS step (temporal filtering), by
+    the same precedence ``row_state`` uses for a D.3 row: performed=no, reported, deferred,
+    unverifiable, not reported, not assessed."""
+    if not kind_rows:
+        return "not_assessed"
+    negatives = [
+        r
+        for r in kind_rows
+        if r.path.endswith(".performed") and r.extraction_status == "EXTRACTED" and r.value is False
+    ]
+    addressing = [r for r in kind_rows if r.extraction_status in _ADDRESSING_STATUSES]
+    if negatives and all(r in negatives for r in addressing):
+        return "performed_no"
+    if any(r.extraction_status == "EXTRACTED" for r in addressing):
+        return "reported"
+    if addressing:
+        return "deferred"
+    if any(_gap_base(r.left_missing_reason) in _UNVERIFIABLE_GAP_BASES for r in kind_rows):
+        return "unverifiable"
+    if _row_covered_by_extractor(kind_rows):
+        return "not_reported"
+    return "not_assessed"

@@ -175,8 +175,8 @@ def test_every_field_of_the_thirteen_kinds_is_present_on_an_assembled_record() -
     """R6: fields carry states. The schema makes them optional for OLD documents; a record the
     extractor writes never leaves one absent."""
     prep = _run()
-    assert [s.kind for s in prep.steps].count("temporal_filtering") == 0
-    assert len(prep.steps) == 18
+    assert [s.kind for s in prep.steps].count("temporal_filtering") == 1  # report v2 §1a
+    assert len(prep.steps) == 19  # 2026-10-29: temporal_filtering emitted (report v2 §1a)
     for kind in COVERAGE_KINDS:
         step = next(s for s in prep.steps if s.kind == kind)
         for name in type(step).model_fields:
@@ -883,3 +883,89 @@ def test_a_used_for_not_in_the_quote_is_dropped_and_the_mention_kept() -> None:
 def _coverage_with_mentions(prep: Preprocessing) -> dict[str, Any]:
     rows = render.flatten(prep)
     return {rc.row.row_id: rc for rc in assess_coverage(rows, None, prep.software_mentions)}
+
+
+# ---------------------------------------------------------------------------
+# report v2 step 3 (2026-10-29): temporal filtering on call T, beyond COBIDAS
+# ---------------------------------------------------------------------------
+
+_TF = "The timecourses were filtered using a bandpass Butterworth filter with passing band 0.02 \u2013 0.1Hz."
+
+
+def _run_tf(**fields: Any) -> Preprocessing:
+    paper = ParsedPaper(text=TEXT + " " + _TF, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper, "m", client=stub_client(_prep_payload(), temporal=TemporalVolumeExtraction(**fields))
+    )
+    return prep
+
+
+def test_the_band_is_extracted_digit_exact_and_shown_beyond_cobidas() -> None:
+    prep = _run_tf(
+        filter_performed=_ex("yes", _TF),
+        filter_band_hz=_ex("0.02-0.1", _TF),
+        filter_type=_ex("Butterworth", _TF),
+    )
+    band = _field(prep, "temporal_filtering", "effective_band_hz")
+    assert band.extraction.value == (0.02, 0.1)
+    assert (
+        _field(prep, "temporal_filtering", "filter_type").extraction.value.resolved == "butterworth"
+    )
+    # low_hz/high_hz stay untargeted: the band-consistency validator can never be tripped
+    assert _field(prep, "temporal_filtering", "low_hz").inference.reason == "not_targeted_by_mvp"
+    out = render.to_cobidas_coverage(prep)
+    assert (
+        "- Temporal filtering [beyond COBIDAS] — reported: performed = True; filter_type = butterworth "
+        '(paper: "Butterworth"); effective_band_hz = 0.02\u20130.1 Hz' in out
+    )
+    assert "- temporal_filtering" in out  # listed under Beyond COBIDAS, never in the 14
+    assert "Mandatory rows: 14" in out
+
+
+def test_a_band_edge_not_in_the_quote_is_unverifiable_and_a_high_pass_is_open() -> None:
+    bad = _run_tf(filter_band_hz=_ex("0.01-0.1", _TF))
+    assert (
+        _field(bad, "temporal_filtering", "effective_band_hz").inference.reason
+        == "value_unsupported_by_quote"
+    )
+    hp_text = "A high-pass filter at 0.008 Hz was applied."
+    paper = ParsedPaper(text=TEXT + " " + hp_text, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(filter_band_hz=_ex("0.008-", hp_text)),
+        ),
+    )
+    assert _field(prep, "temporal_filtering", "effective_band_hz").extraction.value == (0.008, None)
+
+
+def test_the_kb_never_fills_the_band_until_the_kb_build(monkeypatch: Any) -> None:
+    """F1a: the extractor holds temporal_filtering.effective_band_hz back from KB defaults."""
+    import fmri_repro.kb_client.base_pipeline as kb
+
+    seen: dict[str, Any] = {}
+
+    def spy(prep: Any, paper_date: Any, skip: Any = frozenset()) -> Any:
+        seen["skip"] = skip
+        return prep
+
+    monkeypatch.setattr(kb, "fill_dependent_defaults", spy)
+    monkeypatch.setattr(kb, "infer_base_pipeline_version", lambda prep, pd: prep)
+    from datetime import date
+
+    from extractor_mvp.extractor import DeferralRecord, _resolve_deferrals
+
+    prep = _run()
+    _resolve_deferrals(
+        prep,
+        [
+            DeferralRecord(
+                field="base_pipeline", ref_string="x", target_kind="pipeline", deferral_sentence="y"
+            )
+        ],
+        paper_date=date(2020, 1, 1),
+        citation_resolver=None,
+    )
+    assert ("temporal_filtering", "effective_band_hz") in seen["skip"]

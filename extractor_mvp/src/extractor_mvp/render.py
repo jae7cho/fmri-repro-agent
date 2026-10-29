@@ -82,6 +82,7 @@ from extractor_mvp.cobidas import (
     RowCoverage,
     assess_coverage,
     is_expanded,
+    kind_state,
     mapped_rows,
     row_state,
     software_mentions_for_row,
@@ -1197,8 +1198,43 @@ def _expanded_rows_section(
         if quote:
             line += f"  «{_truncate_quote(quote)}»"
         out.append(line)
+    # report v2 §1a (2026-10-29): temporal filtering, beyond COBIDAS -- shown, never counted.
+    tf_rows = [r for r in rows if r.group == "temporal_filtering"]
+    if any(r.path == "temporal_filtering.performed" for r in tf_rows):
+        state = kind_state(tf_rows)
+        values = []
+        quote = None
+        for r in tf_rows:
+            param = r.path.split(".", 1)[1]
+            if r.state == EXTRACTED:
+                values.append(
+                    f"{param} = {_fmt_band(r.value) if param == 'effective_band_hz' else _fmt_value(r.value)}"
+                )
+                quote = quote or r.span_text
+            elif r.state == DEFERRED_TO_CITATION:
+                values.append(
+                    f"{param}: deferred to {', '.join(r.deferral_refs or []) or '(unspecified)'}"
+                )
+        line = f"- Temporal filtering [beyond COBIDAS] — {_ROW_STATE_LABEL[state]}"
+        if values:
+            line += ": " + "; ".join(values)
+        if quote:
+            line += f"  «{_truncate_quote(quote)}»"
+        out.append(line)
     out.append("")
     return out
+
+
+def _fmt_band(value: Any) -> str:
+    """A band (low, high) in Hz; an open edge is shown as such."""
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return _fmt_value(value)
+    low, high = value
+    if low is None:
+        return f"low-pass {high} Hz"
+    if high is None:
+        return f"high-pass {low} Hz"
+    return f"{low}\u2013{high} Hz"
 
 
 def _base_pipeline_name(preprocessing: Preprocessing) -> str | None:

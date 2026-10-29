@@ -42,6 +42,7 @@ def test_assemble_step_list_unchanged(assembled: Preprocessing):
         "ica_denoise",
         "compcor",
         "nuisance_regression",
+        "temporal_filtering",  # report v2 §1a, 2026-10-29: beyond COBIDAS, now emitted
         "despike",
         "scrub",
         "intensity_normalization",
@@ -94,4 +95,7 @@ def test_protocol_renders_new_steps_generically(assembled: Preprocessing):
     # (brain_extraction: performed, parameters; segmentation: performed; nuisance_regression:
     # performed, regressor_list, tissue_definition, tissue_signal_definition). 29 + 45 + 7 = 81.
     # A real run gives fewer: the coverage calls supply real reasons for those 52 fields.
-    assert out.count("not examined by the extractor") == 81
+    #
+    # 81 -> 93, 2026-10-29 (DESIGN_report_v2.md §1a): temporal_filtering is emitted, and with no
+    # coverage call in this fixture all twelve of its fields are untargeted. 81 + 12 = 93.
+    assert out.count("not examined by the extractor") == 93

@@ -172,7 +172,9 @@ _PINNED = {
     #: c2617933046fb988e99e01e1bbb48f08fbb8449456a371009d281d601dfc9beb.
     #: UPDATED 2026-10-29, report v2 step 1 (DESIGN_report_v2.md §1b): six fields become lists; their prompt lines ask for comma-separated lists. Superseded TEMPORAL_VOLUME_PROMPT value:
     #: 18b47abfb9aca06c195686567f59394ff5984a4969ca4721021ac74fcdc4ef19.
-    "TEMPORAL_VOLUME_PROMPT": "8c46e26a78af72505b2d8c4331d9c79ef0baed8d00f0cdf7152b1df5b57028be",
+    #: UPDATED 2026-10-29, report v2 step 3 (DESIGN_report_v2.md §1a): call T asks temporal filtering (performed, band, filter type, order, relative to regression, applied to). Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: 8c46e26a78af72505b2d8c4331d9c79ef0baed8d00f0cdf7152b1df5b57028be.
+    "TEMPORAL_VOLUME_PROMPT": "8f21ca02c0d660a8364c53d63f40735260a13731fd15d2b6de90e44e75d56795",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -188,7 +190,9 @@ _PINNED = {
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):
 #: sha256 of ``json.dumps(PERFORMED_PHRASES, sort_keys=True)``. Written from D.3's wording and the
 #: coverage_v1 sentences of the contaminated sixteen, then frozen; a change is a dated event here.
-_PINNED_PERFORMED_PHRASES = "85566a83441d91338076acf3f7c321afc6d735524bae55c734971cbab1ccc32f"
+#: UPDATED 2026-10-29, report v2 step 3: the temporal_filtering entry added with the step.
+#: Superseded value: 85566a83441d91338076acf3f7c321afc6d735524bae55c734971cbab1ccc32f.
+_PINNED_PERFORMED_PHRASES = "02acd07d8fab2ea17c4f730c2da45a0d8ee5176bc507ea8d34ac442f6ba14ef4"
 
 _VINTAGE_NOTE = (
     "\n\nThis hash pins a prompt that is SENT TO THE MODEL. A change here changes what every "

@@ -587,6 +587,26 @@ SCRUB_FIELD_META: dict[str, FieldMeta] = {
 
 
 TEMPORAL_FILTERING_FIELD_META: dict[str, FieldMeta] = {
+    "performed": FieldMeta(  # 0.6.0, report v2 §1a
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "filter_type": FieldMeta(  # 0.6.0, report v2 §1a
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "relative_to_regression": FieldMeta(  # 0.6.0, report v2 §1a
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
+    "applied_to": FieldMeta(  # 0.6.0, report v2 §1a
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     # ``effective_band_hz`` is version_default-only when a base pipeline is
     # named — field_convention defaults would be confirmation-bias. KB
     # integration landed.
@@ -1239,8 +1259,22 @@ class Scrub(BaseModel):
 TemporalFilteringMethod = Literal["butterworth_bandpass", "highpass_only", "wavelet_decomposition"]
 
 
+# 0.6.0 (2026-10-29, DESIGN_report_v2.md §1a): what the coverage call asks of a filter.
+TemporalFilterType = Literal["butterworth", "fir", "iir", "ideal_fft", "chebyshev", "other"]
+TemporalFilteringRelativeToRegression = Literal["before", "after", "simultaneous"]
+
+
 class TemporalFiltering(BaseModel):
     kind: Literal["temporal_filtering"] = "temporal_filtering"
+    # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1a): asked on the coverage call (temporal/volume).
+    # OPTIONAL, so a document written before 0.6.0 parses unchanged. ``filter_type`` is the filter
+    # family (Butterworth, FIR, ...), separate from ``method``'s band shape, which stays untargeted.
+    performed: ProvenancedField[bool] | None = None
+    filter_type: ProvenancedField[SpecifiedTerm[TemporalFilterType]] | None = None
+    relative_to_regression: (
+        ProvenancedField[SpecifiedTerm[TemporalFilteringRelativeToRegression]] | None
+    ) = None
+    applied_to: ProvenancedField[str] | None = None
     # Method-independent canonical band. For butterworth this is the passband;
     # for wavelet this is the scale's nominal frequency support — NOT a passband.
     effective_band_hz: ProvenancedField[tuple[float | None, float | None]]

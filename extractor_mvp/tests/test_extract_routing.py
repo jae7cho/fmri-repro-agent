@@ -136,7 +136,7 @@ class _StubResolver(CitationResolver):
 def test_kb_path_fills_version_default(monkeypatch):
     calls = {"fill": 0}
 
-    def mock_fill(prep, paper_date):
+    def mock_fill(prep, paper_date, **_kw):  # 2026-10-29: the F1a skip keyword
         calls["fill"] += 1
         return _ts_inferred(prep, VersionDefaultBasis(tool="hcp_minimal", version="v3.4.0"), 0.9)
 
@@ -157,7 +157,9 @@ def test_kb_path_fills_version_default(monkeypatch):
 def test_citation_fallback_when_kb_unchanged(monkeypatch):
     calls = {"fill": 0}
 
-    def mock_fill(prep, paper_date):  # KB recognized nothing -> returns unchanged
+    def mock_fill(
+        prep, paper_date, **_kw
+    ):  # 2026-10-29: the F1a skip keyword  # KB recognized nothing -> returns unchanged
         calls["fill"] += 1
         return prep
 

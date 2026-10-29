@@ -173,7 +173,11 @@ def infer_base_pipeline_version(
     return preprocessing
 
 
-def fill_dependent_defaults(preprocessing: Preprocessing, paper_date: date | None) -> Preprocessing:
+def fill_dependent_defaults(
+    preprocessing: Preprocessing,
+    paper_date: date | None,
+    skip: frozenset[tuple[str, str]] = frozenset(),
+) -> Preprocessing:
     """Fill the seven KB-backed param fields IF the resolved version is *certain*.
 
     "Certain" = extraction is ``Extracted`` (paper pinned it) OR inference is
@@ -211,6 +215,10 @@ def fill_dependent_defaults(preprocessing: Preprocessing, paper_date: date | Non
         return preprocessing
 
     for kind, name in SEVEN_DEMOTED_FIELDS:
+        # ``skip`` (2026-10-29, DESIGN_report_v2.md F1a): fields a caller holds back from KB
+        # defaults -- the extractor holds temporal_filtering.effective_band_hz until the KB build.
+        if (kind, name) in skip:
+            continue
         result = results.get(f"{kind}.{name}")
         if result is None:
             continue

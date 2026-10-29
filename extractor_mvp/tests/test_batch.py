@@ -44,7 +44,8 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     # counted here — this column counts source absences, not coverage gaps.
     # 6 -> 69, 2026-10-28: the stub answers the two coverage calls all-missing as well, so their
     # 38 + 25 = 63 fields are not_stated_in_text beside the six (DESIGN_coverage_expansion.md B1).
-    assert r.n_missing_not_stated == 69
+    # 69 -> 75, 2026-10-29: call T's six temporal-filtering fields answered missing too.
+    assert r.n_missing_not_stated == 75
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 

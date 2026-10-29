@@ -205,6 +205,17 @@ nuisance_detrend: canonical linear, quadratic, none; verbatim otherwise.
 nuisance_filtering_integrated: "yes" if temporal filtering was applied WITHIN the same regression
   (simultaneously, e.g. AFNI 3dTproject), "no" if as a separate step, missing if not stated.
 
+## Temporal filtering (temporal_filtering) -- beyond COBIDAS D.3, asked because a replication needs it
+filter_performed: was the BOLD time series temporally filtered (band-pass, high-pass, low-pass)?
+filter_band_hz: the band in Hz as "low-high" ("0.01-0.1"); a high-pass only as "low-" ("0.008-");
+  a low-pass only as "-high" ("-0.1"). The numbers exactly as the text writes them.
+filter_type: canonical butterworth, fir, iir, ideal_fft, chebyshev, other; verbatim otherwise.
+filter_order: the filter order as an integer string, if stated.
+filter_relative_to_regression: canonical before, after (nuisance regression), simultaneous (in
+  the same regression model, e.g. AFNI 3dTproject).
+filter_applied_to: what was filtered when it is not the BOLD data itself (e.g. "the motion
+  covariates"), the paper's words; missing when the BOLD data were filtered.
+
 """
     + _RECORD_RULES
     + _OUTPUT_STATUS

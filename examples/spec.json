@@ -1829,6 +1829,10 @@
             },
             {
               "kind": "temporal_filtering",
+              "performed": null,
+              "filter_type": null,
+              "relative_to_regression": null,
+              "applied_to": null,
               "effective_band_hz": {
                 "field_id": "effective_band_hz",
                 "extraction": {

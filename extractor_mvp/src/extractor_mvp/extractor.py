@@ -58,6 +58,7 @@ from fmri_repro.spec.preprocessing import (
     SurfaceRegistration,
     TargetSpace,
     TargetSurface,
+    TemporalFiltering,
     TemporalStandardization,
     TemporalStandardizationMethod,
 )
@@ -555,6 +556,15 @@ def _process_field(
                     None,
                 )
             value = number
+        elif value_kind == "band":
+            band = _parse_band(fe.value)
+            if band is None:
+                return (
+                    _missing_pf(field_id, t, "value_not_numeric"),
+                    ExtractionDiagnostic(dotted, "value_not_numeric", fe.value, fe.verbatim_quote),
+                    None,
+                )
+            value = band
         elif value_kind == "term":
             value = _resolve_term(str(fe.value), literal_type, synonyms)
         elif value_kind == "term_list":
@@ -716,6 +726,28 @@ def _parse_number(raw: object, *, integer: bool) -> float | int | None:
     if integer:
         return int(number) if number.is_integer() else None
     return number
+
+
+_BAND_NUMBER = re.compile(r"\d+(?:\.\d+)?|\.\d+")
+
+
+def _parse_band(raw: object) -> tuple[float | None, float | None] | None:
+    """A frequency band "low-high" in Hz (report v2 §1a): "0.01-0.1" -> (0.01, 0.1); a high-pass
+    "0.01-" -> (0.01, None); a low-pass "-0.1" -> (None, 0.1). ``None`` when it is not a band."""
+    text = str(raw).strip().replace("\u2013", "-").replace("\u2014", "-").replace(" to ", "-")
+    for unit in ("hz", "Hz", "HZ"):
+        text = text.replace(unit, "")
+    if "-" not in text:
+        return None
+    low_s, _, high_s = text.partition("-")
+    low_m, high_m = _BAND_NUMBER.search(low_s), _BAND_NUMBER.search(high_s)
+    low = float(low_m.group(0)) if low_m else None
+    high = float(high_m.group(0)) if high_m else None
+    if low is None and high is None:
+        return None
+    if low is not None and high is not None and low >= high:
+        return None
+    return (low, high)
 
 
 _TERM_SPLIT = re.compile(r"\s*(?:,|;|/|\band\b|\+)\s*")
@@ -1077,10 +1109,13 @@ def _assemble(
         return supplied if supplied is not None else _missing_pf(field_id, t, untargeted)
 
     def _build(kind: str, cls: Any, **structural: Any) -> Any:
-        return cls(
-            **{spec.field_id: _cov(kind, spec.field_id, spec.t) for spec in SPECS_BY_KIND[kind]},
-            **structural,
-        )
+        fields = {spec.field_id: _cov(kind, spec.field_id, spec.t) for spec in SPECS_BY_KIND[kind]}
+        # A field of the class the coverage calls do not ask (temporal_filtering's low_hz, high_hz,
+        # cutoff, scale, nominal_band_hz and method -- DESIGN_report_v2.md §1a) is untargeted.
+        for name in cls.model_fields:
+            if name not in fields and name not in cls.STRUCTURAL_FIELDS and name not in structural:
+                fields[name] = _missing_pf(name, str, untargeted)
+        return cls(**fields, **structural)
 
     brain_extraction = _build("brain_extraction", BrainExtraction)
     segmentation = _build("segmentation", Segmentation)
@@ -1169,6 +1204,8 @@ def _assemble(
             _build("ica_denoise", ICADenoise),
             _build("compcor", CompCor),
             nuisance_regression,
+            # report v2 §1a (2026-10-29): beyond COBIDAS, between regression and censoring
+            _build("temporal_filtering", TemporalFiltering),
             _build("despike", Despike),
             _build("scrub", Scrub),
             intensity,
@@ -1917,7 +1954,13 @@ def _resolve_deferrals(
             )
 
             preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
-            preprocessing = fill_dependent_defaults(preprocessing, paper_date)
+            # F1a (2026-10-29): temporal filtering is emitted now; its band takes no KB default
+            # until the KB build (R7), so a stated gap is never filled beside "not reported".
+            preprocessing = fill_dependent_defaults(
+                preprocessing,
+                paper_date,
+                skip=frozenset({("temporal_filtering", "effective_band_hz")}),
+            )
 
         if citation_resolver is not None and _any_step_fields_left_missing(preprocessing):
             resolved = citation_resolver.resolve_base_pipeline_deferral(

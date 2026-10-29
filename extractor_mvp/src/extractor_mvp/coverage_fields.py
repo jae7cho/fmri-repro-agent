@@ -49,11 +49,13 @@ from fmri_repro.spec.preprocessing import (
     SmoothingMethod,
     SmoothingSpace,
     SpecifiedTerm,
+    TemporalFilteringRelativeToRegression,
+    TemporalFilterType,
     TissueClass,
     TissueRegressor,
 )
 
-ValueKind = Literal["term", "term_list", "number", "int", "bool", "text"]
+ValueKind = Literal["term", "term_list", "number", "int", "bool", "text", "band"]
 
 #: The thirteen kinds of the eleven uncovered rows (cobidas.COBIDAS_D3_ROWS), by call.
 CALL_T_KINDS: tuple[str, ...] = (
@@ -64,6 +66,8 @@ CALL_T_KINDS: tuple[str, ...] = (
     "ica_denoise",
     "compcor",
     "nuisance_regression",
+    # report v2 §1a (2026-10-29): beyond COBIDAS, asked on the same call
+    "temporal_filtering",
 )
 CALL_S_KINDS: tuple[str, ...] = (
     "brain_extraction",
@@ -389,6 +393,27 @@ SMOOTHING_SPACE: dict[str, list[str]] = {
 }
 
 
+FILTER_TYPE: dict[str, list[str]] = {
+    "butterworth": ["Butterworth"],
+    "fir": ["FIR", "finite impulse response"],
+    "iir": ["IIR", "infinite impulse response"],
+    "ideal_fft": ["ideal", "FFT", "Fourier", "3dBandpass", "3dTproject"],
+    "chebyshev": ["Chebyshev"],
+    "other": [],
+}
+FILTER_RELATIVE: dict[str, list[str]] = {
+    "before": ["before regression", "prior to regression", "before nuisance", "prior to nuisance"],
+    "after": ["after regression", "following regression", "after nuisance", "following nuisance"],
+    "simultaneous": [
+        "simultaneously",
+        "in the same regression",
+        "same model",
+        "3dTproject",
+        "together with the nuisance",
+    ],
+}
+
+
 def _spec(
     call: Literal["T", "S"],
     attr: str,
@@ -410,6 +435,8 @@ def _spec(
         t = int
     elif value_kind == "bool":
         t = bool
+    elif value_kind == "band":
+        t = tuple[float | None, float | None]
     else:
         t = str
     return CoverageFieldSpec(
@@ -543,6 +570,35 @@ CALL_T_SPECS: tuple[CoverageFieldSpec, ...] = (
     _spec(
         "T", "nuisance_filtering_integrated", "nuisance_regression", "filtering_integrated", "bool"
     ),
+)
+
+#: report v2 §1a (2026-10-29): temporal filtering on call T, beyond COBIDAS. The band is the canonical
+#: ``effective_band_hz``; low_hz/high_hz stay untargeted so the spec's band-consistency validator can
+#: never be tripped by the extractor.
+CALL_T_SPECS = (
+    *CALL_T_SPECS,
+    _spec("T", "filter_performed", "temporal_filtering", "performed", "bool"),
+    _spec("T", "filter_band_hz", "temporal_filtering", "effective_band_hz", "band"),
+    _spec(
+        "T",
+        "filter_type",
+        "temporal_filtering",
+        "filter_type",
+        "term",
+        TemporalFilterType,
+        FILTER_TYPE,
+    ),
+    _spec("T", "filter_order", "temporal_filtering", "order", "int"),
+    _spec(
+        "T",
+        "filter_relative_to_regression",
+        "temporal_filtering",
+        "relative_to_regression",
+        "term",
+        TemporalFilteringRelativeToRegression,
+        FILTER_RELATIVE,
+    ),
+    _spec("T", "filter_applied_to", "temporal_filtering", "applied_to", "text"),
 )
 
 #: Call S, in response-model order.
@@ -864,6 +920,23 @@ PERFORMED_PHRASES: dict[str, tuple[str, ...]] = {
         "interleaved",
         "intensity normalization of the structural",
     ),
+    # report v2 §1a (2026-10-29), added with the step; the table's hash re-pinned with a dated note.
+    "temporal_filtering": (
+        "filtered",
+        "filtering",
+        "filter",
+        "band-pass",
+        "bandpass",
+        "band pass",
+        "high-pass",
+        "highpass",
+        "high pass",
+        "low-pass",
+        "lowpass",
+        "low pass",
+        "Butterworth",
+        "passband",
+    ),
     "spatial_smoothing": (
         "smoothed",
         "smoothing",
@@ -903,3 +976,8 @@ COVERAGE_BOOL_FIELDS: frozenset[str] = frozenset(
 SPECS_BY_KIND: dict[str, tuple[CoverageFieldSpec, ...]] = {
     kind: tuple(s for s in COVERAGE_SPECS if s.kind == kind) for kind in COVERAGE_KINDS
 }
+
+#: report v2 §1a: band fields (every stated edge digit-exact in the quote).
+COVERAGE_BAND_FIELDS: frozenset[str] = frozenset(
+    s.dotted for s in COVERAGE_SPECS if s.value_kind == "band"
+)

@@ -38,6 +38,7 @@ from __future__ import annotations
 import re
 
 from extractor_mvp.coverage_fields import (
+    COVERAGE_BAND_FIELDS,
     COVERAGE_BOOL_FIELDS,
     COVERAGE_LIST_FIELDS,
     COVERAGE_NUMERIC_FIELDS,
@@ -284,6 +285,10 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
         if dotted.endswith(".performed"):
             return performed_phrase_supported(dotted.split(".", 1)[0], quote)
         return None
+    if dotted in COVERAGE_BAND_FIELDS:
+        band = value if isinstance(value, (tuple, list)) else ()
+        edges = [e for e in band if e is not None]
+        return bool(edges) and all(number_in_quote(float(e), quote) for e in edges)
     if dotted in COVERAGE_NUMERIC_FIELDS:
         try:
             return number_in_quote(float(value), quote)  # type: ignore[arg-type]
