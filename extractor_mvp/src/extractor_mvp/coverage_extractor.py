@@ -37,6 +37,7 @@ from extractor_mvp.extractor import (
     DeferralRecord,
     ExtractionDiagnostic,
     _extracted_pf,
+    _performed_cannot_defer_pf,
     _process_field,
     _step_not_performed_pf,
     build_client,
@@ -291,32 +292,22 @@ def _missing_field() -> FieldExtractionResult:
     return FieldExtractionResult(status="missing")
 
 
-def _no_deferred_performed(model: BaseModel) -> BaseModel:
-    """``performed`` is never deferred (the author's item 2, 2026-10-28): a deferral is not a
-    statement that the step was performed. A violation is a validation error -- under instructor,
-    a reask -- never a silent coercion."""
-    for name in type(model).model_fields:
-        if name.endswith("_performed") and getattr(model, name).status == "deferred":
-            raise ValueError(
-                f"{name}: performed is never 'deferred' -- use 'missing' when the text defers the "
-                "step and states nothing itself; defer the step's parameter fields instead"
-            )
-    return model
-
-
 def _response_model(name: str, specs: tuple[CoverageFieldSpec, ...]) -> type[BaseModel]:
-    """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any; the
-    never-deferred rule on every ``performed`` field."""
-    from pydantic import create_model, model_validator
+    """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any.
+
+    NO validator (the author's ruling of 2026-10-29): a rule about one field must never be able to
+    remove a paper's report. The never-deferred rule for ``performed`` is a post-check on the
+    processed layer (:func:`_process`), the motion check's pattern; nothing is sent back to the
+    model. The 2026-10-28 validator reasked, the model held its answer, and ciric_2017 failed whole
+    in coverage_v2.
+    """
+    from pydantic import create_model
 
     fields: dict[str, Any] = {
         spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field))
         for spec in specs + RECORD_SPECS
     }
-    validators: dict[str, Any] = {
-        "_no_deferred_performed": model_validator(mode="after")(_no_deferred_performed)
-    }
-    return create_model(name, __validators__=validators, **fields)
+    return create_model(name, **fields)
 
 
 #: The LLM output schemas of the two calls, built from the field table so the two cannot drift.
@@ -378,6 +369,20 @@ def _process(
             value_kind=spec.value_kind,
             synonyms=(spec.synonyms, spec.underspecified) if spec.synonyms is not None else None,
         )
+        if spec.field_id == "performed" and pf.extraction.status == "DEFERRED_TO_CITATION":
+            # The post-check (2026-10-29): ``performed`` can never be deferred -- a deferral is not
+            # a statement that the step was performed. Coerced to MissingFromPaper with reason
+            # ``performed_cannot_defer`` (an unverifiable gap base); the deferral the model gave is
+            # kept as a diagnostic and is NOT routed to the citation resolver.
+            out.diagnostics.append(
+                ExtractionDiagnostic(
+                    spec.dotted,
+                    "performed_cannot_defer",
+                    fe.ref_string,
+                    fe.deferral_sentence,
+                )
+            )
+            pf, deferral = _performed_cannot_defer_pf(spec.field_id, spec.t), None
         out.fields.setdefault(spec.kind, {})[spec.field_id] = pf
         if diag is not None:
             out.diagnostics.append(diag)

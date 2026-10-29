@@ -169,6 +169,10 @@ _UNVERIFIABLE_GAP_BASES = frozenset(
         # §5 ruling 6, 2026-10-26): the span resolved and no alias of the value is in it. Same
         # judgement as base_pipeline_value_unsupported, on the seven targeted step fields.
         "value_unsupported_by_quote",
+        # A ``performed`` the model returned as deferred, coerced by the post-check (2026-10-29): the
+        # extractor looked, got a deferral it cannot credit for this field. Not a claim the paper
+        # is silent.
+        "performed_cannot_defer",
     }
 )
 

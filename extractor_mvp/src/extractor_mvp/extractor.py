@@ -658,10 +658,17 @@ def _process_field(
     # number when the number is in it, digit-exact. The motion field is not covered here (it has its
     # own post-check in extract_motion_method) and None means "not a checked field". One literal
     # reason at one _missing_pf call, so tests/test_render.py's reason scan can see it.
+    # 2026-10-29 (the author's ruling): when the span was located through tier 6's named repairs,
+    # the check reads the REPAIRED text. Tier 6 accepts a match only when the quote equals the
+    # source character for character outside the named substitutions, so the model's quote IS the
+    # source text with those substitutions undone (poldrack: "FD >0.25 mm", where the located span
+    # reads "40.25 mm" and the number would otherwise sit after a 4). A clean or tier-5 span keeps
+    # reading the located text, as before.
+    support_text = fe.verbatim_quote if resolution.repairs else resolution.span.text
     supported = (
-        coverage_value_supported(dotted, value, resolution.span.text)
+        coverage_value_supported(dotted, value, support_text)
         if value_kind is not None
-        else step_value_supported(dotted, value, resolution.span.text)
+        else step_value_supported(dotted, value, support_text)
     )
     if supported is False:
         return (
@@ -745,6 +752,14 @@ def _step_not_performed_pf(field_id: str, t: Any) -> ProvenancedField:
     """A parameter of a step the paper states was NOT performed (R2, 2026-10-28): not a gap about
     the paper and not an extractor limitation -- its own reason, rendered "not applicable"."""
     return _missing_pf(field_id, t, "step_not_performed")
+
+
+def _performed_cannot_defer_pf(field_id: str, t: Any) -> ProvenancedField:
+    """A ``performed`` the model returned as deferred (the post-check of 2026-10-29): coerced to
+    MissingFromPaper. A member of cobidas._UNVERIFIABLE_GAP_BASES -- the extractor looked and
+    could not credit what it found -- never a source-absence claim. Literal reason here so the
+    render test's reason scan sees it."""
+    return _missing_pf(field_id, t, "performed_cannot_defer")
 
 
 def _process_deferred(

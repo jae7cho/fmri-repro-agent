@@ -526,6 +526,7 @@ _REASON_BUCKET: dict[str, str] = {
     # non-number for a number field.
     "step_not_performed": "not_applicable",
     "value_not_boolean": "unmappable",
+    "performed_cannot_defer": "not_covered",  # 2026-10-29: the post-check; unverifiable, not absent
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -594,6 +595,10 @@ _REASON_LINE: dict[str, str] = {
     # Must NOT read as a gap: the paper said the step was not done (R2, 2026-10-28).
     "step_not_performed": "not applicable — the paper states this step was not performed",
     "value_not_boolean": "extractor returned a non-yes/no value for this field — enter manually",
+    "performed_cannot_defer": (
+        "the extractor was given a citation instead of whether this step was performed — "
+        "check the source yourself"
+    ),
 }
 
 #: Completeness-header gap buckets: (bucket key, display label), fixed order, non-zero only.

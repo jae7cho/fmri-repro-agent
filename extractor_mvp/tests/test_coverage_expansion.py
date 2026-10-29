@@ -281,28 +281,48 @@ def test_performed_yes_with_its_quote_reports_the_row_and_the_values_render() ->
 
 
 def test_performed_is_never_deferred_but_a_parameter_may_be() -> None:
-    """The author's item 2 (2026-10-28): a deferred ``performed`` is a validation error (a reask
-    under instructor); the deferral belongs on the step's parameters, which still defer the row."""
-    import pytest
-
+    """The never-deferred rule is a POST-CHECK, never a reask (the author's ruling of 2026-10-29;
+    the 2026-10-28 validator cost ciric_2017 its whole report in coverage_v2). A deferred
+    ``performed`` constructs, each call is made exactly once, and the field is coerced to
+    MissingFromPaper ``performed_cannot_defer`` with the deferral kept as a diagnostic and NOT
+    routed to the citation resolver. A deferred parameter still defers the row."""
     deferred = FieldExtractionResult(
         status="deferred",
         deferral_sentence=_S["defer"],
         ref_string="Glasser et al. (2013)",
         target_kind="paper",
     )
-    with pytest.raises(ValueError, match="never 'deferred'"):
-        SpatialExtraction(coregistration_performed=deferred)
-    with pytest.raises(ValueError, match="never 'deferred'"):
-        TemporalVolumeExtraction(scrub_performed=deferred)
-    prep = _run(spatial=SpatialExtraction(coregistration_method=deferred))
-    cov = _coverage(prep)
-    assert cov["coregistration"].addressed is True
-    assert row_state(cov["coregistration"], render.flatten(prep)) == "deferred"
-    out = render.to_cobidas_coverage(prep)
-    assert (
-        "coregistration [unvalidated] — deferred: method: deferred to Glasser et al. (2013)" in out
+    # the reask path cannot return: the response models accept the answer as given
+    SpatialExtraction(coregistration_performed=deferred)
+    TemporalVolumeExtraction(scrub_performed=deferred)
+    counter: dict[str, int] = {}
+    prep, diags, deferrals = extract_preprocessing(
+        _paper(),
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            spatial=SpatialExtraction(coregistration_performed=deferred),
+            counter=counter,
+        ),
     )
+    assert counter["SpatialExtraction"] == 1 and counter["TemporalVolumeExtraction"] == 1
+    pf = _field(prep, "coregistration", "performed")
+    assert pf.extraction.status == "MISSING_FROM_PAPER"
+    assert pf.inference.reason == "performed_cannot_defer"
+    assert any(
+        d.failure_reason == "performed_cannot_defer" and d.field == "coregistration.performed"
+        for d in diags
+    )
+    assert not any(d.field == "coregistration.performed" for d in deferrals)
+    rc = _coverage(prep)["coregistration"]
+    assert (rc.addressed, rc.unverifiable) == (False, True)
+    out = render.to_report(prep)
+    assert "the extractor was given a citation instead of whether this step was performed" in out
+    # a deferred PARAMETER still defers the row
+    prep2 = _run(spatial=SpatialExtraction(coregistration_method=deferred))
+    cov = _coverage(prep2)
+    assert cov["coregistration"].addressed is True
+    assert row_state(cov["coregistration"], render.flatten(prep2)) == "deferred"
     rule = 'performed` is NEVER "deferred"'
     assert rule in SPATIAL_PROMPT and rule in TEMPORAL_VOLUME_PROMPT
 
@@ -701,3 +721,40 @@ def test_the_rerender_script_passes_the_stored_answers_through(tmp_path: Any) ->
     stored.pop("multiple_pipelines")
     f.write_text(json.dumps(stored))
     assert "⚠ More than one preprocessing variant" not in _render_one(f)
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-29: the value-support check reads the REPAIRED text when the span carries tier-6 repairs
+# ---------------------------------------------------------------------------
+
+_POLDRACK_EXCERPT = "and spectral ﬁltering 45. Frames with framewise displacement 40.25 mm\nwere censored, as well as"
+
+
+def test_a_number_is_checked_on_the_repaired_text_when_the_span_was_repaired() -> None:
+    """poldrack: the text layer prints ">0.25" as "40.25". The span resolves through tier 6 (>→4);
+    the number check must read ">0.25", not "40.25", or the threshold fails on a correct value."""
+    quote = "Frames with framewise displacement >0.25 mm were censored"
+    paper = ParsedPaper(text=_POLDRACK_EXCERPT, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(scrub_threshold=_ex("0.25", quote)),
+        ),
+    )
+    pf = _field(prep, "scrub", "threshold")
+    assert pf.extraction.status == "EXTRACTED", pf.inference
+    assert pf.extraction.value == 0.25
+    assert pf.extraction.spans[0].repairs == [">→4"]
+    # and a number that is NOT in the repaired quote still fails: the switch reads the quote, it
+    # does not loosen the check
+    bad, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(scrub_threshold=_ex("40.25", quote)),
+        ),
+    )
+    assert _field(bad, "scrub", "threshold").inference.reason == "value_unsupported_by_quote"

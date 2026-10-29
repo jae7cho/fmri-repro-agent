@@ -439,6 +439,8 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
             # Added 2026-10-26 (later) with the step-field quote-support check (quote_support.py,
             # DELTA_value_in_quote_step_fields.md §5 ruling 6).
             "value_unsupported_by_quote",
+            # 2026-10-29: a deferred ``performed``, coerced by the coverage post-check
+            "performed_cannot_defer",
         }
     )
     # every member matches through _gap_base, suffixed as the producers emit them

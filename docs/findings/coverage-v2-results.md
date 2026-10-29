@@ -128,3 +128,59 @@ identical, 0 changed**; `--against d31e8b7` → 0 identical, 19 changed.
 - Held for the author: the validator's failure mode (coerce with a diagnostic, or a larger reask
   budget); the count of variants (both yes answers left it unstated); the "¼" as "=" leak seen in
   poldrack, gordon and chen text layers (31, 85, 35 occurrences), outside item 1's rule.
+
+## Addendum, 2026-10-29 — the two bugs the author named, fixed; ciric_2017 re-drawn
+
+*Recorded the day after the run, from the author's message of 2026-10-29.* Two corrections to the
+reading above, in the author's words: the validator was a bug ("A rule about one field should never
+be able to remove a paper's entire report"), and **chen's slice-timing `performed` was right** — the
+quoted sentence goes on to "corrected acquisition timing among image slices"; the report shows only
+the start of the quote, the coverage_v1 findings misread it as the de-spiking sentence, and the
+phrase rule passed it for that reason. The coverage_v1 findings' first "found" bullet is withdrawn.
+
+- **The validator replaced by a post-check.** A `performed` returned as deferred is coerced on the
+  processed layer to MissingFromPaper with reason `performed_cannot_defer` (an unverifiable gap base,
+  rendered "the extractor was given a citation instead of whether this step was performed — check the
+  source yourself"); the deferral is kept as a diagnostic and not routed to the citation resolver;
+  nothing is sent back to the model. The prompt line stays; the five prompt hashes do not move.
+- **The value-support check reads the repaired text** when a span was located through tier 6 (the
+  model's quote, which tier 6 verified equals the source outside the named substitutions). Replay
+  over every stored batch result (`scripts/repaired_support_replay.py`, no model call): one cell
+  moves for this reason, **poldrack_2015 `scrub.threshold` in coverage_v2 (>→4)**; a second moved
+  cell, ciric_2017 `distortion_correction.source` in coverage_v1, has no repair and moves because of
+  the 2026-10-28 alias fix (magnetic field inhomogeneit\*), not this change; 0 on the held-out three;
+  the 11 repaired-span cells that resolved before stay supported on the reconstructed repaired text.
+  **The stored coverage_v2 records of the other 18 papers were written before both fixes and are not
+  re-processed**: poldrack's threshold stays unsupported in its stored record, as drawn.
+- **ciric_2017 re-drawn alone** into `results/batch_coverage_v2/` under the same five prompt hashes
+  and the same phrase table (the script refused to run otherwise), recorded in
+  `redraw_ciric_manifest.json` and in a `redraw` block of the paper's JSON as **a re-draw after a
+  code fix**, first draw `extraction_failed`; `summary.csv`/`summary.md` keep the first draw's row.
+  Status success, 85 s. Its brain-extraction `performed` came back deferred again and was coerced
+  (`performed_cannot_defer`); the row stays deferred through `parameters` (Avants et al., 2011b).
+  New, not pre-declared: ciric's report carries the multi-pipeline header on both calls with count 14
+  — the paper compares 14 confound-regression models, so the question as worded counts denoising
+  variants as preprocessing variants. Held for the author.
+
+**The per-row table regenerated over 16 contaminated papers** (v1 → v2, ciric re-drawn; the other 15
+as first drawn):
+
+| row | addressed | performed=no | deferred | unverifiable | not reported |
+|---|---|---|---|---|---|
+| Software | 3 → 3 | — | 0 → 0 | 0 → 2 | 13 → 11 |
+| T1 stabilization | 5 → 5 | 0 → 0 | 0 → 0 | 0 → 0 | 11 → 11 |
+| Brain extraction | 4 → 4 | 0 → 0 | 3 → 2 | 0 → 0 | 9 → 10 |
+| Segmentation | 7 → 7 | 0 → 0 | 1 → 1 | 0 → 0 | 8 → 8 |
+| Slice time correction | 5 → 5 | 1 → 2 | 0 → 0 | 1 → 0 | 9 → 9 |
+| Motion correction | 11 → 12 | — | 4 → 4 | 0 → 0 | 1 → 0 |
+| Gradient distortion correction | 3 → 3 | 0 → 0 | 1 → 1 | 0 → 0 | 12 → 12 |
+| Distortion correction | 3 → 3 | 0 → 0 | 1 → 1 | 0 → 0 | 12 → 12 |
+| Function-structure (intra-subject) coregistration | 10 → 9 | 0 → 0 | 1 → 1 | 1 → 1 | 4 → 5 |
+| Intersubject registration | 11 → 13 | — | 1 → 0 | 1 → 0 | 3 → 3 |
+| Intensity correction | 3 → 2 | 0 → 0 | 1 → 1 | 0 → 1 | 12 → 12 |
+| Artifact and structured noise removal | 14 → 14 | 0 → 0 | 0 → 0 | 0 → 0 | 2 → 2 |
+| Volume censoring | 3 → 4 | 1 → 1 | 0 → 0 | 1 → 1 | 11 → 10 |
+| Spatial smoothing | 10 → 10 | 1 → 1 | 1 → 0 | 2 → 1 | 2 → 4 |
+
+The held-out three are unchanged by the re-draw (42 row-cells: addressed 10, performed=no 2,
+deferred 1, unverifiable 6, not reported 23).
