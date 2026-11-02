@@ -79,13 +79,18 @@ says nothing about a step, that step is "missing" (or "deferred" when the text d
 pipeline). A software PACKAGE named for the analysis as a whole (SPM, FSL, AFNI) is not a
 statement that any particular step was performed.
 
-SCOPE (report v2, 2026-10-29): only the preprocessing of the functional (BOLD) data. A sentence
-about the structural (T1/T2) image's own preprocessing does not fill a functional field, except
-where a step is about the structural image (brain extraction, segmentation, intensity correction
-of the structural image). Covariates of a first-level statistical model (task regressors, motion or
-trend covariates entered in the GLM) are analysis, not preprocessing: they do not fill nuisance
-regression or detrend. If the text describes both, use the preprocessing one and say which in the
-quote you choose.
+SCOPE (report v2, 2026-10-29; restated 2026-11-02): the preprocessing of the functional (BOLD)
+data, AND the structural steps that feed the fMRI analysis -- D.3 itself asks about structural
+images ("For structural images, method used to extract gray, white, CSF and other tissue
+classes"). IN scope: brain extraction; segmentation used for masks or nuisance regressors;
+bias-field (intensity inhomogeneity) correction; the structural image as the target of the
+functional data's registration. OUT of scope: structural-only analyses (morphometry -- cortical
+thickness, volumes, surface measures -- diffusion, tractography), and covariates of a first-level
+statistical model (task regressors, motion or trend covariates entered in the GLM): those are
+analysis, not preprocessing, and do not fill nuisance regression or detrend. A sentence about a
+structural step fills only that step's fields, never a field about the functional series itself
+(its motion, slice timing, distortion, smoothing, filtering). If the text describes both, use the
+preprocessing one and say which in the quote you choose.
 
 Typed fields: use the canonical value when the paper's term maps to one; otherwise return the
 paper's term VERBATIM. Numbers as strings, digits as the paper writes them ("0.5", "6", "3").
@@ -305,12 +310,13 @@ intensity_correction_method: canonical n4, fast_bias, other; verbatim otherwise.
 ## Software the paper names (software_mentions)
 D.3 asks, for each software used, its version and revision number.
 software_mentions: a list with one entry per distinct piece of software the methods text names as
-  USED TO PREPROCESS THE FUNCTIONAL (BOLD) DATA -- packages, toolboxes, pipelines, in-house code
-  named as such. The SCOPE rule above applies here too: software used only for the structural
-  image's own analysis (cortical surfaces, tractography), for statistics, first-level models,
-  prediction or machine learning, or for stimulus delivery is NOT listed. Software whose output the
-  functional preprocessing uses (a segmentation feeding tissue regressors or a boundary-based
-  registration) IS listed. name = as written; version = only a SEPARATE version string the text states ("FreeSurfer v5.3"
+  USED FOR A STEP IN THE SCOPE RULE ABOVE -- packages, toolboxes, pipelines, in-house code named
+  as such. So software for the functional data's preprocessing IS listed, and so is software for a
+  structural step that feeds the fMRI analysis (brain extraction, a segmentation used for masks or
+  regressors, bias-field correction, the structural registration target). Software used only for
+  a structural-only analysis (morphometry, diffusion, tractography), for statistics or first-level
+  models, for prediction or machine learning, or for stimulus delivery is NOT listed.
+  name = as written; version = only a SEPARATE version string the text states ("FreeSurfer v5.3"
   -> version "5.3"; a version fused into the name, as in "SPM12", stays in the name and version
   is empty); used_for = the paper's own words for what it was used for, if the sentence says;
   verbatim_quote = the sentence naming it, copied exactly. Software cited only in the

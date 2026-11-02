@@ -231,3 +231,67 @@ def test_software_the_checking_pass_marks_not_preprocessing_is_shown_not_counted
         spatial={"software_mentions": [r]},
     )
     assert "not counted, not preprocessing per the checking pass: r" in report
+
+
+_MOTION_FILTER = "Task and rest data were preprocessed separately in two branches."
+
+
+def test_unplaced_lists_what_no_field_captured_and_changes_no_field() -> None:
+    """2026-11-02, the author's item 2: an `unplaced` list, each statement with its quote-checked
+    sentence and its D.3 row or "no row"; its own section; never a field change."""
+    from extractor_mvp.verifier import UnplacedStatement
+
+    verdict = VerifierExtraction(
+        fields=[
+            FieldVerdict(field="spatial_smoothing.fwhm_mm", verdict="supported", relied_on=_SMOOTH)
+        ],
+        unplaced=[
+            UnplacedStatement(
+                statement="separate task and rest branches",
+                relied_on=_MOTION_FILTER,
+                row="no row",
+            ),
+            UnplacedStatement(
+                statement="a 6 mm kernel", relied_on=_SMOOTH, row="spatial_smoothing"
+            ),
+            UnplacedStatement(
+                statement="a filter on the motion estimates",
+                relied_on="The motion estimates were band-stop filtered.",  # not in the text
+                row="artifact_and_noise",  # not a D.3 row id
+            ),
+        ],
+    )
+    baseline, _, _ = _run(spatial={"smoothing_performed": _ex("yes", _SMOOTH)})
+    prep, record, report = _run(
+        verifier=verdict, spatial={"smoothing_performed": _ex("yes", _SMOOTH)}
+    )
+    # never changes a field: the record's preprocessing equals the run without the list
+    assert prep.model_dump(mode="json") == baseline.model_dump(mode="json")
+    u = record["unplaced"]
+    assert [x["row"] for x in u] == ["no row", "spatial_smoothing", "no row"]
+    assert [x["relied_on_resolved"] for x in u] == [True, True, False]
+    assert u[2]["row_raw"] == "artifact_and_noise"
+    section = report.split(
+        "## Preprocessing statements no field captured (checking pass, unvalidated)"
+    )[1]
+    section = section.split("\n## ")[0]
+    assert "- separate task and rest branches — no D.3 row  «Task and rest data" in section
+    assert "- a 6 mm kernel — row: Spatial smoothing  «Images were smoothed" in section
+    assert (
+        "- a filter on the motion estimates — no D.3 row  «The motion estimates were band-stop "
+        "filtered.»  (its sentence was not found in the text — unverified)" in section
+    )
+    # the section sits before the coverage and the rows are untouched
+    assert report.index("no field captured") < report.index("## COBIDAS D.3 coverage")
+    # the prompt asks for it, with the D.3 row ids
+    assert "unplaced: a list of the preprocessing statements" in VERIFIER_PROMPT
+    assert "{rows}" in VERIFIER_PROMPT
+
+
+def test_an_empty_unplaced_list_says_none_and_an_old_record_has_no_section() -> None:
+    _, record, report = _run(verifier=VerifierExtraction())
+    assert record["unplaced"] == []
+    assert "The checking pass lists none." in report
+    old = dict(record)
+    old.pop("unplaced")
+    assert render._unplaced_section(old) == []

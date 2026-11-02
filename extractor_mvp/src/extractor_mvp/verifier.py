@@ -26,6 +26,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from extractor_mvp.cobidas import COBIDAS_D3_ROWS
 from extractor_mvp.coverage_fields import RECORD_SPECS
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.parsed_paper import ParsedPaper
@@ -58,15 +59,21 @@ For "wrong" and "missed": better_value = what the field should say, in the paper
 EXACTLY from the methods text. For "supported": relied_on may repeat the drafter's sentence.
 reason = one sentence.
 
-Scope: only the preprocessing of the functional (BOLD) data is in scope, except where a field is
-about the structural image (brain extraction, segmentation, intensity correction of the structural
-image). Judge each field independently. Do not judge a field by what a pipeline usually does; only
-by what the text states.
+Scope (restated 2026-11-02): the preprocessing of the functional (BOLD) data, AND the structural
+steps that feed the fMRI analysis -- brain extraction; segmentation used for masks or nuisance
+regressors; bias-field (intensity inhomogeneity) correction; the structural image as the target of
+the functional data's registration. Structural-only analyses (morphometry, diffusion, tractography)
+and first-level model covariates are out. A structural sentence is wrong only for a field about the
+functional series itself (its motion, slice timing, distortion, smoothing, filtering). Judge each
+field independently. Do not judge a field by what a pipeline usually does; only by what the text
+states.
 
 ## Software (one entry per software line in the draft)
 software: for each `software_mentions.<name>` line, preprocessing_use = true if the paper used it
-for preprocessing the data (registration, segmentation, motion correction, denoising, ...), false
-if only for statistics, analysis, visualization or stimulus presentation.
+for a step in the scope above (functional preprocessing, or a structural step that feeds the fMRI
+analysis: registration, segmentation, brain extraction, bias-field correction, motion correction,
+denoising, ...), false if only for a structural-only analysis, statistics, visualization,
+prediction or stimulus presentation.
 
 ## More than one preprocessing variant (a record-level question)
 multiple_pipelines: "yes" only if the paper PREPROCESSES ITS OWN DATA IN MORE THAN ONE WAY -- for
@@ -76,6 +83,15 @@ multiple_pipelines: "yes" only if the paper PREPROCESSES ITS OWN DATA IN MORE TH
   verbatim_quote = the sentence that shows it. "missing" otherwise. Never "no", never "deferred".
 pipeline_variant_count: when multiple_pipelines is "yes", the number of variants as an integer
   string, with the sentence that lets it be counted; "missing" otherwise.
+
+## Preprocessing statements no draft line captures (added 2026-11-02)
+unplaced: a list of the preprocessing statements in the methods text -- in the scope above -- that
+NO draft line captures: a step, a parameter, a threshold, a filter, a branch of the pipeline that
+the draft has nowhere to put or did not put anywhere. Do NOT list a statement a draft line already
+captures, even with a gap or a verdict of yours; do NOT list analysis. For each: statement = what
+is done, in a few words; relied_on = the sentence, copied EXACTLY from the methods text; row = the
+COBIDAS D.3 row it would belong to, one of: {rows}; or "no row" when none fits. An empty list when
+the draft captures everything. This list never changes a field.
 
 Every quoted sentence (relied_on, verbatim_quote) must be copied EXACTLY from the methods text.
 
@@ -111,8 +127,18 @@ class SoftwareVerdict(BaseModel):
     preprocessing_use: bool | None = None
 
 
+class UnplacedStatement(BaseModel):
+    """A preprocessing statement no field captured (2026-11-02, the author's item 2). Plain strings,
+    as the verdicts: a row outside the list is normalised to "no row" in code, never reasked."""
+
+    statement: str
+    relied_on: str | None = None
+    row: str = "no row"
+
+
 class VerifierExtraction(BaseModel):
     fields: list[FieldVerdict] = Field(default_factory=list)
+    unplaced: list[UnplacedStatement] = Field(default_factory=list)
     software: list[SoftwareVerdict] = Field(default_factory=list)
     multiple_pipelines: FieldExtractionResult = Field(default_factory=_missing_field)
     pipeline_variant_count: FieldExtractionResult = Field(default_factory=_missing_field)
@@ -165,6 +191,27 @@ def compact_draft(preprocessing: Any) -> str:
     return "\n".join(lines)
 
 
+#: The rows an unplaced statement may name: every D.3 preprocessing row id, then "no row".
+_ROW_IDS: tuple[str, ...] = tuple(r.row_id for r in COBIDAS_D3_ROWS)
+_ROW_CHOICES = ", ".join(_ROW_IDS)
+
+
+def _unplaced_record(u: UnplacedStatement, text: str) -> dict[str, Any]:
+    """One unplaced statement, its sentence quote-checked through the one span path. A row not in
+    the D.3 list is kept verbatim as ``row_raw`` and placed as "no row"."""
+    resolved = None
+    if u.relied_on:
+        resolved = resolve_quote(u.relied_on, text).span is not None
+    row = u.row.strip()
+    return {
+        "statement": u.statement.strip(),
+        "relied_on": u.relied_on,
+        "relied_on_resolved": resolved,
+        "row": row if row in _ROW_IDS else "no row",
+        "row_raw": row,
+    }
+
+
 def _normalise(verdict: str) -> str | None:
     v = verdict.strip().lower()
     for known in VERDICTS:
@@ -212,7 +259,9 @@ def run_verifier(
             messages=[
                 {
                     "role": "user",
-                    "content": VERIFIER_PROMPT.format(text=parsed_paper.text, draft=draft),
+                    "content": VERIFIER_PROMPT.format(
+                        text=parsed_paper.text, draft=draft, rows=_ROW_CHOICES
+                    ),
                 }
             ],
             response_model=VerifierExtraction,
@@ -227,6 +276,7 @@ def run_verifier(
             "fields": {},
             "software": {},
             "multiple_pipelines": None,
+            "unplaced": [],
             "n_draft_lines": len(known_fields),
         }
     fields: dict[str, dict[str, Any]] = {}
@@ -248,6 +298,7 @@ def run_verifier(
     software = {
         sv.name: sv.preprocessing_use for sv in raw.software if sv.preprocessing_use is not None
     }
+    unplaced = [_unplaced_record(u, parsed_paper.text) for u in raw.unplaced if u.statement.strip()]
     specs = {s.field_id: s for s in RECORD_SPECS}
     multiple = {
         "V": {
@@ -266,6 +317,7 @@ def run_verifier(
         "fields": fields,
         "software": software,
         "multiple_pipelines": multiple,
+        "unplaced": unplaced,
         "n_draft_lines": len(known_fields),
     }
 

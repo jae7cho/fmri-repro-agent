@@ -804,6 +804,33 @@ def _with_verdict(main: str, row: FieldRow, verifier: dict[str, Any] | None) -> 
     return f"- {main}   [check: unverified verdict — its sentence did not resolve]"
 
 
+def _unplaced_section(verifier: dict[str, Any] | None) -> list[str]:
+    """The checking pass's ``unplaced`` list as its own section (2026-11-02, the author's item 2).
+    It never changes a field. Emitted only when the record carries the list, so a record written
+    before it renders byte-identically. A statement whose sentence does not resolve is shown,
+    marked unverified."""
+    if not verifier or verifier.get("status") != "ok" or "unplaced" not in verifier:
+        return []
+    from extractor_mvp.cobidas import COBIDAS_D3_ROWS
+
+    aspect = {r.row_id: r.d3_aspect for r in COBIDAS_D3_ROWS}
+    out = ["## Preprocessing statements no field captured (checking pass, unvalidated)"]
+    items = verifier.get("unplaced") or []
+    if not items:
+        out.append("The checking pass lists none.")
+    for u in items:
+        row = u.get("row") or "no row"
+        where = f"row: {aspect[row]}" if row in aspect else "no D.3 row"
+        line = f"- {u.get('statement', '')} — {where}"
+        if u.get("relied_on"):
+            line += f"  «{_truncate_quote(' '.join(str(u['relied_on']).split()))}»"
+        if u.get("relied_on_resolved") is not True:
+            line += "  (its sentence was not found in the text — unverified)"
+        out.append(line)
+    out.append("")
+    return out
+
+
 def _verifier_summary_line(verifier: dict[str, Any] | None, rows: list[FieldRow]) -> str | None:
     """One header line: the checking pass's counts, marked unvalidated; or that it was unavailable."""
     if verifier is None:
@@ -955,6 +982,9 @@ def to_protocol(
             lines.append(_with_verdict(main, r, verifier))
             lines.extend(f"    {note}" for note in _protocol_note_lines(r))
         lines.append("")
+
+    # 2026-11-02, the author's item 2: what the checking pass found that no field captured.
+    lines.extend(_unplaced_section(verifier))
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
     lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())

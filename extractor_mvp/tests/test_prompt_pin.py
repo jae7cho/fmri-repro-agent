@@ -181,7 +181,9 @@ _PINNED = {
     #: 2129f31135fb0e7f9256a23e2fc962217dc432c668281494be056eb92ccce3fe.
     #: UPDATED 2026-10-29, report v2 step 6 (DESIGN_report_v2.md §3, F3a): the multiple_pipelines question leaves calls T and S for the checking pass. Superseded TEMPORAL_VOLUME_PROMPT value:
     #: b2feb797352b95d0dc17e39d5edd13b1c74aac0a6c3a6c1a759b18a6ea7f5830.
-    "TEMPORAL_VOLUME_PROMPT": "5832804631604a8d92c0154c8798cae4772a08b766824d00410f8b43ae8f44ee",
+    #: UPDATED 2026-11-02, the author's ruling: the SCOPE paragraph restated -- structural steps that feed the fMRI analysis are IN (brain extraction, segmentation for masks or regressors, bias-field correction, the structural registration target), citing D.3's "For structural images"; structural-only analyses (morphometry, diffusion, tractography) and first-level covariates OUT. First drawn as coverage_v4. Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: 5832804631604a8d92c0154c8798cae4772a08b766824d00410f8b43ae8f44ee.
+    "TEMPORAL_VOLUME_PROMPT": "a9230438e3f29e6d604cd13eb7840a921e0a5a44125af53ca3362fb6a08eb05e",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -197,10 +199,14 @@ _PINNED = {
     #: 6d9f03681daf28300de60e23ec0512c9e1deb43e19969ebc927a5e3e60417b66.
     #: UPDATED 2026-11-02, the author's queued fix: the SCOPE rule applied to software_mentions (only software used to preprocess the functional data; structural-only analysis, statistics, prediction and stimulus software out; software whose output the functional preprocessing uses stays in). Not yet run: the next coverage draw is a new vintage. Superseded SPATIAL_PROMPT value:
     #: 697c868be398f23b4cd9e86a7a557e42771d89f3b5ba1e3563aa49d13536ab2a.
-    "SPATIAL_PROMPT": "3c8d604b5776aef6c332d3ab2aed508f7410cf35936c6264de30248c15398959",
+    #: UPDATED 2026-11-02 (later), the author's ruling: the SCOPE paragraph restated as on TEMPORAL_VOLUME_PROMPT (D.3's "For structural images"), and the software list follows it (software for a structural step that feeds the fMRI analysis is listed; structural-only analysis, statistics, prediction, stimulus software is not). First drawn as coverage_v4; 3c8d604b was never drawn. Superseded SPATIAL_PROMPT value:
+    #: 3c8d604b5776aef6c332d3ab2aed508f7410cf35936c6264de30248c15398959.
+    "SPATIAL_PROMPT": "8b54be37ca891c80c141a881c11123278cb6c0af501bab0fe9c705f6fd42ebbf",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
-    "VERIFIER_PROMPT": "42cb343c7b2f4fea94fa47cb0f25146640f5f1101896ba8b67a79c31e2956a70",
+    #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:
+    #: 42cb343c7b2f4fea94fa47cb0f25146640f5f1101896ba8b67a79c31e2956a70.
+    "VERIFIER_PROMPT": "f078f100496a21e873e20de5c41372aa633877f03154c0c324ba000f6741a557",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):

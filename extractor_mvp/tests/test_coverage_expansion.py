@@ -906,18 +906,21 @@ def test_a_fused_major_version_is_major_only_not_no_version() -> None:
 
 
 def test_the_scope_rule_applies_to_software_mentions() -> None:
-    """2026-11-02, the author's queued fix: call S lists only software used to preprocess the
-    functional data (Gracia-Tabuenca's FreeSurfer surfaces, AtlasTrack, caret are out)."""
+    """2026-11-02, the author's queued fix, restated the same day by the author's ruling: call S lists
+    software for any step in the SCOPE rule -- the functional preprocessing and the structural steps
+    that feed it -- and not software for structural-only analyses, statistics or prediction
+    (Gracia-Tabuenca's FreeSurfer surfaces, AtlasTrack, caret are out)."""
     from extractor_mvp.coverage_extractor import SPATIAL_PROMPT
 
     section = SPATIAL_PROMPT.split("## Software the paper names (software_mentions)")[1].split(
         "\n## "
     )[0]
-    assert "USED TO PREPROCESS THE FUNCTIONAL (BOLD) DATA" in section
-    assert "The SCOPE rule above applies here too" in section
+    assert "USED FOR A STEP IN THE SCOPE RULE ABOVE" in section
+    assert "structural step that feeds the fMRI analysis" in section
+    assert "a structural-only analysis (morphometry, diffusion, tractography)" in section
     assert "prediction or machine learning" in section
     assert "for ANY part of the methods" not in section
-    assert "SCOPE (report v2, 2026-10-29)" in SPATIAL_PROMPT  # the rule it points to
+    assert "SCOPE (report v2, 2026-10-29; restated 2026-11-02)" in SPATIAL_PROMPT
 
 
 def _coverage_with_mentions(prep: Preprocessing) -> dict[str, Any]:
@@ -1017,15 +1020,26 @@ def test_the_kb_never_fills_the_band_until_the_kb_build(monkeypatch: Any) -> Non
 
 
 def test_both_coverage_prompts_carry_the_scope_rule() -> None:
-    """report v2 step 4 (2026-10-29): BOLD preprocessing only; structural preprocessing and
-    first-level model covariates are out, and the prompt says so."""
+    """report v2 step 4 (2026-10-29), restated 2026-11-02 by the author's ruling: the functional data's
+    preprocessing AND the structural steps that feed the fMRI analysis are in scope, citing D.3's
+    "For structural images"; structural-only analyses and first-level model covariates are out."""
     for prompt in (TEMPORAL_VOLUME_PROMPT, SPATIAL_PROMPT):
-        assert (
-            "SCOPE (report v2, 2026-10-29): only the preprocessing of the functional (BOLD) data."
-            in prompt
-        )
-        assert "Covariates of a first-level statistical model" in prompt
-        assert "they do not fill nuisance\nregression or detrend" in prompt
+        scope = prompt.split("SCOPE (report v2, 2026-10-29; restated 2026-11-02)")[1].split("\n\n")[
+            0
+        ]
+        assert '"For structural images, method used to extract gray, white, CSF' in scope
+        for inside in (
+            "brain extraction;",
+            "segmentation used for masks or nuisance regressors",
+            "bias-field (intensity inhomogeneity) correction",
+            "the structural image as the target of the\nfunctional data's registration",
+        ):
+            assert inside in scope, inside
+        for outside in ("morphometry", "diffusion, tractography", "first-level\nstatistical model"):
+            assert outside in scope, outside
+        assert "do not fill nuisance regression or detrend" in scope
+        assert "never a field about the functional series itself" in scope
+        assert "only the preprocessing of the functional (BOLD) data." not in prompt
 
 
 # ---------------------------------------------------------------------------
