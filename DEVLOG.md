@@ -3733,3 +3733,30 @@ review, the author's); then six queued fixes, each with tests and a replay, no m
 
 Committed after 17:00 ET. Held-out text unread; the held-out three not run. 594 passed in extractor_mvp
 (not live), 235 root; hooks clean. Commits here: `82d3c39`, `d81ffe2`, then this entry.
+
+## 2026-11-02 (evening) — the scope rule restated; the checking pass's `unplaced` list; coverage_v4
+
+**What was asked.** The author restated the scope rule: structural steps that feed the fMRI analysis
+are in (brain extraction, segmentation for masks or regressors, bias-field correction, the
+structural registration target), and structural-only analyses and first-level covariates are out,
+citing D.3's "For structural images". It applies to both coverage prompts and the software list. The
+checking pass gains an `unplaced` list. Then coverage_v4 on the 16 contaminated papers and the two
+unseen ones, the key against v4, and a check that Hagler_2019.pdf exists. Commits were allowed in
+working hours by the author for this set.
+
+- `a3908c3` — the build. Three prompt hashes re-pinned with dated notes (T `a9230438…`, S
+  `8b54be37…`, V `f078f100…`). The checking pass's own scope paragraph and software question were
+  restated to the same rule, Claude's call, said so in the findings. 4 mutations, every one killed;
+  identity gate 19/19/18 identical against HEAD, 0 of 19 against `d31e8b7`, derived before running.
+- `4b125d7` — coverage_v4 (21:25:51–22:10:26 UTC, HEAD `a3908c3`), 18 of 18 success. The structural rows
+  move toward reported or deferred: segmentation reported 6 → 9, braun_2015 deferred on eight rows.
+  The checking pass on the 16: supported 1,152, wrong 75, missed 69, unverified 9, unplaced 42 (every
+  sentence resolved), unvalidated. Against the key: Shen's SPM5 and nuisance `performed` fixed;
+  Gracia-Tabuenca's FreeSurfer still counted in the Software row; its sMRI intensity correction and
+  registration are now supported under the restated rule, which the key calls wrong (a ruling for
+  the author). `unplaced` lists the motion filter and the FD 0.2 mm rest rule but not Shen's six
+  motion parameters. First-level covariates refilled two Gracia-Tabuenca fields, both flagged. Wall
+  time 93–269 s per paper, 2,670.9 s for all 18. Hagler_2019.pdf: present, 3,382,421 bytes, not opened.
+
+Held-out text unread; the held-out three not run. 596 passed in extractor_mvp (not live), 235 root;
+hooks clean. Commits here: `a3908c3`, `4b125d7`, then this entry.
