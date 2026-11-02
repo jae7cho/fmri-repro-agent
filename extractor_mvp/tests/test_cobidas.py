@@ -441,6 +441,9 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
             "value_unsupported_by_quote",
             # 2026-10-29: a deferred ``performed``, coerced by the coverage post-check
             "performed_cannot_defer",
+            # 2026-11-02: an intensity convention that only names the operation, coerced by the
+            # post-check (the author's queued fix); the sentence asserts the operation.
+            "operation_word_not_value",
         }
     )
     # every member matches through _gap_base, suffixed as the producers emit them

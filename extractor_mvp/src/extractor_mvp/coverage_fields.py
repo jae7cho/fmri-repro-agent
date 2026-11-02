@@ -841,6 +841,17 @@ PERFORMED_PHRASES: dict[str, tuple[str, ...]] = {
         "partialled out",
         "physiological noise",
         "removing the effects",
+        # 2026-11-02, the author's queued fix, DECLARED FITTED: added after shen_2013 (one of the
+        # two unseen papers of 2026-10-29) rendered its regression sentence unverifiable -- shen is
+        # contaminated for this table from here on. "orthogonalized" covers "orthogonalised" and
+        # "orthogonalization" through the word-form matcher; bare "orthogonal" is NOT matched (an
+        # orthogonal design is not a regression). The "regressed out" family already matched
+        # through "regressed"/"regress" before this entry; listed so the family is explicit.
+        "orthogonalized",
+        "orthogonalised",
+        "orthogonalization",
+        "regressed out",
+        "regressing out",
     ),
     "brain_extraction": (
         "skull",

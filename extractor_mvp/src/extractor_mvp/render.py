@@ -374,11 +374,9 @@ def _fmt_field_text(row: FieldRow) -> str:
     """The right-hand value/explanation per the five display states."""
     if row.state == EXTRACTED:
         tag = "" if not row.span_recovered else f"   [{_repair_note(row)}]"
-        return (
-            f"from paper: {_fmt_value(row.value)}   «{_truncate_quote(row.span_text or '')}»{tag}"
-        )
+        return f"from paper: {_fmt_row_value(row)}   «{_truncate_quote(row.span_text or '')}»{tag}"
     if row.state == INFERRED_DEFAULT:
-        return f"inferred: {_fmt_value(row.value)}   ({row.basis_type}, conf {row.confidence})"
+        return f"inferred: {_fmt_row_value(row)}   ({row.basis_type}, conf {row.confidence})"
     if row.state == DEFERRED_TO_CITATION:
         refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
         return f"deferred to {refs}"
@@ -444,7 +442,7 @@ def to_field_table(preprocessing: Preprocessing) -> str:
 
 def _fmt_value_suffix(row: FieldRow) -> str:
     if row.state in (EXTRACTED, INFERRED_DEFAULT) and row.value is not None:
-        return f" {_fmt_value(row.value)}"
+        return f" {_fmt_row_value(row)}"
     if row.state == DEFERRED_TO_CITATION and row.deferral_refs:
         return f" ({', '.join(row.deferral_refs)})"
     return ""
@@ -529,6 +527,7 @@ _REASON_BUCKET: dict[str, str] = {
     "step_not_performed": "not_applicable",
     "value_not_boolean": "unmappable",
     "performed_cannot_defer": "not_covered",  # 2026-10-29: the post-check; unverifiable, not absent
+    "operation_word_not_value": "not_covered",  # 2026-11-02: names the operation, not a convention
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -600,6 +599,9 @@ _REASON_LINE: dict[str, str] = {
     "performed_cannot_defer": (
         "the extractor was given a citation instead of whether this step was performed — "
         "check the source yourself"
+    ),
+    "operation_word_not_value": (
+        "the quoted sentence names the operation but no convention — check the source yourself"
     ),
 }
 
@@ -686,12 +688,12 @@ def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> 
     st = row.state
     sep = " = " if equals_for_extracted else ": "
     if st == EXTRACTED:
-        line = f"{label}{sep}{_fmt_value(row.value)}   {_from_paper_tag(row)}"
+        line = f"{label}{sep}{_fmt_row_value(row)}   {_from_paper_tag(row)}"
         if row.span_text:
             line += f"  «{_truncate_quote(row.span_text)}»"
         return line
     if st == INFERRED_DEFAULT:
-        return f"{label}{sep}{_fmt_value(row.value)}   [INFERRED — not stated in source]"
+        return f"{label}{sep}{_fmt_row_value(row)}   [INFERRED — not stated in source]"
     if st == DEFERRED_TO_CITATION:
         refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
         return f"{label}: deferred to {refs} — resolve by consulting the cited source"
@@ -1055,9 +1057,11 @@ def to_cobidas_coverage(
     non_mand_addressed = [rc for rc in non_mandatory if rc.addressed]
     divergence_present = [s.kind for s in preprocessing.steps if s.kind in DIVERGENCE_KINDS]
 
+    # 2026-11-02 (the author's queued fix): a PARTIALLY reported Software row is not counted under
+    # "not reported", so the violation label must not sit there; it goes on the partial segment.
     violation = (
         " (incl. Software — unconditional violation)"
-        if any(rc.row.row_id == "software" for rc in mand_not_reported)
+        if any(rc.row.row_id == "software" and not rc.partial for rc in mand_not_reported)
         else ""
     )
     # The expanded coverage (2026-10-28, DESIGN_coverage_expansion.md B5, the author's ruling R5):
@@ -1070,14 +1074,22 @@ def to_cobidas_coverage(
     if expanded:
         n_perf_no = sum(1 for rc in mand_assessed if states[rc.row.row_id] == "performed_no")
         n_partial = sum(1 for rc in mand_assessed if rc.partial)
-        partial_seg = f"partially reported {n_partial} · " if n_partial else ""
-        partial_violation = (
-            " (incl. Software — unconditional violation)" if n_partial and not violation else ""
+        software_partial = any(rc.row.row_id == "software" and rc.partial for rc in mand_assessed)
+        partial_seg = (
+            f"partially reported {n_partial}"
+            + (
+                " (incl. Software — unconditional violation for the software without a reported version)"
+                if software_partial
+                else ""
+            )
+            + " · "
+            if n_partial
+            else ""
         )
         lines.append(
             f"  Assessed by AESPA: {len(mand_assessed)}  →  "
             f"addressed {len(mand_addressed) - n_perf_no} · {partial_seg}performed=no {n_perf_no} · "
-            f"not reported {len(mand_not_reported) - n_partial}{violation}{partial_violation}"
+            f"not reported {len(mand_not_reported) - n_partial}{violation}"
         )
     else:
         lines.append(
@@ -1168,11 +1180,22 @@ def to_cobidas_coverage(
         if mentions:
             # report v2 §1c: the row is read over every named software; name the ones without a
             # version, and the ones with one, so the action is concrete.
-            lacking = [m.name for m in mentions if not m.version]
+            # 2026-11-02 (the author's queued fix): a name carrying only a fused major version
+            # (SPM5) is named as such, not as "without a version" -- it still fails §4.3.
+            lacking = [m.name for m in mentions if not m.version and not m.major_only]
+            major = [m.name for m in mentions if m.major_only]
             having = [f"{m.name} {m.version}" for m in mentions if m.version]
-            detail = "Software named without a version: " + ", ".join(lacking) + "."
+            parts = []
+            if lacking:
+                parts.append("Software named without a version: " + ", ".join(lacking) + ".")
+            if major:
+                parts.append(
+                    "Named with a major version only (COBIDAS §4.3 asks for more than the major "
+                    "version): " + ", ".join(major) + "."
+                )
             if having:
-                detail += " Named with a version: " + ", ".join(having) + "."
+                parts.append("Named with a version: " + ", ".join(having) + ".")
+            detail = " ".join(parts)
         elif deferred_refs:
             # rstrip the terminator: refs are author-shaped strings and some already end
             # in a period ("Glasser et al."), which would render as "et al..".
@@ -1274,7 +1297,7 @@ def _expanded_rows_section(
             if prefixed:
                 param = f"{r.group}.{param}"
             if r.state == EXTRACTED:
-                values.append(f"{param} = {_fmt_value(r.value)}")
+                values.append(f"{param} = {_fmt_row_value(r)}")
                 if quote is None and r.span_text:
                     quote = r.span_text
             elif r.state == DEFERRED_TO_CITATION:
@@ -1283,7 +1306,13 @@ def _expanded_rows_section(
         if rc.row.row_id == "software" and mentions:
             # report v2 §1c: every named software, with its version or the lack of one.
             values = [
-                (f"{m.name} {m.version}" if m.version else f"{m.name} (no version)")
+                (
+                    f"{m.name} {m.version}"
+                    if m.version
+                    else f"{m.name} (major version only)"
+                    if m.major_only
+                    else f"{m.name} (no version)"
+                )
                 + (f" — {m.used_for}" if m.used_for else "")
                 for m in mentions
             ]
@@ -1315,9 +1344,7 @@ def _expanded_rows_section(
         for r in tf_rows:
             param = r.path.split(".", 1)[1]
             if r.state == EXTRACTED:
-                values.append(
-                    f"{param} = {_fmt_band(r.value) if param == 'effective_band_hz' else _fmt_value(r.value)}"
-                )
+                values.append(f"{param} = {_fmt_row_value(r)}")
                 quote = quote or r.span_text
             elif r.state == DEFERRED_TO_CITATION:
                 values.append(
@@ -1331,6 +1358,16 @@ def _expanded_rows_section(
         out.append(line)
     out.append("")
     return out
+
+
+def _fmt_row_value(row: Any) -> str:
+    """A row's value: a band field (``*_band_hz``) in the one band format, everything else as
+    :func:`_fmt_value`. 2026-11-02, the author's queued fix: the step section and the rows section
+    showed the same band two ways ("0.02, 0.1" and "0.02-0.1 Hz" with an en dash); every
+    surface now goes here."""
+    if str(getattr(row, "path", "")).endswith("_band_hz"):
+        return _fmt_band(row.value)
+    return _fmt_value(row.value)
 
 
 def _fmt_band(value: Any) -> str:

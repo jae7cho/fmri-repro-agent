@@ -304,6 +304,38 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
     return None
 
 
+#: 2026-11-02, the author's queued fix: "an operation word is not a convention value". The words that
+#: name the OPERATION of intensity normalisation (and the words around them) state no convention.
+#: A returned convention made only of these -- Gracia-Tabuenca's "normalization", the prompt's own
+#: "intensity normalized" example -- is not a value. Word forms tolerated (token_equivalent).
+_CONVENTION_OPERATION_WORDS: tuple[str, ...] = (
+    "normalization",
+    "normalisation",
+    "scaling",
+    "intensity",
+    "signal",
+    "global",
+    "data",
+    "the",
+    "of",
+    "was",
+    "were",
+    "applied",
+)
+
+
+def is_operation_word_only(dotted: str, verbatim: str) -> bool:
+    """True when a ``intensity_normalization.convention`` value names only the operation: every token
+    is an operation word (word forms tolerated), so no convention -- no "grand mean", "median", "mode",
+    target number -- is stated. Any other field: False."""
+    if dotted != "intensity_normalization.convention":
+        return False
+    toks = tokens(verbatim)
+    return bool(toks) and all(
+        any(token_equivalent(t, w) for w in _CONVENTION_OPERATION_WORDS) for t in toks
+    )
+
+
 def performed_phrase_supported(kind: str, quote: str) -> bool:
     """R3 as amended by the author's item 2 (2026-10-28): a ``performed`` quote supports the boolean
     only when it contains one of its step's FROZEN phrases (coverage_fields.PERFORMED_PHRASES), taken

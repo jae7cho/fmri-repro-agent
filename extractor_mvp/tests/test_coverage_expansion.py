@@ -343,6 +343,38 @@ def test_a_performed_quote_must_name_its_step() -> None:
     assert set(PERFORMED_PHRASES) == set(COVERAGE_KINDS)
 
 
+_ORTHO = (
+    "Time-courses from the gray matter were orthogonalized with respect to the white matter and "
+    "CSF mean timecourses and to the six motion-related signals."
+)
+
+
+def test_orthogonalized_and_regressed_out_name_nuisance_regression() -> None:
+    """2026-11-02, the author's queued fix, declared fitted (shen_2013): an orthogonalisation sentence
+    names the regression step; a bare "orthogonal" does not."""
+    from extractor_mvp.quote_support import performed_phrase_supported as named
+
+    for q in (
+        _ORTHO,
+        "Signals were orthogonalised against the motion parameters.",
+        "We applied orthogonalization with respect to the WM and CSF signals.",
+        "WM and CSF signals were regressed out.",
+        "after regressing out the six motion parameters",
+    ):
+        assert named("nuisance_regression", q), q
+    assert not named("nuisance_regression", "An orthogonal design was used for the two tasks.")
+    paper = ParsedPaper(text=TEXT + " " + _ORTHO, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            temporal=TemporalVolumeExtraction(nuisance_performed=_ex("yes", _ORTHO)),
+        ),
+    )
+    assert _field(prep, "nuisance_regression", "performed").extraction.value is True
+
+
 # ---------------------------------------------------------------------------
 # The support check by field type (R3): failures render unverifiable, never not reported
 # ---------------------------------------------------------------------------
@@ -759,6 +791,14 @@ def test_some_software_without_a_version_is_partially_reported_and_named() -> No
     assert (rc.addressed, rc.partial, rc.covered_by_extractor) == (False, True, True)
     out = render.to_cobidas_coverage(prep)
     assert "partially reported 1" in out
+    # 2026-11-02, the author's queued fix: the header puts the Software label on the partial
+    # segment, never under "not reported" when the row is partial.
+    header = next(ln for ln in out.splitlines() if "Assessed by AESPA" in ln)
+    assert (
+        "partially reported 1 (incl. Software — unconditional violation for the software without "
+        "a reported version) · " in header
+    )
+    assert header.count("Software") == 1
     assert (
         "- Software [validated against labels] — partially reported: FreeSurfer 5.3 — Cortical surfaces were reconstructed; BioImage Suite (no version)"
         in out
@@ -788,6 +828,96 @@ def test_a_used_for_not_in_the_quote_is_dropped_and_the_mention_kept() -> None:
     prep = _run_sw([dict(_FS, used_for="tissue segmentation")])
     v = prep.software_mentions[0].extraction.value
     assert (v.name, v.version, v.used_for) == ("FreeSurfer", "5.3", None)
+
+
+_NORM = (
+    "Rest-fMRI underwent additional preprocessing steps including removal of initial volumes, "
+    "normalization, regression and temporal filtering."
+)
+_GRAND = "Each run was grand-mean scaled to 10000."
+
+
+def test_an_operation_word_is_not_a_convention_value() -> None:
+    """2026-11-02, the author's queued fix: Gracia-Tabuenca's convention "normalization" names the
+    operation, not a convention -- unverifiable (the row must not read "not reported"); a stated
+    convention is kept."""
+    paper = ParsedPaper(text=TEXT + " " + _NORM + " " + _GRAND, source="t", parser="manual")
+
+    def run(value: str, quote: str) -> Preprocessing:
+        payload = _prep_payload().model_copy(update={"intensity_convention": _ex(value, quote)})
+        prep, diags, _ = extract_preprocessing(paper, "m", client=stub_client(payload))
+        run.diags = diags  # type: ignore[attr-defined]
+        return prep
+
+    bad = run("normalization", _NORM)
+    pf = _field(bad, "intensity_normalization", "convention")
+    assert pf.extraction.status == "MISSING_FROM_PAPER"
+    assert pf.inference.reason == "operation_word_not_value"
+    assert any(d.failure_reason == "operation_word_not_value" for d in run.diags)  # type: ignore[attr-defined]
+    rc = _coverage(bad)["intensity_normalization"]
+    assert (rc.addressed, rc.unverifiable) == (False, True)
+    assert "the quoted sentence names the operation but no convention" in render.to_protocol(bad)
+    # positive control: a convention-bearing value passes the post-check untouched
+    good = run("grand-mean scaled", _GRAND)
+    assert _field(good, "intensity_normalization", "convention").extraction.status == "EXTRACTED"
+
+
+_SPM5_TEXT = "Functional data was motion corrected and slice-time corrected using SPM5."
+
+
+def test_a_fused_major_version_is_major_only_not_no_version() -> None:
+    """2026-11-02, the author's queued fix: SPM5 is "major version only" per COBIDAS §4.3 -- named as
+    such, and still not a reported version, so the row is not addressed."""
+    from extractor_mvp.cobidas import Mention, fused_major_version
+    from extractor_mvp.coverage_extractor import SoftwareMentionResult
+
+    assert [
+        fused_major_version(n)
+        for n in ("SPM5", "SPM12", "spm 8", "Statistical Parametric Mapping 12", "SPM", "FSL")
+    ] == ["5", "12", "8", "12", None, None]
+    assert Mention("SPM12", None, None).major_only
+    assert not Mention("SPM12", "revision 6225", None).major_only  # a separate version is stated
+    assert not Mention("BioImage Suite", None, None).major_only
+
+    paper = ParsedPaper(text=_SPM5_TEXT + " " + _SW_TEXT, source="t", parser="manual")
+    prep, _, _ = extract_preprocessing(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(),
+            spatial=SpatialExtraction(
+                software_mentions=[
+                    SoftwareMentionResult(name="SPM5", verbatim_quote=_SPM5_TEXT),
+                    SoftwareMentionResult(**_BIS),
+                ]
+            ),
+        ),
+    )
+    rc = _coverage_with_mentions(prep)["software"]
+    assert (rc.addressed, rc.partial, rc.covered_by_extractor) == (False, False, True)
+    out = render.to_cobidas_coverage(prep)
+    assert "SPM5 (major version only)" in out
+    assert "SPM5 (no version)" not in out
+    assert "BioImage Suite (no version)" in out
+    assert (
+        "Software named without a version: BioImage Suite. Named with a major version only "
+        "(COBIDAS §4.3 asks for more than the major version): SPM5." in out
+    )
+
+
+def test_the_scope_rule_applies_to_software_mentions() -> None:
+    """2026-11-02, the author's queued fix: call S lists only software used to preprocess the
+    functional data (Gracia-Tabuenca's FreeSurfer surfaces, AtlasTrack, caret are out)."""
+    from extractor_mvp.coverage_extractor import SPATIAL_PROMPT
+
+    section = SPATIAL_PROMPT.split("## Software the paper names (software_mentions)")[1].split(
+        "\n## "
+    )[0]
+    assert "USED TO PREPROCESS THE FUNCTIONAL (BOLD) DATA" in section
+    assert "The SCOPE rule above applies here too" in section
+    assert "prediction or machine learning" in section
+    assert "for ANY part of the methods" not in section
+    assert "SCOPE (report v2, 2026-10-29)" in SPATIAL_PROMPT  # the rule it points to
 
 
 def _coverage_with_mentions(prep: Preprocessing) -> dict[str, Any]:
@@ -830,6 +960,11 @@ def test_the_band_is_extracted_digit_exact_and_shown_beyond_cobidas() -> None:
     )
     assert "- temporal_filtering" in out  # listed under Beyond COBIDAS, never in the 14
     assert "Mandatory rows: 14" in out
+    # 2026-11-02, the author's queued fix: one band format on every surface.
+    protocol = render.to_protocol(prep)
+    assert "- effective_band_hz = 0.02\u20130.1 Hz   [from paper]" in protocol
+    assert "0.02, 0.1" not in protocol
+    assert "effective_band_hz = 0.02\u20130.1 Hz" in protocol.split("## COBIDAS")[-1]
 
 
 def test_a_band_edge_not_in_the_quote_is_unverifiable_and_a_high_pass_is_open() -> None:

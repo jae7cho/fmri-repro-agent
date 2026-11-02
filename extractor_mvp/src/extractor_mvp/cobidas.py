@@ -21,6 +21,7 @@ from extraction-arm state only.
 from __future__ import annotations
 
 import dataclasses
+import re
 from typing import Any
 
 # ---------------------------------------------------------------------------
@@ -173,6 +174,10 @@ _UNVERIFIABLE_GAP_BASES = frozenset(
         # extractor looked, got a deferral it cannot credit for this field. Not a claim the paper
         # is silent.
         "performed_cannot_defer",
+        # An intensity convention that only names the operation ("normalization"), coerced by the
+        # post-check of 2026-11-02: the quoted sentence asserts the operation, so "not reported"
+        # would be false of the row -- the same reason the motion reasons are in.
+        "operation_word_not_value",
     }
 )
 
@@ -289,6 +294,23 @@ def _software_coverage(
     return base_row.extraction_status == "EXTRACTED", True, False
 
 
+#: A major version fused into the tool's name (2026-11-02, the author's queued fix). COBIDAS §4.3
+#: p. 10: reporting gives "not just the major version number"; its own insufficient example is
+#: ``SPM12`` (docs/findings/cobidas-version-criterion.md). SPM is the one tool §4.3 names whose major
+#: version is fused into the name, abbreviated or spelled out (mueller_2021's "Statistical Parametric
+#: Mapping 12"). Any other tool is not generalised to: a separately stated version is the
+#: extraction's own field and is shown as stated.
+_FUSED_MAJOR = re.compile(
+    r"\b(?:spm|statistical\s+parametric\s+mapping)\s*-?\s*(99|2|5|8|12)\b", re.IGNORECASE
+)
+
+
+def fused_major_version(name: str) -> str | None:
+    """The major version fused into a software name (``SPM5`` -> ``5``), else None."""
+    m = _FUSED_MAJOR.search(name)
+    return m.group(1) if m else None
+
+
 @dataclasses.dataclass(frozen=True)
 class Mention:
     """One piece of software for the Software row: from ``software_mentions`` or the base pipeline."""
@@ -296,6 +318,12 @@ class Mention:
     name: str
     version: str | None
     used_for: str | None
+
+    @property
+    def major_only(self) -> bool:
+        """True when no separate version is stated and the name carries only a fused major version.
+        It does not meet §4.3 and counts as unversioned for the row, but it is not "no version"."""
+        return self.version is None and fused_major_version(self.name) is not None
 
 
 def software_mentions_for_row(

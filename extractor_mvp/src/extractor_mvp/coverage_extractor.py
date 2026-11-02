@@ -304,9 +304,13 @@ intensity_correction_method: canonical n4, fast_bias, other; verbatim otherwise.
 
 ## Software the paper names (software_mentions)
 D.3 asks, for each software used, its version and revision number.
-software_mentions: a list with one entry per distinct piece of software the methods text names --
-  packages, toolboxes, pipelines, in-house code named as such -- for ANY part of the methods:
-  name = as written; version = only a SEPARATE version string the text states ("FreeSurfer v5.3"
+software_mentions: a list with one entry per distinct piece of software the methods text names as
+  USED TO PREPROCESS THE FUNCTIONAL (BOLD) DATA -- packages, toolboxes, pipelines, in-house code
+  named as such. The SCOPE rule above applies here too: software used only for the structural
+  image's own analysis (cortical surfaces, tractography), for statistics, first-level models,
+  prediction or machine learning, or for stimulus delivery is NOT listed. Software whose output the
+  functional preprocessing uses (a segmentation feeding tissue regressors or a boundary-based
+  registration) IS listed. name = as written; version = only a SEPARATE version string the text states ("FreeSurfer v5.3"
   -> version "5.3"; a version fused into the name, as in "SPM12", stays in the name and version
   is empty); used_for = the paper's own words for what it was used for, if the sentence says;
   verbatim_quote = the sentence naming it, copied exactly. Software cited only in the

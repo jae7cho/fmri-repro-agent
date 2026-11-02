@@ -195,7 +195,9 @@ _PINNED = {
     #: 2291c503605d2d887463f119cc2b5218533fa132b11f575cb6c0f9efd0899ea2.
     #: UPDATED 2026-10-29, report v2 step 6 (DESIGN_report_v2.md §3, F3a): the multiple_pipelines question leaves calls T and S for the checking pass. Superseded SPATIAL_PROMPT value:
     #: 6d9f03681daf28300de60e23ec0512c9e1deb43e19969ebc927a5e3e60417b66.
-    "SPATIAL_PROMPT": "697c868be398f23b4cd9e86a7a557e42771d89f3b5ba1e3563aa49d13536ab2a",
+    #: UPDATED 2026-11-02, the author's queued fix: the SCOPE rule applied to software_mentions (only software used to preprocess the functional data; structural-only analysis, statistics, prediction and stimulus software out; software whose output the functional preprocessing uses stays in). Not yet run: the next coverage draw is a new vintage. Superseded SPATIAL_PROMPT value:
+    #: 697c868be398f23b4cd9e86a7a557e42771d89f3b5ba1e3563aa49d13536ab2a.
+    "SPATIAL_PROMPT": "3c8d604b5776aef6c332d3ab2aed508f7410cf35936c6264de30248c15398959",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     "VERIFIER_PROMPT": "42cb343c7b2f4fea94fa47cb0f25146640f5f1101896ba8b67a79c31e2956a70",
@@ -206,7 +208,11 @@ _PINNED = {
 #: coverage_v1 sentences of the contaminated sixteen, then frozen; a change is a dated event here.
 #: UPDATED 2026-10-29, report v2 step 3: the temporal_filtering entry added with the step.
 #: Superseded value: 85566a83441d91338076acf3f7c321afc6d735524bae55c734971cbab1ccc32f.
-_PINNED_PERFORMED_PHRASES = "02acd07d8fab2ea17c4f730c2da45a0d8ee5176bc507ea8d34ac442f6ba14ef4"
+#: UPDATED 2026-11-02, the author's queued fix: nuisance_regression gains the "orthogonalized" and
+#: "regressed out" families, DECLARED FITTED to shen_2013 (now contaminated for this table). The
+#: table is not sent to the model; it is the processed-layer check, so no prompt hash moves.
+#: Superseded value: 02acd07d8fab2ea17c4f730c2da45a0d8ee5176bc507ea8d34ac442f6ba14ef4.
+_PINNED_PERFORMED_PHRASES = "f77f032b8026077b667472d0d4d29b4975408d1a92cea968e2205dd21c917a8f"
 
 _VINTAGE_NOTE = (
     "\n\nThis hash pins a prompt that is SENT TO THE MODEL. A change here changes what every "

@@ -82,7 +82,11 @@ from extractor_mvp.motion_guard import (
     motion_post_check,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.quote_support import coverage_value_supported, step_value_supported
+from extractor_mvp.quote_support import (
+    coverage_value_supported,
+    is_operation_word_only,
+    step_value_supported,
+)
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
 from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
 
@@ -1757,6 +1761,18 @@ def _extract_from_prompt(
             parsed_paper.text,
             value_context,
         )
+        # 2026-11-02, the author's queued fix: an operation word is not a convention value. A
+        # convention that only names the operation ("normalization") is coerced to unverifiable --
+        # the paper states the operation, so the row must not read "not reported".
+        if (
+            isinstance(field_pf.extraction, Extracted)
+            and isinstance(field_pf.extraction.value, SpecifiedTerm)
+            and is_operation_word_only(dotted, field_pf.extraction.value.verbatim or "")
+        ):
+            field_pf = _missing_pf(field_id, t, "operation_word_not_value")
+            diag = ExtractionDiagnostic(
+                dotted, "operation_word_not_value", fe.value, fe.verbatim_quote
+            )
         pf[attr] = field_pf
         if diag is not None:
             diagnostics.append(diag)
