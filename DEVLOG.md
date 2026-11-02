@@ -3706,3 +3706,30 @@ verifier verdicts withheld until the author confirms their own reading is record
 Committed after 17:00 ET as one commit per step from tree snapshots taken as each step passed (the
 commit hook blocks 09:00–17:00). Held-out text unread; the held-out three not run. 590 passed in
 extractor_mvp (not live), 235 root; hooks clean. Commits here: `edaea4c`–`03fa079`, then this entry.
+
+## 2026-11-02 — the author's reading of the two unseen papers; the checking pass opened; six queued fixes
+
+**What was asked.** The author recorded their reading of Gracia-Tabuenca 2024 and Shen 2013 as the
+answer key, written before seeing the checking pass, and asked for it verbatim in the findings; then
+both papers' checking-pass verdicts and a three-way comparison by counts (checking pass, Claude's
+review, the author's); then six queued fixes, each with tests and a replay, no model calls.
+
+- `82d3c39` — the six fixes. Software version "major only" for a fused SPM major version (COBIDAS §4.3,
+  still not a reported version); the scope rule applied to `software_mentions` (SPATIAL_PROMPT
+  `697c868b…` → `3c8d604b…`, dated note, not yet drawn); "orthogonalized" and "regressed out" in the
+  frozen phrase table, declared fitted to shen_2013 (`02acd07d…` → `f77f032b…`); an operation word is
+  not a convention value (new unverifiable reason `operation_word_not_value`); one band format; the
+  Software header label on the partial segment. Mutations: 9, every one killed. Replays: the phrase
+  table moves 1 stored cell (shen's nuisance `performed`; 0 under the old table); the operation-word
+  check moves gracia-tabuenca and weber on v3; the scope rule's target is 58 of 98 v3 mentions.
+  Identity gate derived before each run: 19 identical against HEAD on the acceptance batch and on
+  coverage_v2, 0 of 19 against `d31e8b7`, coverage_v3 16 changed with binder and viduarre identical,
+  every changed line one of the four intended kinds.
+- `d81ffe2` — findings: the author's reading verbatim; the checking-pass verdicts on both papers; the
+  comparison. Of the key's 8 wrong-or-missed items the checking pass caught 4 and Claude's 2026-10-29
+  review 5, 2 by both, 1 by neither; Claude's review contradicted the key once (FreeSurfer in the
+  Software row); the checking pass disputed Shen's order once and flagged 6 fields the key does not
+  mention. Counts only, no rate.
+
+Committed after 17:00 ET. Held-out text unread; the held-out three not run. 594 passed in extractor_mvp
+(not live), 235 root; hooks clean. Commits here: `82d3c39`, `d81ffe2`, then this entry.
