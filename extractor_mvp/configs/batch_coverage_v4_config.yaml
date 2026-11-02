@@ -1,0 +1,48 @@
+# coverage_v4 -- the author's ruling of 2026-11-02: the scope rule restated (structural steps that feed
+# the fMRI analysis are in, citing D.3's "For structural images"; structural-only analyses and
+# first-level covariates out) in both coverage prompts, the software list and the checking pass; the
+# checking pass gains an `unplaced` list (never changes a field). Built and committed in a3908c3.
+# Papers as coverage_v3: the 16 contaminated corpus papers and the two unseen papers; the held-out
+# three are NOT run. Same model. Five calls per paper on the single-acquisition path. Every field
+# written is the vintage coverage_v4; nothing is pooled with coverage_v3, whose table is reported beside it.
+# IDENTITY GATE (derived and run before this run): rerender_reports.py on batch_a1_acceptance --against
+# HEAD -> 19 identical, 0 changed; --against d31e8b7 -> 0 identical, 19 changed.
+model: bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0
+output_dir: /Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/results/batch_coverage_v4
+papers:
+- paper_id: agtzidis_2020
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Agtzidis_2020.pdf
+- paper_id: braun_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Braun_2015.pdf
+- paper_id: chen_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Chen_2015.pdf
+- paper_id: ciric_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Ciric_2017.pdf
+- paper_id: cole_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Cole_2013.pdf
+- paper_id: derosa_2025
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/DeRosa_2025.pdf
+- paper_id: gordon_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Gordon_2014.pdf
+- paper_id: liu_2013
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Liu_2013.pdf
+- paper_id: mueller_2021
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Mueller_2021.pdf
+- paper_id: oconnor_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/OConnor_2017.pdf
+- paper_id: poldrack_2015
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Poldrack_2015.pdf
+- paper_id: power_2014
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Power_2014.pdf
+- paper_id: vanderwal_2016
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Vanderwal_2016.pdf
+- paper_id: viduarre_2017
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Viduarre_2017.pdf
+- paper_id: weber_2024
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Weber_2024.pdf
+- paper_id: binder_1999
+  path: /Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Binder_1999.pdf
+- paper_id: gracia-tabuenca_2024
+  path: /Users/cwook/Downloads/Gracia-Tabuenca_2024.pdf
+- paper_id: shen_2013
+  path: /Users/cwook/Downloads/Shen_2013.pdf
