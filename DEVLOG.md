@@ -3847,3 +3847,27 @@ Model calls this round: case one drawn five times ($0.2226, $0.4191, $0.4199, $0
 the retry measurement ($3.4154 JSON, $2.9974 tool calling). Tests: 635 extractor (not live), 235 root;
 hooks clean. Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical; control
 `d31e8b7` 0 of 19. Commits allowed in working hours by the author for this set. Commits here: `d1aaf73`, `ca9aa88`, then this entry.
+
+## 2026-11-03 (late evening) — schema 0.6.1, the KB software scan, tool calling; case two
+
+**What was asked.** The distortion method as a family with aliases, separate from the tool field,
+re-pinned; the software list from a deterministic scan of the cited and citing paper for KB tool
+names with one scoped question per mention, MMPS added to `kb/tools` with Hagler as the source and
+the key's MMPS line corrected, dated; every client in tool-calling mode as a new vintage; case one
+re-drawn; case two (poldrack_2015 -> ref 45, Power et al. 2014) with its motion answer compared to
+power_2014's label and nothing else shown.
+
+- `665b81d`: schema 0.6.1 (additive; stored 0.6.0 records re-stamp unchanged), `software_scan.py`,
+  `INSTRUCTOR_MODE = "tools"`. In the KB repo: `1a3a057` (MMPS), `1596cc1` (its DEVLOG).
+- `ca5d746`: case one, fields 22 of 23 agree (the distortion method now fails on the model's "other",
+  which no quote can support); software agree 1 (AFNI), key-only 3 (MMPS answered "unclear"; FreeSurfer
+  and mri_vol2surf are not in the KB). Case two: reference 45 resolved to Power_2014.pdf (no DOI on
+  the entry); the hop returned "rigid body realignment" as the tool, quoting the label's sentence;
+  the label is described_only: differ. Proposed, not built: the motion arm's tool-shape test on the
+  hop's tool answer.
+
+Model calls: case one /bin/zsh.4188, case two /bin/zsh.2045; no retry in either under tool calling. Tests: 649
+extractor (not live), 236 root, 103 KB; hooks clean; every mutation killed (two after test fixes).
+Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical; control 0 of 19.
+Commits allowed in working hours by the author for this set. Commits here: `665b81d`, `ca5d746`, then this
+entry.
