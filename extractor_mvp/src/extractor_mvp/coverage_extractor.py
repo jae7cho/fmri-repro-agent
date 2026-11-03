@@ -299,7 +299,9 @@ distortion_source: a comma-separated list -- a paper may correct both -- from su
   pair), gradient_nonlinearity (gradient distortion), fieldmap_less (SyN-based or similar).
 distortion_method: the method FAMILY, a comma-separated list from reverse_phase_encoding (reversed
   phase-encoding / reversing polarity / opposite phase-encoding / blip-up/blip-down pairs), fieldmap (a
-  field map / phase difference), other; verbatim otherwise. Never a program name here.
+  field map / phase difference), gradient_nonlinearity_correction (correction for gradient
+  nonlinearities), other; write other as "other (the paper's own words for it)". Never a program
+  name here.
 distortion_tool: the PROGRAM, a comma-separated list from topup, fugue, gradunwarp, sdc_fieldmapless,
   other; verbatim otherwise; "missing" when no program is named.
 

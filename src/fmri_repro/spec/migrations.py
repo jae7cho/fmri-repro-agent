@@ -287,6 +287,9 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # fieldmap, and DistortionCorrection gains an OPTIONAL ``tool`` field. A 0.6.0 document stays valid
     # unchanged: its method values are still members, and it simply does not carry ``tool``.
     #
+    # 0.6.1 -> 0.6.2 (PATCH, pure re-stamp -- NO doc transform; 2026-11-03, the author's ruling):
+    # DistortionMethod gains gradient_nonlinearity_correction. Every 0.6.1 document stays valid.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

@@ -766,9 +766,24 @@ def _parse_band(raw: object) -> tuple[float | None, float | None] | None:
 _TERM_SPLIT = re.compile(r"\s*(?:,|;|/|\band\b|\+)\s*")
 
 
+_PAREN = re.compile(r"\([^()]*\)")
+#: "other (the paper's phrase)" or "other: the paper's phrase" (2026-11-03, the author's ruling on
+#: the distortion method: "other" must carry the paper's phrase and is checked against it).
+_OTHER_WITH_PHRASE = re.compile(r"^other\s*(?:\((?P<p>[^()]+)\)|:\s*(?P<q>.+))\s*$", re.IGNORECASE)
+
+
 def _split_terms(raw: str) -> list[str]:
-    """A comma/and-separated list value into its items, empty items dropped."""
-    return [item.strip() for item in _TERM_SPLIT.split(raw) if item.strip()]
+    """A comma/and-separated list value into its items, empty items dropped. A parenthesised
+    phrase is one piece ("other (unwarping and resampling)" is not split at its "and")."""
+    held: list[str] = []
+
+    def hold(m: re.Match[str]) -> str:
+        held.append(m.group(0))
+        return f"\x00{len(held) - 1}\x00"
+
+    masked = _PAREN.sub(hold, raw)
+    items = [item.strip() for item in _TERM_SPLIT.split(masked) if item.strip()]
+    return [re.sub(r"\x00(\d+)\x00", lambda m: held[int(m.group(1))], it) for it in items]
 
 
 def _resolve_term(
@@ -777,7 +792,14 @@ def _resolve_term(
     synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
 ) -> SpecifiedTerm:
     """The 0.5.0 recording rule for a coverage-call term: the paper's words always kept; resolved
-    through the field's own table when one is given, else by exact membership."""
+    through the field's own table when one is given, else by exact membership. "other (phrase)"
+    resolves to ``other`` with the phrase as the verbatim (2026-11-03), so its support check reads
+    the paper's words."""
+    other = _OTHER_WITH_PHRASE.match(verbatim.strip())
+    if other and "other" in typing.get_args(literal_type):
+        phrase = (other.group("p") or other.group("q") or "").strip()
+        if phrase:
+            return SpecifiedTerm(verbatim=phrase, resolved="other", resolution="resolved")
     if synonyms is not None:
         syns, under = synonyms
         res = resolve_to_literal(verbatim, syns, under, None)

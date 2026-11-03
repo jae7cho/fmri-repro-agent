@@ -68,7 +68,9 @@ TEXT = (
     "Linear and quadratic trends were removed from the time series. "
     "Distortion correction for magnetic field inhomogeneities used a field map. "
     "Nuisance regressors included 24 movement regressors derived by Volterra expansion. "
-    "B0 distortions were corrected with the reversing polarity method."
+    "B0 distortions were corrected with the reversing polarity method. "
+    "Images were then corrected for distortions due to gradient nonlinearities. "
+    "Residual warps were removed by in-house unwarping."
 )
 _S = {
     "t1": "The first 4 volumes were discarded to allow for signal equilibration.",
@@ -89,6 +91,8 @@ _S = {
     "inhomo": "Distortion correction for magnetic field inhomogeneities used a field map.",
     "volterra": "Nuisance regressors included 24 movement regressors derived by Volterra expansion.",
     "polarity": "B0 distortions were corrected with the reversing polarity method.",
+    "gradnl": "Images were then corrected for distortions due to gradient nonlinearities.",
+    "inhouse": "Residual warps were removed by in-house unwarping.",
 }
 
 
@@ -1252,3 +1256,54 @@ def test_the_papers_words_resolve_to_the_reverse_phase_encoding_family() -> None
     )
     [term] = _field(prep, "distortion_correction", "method").extraction.value
     assert (term.verbatim, term.resolved) == ("reversing polarity", "reverse_phase_encoding")
+
+
+def test_gradient_nonlinearity_correction_is_a_family_and_other_carries_the_papers_phrase() -> None:
+    """2026-11-03 (schema 0.6.2): case one's model wrote "other" for the gradient-nonlinearity
+    step, which no quote can support."""
+    prep = _run(
+        spatial=SpatialExtraction(
+            distortion_method=_ex("gradient nonlinearities", _S["gradnl"]),  # the paper's words
+        )
+    )
+    [term] = _field(prep, "distortion_correction", "method").extraction.value
+    assert term.resolved == "gradient_nonlinearity_correction"
+    prep = _run(
+        spatial=SpatialExtraction(
+            distortion_method=_ex("other (in-house unwarping)", _S["inhouse"])
+        )
+    )
+    method = _field(prep, "distortion_correction", "method")
+    [term] = method.extraction.value
+    assert (term.verbatim, term.resolved) == ("in-house unwarping", "other")
+
+
+def test_other_without_the_papers_phrase_or_with_a_phrase_not_in_the_quote_is_rejected() -> None:
+    for value in ("other", "other (field-map-free unwarping)"):
+        prep = _run(spatial=SpatialExtraction(distortion_method=_ex(value, _S["inhouse"])))
+        method = _field(prep, "distortion_correction", "method")
+        assert method.extraction.status == "MISSING_FROM_PAPER"
+        assert method.inference.reason == "value_unsupported_by_quote"
+
+
+def test_a_parenthesised_phrase_is_one_list_item() -> None:
+    from extractor_mvp.extractor import _split_terms
+
+    assert _split_terms("reverse_phase_encoding, other (unwarping and resampling)") == [
+        "reverse_phase_encoding",
+        "other (unwarping and resampling)",
+    ]
+
+
+def test_a_bare_other_is_unsupported_even_where_the_quote_says_other() -> None:
+    from fmri_repro.spec.preprocessing import SpecifiedTerm
+
+    from extractor_mvp.quote_support import coverage_value_supported
+
+    quote = "Other distortions were removed by in-house unwarping."
+    bare = SpecifiedTerm[str](verbatim="other", resolved="other", resolution="resolved")
+    phrased = SpecifiedTerm[str](
+        verbatim="in-house unwarping", resolved="other", resolution="resolved"
+    )
+    assert coverage_value_supported("distortion_correction.method", [bare], quote) is False
+    assert coverage_value_supported("distortion_correction.method", [phrased], quote) is True

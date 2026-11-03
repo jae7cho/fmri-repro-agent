@@ -171,7 +171,10 @@ def _package_candidate(name: str | None) -> MotionInferenceCandidate | None:
     tool_id = recognize_tool(name)
     if tool_id is None:
         return None
-    rp = realignment_program(tool_id)
+    try:
+        rp = realignment_program(tool_id)
+    except KbError:  # a listed package with no realignment program (FreeSurfer, 2026-11-03)
+        return None
     basis = DerivedBasis(source_field_ids=["base_pipeline.name"], note=rp.source)
     return MotionInferenceCandidate(
         "package", rp.program, basis, BASIS_CEILINGS["derived"], rp.source, False

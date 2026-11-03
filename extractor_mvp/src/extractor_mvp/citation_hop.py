@@ -40,6 +40,7 @@ from extractor_mvp.coverage_extractor import (
     _response_model,
 )
 from extractor_mvp.coverage_fields import CALL_S_SPECS, CALL_T_SPECS, CoverageFieldSpec
+from extractor_mvp.motion_guard import is_tool_shaped_frozen
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.span_resolver import resolve_quote
 
@@ -799,7 +800,12 @@ def run_hop(
         rec["software_mentions"] = [pf.model_dump(mode="json") for pf in processed.software]
         for t in raw_s.tools:
             if t.field in tool_fields:
-                rec["tools"].setdefault(t.field, []).append(_quoted(t.verbatim_quote, t.tool, text))
+                rec["tools"].setdefault(t.field, []).append(
+                    {
+                        **_quoted(t.verbatim_quote, t.tool, text),
+                        "tool_shaped": is_tool_shaped_frozen(t.tool),  # recorded; render decides
+                    }
+                )
         rec["rules"] = apply_rules(fields)
         rec["cited_deferrals"] = [
             {"field": d.field, "ref": d.ref_string, "target_kind": d.target_kind}

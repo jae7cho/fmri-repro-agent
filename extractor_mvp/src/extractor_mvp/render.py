@@ -870,6 +870,7 @@ def _second_hop_section(
     if not second_hop:
         return []
     from extractor_mvp.citation_hop import release_relation
+    from extractor_mvp.motion_guard import is_tool_shaped_frozen
     from extractor_mvp.verifier import effective
 
     out = [
@@ -1009,11 +1010,19 @@ def _second_hop_section(
                     + "; ".join(f'"{w}"' for w in stated)
                     + ", no tool named"
                 )
-            if found:
+            # the first hop's tool-shape test on the answer (the author, 2026-11-03): a phrase
+            # that names no program is the cited paper describing the method, not a tool
+            named = [x for x in found if is_tool_shaped_frozen(str(x["tool"]))]
+            if named:
                 out.append(
                     f"{head}) = "
-                    + "; ".join(x["tool"] for x in found)
-                    + f" — as described in {ref}  «{_truncate_quote(found[0]['verbatim_quote'])}»{tag}"
+                    + "; ".join(x["tool"] for x in named)
+                    + f" — as described in {ref}  «{_truncate_quote(named[0]['verbatim_quote'])}»{tag}"
+                )
+            elif found:
+                out.append(
+                    f"{head}): the cited paper describes the method without naming a tool: "
+                    f"{found[0]['tool']}  «{_truncate_quote(found[0]['verbatim_quote'])}»{tag}"
                 )
             elif returned:
                 x = returned[0]
@@ -1055,7 +1064,10 @@ def _second_hop_section(
         # fMRI processing or feeds it (software_scan.py)
         scanned = (rec.get("software_scan") or {}).get("tools") or []
         kept = [t for t in scanned if t.get("kept")]
-        dropped = [t["display_name"] for t in scanned if not t.get("kept")]
+        unverified = [t for t in scanned if t.get("unverified")]
+        dropped = [
+            t["display_name"] for t in scanned if not t.get("kept") and not t.get("unverified")
+        ]
         if kept:
             out.append(
                 f"- Software as described in {ref} (KB scan of the whole paper; not counted toward "
@@ -1069,6 +1081,13 @@ def _second_hop_section(
                     + f"  (fMRI use: «{_truncate_quote(t.get('use_quote') or '')}»)"
                     for t in kept
                 )
+            )
+        for t in unverified:  # answered "unclear": shown with its quote, never dropped (2026-11-03)
+            ver = f" {t['version']}" if t.get("version") else " (no version)"
+            note = "" if t.get("unclear_quote_resolved") else ", its quote not found"
+            out.append(
+                f"  {t['display_name']}{ver}: its fMRI use is unverified{note}  "
+                f"«{_truncate_quote(t.get('unclear_quote') or '')}»"
             )
         if dropped:
             out.append(f"  Named, no quoted fMRI use: {', '.join(dropped)}")

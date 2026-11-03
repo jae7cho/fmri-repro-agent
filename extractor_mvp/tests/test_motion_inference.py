@@ -187,6 +187,13 @@ def test_missing_with_a_package_name_fills_the_arm_from_the_package_at_0_70() ->
     assert pf.inference.value.resolved == "spm_realign"
 
 
+def test_a_package_with_no_realignment_program_gives_no_package_basis() -> None:
+    """2026-11-03: FreeSurfer is in kb/tools with no realignment block."""
+    prep = _prep(_method("missing"), "FreeSurfer")
+    prep, rec = infer_motion_method(prep)
+    assert rec.path == "none" and _method_pf(prep).inference.status == "LEFT_MISSING"
+
+
 def test_described_only_gets_the_same_inference_as_a_diagnostic_and_the_field_is_untouched() -> (
     None
 ):

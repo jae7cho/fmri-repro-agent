@@ -344,12 +344,21 @@ DISTORTION_METHOD: dict[str, list[str]] = {
         "blip-up blip-down",
     ],
     "fieldmap": ["fieldmap", "field map", "field-map", "phase difference", "phase-difference"],
+    # 2026-11-03 (the author's ruling): case one's "Images are next corrected for distortions due
+    # to gradient nonlinearities", which the model had returned as "other"
+    "gradient_nonlinearity_correction": [
+        "gradient_nonlinearity_correction",
+        "gradient nonlinearities",
+        "gradient nonlinearity distortions",
+    ],
     "other": [],
 }
 #: The families the extractor may resolve a method to (2026-11-03). The schema's DistortionMethod also
 #: keeps the five program members so a 0.6.0 document stays valid; a new extraction never resolves to
 #: them, so a program name returned as the method stays unrecognized (and its quote must hold it).
-DistortionFamily = Literal["reverse_phase_encoding", "fieldmap", "other"]
+DistortionFamily = Literal[
+    "reverse_phase_encoding", "fieldmap", "gradient_nonlinearity_correction", "other"
+]
 #: The program (2026-11-03): the members the 0.6.0 method table held.
 DISTORTION_TOOL: dict[str, list[str]] = {
     "topup": ["topup", "TOPUP"],

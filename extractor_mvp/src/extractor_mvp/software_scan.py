@@ -187,8 +187,9 @@ def ask_uses(
 
 
 def tool_list(uses: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Per tool, in first-mention order: kept when any mention counts; the first version the scan
-    read; the counting mention's use and quote."""
+    """Per tool, in first-mention order: ``kept`` when any mention counts; else ``unverified`` when
+    any mention was answered "unclear" (the author, 2026-11-03: rendered unverified with its quote,
+    never dropped); the first version the scan read; the deciding mention's use and quote."""
     by: dict[str, dict[str, Any]] = {}
     for u in uses:
         t = by.setdefault(
@@ -198,6 +199,7 @@ def tool_list(uses: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "display_name": u["display_name"],
                 "version": None,
                 "kept": False,
+                "unverified": False,
                 "mentions": 0,
             },
         )
@@ -205,4 +207,12 @@ def tool_list(uses: list[dict[str, Any]]) -> list[dict[str, Any]]:
         t["version"] = t["version"] or u.get("version")
         if u.get("counts") and not t["kept"]:
             t.update(kept=True, use=u.get("use"), use_quote=u.get("use_quote"))
+        elif u.get("fmri") == "unclear" and not t["unverified"] and "unclear_quote" not in t:
+            t.update(
+                unclear_use=u.get("use"),
+                unclear_quote=u.get("use_quote") or u.get("sentence"),
+                unclear_quote_resolved=bool(u.get("quote_resolved")) or not u.get("use_quote"),
+            )
+    for t in by.values():
+        t["unverified"] = not t["kept"] and "unclear_quote" in t
     return list(by.values())

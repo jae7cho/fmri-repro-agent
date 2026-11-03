@@ -210,7 +210,11 @@ _PINNED = {
     #: distortion_tool asks the program (the 0.6.0 method members). First drawn under tool calling.
     #: Superseded SPATIAL_PROMPT value:
     #: 87cf358db49c62dfb72a57e14027e68dab7275cc917a70eddb5e7a9ec8fa55ed.
-    "SPATIAL_PROMPT": "cbb6193c43f61cc31f1c1054769d23a359a15908e2067cd79a6cadece1f51fd6",
+    #: UPDATED 2026-11-03 (later evening), the author's ruling (schema 0.6.2): the family list gains
+    #: gradient_nonlinearity_correction, and "other" is written "other (the paper's own words)" and
+    #: checked against them. First drawn on case one that evening. Superseded SPATIAL_PROMPT value:
+    #: cbb6193c43f61cc31f1c1054769d23a359a15908e2067cd79a6cadece1f51fd6.
+    "SPATIAL_PROMPT": "81875e3baa97e3fe734a7719e035e35d4be3527f04ec957e741be8fbfa938339",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:

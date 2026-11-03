@@ -220,6 +220,8 @@ def _hop_client(counter: dict[str, int], prompts: list[str]) -> Any:
         if name == "MentionUse":  # one scoped question per KB-scan mention
             if "package FSL" in messages[0]["content"]:
                 return MentionUse(use="masking frames", use_quote=_N4FSL, fmri="yes")
+            if "package FreeSurfer" in messages[0]["content"]:
+                return MentionUse(use="brain extraction", use_quote=_FS, fmri="unclear")
             return MentionUse(use="tracking fibers", use_quote=_DMRI2, fmri="no")
         return {
             "HopTemporalExtraction": temporal,
@@ -262,7 +264,7 @@ def test_the_hop_asks_only_the_scope_and_never_writes_into_the_citing_record(
     assert counter == {
         "HopTemporalExtraction": 1,
         "HopSpatialExtraction": 1,  # call S, on the fMRI sections
-        "MentionUse": 2,  # the KB scan's two mentions (FSL, ANTs), one question each
+        "MentionUse": 3,  # the KB scan's three mentions (FreeSurfer, FSL, ANTs), one question each
         "VerifierExtraction": 1,
         "CitingReleases": 1,  # call RD, the releases the cited paper describes
     }
@@ -543,8 +545,10 @@ def test_the_cited_text_reaches_every_call_without_a_straight_double_quote(
     """The retry's cause (case one, 2026-11-03): a copied 'signal \u201cdrop-out\u201d', its quotes
     straightened by the model, broke the JSON. Straight and curly double quotes both go."""
     [rec], _, prompts = _run(tmp_path, monkeypatch)
-    assert len(prompts) == 6
-    for p in prompts:
+    assert len(prompts) == 7
+    for p in prompts:  # no call, the per-mention questions included, gets a double quote
+        assert 'signal "drop-out"' not in p and "\u201cdrop-out\u201d" not in p
+    for p in prompts[:2]:  # calls T and S read the section that holds the sentence
         assert "signal 'drop-out' a spin-echo scan was used, 'as published'." in p
     assert rec["fmri_sections"]["double_quotes_replaced"] == 4
     assert rec["fields"]["brain_extraction.performed"]["extraction"]["status"] == "EXTRACTED"
@@ -655,7 +659,8 @@ def test_field_calls_read_every_fmri_section_and_no_dmri_or_smri_section(
     assert CITED[start:end].startswith("2.3. fMRI preprocessing\n")
     assert "2.4. Task-fMRI analysis" in CITED[start:end]
     assert CITED[end:].startswith("2.5. dMRI preprocessing")
-    t, s_, use_fsl, use_ants, check, rd = prompts
+    t, s_, use_fs, use_fsl, use_ants, check, rd = prompts
+    assert "package FreeSurfer" in use_fs
     for p in (t, s_):  # calls T and S
         assert _FS in p and _SMRI not in p and _DMRI not in p and _REL not in p
     # the checking pass reads the same sections (its draft quotes the scan's software list)
@@ -712,12 +717,18 @@ def test_the_software_list_keeps_a_tool_only_when_its_use_is_fmri_processing(
 ) -> None:
     [rec], _, _ = _run(tmp_path, monkeypatch)
     tools = {t["tool_id"]: t for t in rec["software_scan"]["tools"]}
-    assert set(tools) == {"fsl", "ants"}
+    assert set(tools) == {"freesurfer", "fsl", "ants"}
     assert tools["fsl"]["kept"] is True and tools["fsl"]["version"] == "6.0.4"
     assert tools["ants"]["kept"] is False  # its use is not fMRI processing
     report = render.to_report(_citing_prep(), source="t", second_hop=[rec])
     assert "Software row): FSL 6.0.4  (fMRI use: «Frames were masked with FSL 6.0.4.»)" in report
     assert "  Named, no quoted fMRI use: ANTs" in report
+    # answered "unclear": rendered unverified with its quote, never dropped (2026-11-03)
+    assert tools["freesurfer"]["unverified"] is True and tools["freesurfer"]["version"] == "7.1.1"
+    assert (
+        "  FreeSurfer 7.1.1: its fMRI use is unverified  «Brain extraction was performed with "
+        in report
+    )
     [kept_line] = [ln for ln in report.splitlines() if ln.startswith("- Software as described in")]
     assert "ANTs" not in kept_line
     assert "a package it does not list is not looked for" in report
@@ -787,3 +798,23 @@ def test_the_citing_papers_own_scan_renders_as_a_first_hop_line_outside_the_cove
     assert cov == render.to_report(prep, source="t").split("## COBIDAS D.3 coverage")[1]
     none = render.to_report(prep, source="t", second_hop=[rec], citing_software=[])
     assert "extraction's): no KB package named with an fMRI use." in none
+
+
+def test_a_tool_answer_that_names_no_program_renders_as_a_described_method(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Case two (2026-11-03): "rigid body realignment" came back as Power et al. (2014)'s tool."""
+    prep = _citing_prep(**_bias("bias field estimation"))
+    [rec], _, _ = _run(tmp_path, monkeypatch, prep=prep)
+    [t] = rec["tools"]["intensity_correction.method"]
+    assert t["tool_shaped"] is True  # "N4ITK default"
+    t["tool"] = "rigid body realignment"
+    t["verbatim_quote"] = "rigid body realignment to correct for head movement"
+    t["tool_in_quote"] = True
+    report = render.to_report(prep, source="t", second_hop=[rec])
+    assert (
+        '- intensity_correction.method tool (this paper: "bias field estimation", no tool named): '
+        "the cited paper describes the method without naming a tool: rigid body realignment  «"
+        in report
+    )
+    assert "= rigid body realignment" not in report

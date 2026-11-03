@@ -884,6 +884,7 @@ DistortionSource = Literal["susceptibility_fieldmap", "gradient_nonlinearity", "
 DistortionMethod = Literal[
     "reverse_phase_encoding",
     "fieldmap",
+    "gradient_nonlinearity_correction",  # 0.6.2 (2026-11-03, the author's ruling)
     "topup",
     "fugue",
     "gradunwarp",
@@ -1535,7 +1536,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.6.1"
+SCHEMA_VERSION = "0.6.2"
 
 
 class MigrationInfo(BaseModel):
@@ -1584,7 +1585,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.6.1"] = "0.6.1"
+    schema_version: Literal["0.6.2"] = "0.6.2"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

@@ -244,6 +244,10 @@ def _term_supported(dotted: str, item: object, quote: str) -> bool:
         return False
     resolved = getattr(item, "resolved", None)
     resolution = str(getattr(item, "resolution", "unrecognized"))
+    if resolved == "other":
+        # 2026-11-03 (the author's ruling): "other" carries the paper's phrase and is checked
+        # against it; a bare "other" names nothing the quote could hold
+        return str(verbatim).strip().lower() != "other" and phrase_in_quote(str(verbatim), quote)
     if resolved is not None and resolved in table:
         candidates = [str(resolved), *table[resolved]]
     elif resolved is not None:

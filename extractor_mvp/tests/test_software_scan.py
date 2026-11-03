@@ -80,6 +80,9 @@ def test_one_question_per_mention_and_a_tool_counts_only_on_a_found_quote_and_a_
     assert tools["afni"]["kept"] and tools["afni"]["use_quote"].startswith("Head motion")
     assert not tools["fsl"]["kept"] and tools["fsl"]["mentions"] == 2
     assert not tools["mmps"]["kept"]
+    # answered "unclear" (2026-11-03): unverified with its quote, never dropped
+    assert tools["mmps"]["unverified"] and tools["mmps"]["unclear_quote"].startswith("Tracts")
+    assert not tools["fsl"]["unverified"]  # a no and an unfound quote: not unverified
 
 
 def test_a_failed_question_is_recorded_never_raised() -> None:
