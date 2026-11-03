@@ -350,13 +350,29 @@ def test_the_performed_phrase_table_is_frozen() -> None:
 #: the fields asked and the per-variant question, inserted before the text block of the pinned
 #: TEMPORAL_VOLUME_PROMPT and SPATIAL_PROMPT, which stay unchanged. Pinned at its first build,
 #: 2026-11-03; first drawn on gracia-tabuenca_2024 -> Hagler et al. (2019). A change is a dated event.
-_PINNED_HOP_ADDENDUM = "a167221c5021b455834d984343bf1de561f57fd41cf5c78b6e55e7750e64ab7e"
+#: Was a167221c5021b455834d984343bf1de561f57fd41cf5c78b6e55e7750e64ab7e (the addendum alone, the first
+#: case-one draw). Re-pinned 2026-11-03 (afternoon, the author's rulings of that day): call S also
+#: asks the tool for a step the citing paper describes without one (fork A widened) and the data
+#: releases the cited paper describes; the pin now covers the addendum and both asks
+#: (HOP_ADDENDUM + _TOOLS_ASK + _RELEASES_ASK). Supersedes the first draw for case one.
+_PINNED_HOP_ADDENDUM = "64d8979fd5267a7daafbd3893f0c512e63e622aa011e1f1de05d8885fd9257a6"
+
+#: The citing paper's data-release call R (first hop; the author's "described vs applied" ruling,
+#: 2026-11-03). Pinned at its first build, 2026-11-03.
+_PINNED_RELEASE_PROMPT = "28518830db6b8b7e7ff75194f7bd6caac7ae1995aa3911b4ea537d35fec3391c"
+
+
+def test_the_release_prompt_is_hash_pinned() -> None:
+    from extractor_mvp.citation_hop import RELEASE_PROMPT
+
+    got = hashlib.sha256(RELEASE_PROMPT.encode("utf-8")).hexdigest()
+    assert got == _PINNED_RELEASE_PROMPT, f"RELEASE_PROMPT changed: {got}{_VINTAGE_NOTE}"
 
 
 def test_the_hop_addendum_is_hash_pinned() -> None:
-    from extractor_mvp.citation_hop import HOP_ADDENDUM, hop_prompt
+    from extractor_mvp.citation_hop import _RELEASES_ASK, _TOOLS_ASK, HOP_ADDENDUM, hop_prompt
 
-    got = hashlib.sha256(HOP_ADDENDUM.encode("utf-8")).hexdigest()
+    got = hashlib.sha256((HOP_ADDENDUM + _TOOLS_ASK + _RELEASES_ASK).encode("utf-8")).hexdigest()
     assert got == _PINNED_HOP_ADDENDUM, f"HOP_ADDENDUM changed: {got}{_VINTAGE_NOTE}"
     # the base prompt is untouched around the insertion
     p = hop_prompt(SPATIAL_PROMPT, ["smoothing_fwhm_mm"], False)

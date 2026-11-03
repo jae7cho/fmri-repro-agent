@@ -29,7 +29,7 @@ sys.path.insert(0, str(_HERE.parent.parent / "src"))
 
 from fmri_repro.spec.migrations import parse_any_version  # noqa: E402
 
-from extractor_mvp.citation_hop import CallMeter, run_hop  # noqa: E402
+from extractor_mvp.citation_hop import CallMeter, extract_data_release, run_hop  # noqa: E402
 from extractor_mvp.methods_finder import MethodsSlice  # noqa: E402
 from extractor_mvp.pdf_loader import load_pdf_text  # noqa: E402
 from extractor_mvp.render import to_report  # noqa: E402
@@ -64,14 +64,17 @@ def main(argv: list[str] | None = None) -> int:
         verifier=data.get("verifier"),
         meter=meter,
     )
-    wall = round(time.perf_counter() - t0, 3)
     (a.out / f"{pid}.second_hop.json").write_text(json.dumps(hop, indent=1), encoding="utf-8")
+    release = extract_data_release(citing_text, a.model, client=meter.client(), meter=meter)
+    wall = round(time.perf_counter() - t0, 3)
+    (a.out / f"{pid}.data_release.json").write_text(json.dumps(release, indent=1), encoding="utf-8")
 
     verifier = data.get("verifier")
     extra: dict[str, Any] = {
         "verifier": verifier,
         "multiple_pipelines": (verifier or {}).get("multiple_pipelines"),
         "second_hop": hop,
+        "data_release": release,
     }
     rec = data.get("motion_inference")
     if isinstance(rec, dict):
@@ -98,6 +101,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"  cited methods slice: found_via={r['methods']['found_via']}, {r['methods']['chars']} chars"
             )
         print(f"  software list asked: {r['scope']['software']}")
+        for t in r["scope"].get("tools") or []:
+            print(f"  tool asked: {t['field']}  (row {t['row']} reported without a tool)")
         print(
             f"  rows outside calls T and S (not asked): {', '.join(r['scope']['rows_outside_calls']) or '-'}"
         )
@@ -108,10 +113,21 @@ def main(argv: list[str] | None = None) -> int:
         print(f"  checking pass: {v.get('status')}")
         for c in r.get("calls") or []:
             print(
-                f"  call {c['call']}: {c['wall_s']} s, in {c['input_tokens']} tok, out {c['output_tokens']} tok, "
-                f"cost {c['cost_usd']}"
+                f"  call {c['call']} attempt {c['attempt']}: {c['wall_s']} s, in {c['input_tokens']} tok, "
+                f"out {c['output_tokens']} tok, cost {c['cost_usd']}, finish {c['finish_reason']}"
+                + (f", parse error: {c['parse_error'][:300]}" if c.get("parse_error") else "")
             )
         print(f"  hop wall time: {r.get('wall_time_s')} s")
+    print(
+        f"citing data release (call R): {release['status']}, {len(release['releases'])} named, "
+        f"{sum(1 for x in release['releases'] if x['quote_resolved'] and x['release_in_quote'])} with "
+        "quote and value checked"
+    )
+    for c in meter.calls[-sum(1 for c in meter.calls if c["call"] == "R") :]:
+        print(
+            f"  call R attempt {c['attempt']}: {c['wall_s']} s, in {c['input_tokens']} tok, "
+            f"out {c['output_tokens']} tok, cost {c['cost_usd']}, finish {c['finish_reason']}"
+        )
     costs = [c["cost_usd"] for c in meter.calls]
     print(
         f"total wall {wall} s; model calls {len(meter.calls)}; "

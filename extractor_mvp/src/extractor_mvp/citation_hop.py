@@ -24,12 +24,13 @@ import hashlib
 import re
 import time
 import unicodedata
+from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
 from pydantic import BaseModel, Field
 
-from extractor_mvp.cobidas import assess_coverage, row_state
+from extractor_mvp.cobidas import assess_coverage, mapped_rows, row_state
 from extractor_mvp.coverage_extractor import (
     SPATIAL_PROMPT,
     TEMPORAL_VOLUME_PROMPT,
@@ -221,7 +222,8 @@ def hop_scope(
     A field deferred to it is asked. A base-pipeline deferral to it reaches (fork A, ratified
     2026-11-03) every D.3 row the citing paper did not report itself -- rows in state not reported,
     deferred or unverifiable -- plus the Software row's versions. A row the citing paper reports is
-    never asked. Rows whose kinds calls T and S do not carry are listed as outside the calls."""
+    never asked for its fields; widened 2026-11-03, a reported row whose method names no tool
+    (:func:`described_only`) is asked for the tool, in ``tools``. Rows whose kinds calls T and S do not carry are listed as outside the calls."""
     from extractor_mvp.render import flatten
 
     rows = flatten(preprocessing)
@@ -232,6 +234,7 @@ def hop_scope(
     }
     asked: dict[str, str] = {d: "field deferred" for d in sorted(deferred_here) if d in _SPECS}
     software = False
+    tools: dict[str, dict[str, Any]] = {}
     outside: list[str] = []
     if "base_pipeline" in deferred_here:
         software = True
@@ -250,7 +253,23 @@ def hop_scope(
         for rc in coverage:
             if not rc.row.mandatory or rc.row.row_id == "software":
                 continue
-            if row_state(rc, rows) not in _HOP_ROW_STATES:
+            state = row_state(rc, rows)
+            if state in ("reported", "partially_reported"):
+                for r in mapped_rows(rc, rows):
+                    if (
+                        r.path == f"{r.group}.method"
+                        and r.group in _TOOL_METHOD_KINDS
+                        and r.extraction_status == "EXTRACTED"
+                        and r.path not in tools
+                        and described_only(r.value)
+                    ):
+                        tools[r.path] = {
+                            "field": r.path,
+                            "row": rc.row.row_id,
+                            "described_as": _verbatims(r.value),
+                        }
+                continue
+            if state not in _HOP_ROW_STATES:
                 continue
             specs = [s for s in _SPECS.values() if s.kind in rc.row.spec_kinds]
             if not specs:
@@ -260,8 +279,51 @@ def hop_scope(
     return {
         "asked": [{"field": f, "why": w} for f, w in asked.items()],
         "software": software,
+        "tools": list(tools.values()),
         "rows_outside_calls": outside,
     }
+
+
+#: The step kinds whose ``method`` is a list of tools (the spec's ``*Method`` literals name programs:
+#: ``mcflirt``, ``bbregister``, ``afni_3dtproject``...). ``temporal_filtering.method`` names filter
+#: shapes and is left out.
+_TOOL_METHOD_KINDS = frozenset(
+    {
+        "motion_correction",
+        "slice_time_correction",
+        "brain_extraction",
+        "segmentation",
+        "coregistration",
+        "distortion_correction",
+        "intensity_correction",
+        "spatial_normalization",
+        "spatial_smoothing",
+        "despike",
+        "scrub",
+        "nuisance_regression",
+        "ica_denoise",
+    }
+)
+_NOT_A_TOOL = frozenset({"other", "custom"})
+
+
+def _terms(value: Any) -> list[Any]:
+    return list(value) if isinstance(value, list | tuple) else [value]
+
+
+def _verbatims(value: Any) -> list[str]:
+    return [str(getattr(t, "verbatim", None) or t) for t in _terms(value)]
+
+
+def described_only(value: Any) -> bool:
+    """Fork A widened (the author, 2026-11-03): an EXTRACTED method value that names no tool -- the
+    paper's own words ("corrected for motion"), resolved to no member of the step's tool list or
+    only to ``other``/``custom``. The motion arm's ``described_only``, for every tool-list step."""
+    return not any(
+        getattr(t, "resolution", None) == "resolved"
+        and str(getattr(t, "resolved", "")) not in _NOT_A_TOOL
+        for t in _terms(value)
+    )
 
 
 class HopVariant(BaseModel):
@@ -282,23 +344,65 @@ sites, sequences, cohorts or datasets, put each one in `variants`: field (the fi
 listed above), value, verbatim_quote (copied exactly from the text), applies_to (the text's own words
 for the variant, e.g. a scanner vendor). The field itself then carries only a value the text gives
 for all of its data, else "missing". Never choose one variant.
+[TOOLS]
+[RELEASES]
 
 """
+
+_TOOLS_ASK = (
+    "Tools: for each of these steps, put the software program this text names as performing it in "
+    "`tools`: field (exactly as listed here), tool (as written), verbatim_quote (copied exactly from "
+    "the text). A step for which the text names no program: leave it out. Steps: {fields}."
+)
+_RELEASES_ASK = (
+    "Data releases: in `releases_described`, each named release of a dataset whose processing this "
+    "text describes (e.g. a dataset's release numbers): dataset, release (as written), "
+    "verbatim_quote (copied exactly from the text). None named: an empty list."
+)
 
 _TEXT_MARKER = 'Text:\n"""'
 
 
-def hop_prompt(base: str, attrs: list[str], software: bool) -> str:
-    """``base`` (call T's or S's pinned prompt) with :data:`HOP_ADDENDUM` before its text block."""
-    addendum = HOP_ADDENDUM.replace("[ASKED]", ", ".join(attrs) or "(none)").replace(
-        "[SOFTWARE]",
-        "List the software as the prompt asks." if software else "Return no software list.",
+def hop_prompt(
+    base: str, attrs: list[str], software: bool, tools: Sequence[str] = (), releases: bool = False
+) -> str:
+    """``base`` (call T's or S's pinned prompt) with :data:`HOP_ADDENDUM` before its text block.
+    ``tools`` and ``releases`` are asked on call S only (its response model carries them)."""
+    addendum = (
+        HOP_ADDENDUM.replace("[ASKED]", ", ".join(attrs) or "(none)")
+        .replace(
+            "[SOFTWARE]",
+            "List the software as the prompt asks." if software else "Return no software list.",
+        )
+        .replace(
+            "[TOOLS]",
+            _TOOLS_ASK.format(fields=", ".join(tools)) if tools else "Return no `tools`.",
+        )
+        .replace("[RELEASES]", _RELEASES_ASK if releases else "Return no `releases_described`.")
     )
     i = base.rindex(_TEXT_MARKER)
     return base[:i] + addendum + base[i:]
 
 
+class HopTool(BaseModel):
+    """The program the cited paper names for a step the citing paper describes without one."""
+
+    field: str
+    tool: str
+    verbatim_quote: str
+
+
+class DataRelease(BaseModel):
+    """A named release of a dataset: the citing paper's own data (first hop) or a release whose
+    processing the cited paper describes."""
+
+    dataset: str
+    release: str
+    verbatim_quote: str
+
+
 _VARIANTS: tuple[Any, Any] = (list[HopVariant], Field(default_factory=list))
+_RELEASES: tuple[Any, Any] = (list[DataRelease], Field(default_factory=list))
 HopTemporalExtraction: type[BaseModel] = _response_model(
     "HopTemporalExtraction", CALL_T_SPECS, {"variants": _VARIANTS}
 )
@@ -308,13 +412,20 @@ HopSpatialExtraction: type[BaseModel] = _response_model(
     {
         "software_mentions": (list[SoftwareMentionResult], Field(default_factory=list)),
         "variants": _VARIANTS,
+        "tools": (list[HopTool], Field(default_factory=list)),
+        "releases_described": _RELEASES,
     },
 )
 
 
 class CallMeter:
     """Wall time and token use per model call, read from the raw responses (cost from LiteLLM's
-    price table when it knows the model, else None)."""
+    price table when it knows the model, else None).
+
+    Every attempt is one entry, numbered within its call. An attempt whose response instructor
+    could not parse carries ``parse_error``, and its raw text and ``finish_reason`` are kept, so a
+    retry is read from the record, never inferred from a call count (case one's checking pass,
+    2026-11-03, made two billed calls and the first response was not kept)."""
 
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
@@ -330,21 +441,34 @@ class CallMeter:
             cost: float | None = float(completion_cost(completion_response=resp))
         except Exception:
             cost = None
+        choice = (getattr(resp, "choices", None) or [None])[0]
+        message = getattr(choice, "message", None)
         self.calls.append(
             {
                 "call": self.label,
+                "attempt": 1 + sum(1 for c in self.calls if c["call"] == self.label),
                 "wall_s": round(time.perf_counter() - t0, 3),
                 "input_tokens": getattr(usage, "prompt_tokens", None),
                 "output_tokens": getattr(usage, "completion_tokens", None),
                 "cost_usd": cost,
+                "finish_reason": getattr(choice, "finish_reason", None),
+                "raw": getattr(message, "content", None),
+                "parse_error": None,
             }
         )
         return resp
 
+    def on_parse_error(self, error: Exception) -> None:
+        """instructor's ``parse:error`` hook: the attempt just made is the one that failed."""
+        if self.calls:
+            self.calls[-1]["parse_error"] = f"{type(error).__name__}: {error}"[:2000]
+
     def client(self) -> Any:
         import instructor
 
-        return instructor.from_litellm(self.completion, mode=instructor.Mode.JSON)
+        client = instructor.from_litellm(self.completion, mode=instructor.Mode.JSON)
+        client.on("parse:error", self.on_parse_error)
+        return client
 
 
 def _create(client: Any, model: str, prompt: str, response_model: type[BaseModel]) -> Any:
@@ -369,7 +493,48 @@ def _variant_record(v: HopVariant, text: str) -> dict[str, Any]:
     }
 
 
-def _draft(fields: dict[str, Any], software: list[Any]) -> str:
+_DOUBLE_QUOTES = str.maketrans({'"': "'", "\u201c": "'", "\u201d": "'"})
+
+
+def json_safe(text: str) -> str:
+    """The cited text with every double quotation mark, straight or curly, replaced by an apostrophe,
+    one character for one, so every offset holds. A sentence the model copies into a JSON string
+    then has no double quote to escape. Case one's checking pass (2026-11-03) copied Hagler's
+    'signal \u201cdrop-out\u201d' with the curly quotes turned straight and unescaped; the reply
+    failed to parse and instructor's retry was a second billed call. Replacing only straight quotes
+    did not stop it (Hagler's methods have none; the model straightens the curly ones)."""
+    return text.translate(_DOUBLE_QUOTES)
+
+
+_POSSESSIVE = re.compile(r"['\u2019]s\b")
+
+
+def _in_quote(value: str, quote: str) -> bool:
+    """The value's words in the quote, case and spacing aside, and a possessive "'s" aside ("AFNI
+    3dvolreg" is in "AFNI's 3dvolreg", case one's motion tool, 2026-11-03)."""
+
+    def norm(x: str) -> str:
+        return " ".join(_POSSESSIVE.sub("", x.lower()).split())
+
+    return norm(value) in norm(quote)
+
+
+def _quoted(quote: str, value: str, text: str, *, key: str = "tool") -> dict[str, Any]:
+    """A value with its quote, checked as a variant is: the quote found in the text, the value
+    found in the quote."""
+    return {
+        key: value,
+        "verbatim_quote": quote,
+        "quote_resolved": resolve_quote(quote, text).span is not None,
+        f"{key}_in_quote": _in_quote(value, quote),
+    }
+
+
+def _draft(
+    fields: dict[str, Any],
+    software: list[Any],
+    tools: dict[str, list[dict[str, Any]]] | None = None,
+) -> str:
     """The scoped draft, one line per asked field, in the checking pass's line format."""
     from extractor_mvp.verifier import _fmt
 
@@ -387,6 +552,12 @@ def _draft(fields: dict[str, Any], software: list[Any]) -> str:
         lines.append(
             f'{dotted} | {state} | {value} | quote: "{" ".join(quote.split())}" | reason: {reason}'
         )
+    for field, found in (tools or {}).items():
+        for t in found:
+            lines.append(
+                f"tool.{field} | extracted | {t['tool']} | "
+                f'quote: "{" ".join(t["verbatim_quote"].split())}" | reason: '
+            )
     for pf in software:
         if pf.extraction.status == "EXTRACTED":
             v = pf.extraction.value
@@ -430,6 +601,8 @@ def run_hop(
             "fields": {},
             "variants": {},
             "software_mentions": [],
+            "tools": {},
+            "releases_described": [],
             "cited_deferrals": [],
             "verifier": None,
         }
@@ -456,8 +629,12 @@ def run_hop(
             "doi_confirmed": (m.entry.doi.lower() in full.lower()) if m.entry.doi else None,
         }
         methods = find_methods_section(full)
-        text = methods.text
-        rec["methods"] = {"found_via": methods.found_via, "chars": len(text)}
+        text = json_safe(methods.text)
+        rec["methods"] = {
+            "found_via": methods.found_via,
+            "chars": len(text),
+            "double_quotes_replaced": sum(methods.text.count(q) for q in '"\u201c\u201d'),
+        }
         asked = [a["field"] for a in scope["asked"]]
         t_specs = tuple(s for s in CALL_T_SPECS if s.dotted in asked)
         s_specs = tuple(s for s in CALL_S_SPECS if s.dotted in asked)
@@ -476,20 +653,24 @@ def run_hop(
                 )
                 _process(raw_t, t_specs, text, processed)
                 raw_variants += [(v, {s.attr: s for s in t_specs}) for v in raw_t.variants]
-            if s_specs or scope["software"]:
-                meter.label = "S"
-                raw_s = _create(
-                    client,
-                    model,
-                    hop_prompt(SPATIAL_PROMPT, [s.attr for s in s_specs], scope["software"]).format(
-                        text=text
-                    ),
-                    HopSpatialExtraction,
-                )
-                _process(raw_s, s_specs, text, processed)
-                if scope["software"]:
-                    _process_software(raw_s, text, processed)
-                raw_variants += [(v, {s.attr: s for s in s_specs}) for v in raw_s.variants]
+            tool_fields = [t["field"] for t in scope.get("tools") or []]
+            meter.label = "S"
+            raw_s = _create(
+                client,
+                model,
+                hop_prompt(
+                    SPATIAL_PROMPT,
+                    [s.attr for s in s_specs],
+                    scope["software"],
+                    tool_fields,
+                    releases=True,
+                ).format(text=text),
+                HopSpatialExtraction,
+            )
+            _process(raw_s, s_specs, text, processed)
+            if scope["software"]:
+                _process_software(raw_s, text, processed)
+            raw_variants += [(v, {s.attr: s for s in s_specs}) for v in raw_s.variants]
         except Exception as exc:  # the hop can never fail the citing paper
             rec["status"] = "call_failed"
             rec["error"] = f"{type(exc).__name__}: {exc}"[:500]
@@ -509,6 +690,13 @@ def run_hop(
                 continue
             rec["variants"].setdefault(spec.dotted, []).append(_variant_record(v, text))
         rec["software_mentions"] = [pf.model_dump(mode="json") for pf in processed.software]
+        for t in raw_s.tools:
+            if t.field in tool_fields:
+                rec["tools"].setdefault(t.field, []).append(_quoted(t.verbatim_quote, t.tool, text))
+        rec["releases_described"] = [
+            {"dataset": r.dataset, **_quoted(r.verbatim_quote, r.release, text, key="release")}
+            for r in raw_s.releases_described
+        ]
         rec["cited_deferrals"] = [
             {"field": d.field, "ref": d.ref_string, "target_kind": d.target_kind}
             for d in processed.deferrals
@@ -519,9 +707,100 @@ def run_hop(
             None,
             model,
             client=client,
-            draft=_draft(fields, processed.software),
+            draft=_draft(fields, processed.software, rec["tools"]),
         )
         rec["status"] = "ok"
         rec["calls"] = meter.calls[n_calls:]
         rec["wall_time_s"] = round(time.perf_counter() - t0, 3)
     return out
+
+
+# ---------------------------------------------------------------------------
+# 4. The citing paper's data release (a first-hop field; "described vs applied", 2026-11-03)
+# ---------------------------------------------------------------------------
+
+RELEASE_PROMPT = """\
+You are reading the methods of a neuroimaging paper. List each named release of a dataset that THIS
+paper's own data come from (e.g. a dataset's release number, a data collection's number). For each:
+dataset (the dataset's name as written), release (the release or collection as written),
+verbatim_quote (copied exactly from the text). Only releases the text names. A dataset named with no
+release: leave it out. None named: an empty list.
+
+Text:
+\"\"\"
+{text}
+\"\"\"
+"""
+
+
+class CitingReleases(BaseModel):
+    releases: list[DataRelease] = Field(default_factory=list)
+
+
+def extract_data_release(
+    citing_text: str, model: str, *, client: Any | None = None, meter: CallMeter | None = None
+) -> dict[str, Any]:
+    """The citing paper's own data release(s), each with its quote, from one call (``R``) on its
+    methods. A first-hop field: it is read in the citing paper, never in the cited one. Never
+    raises: a failed call is a state."""
+    from extractor_mvp.methods_finder import find_methods_section
+
+    meter = meter or CallMeter()
+    client = client or meter.client()
+    text = find_methods_section(citing_text).text
+    meter.label = "R"
+    try:
+        raw = _create(client, model, RELEASE_PROMPT.format(text=text), CitingReleases)
+    except Exception as exc:
+        return {
+            "status": "call_failed",
+            "error": f"{type(exc).__name__}: {exc}"[:500],
+            "releases": [],
+        }
+    return {
+        "status": "ok",
+        "releases": [
+            {"dataset": r.dataset, **_quoted(r.verbatim_quote, r.release, text, key="release")}
+            for r in raw.releases
+        ],
+    }
+
+
+_VERSION = re.compile(r"\d+(?:\.\d+)*")
+_DATASET_FILLER = re.compile(r"\b(data|dataset|study|releases?|cohort)\b")
+
+
+def _dataset_key(name: str) -> str:
+    """A dataset's name for matching: its parenthesised acronym when it has one ("Adolescent Brain
+    Cognitive Development (ABCD) study" -> "abcd"), else the name without filler words."""
+    acronym = re.search(r"\(([A-Za-z][A-Za-z0-9\-]+)\)", name)
+    base = acronym.group(1) if acronym else _DATASET_FILLER.sub(" ", _norm_name(name))
+    return re.sub(r"[^a-z0-9]", "", base.lower())
+
+
+def _versions(release: str) -> list[tuple[int, ...]]:
+    return [tuple(int(p) for p in m.group(0).split(".")) for m in _VERSION.finditer(release)]
+
+
+def _checked(r: dict[str, Any]) -> bool:
+    return bool(r.get("quote_resolved") and r.get("release_in_quote"))
+
+
+def release_relation(citing: dict[str, Any], described: list[dict[str, Any]]) -> str:
+    """Whether a citing paper's release is later than every release of the same dataset the cited
+    paper describes: ``postdates``, ``not_later``, or ``undetermined`` (no checked release of the
+    same dataset described, or a release that is not one version number). Release DATES are not
+    known here (the KB backlog's dataset-release table); only version numbers are compared."""
+    if not _checked(citing):
+        return "undetermined"
+    mine = _versions(str(citing.get("release", "")))
+    same = [
+        v
+        for d in described
+        if _checked(d)
+        and _dataset_key(str(d.get("dataset", ""))) == _dataset_key(str(citing.get("dataset", "")))
+        for v in _versions(str(d.get("release", "")))
+    ]
+    if len(mine) != 1 or not same:
+        return "undetermined"
+    return "postdates" if mine[0] > max(same) else "not_later"

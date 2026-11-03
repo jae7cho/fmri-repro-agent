@@ -1,0 +1,75 @@
+ANSWER KEY — citation hop case one
+Citing: gracia-tabuenca_2024 -> Cited: Hagler et al. 2019
+Co-adjudicated 2026-11-03: assistant located sentences and drafted values; author
+checked each line against its sentence. Recorded before seeing the hop's output.
+
+## Software (fMRI preprocessing only)
+| tool | version | used for | sentence |
+| AFNI 3dvolreg | not stated | head motion correction | "Head motion is corrected by registering each frame to the first using AFNI's 3dvolreg (Cox, 1996)" |
+| FreeSurfer | 5.3 (Releases 1.0–2.0.1) | aseg segmentation for WM/ventricle/whole-brain masks; ROIs | "ABCD Data Releases 1.0 – 2.0.1 used FreeSurfer version 5.3" ; "derived from FreeSurfer's automated brain segmentation (aseg)" |
+| FreeSurfer mri_vol2surf | (FreeSurfer 5.3) | surface sampling of time courses | "using FreeSurfer's mri_vol2surf with "white" surface, "-projdist 1" option, and default "nearest" interpolation" |
+(Out of scope: AFNI 3dDeconvolve — first-level task GLM; AtlasTrack — dMRI.
+ Distortion and bias tools are in-house and unnamed.)
+
+## Distortion correction
+method: reversing phase-encode polarity (Holland et al., 2010); displacement field
+  from separate spin-echo calibration scans, adjusted for between-scan motion, applied
+  to the gradient-echo series; then gradient-nonlinearity correction (Jovicich 2006).
+  sentence: "B0 distortions are corrected using the same reversing polarity method used
+  for the dMRI (Holland et al., 2010)." ; "Images are next corrected for distortions
+  due to gradient nonlinearities (Jovicich et al., 2006)."
+  variants: gradient-nonlinearity transforms are scanner-specific, "provided by MRI
+  scanner manufacturers" (sMRI section).
+
+## Brain extraction
+performed: not stated (for fMRI)        variants: —
+method / parameters / manual_edits: not stated
+
+## Slice-time correction
+performed: not stated — the fMRI preprocessing section never mentions it
+all other fields: not stated
+
+## Coregistration (functional -> structural)
+performed: yes — "Automated registration between the spin-echo, B0 calibration scans
+  (i.e., field maps) and T1w structural images is performed using mutual information
+  (Wells et al., 1996) with coarse pre-alignment based on within-modality registration
+  to atlas brains."
+transform: rigid — "A registration matrix is provided to specify the rigid-body
+  transformation between fMRI and T1w images."
+nonlinear_transform_type: not applicable (rigid)
+method (tool): not stated (in-house)
+cost_function: mutual information
+interpolation: not stated — the matrix is provided, not applied: "The resulting fMRI
+  images remain in "native-space" and have 2.4 mm isotropic resolution."
+  (Cubic interpolation is stated for the between-scan alignment, not this step.)
+variants: none stated
+
+## Spatial smoothing
+performed: not stated for fMRI (the ~66 mm FWHM is for sMRI morphometrics, out of scope)
+all other fields: not stated
+
+## Stated by Hagler, no field above
+- Motion: each frame registered to the first; between-scan alignment to the scan
+  nearest the middle, rigid, cubic interpolation.
+- Native space, 2.4 mm; surface sampling 1 mm into gray matter, nearest neighbour.
+- Initial frames removed: "removal of initial frames4" — the count is in footnote 4,
+  not in this excerpt; likely scanner-specific; check the footnote.
+- Rest regression: quadratic trends, motion (six parameters plus derivatives and
+  squares — 18 or 24 regressors, ambiguous), WM, ventricles, whole brain + first
+  derivatives; masks from aseg, eroded one voxel.
+- Motion estimates notch-filtered (IIR) at 0.31–0.43 Hz (respiration).
+- Frames with FD > 0.3 mm excluded from the regression; band-pass 0.009–0.08 Hz after
+  regression.
+- Rest censoring: FD > 0.2 mm; runs of < 5 contiguous frames; ROI-SD outliers > 3 MAD.
+
+## Data release
+Hagler describes: ABCD Data Releases 1.0–2.0.1 (DAIC pipeline)
+Gracia-Tabuenca uses:
+  - ABCD 3.0 (NDA): phenotypes and baseline MRI derivatives — "extracted from the ABCD
+    3.0 release from the National Institute of Mental Health Data Archive (NDA)"
+  - ABCD-BIDS Community Collection 3165: the FC matrices — "preprocessed functional
+    connectivity matrices at baseline were extracted from the ABCD-BIDS Community
+    Collection (ABCD collection 3165)"
+Match: partial. 3.0 postdates Hagler's 2.0.1. The FC matrices likely come from a
+  different pipeline (DCAN ABCD-BIDS) — to verify; if so, Hagler does not describe the
+  preprocessing of the FC data at all.

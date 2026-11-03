@@ -209,5 +209,98 @@ per run, cached by DOI.
   versions sit in that section, marked not counted.
 - **Fork E.** `_resolve_deferrals` no longer routes paper or supplement targets to the one-hop
   resolver (`extractor.py`, `_hop_kinds`).
-- **Not built.** The citing paper's data release as a first-hop field, and its "described vs
-  applied" note, need a new field on the citing paper's calls; recorded, not built.
+- **Not built in this round.** The citing paper's data release as a first-hop field, and its
+  "described vs applied" note. Built in the second round, below.
+
+## The author's rulings (dated 2026-11-03, afternoon, sourced to the author)
+
+- **Fork A widened.** Under a base-pipeline deferral to a paper, a row the citing paper reports
+  without a tool (described_only) is asked for the tool too.
+- **The checking-pass retry fix and the data-release field**, as the morning's rulings asked.
+- **Released-derivatives state, design only** (the next section).
+- **KB backlog:** dataset release to processing documentation (the ABCD release notes per release,
+  the HCP minimal preprocessing pipelines), and tool facts such as "FreeSurfer recon-all includes
+  skull stripping", each with a source (`docs/findings/kb-release-documentation-and-tool-facts-backlog.md`).
+
+## Released-derivatives state (design only, 2026-11-03)
+
+**A citing paper that analyses a dataset's released derivatives did not run the preprocessing
+itself; the release's documentation is the record of what was run.** gracia-tabuenca_2024 takes
+its functional connectivity matrices from the ABCD-BIDS Community Collection 3165 and its other
+baseline MRI derivatives from ABCD 3.0, and defers its preprocessing to Hagler et al. (2019), which
+describes Releases 2.0 and 2.0.1. The author's key notes that the matrices likely come from another
+pipeline (DCAN's ABCD-BIDS), in which case Hagler does not describe their preprocessing at all.
+
+**The first-hop field.** The data-release field built in the second round (`dataset`, `release`,
+quote) gains what the citing paper takes from that release, quoted: `derivatives` (e.g.
+"preprocessed functional connectivity matrices") and whether the BOLD analysis reads them. A
+release with no derivatives quoted is a data source only, and the state below never fires on it.
+When the paper names two releases and does not say which one feeds the BOLD analysis, the binding
+is undetermined and nothing is inferred.
+
+**The state.** For a release whose derivatives the BOLD analysis reads, the KB's entry for that
+release (the backlog item) lists the documented pipeline's steps, each with its source. For a
+mandatory D.3 row the citing paper does not report:
+
+- a step the documentation includes: the documented value, on the inference arm, with basis
+  `release_documentation` (release, document, section, source, date checked);
+- a step the documentation does not include: **"not in the cited release's documented pipeline"**,
+  on the inference arm, with the same basis. Never "not performed": a documentation's silence is
+  not evidence that a step was skipped, and the extraction arm keeps the paper's own state.
+- a release the KB has no entry for: no inference, and the report says the release is not in the
+  KB, so a missing entry is visible.
+
+**The citing paper's COBIDAS row is unchanged.** The coverage section counts what the paper reports;
+an inference-arm value from a release's documentation is not the paper reporting it, the same rule
+that keeps second-hop values out of the counts (§4).
+
+**With the hop.** Both are shown. The hop's values stay "as described in <ref>"; the release's
+documentation sits on the inference arm. When the release postdates what the cited paper describes,
+the second round's "may differ" note already says so on the hop's lines.
+
+**Tool facts.** A KB fact about a named tool ("FreeSurfer recon-all includes skull stripping") fills
+the inference arm of the row it names with basis `tool_fact` and its source, only for the data the
+fact covers. recon-all strips the T1w image, so the fact does not fill the BOLD brain-extraction row
+gracia-tabuenca_2024 leaves unreported. The checking pass's two "missed" verdicts on Hagler's
+brain extraction rest on that same sentence, and the key reads it as not stated for fMRI.
+
+**Fork G (open): the inference arm's shape for "not in the documented pipeline".** It is a statement,
+not a value, and the frozen provenance contract has no inference state for it.
+- G1 (recommended): a new inference state carrying the basis, `NotInDocumentedPipeline`, in a schema
+  minor version with its migration; old records read unchanged.
+- G2: a `LeftMissing` reason `not_in_release_documentation`, with the basis kept beside the record.
+  No schema change, but the basis is not on the field, which is the provenance rule's point.
+
+**Evaluation.** Case one first: the author's key states the releases and their match. Each rendered
+"not in the cited release's documented pipeline" line is checked by the author against the
+document it cites. No rates.
+
+**Cost.** No model call beyond call R (the derivatives question is asked there). The cost is KB
+curation: one entry per release, checked against the release's own documentation.
+
+## As built, second round (2026-11-03, afternoon)
+
+- **Fork A widened.** `hop_scope` lists in `tools` every reported row whose `method` names no tool
+  (`described_only`): a method value resolved to no member of the step's tool list, or only to
+  `other`/`custom`, for the step kinds whose method literals name programs (`_TOOL_METHOD_KINDS`;
+  temporal filtering is left out). Call S asks each listed step's tool, and each tool is checked as
+  a variant is (quote found, tool in its quote, a possessive aside), and renders "<field> tool (this
+  paper: "<its words>", no tool named) = <tool>, as described in <ref>". A tool that fails its check
+  renders as unverified, never as "no tool named". Case one asks two: motion correction ("corrected
+  for motion") and intensity correction ("B1-bias field estimation").
+- **The checking-pass retry.** `CallMeter` keeps every attempt with its number, `finish_reason`,
+  raw reply and, through instructor's `parse:error` hook, the parse error. The cause, read from the
+  record: the checking pass copied Hagler's curly-quoted "drop-out" into a JSON string as straight,
+  unescaped quotes. `json_safe` replaces every double quotation mark in the cited text with an
+  apostrophe, one character for one. Replacing straight quotes only did not stop it (Hagler's methods
+  have none). One draw since the fix made no retry.
+- **The data-release field.** Call R (`RELEASE_PROMPT`, pinned `28518830…`) on the citing paper's
+  methods returns each named release of the paper's own data, quoted; it is stored in
+  `<paper>.data_release.json`, beside the record. Call S also returns the releases the cited paper
+  describes. `release_relation` compares version numbers within the same dataset (a parenthesised
+  acronym matches the name): later than every described release is `postdates`, which renders "the
+  pipeline described there may differ from the one applied to this paper's data". A release that is
+  not one version number, or of a dataset the cited paper does not describe, is `undetermined` and
+  says so. Release dates are not known (the KB backlog); only version numbers are compared.
+- **Pins.** `HOP_ADDENDUM` re-pinned with a dated note (`64d8979f…`, covering the addendum and its
+  tools and releases asks); the T, S and checking-pass prompts unchanged.

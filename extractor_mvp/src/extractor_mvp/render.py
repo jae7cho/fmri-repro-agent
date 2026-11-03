@@ -846,6 +846,11 @@ def _hop_value(value: Any) -> str:
     return str(value)
 
 
+def _release_checked(r: dict[str, Any], key: str = "release") -> bool:
+    """A quoted value the hop keeps: its quote found in the text and the value found in its quote."""
+    return bool(r.get("quote_resolved") and r.get(f"{key}_in_quote"))
+
+
 _HOP_TARGET_STATE = {
     "no_local_pdf": "no local PDF (PubMed Central is not built yet)",
     "local_pdf_ambiguous": "more than one local PDF matches",
@@ -853,19 +858,40 @@ _HOP_TARGET_STATE = {
 }
 
 
-def _second_hop_section(second_hop: list[dict[str, Any]] | None) -> list[str]:
+def _second_hop_section(
+    second_hop: list[dict[str, Any]] | None, data_release: dict[str, Any] | None = None
+) -> list[str]:
     """The citation hop (DESIGN_citation_hop.md, ratified 2026-11-03): every value the hop read in a
     cited paper, shown "as described in <ref>, cited by this paper". Never counted toward this
     paper's COBIDAS compliance; nothing here reaches the coverage section below. Emitted only when a
     hop ran, so every other report is unchanged."""
     if not second_hop:
         return []
+    from extractor_mvp.citation_hop import release_relation
     from extractor_mvp.verifier import effective
 
     out = [
         "## As described in cited papers (second hop, one hop only; never counted toward this "
         "paper's COBIDAS compliance)"
     ]
+    named = (data_release or {}).get("releases") or []
+    own = [r for r in named if _release_checked(r)]
+    if data_release is not None:
+        if data_release.get("status") != "ok":
+            said = "not read (the call failed)"
+        elif not named:
+            said = "none stated"
+        else:
+            said = (
+                "; ".join(
+                    f"{r['dataset']} {r['release']}  «{_truncate_quote(r['verbatim_quote'])}»"
+                    for r in own
+                )
+                or "none kept"
+            )
+            if len(own) < len(named):
+                said += f" ({len(named) - len(own)} named without its quote and value checked, not shown)"
+        out.append(f"This paper's data release (read in this paper): {said}")
     for rec in second_hop:
         ref = rec.get("ref", "(unspecified)")
         out.append(f"### {ref}, cited by this paper")
@@ -918,6 +944,56 @@ def _second_hop_section(second_hop: list[dict[str, Any]] | None) -> list[str]:
                 out.append(
                     f"    - {v.get('applies_to')}: {v.get('value')}"
                     f"  «{_truncate_quote(v.get('verbatim_quote') or '')}»{note}"
+                )
+        tools = (rec.get("scope") or {}).get("tools") or []
+        for t in tools:
+            returned = (rec.get("tools") or {}).get(t["field"], [])
+            found = [x for x in returned if _release_checked(x, "tool")]
+            check = effective(verdicts.get(f"tool.{t['field']}"))
+            tag = f"   [check: {check}]" if check else ""
+            head = f"- {t['field']} tool (this paper: " + "; ".join(
+                f'"{w}"' for w in t.get("described_as") or []
+            )
+            if found:
+                out.append(
+                    f"{head}, no tool named) = "
+                    + "; ".join(x["tool"] for x in found)
+                    + f" — as described in {ref}  «{_truncate_quote(found[0]['verbatim_quote'])}»{tag}"
+                )
+            elif returned:
+                x = returned[0]
+                why = (
+                    "its quote was not found"
+                    if not x.get("quote_resolved")
+                    else "it is not in its quote"
+                )
+                out.append(
+                    f"{head}, no tool named) = {x['tool']}  «{_truncate_quote(x['verbatim_quote'])}»"
+                    f"  ({why} — unverified){tag}"
+                )
+            else:
+                out.append(f"{head}, no tool named): no tool named in {ref}{tag}")
+        described = [r for r in rec.get("releases_described") or [] if _release_checked(r)]
+        if described:
+            out.append(
+                f"- Data releases whose processing {ref} describes: "
+                + "; ".join(
+                    f"{r['dataset']} {r['release']}  «{_truncate_quote(r['verbatim_quote'])}»"
+                    for r in described
+                )
+            )
+        for r in own:
+            relation = release_relation(r, described)
+            if relation == "postdates":
+                out.append(
+                    f"  Note: this paper's data come from {r['dataset']} {r['release']}, a later "
+                    f"release than those {ref} describes; the pipeline described there may differ "
+                    "from the one applied to this paper's data."
+                )
+            elif relation == "undetermined":
+                out.append(
+                    f"  Whether {r['dataset']} {r['release']} postdates what {ref} describes is not "
+                    "determined from the two texts."
                 )
         software = [
             pf["extraction"]["value"]
@@ -984,6 +1060,7 @@ def to_protocol(
     multiple_pipelines: dict[str, Any] | None = None,
     verifier: dict[str, Any] | None = None,
     second_hop: list[dict[str, Any]] | None = None,
+    data_release: dict[str, Any] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -1102,7 +1179,7 @@ def to_protocol(
 
     # 2026-11-02, the author's item 2: what the checking pass found that no field captured.
     lines.extend(_unplaced_section(verifier))
-    lines.extend(_second_hop_section(second_hop))
+    lines.extend(_second_hop_section(second_hop, data_release))
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
     lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())
@@ -1124,6 +1201,7 @@ def to_report(
     multiple_pipelines: dict[str, Any] | None = None,
     verifier: dict[str, Any] | None = None,
     second_hop: list[dict[str, Any]] | None = None,
+    data_release: dict[str, Any] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -1140,6 +1218,7 @@ def to_report(
         multiple_pipelines=multiple_pipelines,
         verifier=verifier,
         second_hop=second_hop,
+        data_release=data_release,
     )
 
 
