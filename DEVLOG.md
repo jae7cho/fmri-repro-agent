@@ -3871,3 +3871,29 @@ extractor (not live), 236 root, 103 KB; hooks clean; every mutation killed (two 
 Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical; control 0 of 19.
 Commits allowed in working hours by the author for this set. Commits here: `665b81d`, `ca5d746`, then this
 entry.
+
+## 2026-11-03 (late evening) — tool shape, the distortion families, FreeSurfer in the KB; FREEZE
+
+**What was asked.** The hop's tool answers through the first hop's tool-shape test, case two
+re-rendered with the motion line only; the distortion family gradient_nonlinearity_correction and
+"other" carrying the paper's phrase, call S re-pinned, case one re-drawn; the KB realignment program
+optional and FreeSurfer added with sources, an "unclear" software answer shown unverified; then a
+freeze.
+
+- ``: schema 0.6.2 (additive), the tool-shape render, other's phrase, unverified software, the
+  package basis for a package without realignment; CI pins the KB at `3c2427e`. In the KB repo:
+  `a36477e` (FreeSurfer, the optional block) and `3c2427e` (its DEVLOG).
+- `249e5b2`: case one, fields 23 of 23 agree; software agree 3 (AFNI, FreeSurfer 5.3, MMPS shown
+  unverified), hop-only 1 (FSL, unverified), key-only 1 (mri_vol2surf, a program the package list
+  does not name). Case two's motion line now reads "the cited paper describes the method without
+  naming a tool: rigid body realignment", matching power_2014's label.
+
+Model calls: case one /bin/zsh.5392 (no retry); case two re-rendered with none. Tests: 655 extractor (not
+live), 237 root, 105 KB; hooks clean; every mutation killed. Identity gate, derived before running:
+a1 19, v2 19, v3 18, v4 18 identical; control 0 of 19. Commits allowed by the author for this set.
+Commits here: ``, `249e5b2`, then this entry.
+
+**FREEZE (dated 2026-11-03, the author's instruction).** Frozen at `` (fmri-repro-agent) and
+`a36477e` (fmri-defaults-kb). No feature work until after 2026-11-14, except fixes found while
+building the poster; each such fix is committed alone, named as a poster fix, and passes the
+identity gate derived before it runs.
