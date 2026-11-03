@@ -444,3 +444,53 @@ resolved the phrase through extraction; no test had two aliases from one start. 
 Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical against HEAD `830e2ff`;
 negative control 0 of 19. Schema 0.6.1 is additive: the stored 0.6.0 records re-stamp with no
 transform and render unchanged.
+
+## Sixth round: tool shape, the distortion families, FreeSurfer in the KB (2026-11-03, late evening)
+
+The author's rulings: the hop's tool answers pass the first hop's tool-shape test; the distortion
+families gain gradient_nonlinearity_correction and "other" carries the paper's phrase (schema
+0.6.2, call S re-pinned); `kb/tools` makes the realignment program optional and lists FreeSurfer
+(recon-all, aseg, mri_vol2surf) with sources; an "unclear" software answer renders unverified with
+its quote; then a freeze.
+
+**Case two, re-rendered from its stored record (no model call), the motion line only:**
+"- motion_correction.method tool (this paper: deferred to 45): the cited paper describes the method
+without naming a tool: rigid body realignment" with its quote, `[check: supported]`. This now matches
+power_2014's label (described_only, no tool named). The other fields of case two stay unshown.
+
+**Case one, draw 14:57 ET** (`hop_case1_v11`): T, S, 26 per-mention questions on Hagler, the
+checking pass, RD; R and one question on the citing paper; no parse error, no retry; 167.4 s;
+$0.5392.
+
+| field | key | hop | |
+|---|---|---|---|
+| distortion_correction.method | reversing polarity, then gradient nonlinearity correction | reverse_phase_encoding, gradient_nonlinearity_correction; checking pass: supported | agree |
+| brain_extraction (4), slice_time_correction (6), spatial_smoothing (6) | not stated | not reported | agree (16) |
+| coregistration (6) | yes; not stated; rigid; not applicable; mutual information; not stated | the same | agree (6) |
+
+**Fields, 23: agree 23, differ 0, hop-only 0, key-only 0.**
+
+| software (key, with the MMPS correction) | key | hop | |
+|---|---|---|---|
+| AFNI 3dvolreg | no version | AFNI, no version; use quote the 3dvolreg sentence | agree |
+| FreeSurfer | 5.3 | FreeSurfer 5.3 (16 mentions; the first counting one is the §2.5.2 segmentation sentence; the aseg and mri_vol2surf sentences also count) | agree |
+| MMPS | not stated | MMPS, no version, its fMRI use unverified (answered "unclear"), shown with its §2.1 quote | agree, unverified |
+| FreeSurfer mri_vol2surf | (5.3) | its sentence counts toward FreeSurfer; the scan lists packages, not programs | key-only |
+| FSL | not listed | FSL, unverified (its §2.1 package-list sentence answered "unclear") | hop-only, unverified |
+
+**Software, 5 entries: agree 3 (one unverified), differ 0, hop-only 1 (unverified), key-only 1.** One
+FreeSurfer mention reads version 6.0 (Hagler's sentence on a later release's FreeSurfer); the list
+takes the first version read, 5.3. Gracia-Tabuenca's own text names FreeSurfer once; its question
+answered no fMRI use (the citing paper's segmentation sentence), so the first-hop line lists it as
+named without one.
+
+Tools, releases and relation unchanged from the fifth round: AFNI's 3dvolreg (agree), intensity no
+tool (agree), the 1.0–2.0.1 range (agree), the two citing releases (agree), ABCD 3.0 postdates.
+
+**Build checks.** Tests: 655 extractor (not live), 237 root, 105 KB; hooks clean. Mutations, each
+diffed on a green baseline, all killed: T1, T2 (tool shape), O1 to O3 (other's phrase and the split),
+G1 (the gradient alias), F1 to F3 (the optional realignment block, KB and agent), U1, U2 (unverified
+software). Two tests were tightened before the run so their mutations could be reached (the family
+test passes the paper's words, not the canonical token; a bare "other" is tested against a quote that
+says "other"). Identity gate, derived before running: a1 19, v2 19, v3 18, v4 18 identical against
+HEAD `08973b0`; control 0 of 19.

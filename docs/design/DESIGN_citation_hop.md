@@ -424,3 +424,38 @@ processing or feeds it (FreeSurfer through the aseg masks and ROIs; AtlasTrack n
 - **Open.** FreeSurfer is not in `kb/tools`, whose schema requires a realignment program; the scan
   cannot find it until it has an entry. The hop's tool answer has no tool-shape test (case two).
   `other` in a family list can never be supported (case one's distortion method).
+
+## The author's rulings (dated 2026-11-03, late evening, sourced to the author)
+
+1. The hop's tool answers pass the first hop's tool-shape test (`is_tool_shaped_frozen`); a non-tool
+   answer renders "the cited paper describes the method without naming a tool: <phrase>".
+2. Distortion: the family gradient_nonlinearity_correction ("gradient nonlinearities", "gradient
+   nonlinearity distortions"); "other" carries the paper's phrase and is checked against it. Call S
+   re-pinned.
+3. `kb/tools`: the realignment program optional in the registry schema; FreeSurfer added (programs
+   recon-all, aseg, mri_vol2surf) with sources. A software question answered "unclear" renders
+   unverified with its quote, never dropped.
+4. Freeze (below).
+
+## As built, sixth round (2026-11-03, late evening)
+
+- **Tool shape.** The render reads each hop tool answer through `motion_guard.is_tool_shaped_frozen`;
+  the record also carries `tool_shaped`. The test is the motion arm's frozen token list: a bare
+  "FreeSurfer" reads as not tool-shaped, so a non-motion step's tool answer can be called a
+  description when it names a package the list does not hold.
+- **Families and other.** Schema 0.6.2 (additive): `DistortionMethod` gains
+  gradient_nonlinearity_correction. `other (the paper's words)` or `other: words` resolves to `other`
+  with the words as the verbatim, and the value-in-quote check reads them; a bare `other` is never
+  supported. The list splitter keeps a parenthesised phrase whole.
+- **KB.** The registry schema's `realignment` block is optional and a `programs` list (name,
+  purpose, source) is added. `realignment_program` raises `KbNoRealignmentError` for a package
+  without one; the motion fallback's package table lists only packages with one, so FreeSurfer
+  never makes a motion quote package-attributed; the agent's package basis returns none for it.
+- **Unverified software.** A package whose questions include an "unclear" answer and no counting
+  yes is listed as unverified with that answer's quote.
+
+## FREEZE (dated 2026-11-03, the author's instruction)
+
+Frozen at agent commit `3d451fe` (fmri-repro-agent) and KB commit `a36477e` (fmri-defaults-kb).
+No feature work until after 2026-11-14, except fixes found while building the poster; each such fix
+is committed alone, named as a poster fix, and passes the identity gate derived before it runs.
