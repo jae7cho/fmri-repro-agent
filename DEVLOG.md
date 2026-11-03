@@ -3815,3 +3815,35 @@ documentation and tool facts.
 
 Tests: 623 extractor (not live), 235 root; hooks clean. Commits allowed in working hours by the
 author for this set. Commits here: `c7618ce`, `7f349ad`, then this entry.
+
+## 2026-11-03 (evening) — the hop scoped to Hagler's fMRI sections; the checking pass in tool-calling mode, measured
+
+**What was asked.** Scope the hop's field calls to the cited paper's fMRI sections, with offsets, and
+re-draw case one against the key; then the author's correction: every section whose heading names
+fMRI, dMRI and sMRI excluded, and the software list from the whole paper keeping a tool only when
+its quoted use is fMRI processing or feeds it. Two deterministic rules (a rigid transform makes the
+nonlinear type not applicable; release ranges parse as ranges). Why distortion_correction.method
+misses. Fork G decided (G1, design recorded, built after case one is stable). The instructor mode
+checked, and the checking pass's retries measured on the 18 coverage papers in JSON and tool-calling
+mode. One key copy, `docs/findings/keys/hop1_case_key.txt`.
+
+- `d1aaf73`: `find_fmri_sections`; call SW for the software list with each tool's fMRI use quote,
+  kept only when that quote is in the fMRI sections and names the tool; call RD for the releases the
+  cited paper describes; `apply_rules` (`rigid_no_nonlinear`, beside the record); `parse_release`;
+  `CallMeter.client("tools")`; `scripts/measure_checking_pass_retries.py`. Addendum re-pinned with
+  dated notes; `CITED_RELEASE_PROMPT` pinned. A slicer bug was found by a red mutation baseline
+  (each heading pattern took only its first match), fixed, and the mutation round re-run.
+- `ca9aa88`: against the key, the draw of record (13:39 ET, $0.4122): fields 23, agree 22, key-only 1
+  (the first draw: 19, differ 1, key-only 3); software 3 entries, agree 1 (AFNI), key-only 2
+  (FreeSurfer, extracted with 5.3 but its use quote was the sMRI sentence; mri_vol2surf, not named).
+  The software list did not recover. distortion_correction.method: a value-support miss in every
+  draw, the model returning the field's tool names ("topup, gradunwarp" or "gradunwarp") for a quote
+  that names neither; a verbatim value passes the same check. MMPS's quote resolves in §2.1 Overview,
+  not in the fMRI sections. Retries: JSON 1 of 18 papers (liu_2013, the same unescaped-quote JSON
+  failure as case one), tool calling 0 of 18, one draw each; tool calling proposed, not switched.
+  Fork G and both rounds as built in `DESIGN_citation_hop.md`.
+
+Model calls this round: case one drawn five times ($0.2226, $0.4191, $0.4199, $0.4099, $0.4122) and
+the retry measurement ($3.4154 JSON, $2.9974 tool calling). Tests: 635 extractor (not live), 235 root;
+hooks clean. Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical; control
+`d31e8b7` 0 of 19. Commits allowed in working hours by the author for this set. Commits here: `d1aaf73`, `ca9aa88`, then this entry.
