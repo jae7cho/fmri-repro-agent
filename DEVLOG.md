@@ -3760,3 +3760,32 @@ working hours by the author for this set.
 
 Held-out text unread; the held-out three not run. 596 passed in extractor_mvp (not live), 235 root;
 hooks clean. Commits here: `a3908c3`, `4b125d7`, then this entry.
+
+## 2026-11-03 — the author's rulings on the Software row and the order verdict; the citation-hop design
+
+**What was asked.** The author ruled on 2026-11-02: Gracia-Tabuenca's sMRI sentence feeds the fMRI
+analysis (its ROIs come from the FreeSurfer segmentation, and ABCD registers the fMRI through the
+T1), so the key is revised beside its original lines; the Software row is addressed only when every
+named in-scope software has an exact version, a deferral renders "deferred to <ref>; version not
+reported in this paper" with the violation kept, and FreeSurfer "5.3" is partial; an order verdict
+proposing the current order is dropped in code; and the coverage prompts get one generic
+first-level covariate example. Then a design for the citation hop, no model calls.
+
+- `b4aad5b`: the rulings in code. T `c043aa86…` and S `87cf358d…` re-pinned with dated notes; the
+  checking pass's prompt unchanged. The gate script now passes the stored checking-pass record,
+  which it had never done, so no checking-pass content was under the gate from coverage_v3 on. Six
+  mutations, each killed. Identity gate, derived before running: a1 17/2, v2 17/2, v3 5/13, v4
+  8/10, the derived ids exactly; the first run without the checking-pass record disagreed with the
+  derivation, which is how the gap was found. Negative control against `d31e8b7`: 0 of 19.
+- `90dba8d`: the key revision; coverage_v4 re-rendered with no model calls (HEAD reproduces all
+  18 stored reports; the working tree changes 10). Gracia-Tabuenca's Software row now reads partial
+  with the Hagler deferral and the violation in place, which matches the revised key; Shen's order
+  objection is dropped. weber_2024's "FreeSurfer v5.1" was missed by the first version of the rule
+  and fixed before staging.
+- `edc8b34`: `DESIGN_citation_hop.md`. The existing one-hop resolver has never run on a stored
+  vintage (its cache folder resolves to `extractor_mvp/configs/citation_cache`, which does not
+  exist) and is to be retired for paper targets. mueller_2021 records no deferral in v3 or v4, so
+  the hop does not fire on it.
+
+Tests: 601 extractor (not live), 235 root; hooks clean. Commits allowed in working hours by the author
+for this set. Commits here: `b4aad5b`, `90dba8d`, `edc8b34`, then this entry.
