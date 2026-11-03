@@ -191,6 +191,9 @@ The launcher ran 44 min 35 s.
 `/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Hagler_2019.pdf` exists: 3,382,421 bytes.
 The path is the parent `neurorepro` folder's `tested_lit`, not the repository's. Not opened.
 
+Correction (2026-11-03, the author): `tested_lit/sfn_batch` meant that folder, which is where the
+corpus PDFs live. The file is in the right place.
+
 ## Open, for the author
 
 - **Two rulings on Gracia-Tabuenca's sMRI sentence.** Do its intensity correction and its
@@ -203,3 +206,84 @@ The path is the parent `neurorepro` folder's `tested_lit`, not the repository's.
 - **First-level covariates filled `motion_expansion` and `detrend` again** on Gracia-Tabuenca. The
   checking pass caught both.
 - **Shen's six motion parameters stay unverifiable**, and `unplaced` cannot list them by its own rule.
+
+## The author's rulings on the open items (dated 2026-11-02, recorded 2026-11-03)
+
+Sourced to the author. The open list above is kept as written.
+
+1. **The sMRI sentence feeds the fMRI analysis.** Gracia-Tabuenca's 19 subcortical ROIs come from
+   the FreeSurfer segmentation, and in ABCD the fMRI is registered through the T1. Intensity
+   correction and intersubject registration from that sentence are right. The key is revised beside
+   its original lines in `coverage-v3-results.md`.
+2. **FreeSurfer is in scope, and "5.3" is not an exact version.** FreeSurfer releases are 5.3.0 and
+   later, so the row counts it as partial.
+3. **A deferral does not satisfy the Software row.** The row is addressed only if every named
+   in-scope software carries an exact version. A deferred base pipeline renders "deferred to <ref>;
+   version not reported in this paper", and the unconditional violation stays. What the cited paper
+   reports is second-hop information once the hop reads it, never this paper's compliance.
+4. **An order verdict whose proposal equals the current order is dropped in code.**
+5. **First-level model covariates get one generic example sentence** in the coverage prompts' scope
+   paragraph.
+
+## The build (2026-11-03, no model calls)
+
+- `cobidas.py`: `Mention.inexact` / `Mention.exact` over `_EXACT_RELEASE_PARTS`, which lists only
+  FreeSurfer (3 components), the one tool ruled on. A deferred base pipeline joins the Software row
+  as a mention with no version. The row is addressed iff every mention is exact, and partial iff it
+  is not addressed and some mention carries a version.
+- `render.py`: the deferred mention reads "Base pipeline deferred to <ref>; version not reported in
+  this paper", on the row line and in the violation detail. The pre-0.6.0 deferral line takes the
+  same wording, with the ref's own period kept ("Glasser et al.;"). An inexact version reads
+  "(not an exact release)" on the row and "Named with a version short of an exact release" in the
+  detail. The header's partial segment now reads "for the software without an exact version".
+- `verifier.py`: `same_order` and `drop_same_order_verdict`, applied when the record is written and
+  again when it is rendered. Equal means the proposal names only draft kinds, each once, in the
+  draft's relative order. The draft lists every kind, performed or not, so Shen's proposal (his
+  seven steps, same order) is equal by this reading; strict equality of the two lists would never
+  fire on it. The summary line names a dropped verdict instead of counting it as not checked.
+- `coverage_extractor.py`: the generic example, written for the prompt and quoting no paper. T
+  `c043aa86…`, S `87cf358d…`, re-pinned with dated notes; the checking pass's prompt is unchanged
+  (`f078f100…`). Not yet drawn.
+- `scripts/rerender_reports.py` now passes the stored checking-pass record to the renderer when the
+  record carries one. Without it the gate rendered every coverage_v3/v4 report with no checking-pass
+  content, which is why the first run of the gate below disagreed with the derivation.
+- `scripts/rerender_coverage.py`: re-renders a vintage as the batch renders it, into a new
+  directory, never into `papers/`.
+
+Tests: 601 extractor (not live), 235 root; hooks clean. Six mutations, each with a non-empty diff
+shown before the run, each killed: inexact ignored, deferred base not joined, order drop disabled,
+the example's date removed, the dropped-verdict segment zeroed, the release lookup by full name.
+
+**Identity gate, derived before running** (`/private/tmp/.../gate/derive.py`, conditions read from
+stored JSON): a1 2 changed (braun, viduarre: the old deferral wording), v2 2 (the same), v3 13, v4 10.
+The first run, without the checking-pass record, gave v3 14 and v4 10 with different members: it
+missed chen, derosa, mueller and shen (the order drop is checking-pass content) and added ciric, cole
+and vanderwal (without the checking pass's exclusions their Software rows read partial). With the
+record passed: a1 17 identical / 2 changed, v2 17 / 2, v3 5 / 13, v4 8 / 10, the derived ids
+exactly. Negative control against `d31e8b7` on a1: 0 identical, 19 changed.
+
+## coverage_v4 re-rendered under the rulings
+
+`results/batch_coverage_v4_rerender/`. Positive control first: the HEAD library (`5acb2b5`) renders
+all 18 stored v4 reports byte-identically. The working tree changes 10: braun_2015, gordon_2014,
+gracia-tabuenca_2024, liu_2013, oconnor_2017, poldrack_2015, power_2014, shen_2013, viduarre_2017,
+weber_2024. Held-out papers are not in this vintage.
+
+- **gracia-tabuenca_2024, Software row:** "partially reported: FreeSurfer 5.3 (not an exact release)
+  — Cortical surface and subcortical segmentations; Base pipeline deferred to Hagler et al. (2019);
+  version not reported in this paper", AtlasTrack shown and not counted. The header carries the
+  Software violation on the partial segment, and the unconditional section is back: "Base pipeline
+  deferred to Hagler et al. (2019); version not reported in this paper. Named with a version short
+  of an exact release: FreeSurfer 5.3." This now matches the revised key.
+- **shen_2013, checking pass:** wrong 1 becomes wrong 0, with "order verdict dropped (its proposal is
+  the current order)".
+- **power_2014, poldrack_2015, weber_2024:** FreeSurfer with a major.minor version, now "(not an exact
+  release)". gordon, liu, oconnor: the header wording only. braun, viduarre: the deferred
+  base pipeline joins the row.
+- **weber_2024, caught on the first re-render and fixed.** Its v4 mention is named "FreeSurfer
+  v5.1" with version "5.1", and the release table was looked up by the full name, so 5.1 counted as
+  exact. The lookup now drops a trailing version from the name first (a sixth mutation, killed);
+  weber's row reads "FreeSurfer v5.1 5.1 (not an exact release)". The doubled version on that label
+  is the stored name and version shown side by side, as before.
+- **Not reachable without a model call:** the GLM covariates on Gracia-Tabuenca's regression fields.
+  The example sentence takes effect on the next draw.

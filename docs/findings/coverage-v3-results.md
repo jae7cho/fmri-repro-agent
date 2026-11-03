@@ -153,6 +153,15 @@ author alone, written before seeing the checking pass):
   "orthogonalized" is not in the phrase table.
 ```
 
+**Revision (revised 2026-11-02 under the restated scope rule; recorded 2026-11-03, sourced to the
+author).** The original lines above stand unchanged, so the three-reader comparison below is not
+rewritten. For gracia-tabuenca_2024, intensity correction, intersubject registration and FreeSurfer
+are in scope: the paper's 19 subcortical ROIs come from the FreeSurfer segmentation, and in ABCD the
+fMRI is registered through the T1. Under the revised key the drafter and the checking pass are
+right on intensity correction and intersubject registration. FreeSurfer stays on the Software row,
+and its "5.3" is major.minor (FreeSurfer releases are 5.3.0 and later), so it counts as partial, not
+reported. The Software row is not satisfied by the deferral to Hagler et al. (2019).
+
 ## The checking pass on the two unseen papers (opened 2026-11-02, after the reading above was recorded)
 
 Read from `extractor_mvp/results/batch_coverage_v3/papers/<paper>.json`, key `verifier`; counts are
