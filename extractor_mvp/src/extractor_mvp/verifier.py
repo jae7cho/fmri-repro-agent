@@ -21,6 +21,7 @@ drafter; its verdicts are spot-checked against the author's reading before anyon
 
 from __future__ import annotations
 
+import re
 import time
 from typing import Any
 
@@ -212,6 +213,44 @@ def _unplaced_record(u: UnplacedStatement, text: str) -> dict[str, Any]:
     }
 
 
+def same_order(better_value: str | None, kinds: list[str]) -> bool:
+    """True when an order proposal names only steps in ``kinds`` and keeps them in ``kinds``'s order.
+
+    2026-11-02, the author's ruling: an order verdict whose proposal equals the current order is
+    dropped in code. The draft lists every kind (performed or not), so a proposal that names only
+    the performed ones in the same relative order (shen_2013's) is the same order, not an
+    objection to it. A proposal with any token that is not a draft kind, a repeated kind, or no
+    kinds at all is kept: it cannot be read as equal."""
+    if not better_value:
+        return False
+    tokens = [
+        "_".join(t.lower().replace("-", " ").split())
+        for t in re.split(r",|;|->|\u2192|\bthen\b", better_value)
+        if t.strip()
+    ]
+    known = set(kinds)
+    if not tokens or any(t not in known for t in tokens) or len(set(tokens)) != len(tokens):
+        return False
+    return tokens == [k for k in kinds if k in set(tokens)]
+
+
+def drop_same_order_verdict(
+    verifier: dict[str, Any] | None, preprocessing: Any
+) -> dict[str, Any] | None:
+    """The verifier record without a ``step_order`` verdict whose proposal equals the current order
+    (:func:`same_order`); otherwise the record unchanged. Applied when the record is written and
+    again when it is rendered, so records stored before the ruling read the same way."""
+    if not verifier or verifier.get("status") != "ok":
+        return verifier
+    v = (verifier.get("fields") or {}).get("step_order")
+    if v is None or v.get("verdict") != "wrong":
+        return verifier
+    if not same_order(v.get("better_value"), [s.kind for s in preprocessing.steps]):
+        return verifier
+    fields = {k: val for k, val in verifier["fields"].items() if k != "step_order"}
+    return {**verifier, "fields": fields, "dropped_same_order": True}
+
+
 def _normalise(verdict: str) -> str | None:
     v = verdict.strip().lower()
     for known in VERDICTS:
@@ -310,16 +349,22 @@ def run_verifier(
             ),
         }
     }
-    return {
-        "status": "ok",
-        "error": None,
-        "wall_time_s": round(time.perf_counter() - t0, 3),
-        "fields": fields,
-        "software": software,
-        "multiple_pipelines": multiple,
-        "unplaced": unplaced,
-        "n_draft_lines": len(known_fields),
-    }
+    return (
+        drop_same_order_verdict(
+            {
+                "status": "ok",
+                "error": None,
+                "wall_time_s": round(time.perf_counter() - t0, 3),
+                "fields": fields,
+                "software": software,
+                "multiple_pipelines": multiple,
+                "unplaced": unplaced,
+                "n_draft_lines": len(known_fields),
+            },
+            preprocessing,
+        )
+        or {}
+    )
 
 
 def effective(verdict: dict[str, Any] | None) -> str | None:

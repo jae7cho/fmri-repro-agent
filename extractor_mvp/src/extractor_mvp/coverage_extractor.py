@@ -87,7 +87,9 @@ bias-field (intensity inhomogeneity) correction; the structural image as the tar
 functional data's registration. OUT of scope: structural-only analyses (morphometry -- cortical
 thickness, volumes, surface measures -- diffusion, tractography), and covariates of a first-level
 statistical model (task regressors, motion or trend covariates entered in the GLM): those are
-analysis, not preprocessing, and do not fill nuisance regression or detrend. A sentence about a
+analysis, not preprocessing, and do not fill nuisance regression or detrend. A sentence of this
+shape is one: "Each subject's GLM included the task conditions, the realignment parameters and
+their derivatives, and polynomial drift terms as regressors." (example, 2026-11-02). A sentence about a
 structural step fills only that step's fields, never a field about the functional series itself
 (its motion, slice timing, distortion, smoothing, filtering). If the text describes both, use the
 preprocessing one and say which in the quote you choose.

@@ -311,19 +311,51 @@ def fused_major_version(name: str) -> str | None:
     return m.group(1) if m else None
 
 
+#: The number of version components an exact release carries, for the tools ruled on (2026-11-02,
+#: the author's ruling: FreeSurfer releases are major.minor.patch, "5.3.0 and later", so "5.3" is
+#: major.minor and not an exact version). Only tools the author has ruled on are listed; any other
+#: tool's stated version is taken as exact, as before.
+_EXACT_RELEASE_PARTS: dict[str, int] = {"freesurfer": 3}
+
+
+def _version_parts(version: str) -> int:
+    """The number of dot-separated numeric components at the start of a version string."""
+    m = re.match(r"\s*v?(\d+(?:\.\d+)*)", version)
+    return len(m.group(1).split(".")) if m else 0
+
+
 @dataclasses.dataclass(frozen=True)
 class Mention:
-    """One piece of software for the Software row: from ``software_mentions`` or the base pipeline."""
+    """One piece of software for the Software row: from ``software_mentions`` or the base pipeline.
+    ``deferred_to`` is set for a base pipeline the paper defers to a citation: it is named software
+    without a version in this paper (2026-11-02, the author's ruling)."""
 
     name: str
     version: str | None
     used_for: str | None
+    deferred_to: tuple[str, ...] = ()
 
     @property
     def major_only(self) -> bool:
         """True when no separate version is stated and the name carries only a fused major version.
         It does not meet §4.3 and counts as unversioned for the row, but it is not "no version"."""
         return self.version is None and fused_major_version(self.name) is not None
+
+    @property
+    def inexact(self) -> bool:
+        """True when a version is stated but has fewer components than the tool's exact release
+        (:data:`_EXACT_RELEASE_PARTS`): FreeSurfer "5.3". The row is partially reported, not
+        addressed (2026-11-02, the author's ruling)."""
+        if not self.version:
+            return False
+        # the name may carry the version too ("FreeSurfer v5.1", weber_2024 in coverage_v4)
+        bare = re.sub(r"\s+v?\d+(?:\.\d+)*\s*$", "", " ".join(self.name.lower().split()))
+        parts = _EXACT_RELEASE_PARTS.get(bare)
+        return parts is not None and _version_parts(self.version) < parts
+
+    @property
+    def exact(self) -> bool:
+        return bool(self.version) and not self.inexact
 
 
 def software_mentions_for_row(
@@ -350,6 +382,11 @@ def software_mentions_for_row(
             unverified += 1
     base_row = next((r for r in rows if r.path == "base_pipeline"), None)
     version_row = next((r for r in rows if r.path == "base_pipeline.version"), None)
+    if base_row is not None and base_row.extraction_status == "DEFERRED_TO_CITATION":
+        # 2026-11-02, the author's ruling: a deferral does not satisfy the Software row. The deferred
+        # pipeline is software this paper used and gave no version for.
+        refs = tuple(base_row.deferral_refs or ())
+        verified.append(Mention("Base pipeline", None, None, refs or ("(unspecified)",)))
     if base_row is not None and base_row.extraction_status == "EXTRACTED" and base_row.value:
         name = str(getattr(base_row.value, "name", "") or "")
         names = {" ".join(m.name.lower().split()) for m in verified}
@@ -395,14 +432,16 @@ def assess_coverage(
             # none -> not reported (the unconditional violation); some -> partially reported. No
             # verified mention but some unverifiable -> unverifiable. Nothing named at all -> the
             # base-pipeline rule above stands.
+            # 2026-11-02, the author's ruling: addressed only if EVERY named in-scope software
+            # carries an exact version; a deferred base pipeline is named software without one;
+            # a stated but inexact version (FreeSurfer "5.3") makes the row partial, not addressed.
             verified, n_unverified = software_mentions_for_row(
                 rows, software_mentions, excluded_software
             )
             if verified:
-                with_version = [m for m in verified if m.version]
                 covered, unverifiable = True, False
-                addressed = len(with_version) == len(verified)
-                partial = 0 < len(with_version) < len(verified)
+                addressed = all(m.exact for m in verified)
+                partial = not addressed and any(m.version for m in verified)
             elif n_unverified:
                 addressed, covered, unverifiable = False, False, True
         else:

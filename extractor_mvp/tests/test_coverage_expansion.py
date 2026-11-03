@@ -10,7 +10,15 @@ from __future__ import annotations
 from typing import Any
 
 from fmri_repro.spec.preprocessing import Preprocessing, SpatialSmoothing
-from fmri_repro.spec.provenance import Extracted, NotApplicable
+from fmri_repro.spec.provenance import (
+    Deferral,
+    DeferredToCitation,
+    Extracted,
+    LeftMissing,
+    NotApplicable,
+    ProvenancedField,
+    Span,
+)
 
 from conftest import stub_client
 from extractor_mvp import render
@@ -743,7 +751,8 @@ def test_a_number_is_checked_on_the_repaired_text_when_the_span_was_repaired() -
 _SW_TEXT = (
     "Cortical surfaces were reconstructed with FreeSurfer v5.3. "
     "The data were mapped to a common space using BioImage Suite software. "
-    "Statistics were computed in R version 4.1.0."
+    "Statistics were computed in R version 4.1.0. "
+    "Subcortical labels were derived with FreeSurfer 5.3.0."
 )
 
 
@@ -796,22 +805,100 @@ def test_some_software_without_a_version_is_partially_reported_and_named() -> No
     header = next(ln for ln in out.splitlines() if "Assessed by AESPA" in ln)
     assert (
         "partially reported 1 (incl. Software — unconditional violation for the software without "
-        "a reported version) · " in header
+        "an exact version) · " in header
     )
     assert header.count("Software") == 1
     assert (
-        "- Software [validated against labels] — partially reported: FreeSurfer 5.3 — Cortical surfaces were reconstructed; BioImage Suite (no version)"
+        "- Software [validated against labels] — partially reported: FreeSurfer 5.3 (not an exact release) — Cortical surfaces were reconstructed; BioImage Suite (no version)"
         in out
     )
     assert (
-        "Software named without a version: BioImage Suite. Named with a version: FreeSurfer 5.3."
-        in out
+        "Software named without a version: BioImage Suite. Named with a version short of an exact "
+        "release: FreeSurfer 5.3." in out
     )
 
 
+_FS_EXACT = {
+    "name": "FreeSurfer",
+    "version": "5.3.0",
+    "verbatim_quote": "Subcortical labels were derived with FreeSurfer 5.3.0.",
+}
+
+
 def test_every_software_versioned_addresses_the_row() -> None:
-    rc = _coverage_with_mentions(_run_sw([_FS, _R]))["software"]
+    rc = _coverage_with_mentions(_run_sw([_FS_EXACT, _R]))["software"]
     assert (rc.addressed, rc.partial) == (True, False)
+
+
+def test_a_freesurfer_major_minor_version_is_partial_not_addressed() -> None:
+    """2026-11-02, the author's ruling: FreeSurfer releases are major.minor.patch, so "5.3" is not an
+    exact version; the row is partially reported and the header keeps the Software violation."""
+    for mentions in ([_FS], [_FS, _R]):
+        rc = _coverage_with_mentions(_run_sw(mentions))["software"]
+        assert (rc.addressed, rc.partial) == (False, True), mentions
+    out = render.to_cobidas_coverage(_run_sw([_FS]))
+    header = next(ln for ln in out.splitlines() if "Assessed by AESPA" in ln)
+    assert (
+        "(incl. Software — unconditional violation for the software without an exact version)"
+        in header
+    )
+    assert "FreeSurfer 5.3 (not an exact release)" in out
+    assert "Named with a version short of an exact release: FreeSurfer 5.3." in out
+
+
+def test_only_the_ruled_tool_needs_three_components() -> None:
+    from extractor_mvp.cobidas import Mention
+
+    assert Mention("FreeSurfer", "5.3", None).inexact
+    assert not Mention("FreeSurfer", "5.3.0", None).inexact
+    assert not Mention("FreeSurfer", "v7.1.1", None).inexact
+    assert not Mention("FSL", "5.0", None).inexact  # not ruled on: taken as stated
+    assert Mention("FreeSurfer v5.1", "5.1", None).inexact  # the version also in the name
+    assert not Mention("FreeSurfer", None, None).exact
+
+
+def _with_deferred_base(prep: Any) -> Any:
+    base = ProvenancedField(
+        field_id="base_pipeline",
+        extraction=DeferredToCitation(
+            deferrals=[
+                Deferral(
+                    ref="Doe et al. (2019)",
+                    span=Span(
+                        start=0, end=10, text="Preprocessing is in Doe et al. (2019).", section=None
+                    ),
+                    target_kind="paper",
+                )
+            ],
+            searched_terms=[],
+            sections_searched=[],
+        ),
+        inference=LeftMissing(reason="deferred_to_citation"),
+    )
+    return prep.model_copy(update={"base_pipeline": base})
+
+
+def test_a_deferred_base_pipeline_does_not_satisfy_the_software_row() -> None:
+    """2026-11-02, the author's ruling: a deferral does not address the row, even beside software
+    that carries an exact version; it renders "deferred to <ref>; version not reported in this
+    paper" and the unconditional violation stays."""
+    prep = _with_deferred_base(_run_sw([_FS_EXACT]))
+    rc = _coverage_with_mentions(prep)["software"]
+    assert (rc.addressed, rc.partial, rc.covered_by_extractor) == (False, True, True)
+    out = render.to_cobidas_coverage(prep)
+    header = next(ln for ln in out.splitlines() if "Assessed by AESPA" in ln)
+    assert "unconditional violation" in header
+    assert "Base pipeline deferred to Doe et al. (2019); version not reported in this paper" in out
+    assert "### Not reported (mandatory, unconditional)" in out
+
+
+def test_a_deferred_base_pipeline_alone_is_not_reported() -> None:
+    prep = _with_deferred_base(_run_sw([]))
+    rc = _coverage_with_mentions(prep)["software"]
+    assert (rc.addressed, rc.partial, rc.covered_by_extractor) == (False, False, True)
+    out = render.to_cobidas_coverage(prep)
+    header = next(ln for ln in out.splitlines() if "Assessed by AESPA" in ln)
+    assert header.endswith("(incl. Software — unconditional violation)")
 
 
 def test_a_version_not_in_the_quote_makes_the_mention_unverifiable() -> None:
@@ -1040,6 +1127,11 @@ def test_both_coverage_prompts_carry_the_scope_rule() -> None:
         assert "do not fill nuisance regression or detrend" in scope
         assert "never a field about the functional series itself" in scope
         assert "only the preprocessing of the functional (BOLD) data." not in prompt
+        # 2026-11-02, the author's ruling: one generic example of a first-level covariate sentence
+        assert (
+            "\"Each subject's GLM included the task conditions, the realignment parameters" in scope
+        )
+        assert "(example, 2026-11-02)" in scope
 
 
 # ---------------------------------------------------------------------------

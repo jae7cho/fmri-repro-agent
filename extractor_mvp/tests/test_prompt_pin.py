@@ -183,7 +183,9 @@ _PINNED = {
     #: b2feb797352b95d0dc17e39d5edd13b1c74aac0a6c3a6c1a759b18a6ea7f5830.
     #: UPDATED 2026-11-02, the author's ruling: the SCOPE paragraph restated -- structural steps that feed the fMRI analysis are IN (brain extraction, segmentation for masks or regressors, bias-field correction, the structural registration target), citing D.3's "For structural images"; structural-only analyses (morphometry, diffusion, tractography) and first-level covariates OUT. First drawn as coverage_v4. Superseded TEMPORAL_VOLUME_PROMPT value:
     #: 5832804631604a8d92c0154c8798cae4772a08b766824d00410f8b43ae8f44ee.
-    "TEMPORAL_VOLUME_PROMPT": "a9230438e3f29e6d604cd13eb7840a921e0a5a44125af53ca3362fb6a08eb05e",
+    #: UPDATED 2026-11-03, the author's ruling dated 2026-11-02: the SCOPE paragraph gains one generic example of a first-level model covariate sentence (written for the prompt, quoting no paper), after the GLM covariates refilled nuisance regression and detrend on gracia-tabuenca_2024 in coverage_v4. Not yet drawn. Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: a9230438e3f29e6d604cd13eb7840a921e0a5a44125af53ca3362fb6a08eb05e.
+    "TEMPORAL_VOLUME_PROMPT": "c043aa86afb437224aa68011827b746ff1515025252574e8493f401f6b5dd23e",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -201,7 +203,9 @@ _PINNED = {
     #: 697c868be398f23b4cd9e86a7a557e42771d89f3b5ba1e3563aa49d13536ab2a.
     #: UPDATED 2026-11-02 (later), the author's ruling: the SCOPE paragraph restated as on TEMPORAL_VOLUME_PROMPT (D.3's "For structural images"), and the software list follows it (software for a structural step that feeds the fMRI analysis is listed; structural-only analysis, statistics, prediction, stimulus software is not). First drawn as coverage_v4; 3c8d604b was never drawn. Superseded SPATIAL_PROMPT value:
     #: 3c8d604b5776aef6c332d3ab2aed508f7410cf35936c6264de30248c15398959.
-    "SPATIAL_PROMPT": "8b54be37ca891c80c141a881c11123278cb6c0af501bab0fe9c705f6fd42ebbf",
+    #: UPDATED 2026-11-03, the author's ruling dated 2026-11-02: the SCOPE paragraph gains one generic example of a first-level model covariate sentence (written for the prompt, quoting no paper), after the GLM covariates refilled nuisance regression and detrend on gracia-tabuenca_2024 in coverage_v4. Not yet drawn. Superseded SPATIAL_PROMPT value:
+    #: 8b54be37ca891c80c141a881c11123278cb6c0af501bab0fe9c705f6fd42ebbf.
+    "SPATIAL_PROMPT": "87cf358db49c62dfb72a57e14027e68dab7275cc917a70eddb5e7a9ec8fa55ed",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:

@@ -150,6 +150,11 @@ def _render_one(json_path: Path) -> str:
     extra: dict[str, Any] = {}
     if data.get("multiple_pipelines") is not None:
         extra["multiple_pipelines"] = data["multiple_pipelines"]
+    # 2026-11-03: the checking pass's record, on the same terms. Without it the gate rendered every
+    # coverage_v3/v4 report with no checking-pass content, so a change there (the same-order verdict
+    # drop) could not show; a record written before coverage_v3 carries none and is unaffected.
+    if data.get("verifier") is not None:
+        extra["verifier"] = data["verifier"]
     report: str = to_report(preprocessing, source=data["paper_id"], methods_slice=methods, **extra)
     return report
 

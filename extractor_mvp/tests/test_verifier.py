@@ -295,3 +295,40 @@ def test_an_empty_unplaced_list_says_none_and_an_old_record_has_no_section() -> 
     old = dict(record)
     old.pop("unplaced")
     assert render._unplaced_section(old) == []
+
+
+def test_an_order_verdict_proposing_the_current_order_is_dropped() -> None:
+    """2026-11-02, the author's ruling: an order verdict whose proposal equals the current order is
+    dropped in code. shen_2013's shape: the draft lists every kind, the proposal lists the performed
+    ones in the same relative order."""
+    from extractor_mvp.verifier import drop_same_order_verdict, same_order
+
+    kinds = ["motion_correction", "slice_time_correction", "spatial_smoothing", "despike"]
+    assert same_order("motion_correction, slice_time_correction, spatial_smoothing", kinds)
+    assert same_order("motion correction -> slice-time correction", kinds)
+    assert not same_order("slice_time_correction, motion_correction", kinds)  # a real reorder
+    assert not same_order("motion_correction, realignment", kinds)  # a token not in the draft
+    assert not same_order("motion_correction, motion_correction", kinds)
+    assert not same_order("", kinds) and not same_order(None, kinds)
+
+    prep, record, _ = _run(
+        spatial={"smoothing_performed": _ex("yes", _SMOOTH), "smoothing_fwhm_mm": _ex("6", _SMOOTH)}
+    )
+    current = ", ".join(s.kind for s in prep.steps[:3])
+    reversed_ = ", ".join(s.kind for s in reversed(prep.steps[:3]))
+
+    def with_order(better: str) -> dict[str, Any]:
+        v = {"verdict": "wrong", "reason": "r", "relied_on": _SMOOTH, "relied_on_resolved": True}
+        fields = {**record["fields"], "step_order": {**v, "better_value": better}}
+        return {**record, "fields": fields}
+
+    kept = drop_same_order_verdict(with_order(reversed_), prep)
+    dropped = drop_same_order_verdict(with_order(current), prep)
+    assert "step_order" in kept["fields"] and "dropped_same_order" not in kept
+    assert "step_order" not in dropped["fields"] and dropped["dropped_same_order"] is True
+    # a record stored before the ruling renders without the verdict
+    report = render.to_report(prep, source="t", verifier=with_order(current))
+    assert "wrong 0" in report
+    assert "· order verdict dropped (its proposal is the current order)" in report
+    report = render.to_report(prep, source="t", verifier=with_order(reversed_))
+    assert "wrong 1" in report

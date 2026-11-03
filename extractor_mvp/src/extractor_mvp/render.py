@@ -847,11 +847,14 @@ def _verifier_summary_line(verifier: dict[str, Any] | None, rows: list[FieldRow]
         eff = effective(v)
         counts[eff if eff in counts else "unverified"] += 1
     n_lines = int(verifier.get("n_draft_lines") or 0)
-    not_checked = max(0, n_lines - sum(counts.values()))
+    # 2026-11-02, the author's ruling: a dropped same-order verdict was checked, not "not checked"
+    dropped = 1 if verifier.get("dropped_same_order") else 0
+    not_checked = max(0, n_lines - sum(counts.values()) - dropped)
     return (
         "Checking pass (unvalidated — spot-checked against a human reading before it is trusted): "
         f"supported {counts['supported']} · wrong {counts['wrong']} · missed {counts['missed']} · "
         f"unverified {counts['unverified']} · not checked {not_checked}"
+        + (" · order verdict dropped (its proposal is the current order)" if dropped else "")
     )
 
 
@@ -888,6 +891,9 @@ def to_protocol(
     is rendered under the title: a spec extracted from a whole-document fallback or a
     bloated slice has different provenance semantics and must say so on its face.
     """
+    from extractor_mvp.verifier import drop_same_order_verdict
+
+    verifier = drop_same_order_verdict(verifier, preprocessing)
     rows = flatten(preprocessing)
     lines: list[str] = []
     lines.append(f"# Replication Protocol — {source}" if source else "# Replication Protocol")
@@ -1108,7 +1114,7 @@ def to_cobidas_coverage(
         partial_seg = (
             f"partially reported {n_partial}"
             + (
-                " (incl. Software — unconditional violation for the software without a reported version)"
+                " (incl. Software — unconditional violation for the software without an exact version)"
                 if software_partial
                 else ""
             )
@@ -1212,10 +1218,16 @@ def to_cobidas_coverage(
             # version, and the ones with one, so the action is concrete.
             # 2026-11-02 (the author's queued fix): a name carrying only a fused major version
             # (SPM5) is named as such, not as "without a version" -- it still fails §4.3.
-            lacking = [m.name for m in mentions if not m.version and not m.major_only]
+            # 2026-11-02, the author's ruling: a deferred pipeline is named as deferred with no
+            # version in this paper; a version short of an exact release is named as such.
+            deferred = [m for m in mentions if m.deferred_to]
+            lacking = [
+                m.name for m in mentions if not m.version and not m.major_only and not m.deferred_to
+            ]
             major = [m.name for m in mentions if m.major_only]
-            having = [f"{m.name} {m.version}" for m in mentions if m.version]
-            parts = []
+            inexact = [f"{m.name} {m.version}" for m in mentions if m.inexact]
+            having = [f"{m.name} {m.version}" for m in mentions if m.exact]
+            parts = [_deferred_mention(m) + "." for m in deferred]
             if lacking:
                 parts.append("Software named without a version: " + ", ".join(lacking) + ".")
             if major:
@@ -1223,14 +1235,18 @@ def to_cobidas_coverage(
                     "Named with a major version only (COBIDAS §4.3 asks for more than the major "
                     "version): " + ", ".join(major) + "."
                 )
+            if inexact:
+                parts.append(
+                    "Named with a version short of an exact release: " + ", ".join(inexact) + "."
+                )
             if having:
                 parts.append("Named with a version: " + ", ".join(having) + ".")
             detail = " ".join(parts)
         elif deferred_refs:
-            # rstrip the terminator: refs are author-shaped strings and some already end
-            # in a period ("Glasser et al."), which would render as "et al..".
-            joined = ", ".join(deferred_refs).rstrip(".")
-            detail = f"Version not reported; pipeline identity deferred to {joined}."
+            # 2026-11-02, the author's ruling: the one deferral wording on every surface. The refs
+            # are followed by ";", so a ref ending in a period ("Glasser et al.") keeps it.
+            joined = ", ".join(deferred_refs)
+            detail = f"Base pipeline deferred to {joined}; version not reported in this paper."
         else:
             name = _base_pipeline_name(preprocessing)
             if name is None:
@@ -1336,8 +1352,12 @@ def _expanded_rows_section(
         if rc.row.row_id == "software" and mentions:
             # report v2 §1c: every named software, with its version or the lack of one.
             values = [
-                (
-                    f"{m.name} {m.version}"
+                _deferred_mention(m)
+                if m.deferred_to
+                else (
+                    f"{m.name} {m.version} (not an exact release)"
+                    if m.inexact
+                    else f"{m.name} {m.version}"
                     if m.version
                     else f"{m.name} (major version only)"
                     if m.major_only
@@ -1388,6 +1408,11 @@ def _expanded_rows_section(
         out.append(line)
     out.append("")
     return out
+
+
+def _deferred_mention(m: Any) -> str:
+    """A deferred base pipeline on the Software row (2026-11-02, the author's ruling)."""
+    return f"{m.name} deferred to {', '.join(m.deferred_to)}; version not reported in this paper"
 
 
 def _fmt_row_value(row: Any) -> str:

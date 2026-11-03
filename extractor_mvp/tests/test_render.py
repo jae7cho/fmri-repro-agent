@@ -989,7 +989,7 @@ def test_deferred_software_line_names_the_citation() -> None:
     prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[_one_step()])
     out = render.to_cobidas_coverage(prep)
     assert "### Not reported (mandatory, unconditional)" in out
-    assert "pipeline identity deferred to refs. 47 and 48." in out
+    assert "Base pipeline deferred to refs. 47 and 48; version not reported in this paper." in out
     # Must not fall through to either non-deferral line. Asserting the CURRENT strings, not
     # a retired one: an exclusion of a string nothing emits any more cannot fail.
     assert "No software named in the source." not in out
@@ -1052,7 +1052,7 @@ def test_deferred_software_line_does_not_double_the_terminator() -> None:
     )
     prep = Preprocessing(applies_to=_applies_to(), base_pipeline=base_pipeline, steps=[_one_step()])
     out = render.to_cobidas_coverage(prep)
-    assert "deferred to Glasser et al.)" in out
+    assert "deferred to Glasser et al.; version not reported in this paper." in out
     assert "et al.." not in out
 
 
