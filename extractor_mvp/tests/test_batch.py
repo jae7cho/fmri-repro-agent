@@ -45,7 +45,8 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     # 6 -> 69, 2026-10-28: the stub answers the two coverage calls all-missing as well, so their
     # 38 + 25 = 63 fields are not_stated_in_text beside the six (DESIGN_coverage_expansion.md B1).
     # 69 -> 75, 2026-10-29: call T's six temporal-filtering fields answered missing too.
-    assert r.n_missing_not_stated == 75
+    # 75 -> 76, 2026-11-03 (schema 0.6.1): call S's distortion_tool answered missing too.
+    assert r.n_missing_not_stated == 76
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 
@@ -58,6 +59,7 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     # per-paper JSON written, with span translated to full-paper offsets
     paper_json = json.loads((config.output_dir / "papers" / "p1.json").read_text())
     assert paper_json["status"] == "success"
+    assert paper_json["instructor_mode"] == "tools"  # 2026-11-03: a vintage is prompts AND mode
     spans = [
         span
         for step in paper_json["preprocessing"]["steps"]

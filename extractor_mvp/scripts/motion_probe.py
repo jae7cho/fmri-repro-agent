@@ -351,7 +351,7 @@ class _CountingClient:
             self.attempts += 1
             return litellm.completion(*args, **kwargs)
 
-        self._client = instructor.from_litellm(counting_completion, mode=instructor.Mode.JSON)
+        self._client = instructor.from_litellm(counting_completion, mode=instructor.Mode.TOOLS)
 
     def reset(self) -> None:
         self.attempts = 0

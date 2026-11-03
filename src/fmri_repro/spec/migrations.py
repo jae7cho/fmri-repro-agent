@@ -282,6 +282,11 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
             for fid in _LISTED_IN_0_6_0.get(step.get("kind", ""), ()):
                 _lift_to_list(step.get(fid))
 
+    # 0.6.0 -> 0.6.1 (PATCH, pure re-stamp -- NO doc transform; 2026-11-03, the author's ruling on the
+    # distortion vocabulary): DistortionMethod gains the family members reverse_phase_encoding and
+    # fieldmap, and DistortionCorrection gains an OPTIONAL ``tool`` field. A 0.6.0 document stays valid
+    # unchanged: its method values are still members, and it simply does not carry ``tool``.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

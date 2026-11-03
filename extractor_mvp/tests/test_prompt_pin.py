@@ -205,7 +205,12 @@ _PINNED = {
     #: 3c8d604b5776aef6c332d3ab2aed508f7410cf35936c6264de30248c15398959.
     #: UPDATED 2026-11-03, the author's ruling dated 2026-11-02: the SCOPE paragraph gains one generic example of a first-level model covariate sentence (written for the prompt, quoting no paper), after the GLM covariates refilled nuisance regression and detrend on gracia-tabuenca_2024 in coverage_v4. Not yet drawn. Superseded SPATIAL_PROMPT value:
     #: 8b54be37ca891c80c141a881c11123278cb6c0af501bab0fe9c705f6fd42ebbf.
-    "SPATIAL_PROMPT": "87cf358db49c62dfb72a57e14027e68dab7275cc917a70eddb5e7a9ec8fa55ed",
+    #: UPDATED 2026-11-03 (evening), the author's ruling (schema 0.6.1): distortion_method asks the
+    #: method FAMILY (reverse_phase_encoding, fieldmap, other; "Never a program name here") and the new
+    #: distortion_tool asks the program (the 0.6.0 method members). First drawn under tool calling.
+    #: Superseded SPATIAL_PROMPT value:
+    #: 87cf358db49c62dfb72a57e14027e68dab7275cc917a70eddb5e7a9ec8fa55ed.
+    "SPATIAL_PROMPT": "cbb6193c43f61cc31f1c1054769d23a359a15908e2067cd79a6cadece1f51fd6",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:
@@ -364,7 +369,24 @@ def test_the_performed_phrase_table_is_frozen() -> None:
 #: tool's fMRI use quote (_SOFTWARE_ASK); the pin covers HOP_ADDENDUM + _TOOLS_ASK + _SOFTWARE_ASK.
 #: Was f2785d924064367b2a21a83ffb3362dc758f7308624f2c2d2036b360d40865a7 (never drawn on case one). Re-pinned 2026-11-03: the use quote is asked
 #: from the fMRI processing sections, where fmri_use now checks it.
-_PINNED_HOP_ADDENDUM = "8f928a217ee9e60a413c2edcd46d604883aab7cc5dbea92354220b1f4c206816"
+#: Was 8f928a217ee9e60a413c2edcd46d604883aab7cc5dbea92354220b1f4c206816. Re-pinned 2026-11-03 (evening, the author's ruling): the software list
+#: leaves the model for a deterministic KB scan with one scoped question per mention
+#: (software_scan.SOFTWARE_USE_PROMPT, pinned below); _SOFTWARE_ASK is removed and the pin covers
+#: HOP_ADDENDUM + _TOOLS_ASK again (097a8eb1..., the third round's value: the addendum itself did
+#: not change).
+_PINNED_HOP_ADDENDUM = "097a8eb1435eb7b949169e1f4afad8eae3eb394014b5bddad432dcdfc84b6ec3"
+
+#: The per-mention software question (software_scan.py, 2026-11-03, the author's ruling). Pinned at
+#: its first build.
+_PINNED_SOFTWARE_USE_PROMPT = "e89f7a63464f829e62ab65f698f67102736c1d444a2e97de5f3c172879dad50e"
+
+
+def test_the_software_use_prompt_is_hash_pinned() -> None:
+    from extractor_mvp.software_scan import SOFTWARE_USE_PROMPT
+
+    got = hashlib.sha256(SOFTWARE_USE_PROMPT.encode("utf-8")).hexdigest()
+    assert got == _PINNED_SOFTWARE_USE_PROMPT, f"SOFTWARE_USE_PROMPT changed: {got}{_VINTAGE_NOTE}"
+
 
 #: Call RD, the releases the cited paper describes, on its methods slice (2026-11-03, later
 #: afternoon). Pinned at its first build.
@@ -393,11 +415,27 @@ def test_the_release_prompt_is_hash_pinned() -> None:
 
 
 def test_the_hop_addendum_is_hash_pinned() -> None:
-    from extractor_mvp.citation_hop import _SOFTWARE_ASK, _TOOLS_ASK, HOP_ADDENDUM, hop_prompt
+    from extractor_mvp.citation_hop import _TOOLS_ASK, HOP_ADDENDUM, hop_prompt
 
-    got = hashlib.sha256((HOP_ADDENDUM + _TOOLS_ASK + _SOFTWARE_ASK).encode("utf-8")).hexdigest()
+    got = hashlib.sha256((HOP_ADDENDUM + _TOOLS_ASK).encode("utf-8")).hexdigest()
     assert got == _PINNED_HOP_ADDENDUM, f"HOP_ADDENDUM changed: {got}{_VINTAGE_NOTE}"
     # the base prompt is untouched around the insertion
     p = hop_prompt(SPATIAL_PROMPT, ["smoothing_fwhm_mm"], False)
     head, tail = SPATIAL_PROMPT.rsplit('Text:\n"""', 1)
     assert p.startswith(head) and p.endswith('Text:\n"""' + tail)
+
+
+#: The instructor mode is part of a vintage (2026-11-03, the author's ruling): every client switched
+#: from JSON mode to tool calling, a new vintage whatever the prompt hashes. A change is a dated event.
+_PINNED_INSTRUCTOR_MODE = "tools"
+
+
+def test_the_instructor_mode_is_pinned_and_every_client_uses_it() -> None:
+    import instructor
+
+    from extractor_mvp.citation_hop import CallMeter
+    from extractor_mvp.extractor import INSTRUCTOR_MODE, build_client
+
+    assert INSTRUCTOR_MODE == _PINNED_INSTRUCTOR_MODE
+    assert build_client().mode == instructor.Mode.TOOLS
+    assert CallMeter().client().mode == instructor.Mode.TOOLS

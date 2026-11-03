@@ -28,7 +28,7 @@ from typing import TYPE_CHECKING, Any
 from extractor_mvp.batch_config import BatchConfig, load_batch_config
 from extractor_mvp.batch_utils import build_citation_resolver
 from extractor_mvp.corpus import EXCLUDED_PAPERS, is_excluded
-from extractor_mvp.extractor import ResolutionRecord, extract
+from extractor_mvp.extractor import INSTRUCTOR_MODE, ResolutionRecord, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
@@ -348,6 +348,7 @@ def process_paper(
             "suspicious": methods.suspicious,
         },
         "likely_multi_acquisition": multi,
+        "instructor_mode": INSTRUCTOR_MODE,  # 2026-11-03: a vintage is prompts AND mode
         "wall_time_s": wall_time_s,
         "counts": counts,
         "preprocessing": prep_dump,

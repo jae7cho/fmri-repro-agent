@@ -67,7 +67,8 @@ TEXT = (
     "Preprocessing otherwise followed Glasser et al. (2013). "
     "Linear and quadratic trends were removed from the time series. "
     "Distortion correction for magnetic field inhomogeneities used a field map. "
-    "Nuisance regressors included 24 movement regressors derived by Volterra expansion."
+    "Nuisance regressors included 24 movement regressors derived by Volterra expansion. "
+    "B0 distortions were corrected with the reversing polarity method."
 )
 _S = {
     "t1": "The first 4 volumes were discarded to allow for signal equilibration.",
@@ -87,6 +88,7 @@ _S = {
     "trends": "Linear and quadratic trends were removed from the time series.",
     "inhomo": "Distortion correction for magnetic field inhomogeneities used a field map.",
     "volterra": "Nuisance regressors included 24 movement regressors derived by Volterra expansion.",
+    "polarity": "B0 distortions were corrected with the reversing polarity method.",
 }
 
 
@@ -1198,3 +1200,55 @@ def test_no_order_or_an_unresolved_sentence_keeps_the_template_and_says_so() -> 
     assert prep2.step_order_source == "template"
     assert any(d.failure_reason.startswith("step_order_quote_unresolved") for d in diags)
     assert prep2.steps[0].kind == "nonsteadystate_removal"
+
+
+# ---------------------------------------------------------------------------
+# The distortion method family, separate from the tool (schema 0.6.1, the author's ruling 2026-11-03)
+# ---------------------------------------------------------------------------
+
+
+def test_the_distortion_method_is_a_family_and_the_program_is_the_tool() -> None:
+    prep = _run(
+        spatial=SpatialExtraction(
+            distortion_performed=_ex("yes", _S["dist"]),
+            distortion_method=_ex("fieldmap", _S["dist"]),
+            distortion_tool=_ex("fugue", _S["dist"]),
+        )
+    )
+    method = _field(prep, "distortion_correction", "method")
+    tool = _field(prep, "distortion_correction", "tool")
+    assert [t.resolved for t in method.extraction.value] == ["fieldmap"]
+    assert [t.resolved for t in tool.extraction.value] == ["fugue"]
+
+
+def test_a_program_name_is_no_longer_a_method_family() -> None:
+    prep = _run(spatial=SpatialExtraction(distortion_method=_ex("fugue", _S["dist"])))
+    [term] = _field(prep, "distortion_correction", "method").extraction.value
+    assert (term.verbatim, term.resolved) == ("fugue", None)  # not in the family table
+
+
+def test_reversing_polarity_supports_the_reverse_phase_encoding_family() -> None:
+    """Case one (Hagler et al. 2019): every draw returned a program name for this sentence and the
+    value-in-quote check rejected it."""
+    from fmri_repro.spec.preprocessing import SpecifiedTerm
+
+    from extractor_mvp.quote_support import coverage_value_supported
+
+    quote = (
+        "B 0 distortions are corrected using the same reversing polarity method used for the "
+        "dMRI (Holland et al., 2010 )."
+    )
+    family = SpecifiedTerm[str](
+        verbatim="reversing polarity", resolved="reverse_phase_encoding", resolution="resolved"
+    )
+    topup = SpecifiedTerm[str](verbatim="topup", resolved=None, resolution="unrecognized")
+    assert coverage_value_supported("distortion_correction.method", [family], quote) is True
+    assert coverage_value_supported("distortion_correction.method", [topup], quote) is False
+
+
+def test_the_papers_words_resolve_to_the_reverse_phase_encoding_family() -> None:
+    prep = _run(
+        spatial=SpatialExtraction(distortion_method=_ex("reversing polarity", _S["polarity"]))
+    )
+    [term] = _field(prep, "distortion_correction", "method").extraction.value
+    assert (term.verbatim, term.resolved) == ("reversing polarity", "reverse_phase_encoding")

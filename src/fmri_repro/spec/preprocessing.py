@@ -242,6 +242,11 @@ DISTORTION_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
         inference_applicable=False,
         source="derived",
     ),
+    "tool": FieldMeta(  # 0.6.1 (2026-11-03): the program, separate from the method family
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
 }
 
 
@@ -872,7 +877,20 @@ class MotionCorrection(BaseModel):
 
 # 4. DistortionCorrection — COBIDAS distortion + gradient-distortion correction
 DistortionSource = Literal["susceptibility_fieldmap", "gradient_nonlinearity", "fieldmap_less"]
-DistortionMethod = Literal["topup", "fugue", "gradunwarp", "sdc_fieldmapless", "other"]
+# 0.6.1 (2026-11-03, the author's ruling): ``method`` names the method FAMILY, the program goes in
+# ``tool``. The families are reverse_phase_encoding and fieldmap (and other). The five members that
+# name programs stay valid so a 0.6.0 document parses unchanged (additive); new extractions put them
+# in ``tool``.
+DistortionMethod = Literal[
+    "reverse_phase_encoding",
+    "fieldmap",
+    "topup",
+    "fugue",
+    "gradunwarp",
+    "sdc_fieldmapless",
+    "other",
+]
+DistortionTool = Literal["topup", "fugue", "gradunwarp", "sdc_fieldmapless", "other"]
 
 
 class DistortionCorrection(BaseModel):
@@ -885,6 +903,9 @@ class DistortionCorrection(BaseModel):
     # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
     source: ProvenancedField[list[SpecifiedTerm[DistortionSource]]]
     method: ProvenancedField[list[SpecifiedTerm[DistortionMethod]]]
+    # 0.6.1 (2026-11-03): the program, separate from the method family. OPTIONAL: a 0.6.0 document
+    # parses with it absent and renders unchanged.
+    tool: ProvenancedField[list[SpecifiedTerm[DistortionTool]]] | None = None
     intended_fieldmap: AcquisitionRef | NotApplicable
 
     cobidas_row: ClassVar[str] = "distortion_correction"
@@ -1514,7 +1535,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.6.0"
+SCHEMA_VERSION = "0.6.1"
 
 
 class MigrationInfo(BaseModel):
@@ -1563,7 +1584,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.6.0"] = "0.6.0"
+    schema_version: Literal["0.6.1"] = "0.6.1"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

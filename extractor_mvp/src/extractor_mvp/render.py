@@ -859,7 +859,9 @@ _HOP_TARGET_STATE = {
 
 
 def _second_hop_section(
-    second_hop: list[dict[str, Any]] | None, data_release: dict[str, Any] | None = None
+    second_hop: list[dict[str, Any]] | None,
+    data_release: dict[str, Any] | None = None,
+    citing_software: list[dict[str, Any]] | None = None,
 ) -> list[str]:
     """The citation hop (DESIGN_citation_hop.md, ratified 2026-11-03): every value the hop read in a
     cited paper, shown "as described in <ref>, cited by this paper". Never counted toward this
@@ -892,6 +894,27 @@ def _second_hop_section(
             if len(own) < len(named):
                 said += f" ({len(named) - len(own)} named without its quote and value checked, not shown)"
         out.append(f"This paper's data release (read in this paper): {said}")
+    if citing_software is not None:
+        kept_own = [t for t in citing_software if t.get("kept")]
+        rest = [t["display_name"] for t in citing_software if not t.get("kept")]
+        out.append(
+            "This paper's software by the KB scan (read in this paper; not counted, the Software "
+            "row below is the extraction's): "
+            + (
+                "; ".join(
+                    (
+                        f"{t['display_name']} {t['version']}"
+                        if t.get("version")
+                        else t["display_name"]
+                    )
+                    + f"  (fMRI use: «{_truncate_quote(t.get('use_quote') or '')}»)"
+                    for t in kept_own
+                )
+                or "no KB package named with an fMRI use"
+            )
+            + (f"; named, no quoted fMRI use: {', '.join(rest)}" if rest else "")
+            + "."
+        )
     for rec in second_hop:
         ref = rec.get("ref", "(unspecified)")
         out.append(f"### {ref}, cited by this paper")
@@ -975,12 +998,20 @@ def _second_hop_section(
             found = [x for x in returned if _release_checked(x, "tool")]
             check = effective(verdicts.get(f"tool.{t['field']}"))
             tag = f"   [check: {check}]" if check else ""
-            head = f"- {t['field']} tool (this paper: " + "; ".join(
-                f'"{w}"' for w in t.get("described_as") or []
-            )
+            stated: list[str] = t.get("described_as") or []
+            if stated and all(w.startswith("deferred to ") for w in stated):
+                head = (
+                    f"- {t['field']} tool (this paper: {stated[0]}"  # a deferral, case two's shape
+                )
+            else:
+                head = (
+                    f"- {t['field']} tool (this paper: "
+                    + "; ".join(f'"{w}"' for w in stated)
+                    + ", no tool named"
+                )
             if found:
                 out.append(
-                    f"{head}, no tool named) = "
+                    f"{head}) = "
                     + "; ".join(x["tool"] for x in found)
                     + f" — as described in {ref}  «{_truncate_quote(found[0]['verbatim_quote'])}»{tag}"
                 )
@@ -992,11 +1023,11 @@ def _second_hop_section(
                     else "it is not in its quote"
                 )
                 out.append(
-                    f"{head}, no tool named) = {x['tool']}  «{_truncate_quote(x['verbatim_quote'])}»"
+                    f"{head}) = {x['tool']}  «{_truncate_quote(x['verbatim_quote'])}»"
                     f"  ({why} — unverified){tag}"
                 )
             else:
-                out.append(f"{head}, no tool named): no tool named in {ref}{tag}")
+                out.append(f"{head}): no tool named in {ref}{tag}")
         described = [r for r in rec.get("releases_described") or [] if _release_checked(r)]
         if described:
             out.append(
@@ -1019,31 +1050,33 @@ def _second_hop_section(
                     f"  Whether {r['dataset']} {r['release']} postdates what {ref} describes is not "
                     "determined from the two texts."
                 )
-        software = [
-            pf["extraction"]["value"]
-            for pf in rec.get("software_mentions") or []
-            if (pf.get("extraction") or {}).get("status") == "EXTRACTED"
-        ]
-        # a tool is kept only when its quoted use is fMRI processing or feeds it (the author,
-        # 2026-11-03): the use quote found in the text and naming the tool (citation_hop.fmri_use)
-        use = rec.get("software_use") or {}
-        kept = [m for m in software if (use.get(m["name"]) or {}).get("kept")]
-        dropped = [m["name"] for m in software if not (use.get(m["name"]) or {}).get("kept")]
+        # the software list (the author, 2026-11-03): a deterministic KB scan of the whole cited
+        # paper, one scoped question per mention; a tool is listed when a mention's quoted use is
+        # fMRI processing or feeds it (software_scan.py)
+        scanned = (rec.get("software_scan") or {}).get("tools") or []
+        kept = [t for t in scanned if t.get("kept")]
+        dropped = [t["display_name"] for t in scanned if not t.get("kept")]
         if kept:
             out.append(
-                f"- Software as described in {ref} (not counted toward this paper's Software row): "
+                f"- Software as described in {ref} (KB scan of the whole paper; not counted toward "
+                "this paper's Software row): "
                 + "; ".join(
                     (
-                        f"{m['name']} {m['version']}"
-                        if m.get("version")
-                        else f"{m['name']} (no version)"
+                        f"{t['display_name']} {t['version']}"
+                        if t.get("version")
+                        else f"{t['display_name']} (no version)"
                     )
-                    + f"  (fMRI use: «{_truncate_quote(use[m['name']]['fmri_use_quote'])}»)"
-                    for m in kept
+                    + f"  (fMRI use: «{_truncate_quote(t.get('use_quote') or '')}»)"
+                    for t in kept
                 )
             )
         if dropped:
-            out.append(f"  Not listed, no quoted fMRI use: {', '.join(dropped)}")
+            out.append(f"  Named, no quoted fMRI use: {', '.join(dropped)}")
+        if rec.get("software_scan") is not None:
+            out.append(
+                "  The scan finds only packages in the KB (kb/tools); a package it does not list is "
+                "not looked for."
+            )
         outside = (rec.get("scope") or {}).get("rows_outside_calls") or []
         if outside:
             out.append(f"Not asked (outside calls T and S): {', '.join(outside)}.")
@@ -1095,6 +1128,7 @@ def to_protocol(
     verifier: dict[str, Any] | None = None,
     second_hop: list[dict[str, Any]] | None = None,
     data_release: dict[str, Any] | None = None,
+    citing_software: list[dict[str, Any]] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -1213,7 +1247,7 @@ def to_protocol(
 
     # 2026-11-02, the author's item 2: what the checking pass found that no field captured.
     lines.extend(_unplaced_section(verifier))
-    lines.extend(_second_hop_section(second_hop, data_release))
+    lines.extend(_second_hop_section(second_hop, data_release, citing_software))
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
     lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())
@@ -1236,6 +1270,7 @@ def to_report(
     verifier: dict[str, Any] | None = None,
     second_hop: list[dict[str, Any]] | None = None,
     data_release: dict[str, Any] | None = None,
+    citing_software: list[dict[str, Any]] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -1253,6 +1288,7 @@ def to_report(
         verifier=verifier,
         second_hop=second_hop,
         data_release=data_release,
+        citing_software=citing_software,
     )
 
 

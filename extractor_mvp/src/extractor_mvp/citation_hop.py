@@ -37,7 +37,6 @@ from extractor_mvp.coverage_extractor import (
     CoverageExtraction,
     SoftwareMentionResult,
     _process,
-    _process_software,
     _response_model,
 )
 from extractor_mvp.coverage_fields import CALL_S_SPECS, CALL_T_SPECS, CoverageFieldSpec
@@ -327,6 +326,12 @@ def hop_scope(
     asked: dict[str, str] = {d: "field deferred" for d in sorted(deferred_here) if d in _SPECS}
     software = False
     tools: dict[str, dict[str, Any]] = {}
+    # a deferred method field calls T and S do not carry (motion_correction.method: case two,
+    # poldrack_2015 -> ref 45, 2026-11-03) is asked as the step's tool, the question call S carries
+    for d in sorted(deferred_here):
+        kind = d.split(".", 1)[0]
+        if d not in _SPECS and d == f"{kind}.method" and kind in _TOOL_METHOD_KINDS:
+            tools[d] = {"field": d, "row": kind, "described_as": [f"deferred to {ref_string}"]}
     outside: list[str] = []
     if "base_pipeline" in deferred_here:
         software = True
@@ -446,25 +451,17 @@ _TOOLS_ASK = (
     "the text). A step for which the text names no program: leave it out. Steps: {fields}."
 )
 
-#: The software ask on call SW (the whole cited paper; the author, 2026-11-03): each tool with the
-#: sentence in the fMRI sections where the fMRI data are processed with it or its product. The
-#: tool is kept only when that quote is found in those sections and names it (:func:`fmri_use`).
-_SOFTWARE_ASK = (
-    "List the software as the prompt asks, from the whole text. For each, also give fmri_use_quote: "
-    "a sentence, copied exactly from the text's fMRI processing sections, that names the tool "
-    "where the fMRI data are processed with it or with what it produces (e.g. masks, regions of "
-    "interest, surfaces); null when those sections state none."
-)
-
 _TEXT_MARKER = 'Text:\n"""'
 
 
 def hop_prompt(base: str, attrs: list[str], software: bool, tools: Sequence[str] = ()) -> str:
     """``base`` (call T's or S's pinned prompt) with :data:`HOP_ADDENDUM` before its text block.
-    ``tools`` are asked on call S only (its response model carries them)."""
+    ``tools`` are asked on call S only (its response model carries them). ``software`` is kept for
+    the signature; the software list comes from the KB scan (software_scan.py, 2026-11-03), never
+    from a call, so the addendum always says "Return no software list."."""
     addendum = (
         HOP_ADDENDUM.replace("[ASKED]", ", ".join(attrs) or "(none)")
-        .replace("[SOFTWARE]", _SOFTWARE_ASK if software else "Return no software list.")
+        .replace("[SOFTWARE]", "Return no software list.")
         .replace(
             "[TOOLS]",
             _TOOLS_ASK.format(fields=", ".join(tools)) if tools else "Return no `tools`.",
@@ -472,40 +469,6 @@ def hop_prompt(base: str, attrs: list[str], software: bool, tools: Sequence[str]
     )
     i = base.rindex(_TEXT_MARKER)
     return base[:i] + addendum + base[i:]
-
-
-class HopSoftwareMention(SoftwareMentionResult):
-    """A software mention with the sentence that ties it to the fMRI processing (call SW)."""
-
-    fmri_use_quote: str | None = None
-
-
-HopSoftwareExtraction: type[BaseModel] = _response_model(
-    "HopSoftwareExtraction",
-    (),
-    {"software_mentions": (list[HopSoftwareMention], Field(default_factory=list))},
-)
-
-
-def fmri_use(name: str, quote: str | None, fmri_text: str) -> dict[str, Any]:
-    """The use check: kept when the quote is found in the cited paper's fMRI sections (where the
-    fMRI processing uses the tool or its product) and names the tool, by its name, a first-use
-    variant ("Analysis of Functional NeuroImages (AFNI)" -> "AFNI") or the name's first word, a
-    possessive aside. A sentence elsewhere naming the tool (FreeSurfer's sMRI segmentation, an
-    acquisition-time monitor) does not show an fMRI use."""
-    if not quote:
-        return {"fmri_use_quote": None, "quote_resolved": False, "names_tool": False, "kept": False}
-    from extractor_mvp.span_resolver import _first_use_variants
-
-    resolved = resolve_quote(quote, fmri_text).span is not None
-    forms = {v for v in _first_use_variants(name)} | ({name.split()[0]} if name.split() else set())
-    names = any(_in_quote(f, quote) for f in forms)
-    return {
-        "fmri_use_quote": quote,
-        "quote_resolved": resolved,
-        "names_tool": names,
-        "kept": resolved and names,
-    }
 
 
 class HopTool(BaseModel):
@@ -591,9 +554,9 @@ class CallMeter:
         if self.calls:
             self.calls[-1]["parse_error"] = f"{type(error).__name__}: {error}"[:2000]
 
-    def client(self, mode: str = "json") -> Any:
-        """``mode`` "json" (every client in this package today) or "tools" (instructor's tool
-        calling; the 2026-11-03 retry measurement, not a default)."""
+    def client(self, mode: str = "tools") -> Any:
+        """``mode`` "tools" (the default, as :data:`extractor.INSTRUCTOR_MODE` from 2026-11-03) or
+        "json" (the earlier mode, kept for the retry measurement)."""
         import instructor
 
         client = instructor.from_litellm(
@@ -691,12 +654,12 @@ def _draft(
                 f"tool.{field} | extracted | {t['tool']} | "
                 f'quote: "{" ".join(t["verbatim_quote"].split())}" | reason: '
             )
-    for pf in software:
-        if pf.extraction.status == "EXTRACTED":
-            v = pf.extraction.value
+    for t in software:
+        if t.get("kept"):
             lines.append(
-                f"software_mentions.{v.name} | extracted | version {v.version or 'not stated'}; "
-                f'used for {v.used_for or "not stated"} | quote: "{" ".join(pf.extraction.spans[0].text.split())}" | reason: '
+                f"software_mentions.{t['display_name']} | extracted | version "
+                f"{t.get('version') or 'not stated'}; used for {t.get('use') or 'not stated'} | "
+                f'quote: "{" ".join((t.get("use_quote") or "").split())}" | reason: '
             )
     return "\n".join(lines)
 
@@ -734,7 +697,7 @@ def run_hop(
             "fields": {},
             "variants": {},
             "software_mentions": [],
-            "software_use": {},
+            "software_scan": None,
             "tools": {},
             "releases_described": [],
             "cited_deferrals": [],
@@ -809,29 +772,12 @@ def run_hop(
             _process(raw_s, s_specs, text, processed)
             raw_variants += [(v, {s.attr: s for s in s_specs}) for v in raw_s.variants]
             if scope["software"]:
-                # the software list reads the whole cited paper (the author, 2026-11-03): a tool
-                # named outside the fMRI sections may feed them (FreeSurfer's aseg masks); the
-                # checking pass's use verdict keeps only those whose use is fMRI processing
-                meter.label = "SW"
-                raw_sw = _create(
-                    client,
-                    model,
-                    hop_prompt(SPATIAL_PROMPT, [], True).format(text=whole),
-                    HopSoftwareExtraction,
-                )
-                rec["software_use"] = {
-                    m.name: fmri_use(m.name, m.fmri_use_quote, text)
-                    for m in raw_sw.software_mentions
-                }
-                # a mention whose own quote is not found takes its use quote when that passed the
-                # use check (case one: AFNI quoted from a package list the text does not hold
-                # verbatim, its 3dvolreg sentence found in the fMRI sections)
-                for m in raw_sw.software_mentions:
-                    use = rec["software_use"][m.name]
-                    if use["kept"] and resolve_quote(m.verbatim_quote, whole).span is None:
-                        m.verbatim_quote = use["fmri_use_quote"]
-                        use["mention_quote_from_use"] = True
-                _process_software(raw_sw, whole, processed)
+                # the software list (the author, 2026-11-03): a deterministic scan of the whole
+                # cited paper for KB package names, then one scoped question per mention
+                from extractor_mvp.software_scan import ask_uses, scan, tool_list
+
+                uses = ask_uses(scan(whole), model, client=client, meter=meter)
+                rec["software_scan"] = {"mentions": uses, "tools": tool_list(uses)}
         except Exception as exc:  # the hop can never fail the citing paper
             rec["status"] = "call_failed"
             rec["error"] = f"{type(exc).__name__}: {exc}"[:500]
@@ -865,7 +811,7 @@ def run_hop(
             None,
             model,
             client=client,
-            draft=_draft(fields, processed.software, rec["tools"]),
+            draft=_draft(fields, (rec.get("software_scan") or {}).get("tools") or [], rec["tools"]),
         )
         rec["releases_described"] = described_releases(
             json_safe(methods.text), model, client=client, meter=meter
@@ -929,10 +875,11 @@ def extract_data_release(
 
 _VERSION = r"\d+(?:\.\d+)*"
 #: A release as a version or a range of versions ("2.0.1"; "1.0 \u2013 2.0.1"; "1.0 to 2.0.1"),
-#: after an optional release word. Anything else ("ABCD collection 3165") is not a release version.
+#: with an optional release word before or after ("Data Release 2.0"; "3.0 release", case one's
+#: draw of 2026-11-03 evening). Anything else ("ABCD collection 3165") is not a release version.
 _RELEASE = re.compile(
     rf"^\s*(?:(?:data\s+|fix\s+)?releases?\s+)?(?P<lo>{_VERSION})"
-    rf"(?:\s*(?:-|\u2013|\u2014|to|through)\s*(?P<hi>{_VERSION}))?\s*$",
+    rf"(?:\s*(?:-|\u2013|\u2014|to|through)\s*(?P<hi>{_VERSION}))?(?:\s+releases?)?\s*$",
     re.IGNORECASE,
 )
 _DATASET_FILLER = re.compile(r"\b(data|dataset|study|releases?|cohort)\b")

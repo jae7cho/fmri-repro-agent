@@ -456,12 +456,21 @@ _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
 ]
 
 
+#: The instructor mode every client uses. "tools" from 2026-11-03 (the author's ruling): JSON mode
+#: let a reply copy a quoted sentence's double quotes unescaped into its JSON and retried, billed
+#: (case one's checking pass; liu_2013's in the 18-paper measurement, 1 of 18 under JSON, 0 of 18
+#: under tool calling, one draw each). A draw under it is a new vintage; the request every call
+#: makes changes, so the prompt hashes alone no longer identify a vintage. Recorded on every batch
+#: record as ``instructor_mode``.
+INSTRUCTOR_MODE = "tools"
+
+
 def build_client() -> Any:
-    """Instructor-wrapped LiteLLM client in JSON mode (Bedrock-portable)."""
+    """Instructor-wrapped LiteLLM client in tool-calling mode (:data:`INSTRUCTOR_MODE`)."""
     import instructor
     from litellm import completion
 
-    return instructor.from_litellm(completion, mode=instructor.Mode.JSON)
+    return instructor.from_litellm(completion, mode=instructor.Mode.TOOLS)
 
 
 def _missing_pf(field_id: str, t: Any, reason: str) -> ProvenancedField:

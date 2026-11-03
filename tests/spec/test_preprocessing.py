@@ -741,7 +741,7 @@ _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
     # dated catalog entry), so an InferredDefault on it is now accepted -- see the flagged case below.
     # 2026-10-28, schema 0.5.2: these fields are SpecifiedTerm-typed now (DESIGN_coverage_expansion.md
     # B9), so the inferred value is a resolved term, verbatim None (nothing was stated).
-    # 0.6.0 (2026-10-29): four of these are lists now
+    # 0.6.1 (2026-10-29): four of these are lists now
     (
         DistortionCorrection,
         "method",
@@ -1638,10 +1638,10 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.6.0) is the live root.
+    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.6.1) is the live root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.6.0"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.6.1"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1651,12 +1651,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.6.0"
-    assert prep.written_under == "0.6.0"
+    assert prep.schema_version == "0.6.1"
+    assert prep.written_under == "0.6.1"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.6.0"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.6.1"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1664,7 +1664,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.6.0",
+            written_under="0.6.1",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),

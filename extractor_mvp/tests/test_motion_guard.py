@@ -461,7 +461,9 @@ def test_the_fallback_reads_the_knowledge_base_package_table() -> None:
     from extractor_mvp.motion_guard import _listed_packages
 
     assert _listed_packages() == listed_package_tokens()
-    assert set(_listed_packages()) == {"afni", "fsl", "spm", "ants", "brainvoyager"}
+    # mmps added to kb/tools 2026-11-03 (the author's request; Hagler et al. 2019 as the source):
+    # a motion quote naming MMPS now reaches the listed-package fallback
+    assert set(_listed_packages()) == {"afni", "fsl", "spm", "ants", "brainvoyager", "mmps"}
 
 
 @pytest.mark.parametrize(

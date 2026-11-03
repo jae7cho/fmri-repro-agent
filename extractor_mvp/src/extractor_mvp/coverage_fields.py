@@ -27,8 +27,8 @@ from fmri_repro.spec.preprocessing import (
     CoregistrationTransform,
     DespikeMethod,
     Detrend,
-    DistortionMethod,
     DistortionSource,
+    DistortionTool,
     ICADenoiseMethod,
     IntensityCorrectionMethod,
     IntensityCorrectionTarget,
@@ -325,7 +325,33 @@ DISTORTION_SOURCE: dict[str, list[str]] = {
     ],
     "fieldmap_less": ["fieldmap-less", "field map-less", "fieldmapless", "SyN-based"],
 }
+#: 2026-11-03 (the author's ruling): the method FAMILY, separate from the program (DISTORTION_TOOL).
+#: Case one's Hagler et al. (2019) states "the same reversing polarity method"; a tool name returned
+#: for it was rejected by the value-in-quote check in every draw.
 DISTORTION_METHOD: dict[str, list[str]] = {
+    "reverse_phase_encoding": [
+        "reverse_phase_encoding",
+        "reversing polarity",
+        "reversed polarity",
+        "reverse polarity",
+        "opposite phase-encoding",
+        "opposite phase encoding",
+        "reverse phase-encoding",
+        "reversed phase-encoding",
+        "reverse phase encoding",
+        "blip-up/blip-down",
+        "blip up/blip down",
+        "blip-up blip-down",
+    ],
+    "fieldmap": ["fieldmap", "field map", "field-map", "phase difference", "phase-difference"],
+    "other": [],
+}
+#: The families the extractor may resolve a method to (2026-11-03). The schema's DistortionMethod also
+#: keeps the five program members so a 0.6.0 document stays valid; a new extraction never resolves to
+#: them, so a program name returned as the method stays unrecognized (and its quote must hold it).
+DistortionFamily = Literal["reverse_phase_encoding", "fieldmap", "other"]
+#: The program (2026-11-03): the members the 0.6.0 method table held.
+DISTORTION_TOOL: dict[str, list[str]] = {
     "topup": ["topup", "TOPUP"],
     "fugue": ["FUGUE"],
     "gradunwarp": ["gradunwarp", "gradient_unwarp", "gradient unwarp"],
@@ -694,8 +720,17 @@ CALL_S_SPECS: tuple[CoverageFieldSpec, ...] = (
         "distortion_correction",
         "method",
         "term_list",
-        DistortionMethod,
+        DistortionFamily,
         DISTORTION_METHOD,
+    ),
+    _spec(
+        "S",
+        "distortion_tool",
+        "distortion_correction",
+        "tool",
+        "term_list",
+        DistortionTool,
+        DISTORTION_TOOL,
     ),
     _spec("S", "intensity_correction_performed", "intensity_correction", "performed", "bool"),
     _spec(

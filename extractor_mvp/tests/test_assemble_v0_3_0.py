@@ -98,4 +98,7 @@ def test_protocol_renders_new_steps_generically(assembled: Preprocessing):
     #
     # 81 -> 93, 2026-10-29 (DESIGN_report_v2.md §1a): temporal_filtering is emitted, and with no
     # coverage call in this fixture all twelve of its fields are untargeted. 81 + 12 = 93.
-    assert out.count("not examined by the extractor") == 93
+    #
+    # 93 -> 94, 2026-11-03 (schema 0.6.1, the author's ruling): distortion_correction gains ``tool``,
+    # the program, separate from the method family. 93 + 1 = 94.
+    assert out.count("not examined by the extractor") == 94

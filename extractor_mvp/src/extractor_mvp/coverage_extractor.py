@@ -297,8 +297,11 @@ distortion_performed: was any distortion correction applied (field-map based, fi
   gradient-nonlinearity unwarping)?
 distortion_source: a comma-separated list -- a paper may correct both -- from susceptibility_fieldmap (a field map / phase difference / spin-echo
   pair), gradient_nonlinearity (gradient distortion), fieldmap_less (SyN-based or similar).
-distortion_method: a comma-separated list from topup, fugue, gradunwarp, sdc_fieldmapless, other; verbatim
-  otherwise.
+distortion_method: the method FAMILY, a comma-separated list from reverse_phase_encoding (reversed
+  phase-encoding / reversing polarity / opposite phase-encoding / blip-up/blip-down pairs), fieldmap (a
+  field map / phase difference), other; verbatim otherwise. Never a program name here.
+distortion_tool: the PROGRAM, a comma-separated list from topup, fugue, gradunwarp, sdc_fieldmapless,
+  other; verbatim otherwise; "missing" when no program is named.
 
 ## Intensity correction (intensity_correction)
 D.3 asks: "Bias field corrections for structural MRI, but also correction of odd versus even
