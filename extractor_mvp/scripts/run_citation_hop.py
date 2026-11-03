@@ -100,6 +100,11 @@ def main(argv: list[str] | None = None) -> int:
             print(
                 f"  cited methods slice: found_via={r['methods']['found_via']}, {r['methods']['chars']} chars"
             )
+        if r.get("fmri_sections"):
+            f = r["fmri_sections"]
+            print(f"  fMRI sections: {f['found_via']}, {f['chars']} chars")
+            for x in f["sections"]:
+                print(f"    {x['heading']!r}: {x['start']}-{x['end']}")
         print(f"  software list asked: {r['scope']['software']}")
         for t in r["scope"].get("tools") or []:
             print(f"  tool asked: {t['field']}  (row {t['row']} reported without a tool)")

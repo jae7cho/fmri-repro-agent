@@ -922,6 +922,22 @@ def _second_hop_section(
             target.get("doi_confirmed")
         ]
         out.append(f"Read from a local PDF, {Path(str(target.get('path'))).name} ({doi}).")
+        sec = rec.get("fmri_sections")
+        if sec and sec.get("found_via") == "headings":
+            out.append(
+                "Fields read in its fMRI sections only: "
+                + "; ".join(
+                    f'"{x["heading"]}" and its subsections (characters {x["start"]} to {x["end"]})'
+                    for x in sec.get("sections") or []
+                )
+                + ". The software list reads the whole paper."
+            )
+        elif sec:
+            out.append(
+                "No heading names fMRI; fields read in its whole methods section. The software "
+                "list reads the whole paper."
+            )
+        rules = rec.get("rules") or {}
         verifier = rec.get("verifier") or {}
         verdicts = (verifier.get("fields") or {}) if verifier.get("status") == "ok" else {}
         for dotted, pf in (rec.get("fields") or {}).items():
@@ -938,7 +954,15 @@ def _second_hop_section(
                 refs = ", ".join(d.get("ref", "") for d in ext.get("deferrals") or [])
                 out.append(f"- {dotted}: the cited paper defers further, to {refs} (not followed)")
             else:
-                out.append(f"- {dotted}: not reported in {ref}{tag}")
+                rule = rules.get(dotted)
+                if rule:
+                    src = ", ".join(rule.get("source_fields") or [])
+                    out.append(
+                        f"- {dotted}: {rule['value']} — by rule, from {src} as described in {ref} "
+                        f"({rule.get('note')}){tag}"
+                    )
+                else:
+                    out.append(f"- {dotted}: not reported in {ref}{tag}")
             for v in (rec.get("variants") or {}).get(dotted, []):
                 note = "" if v.get("quote_resolved") else "  (its quote was not found — unverified)"
                 out.append(
@@ -1000,16 +1024,26 @@ def _second_hop_section(
             for pf in rec.get("software_mentions") or []
             if (pf.get("extraction") or {}).get("status") == "EXTRACTED"
         ]
-        if software:
+        # a tool is kept only when its quoted use is fMRI processing or feeds it (the author,
+        # 2026-11-03): the use quote found in the text and naming the tool (citation_hop.fmri_use)
+        use = rec.get("software_use") or {}
+        kept = [m for m in software if (use.get(m["name"]) or {}).get("kept")]
+        dropped = [m["name"] for m in software if not (use.get(m["name"]) or {}).get("kept")]
+        if kept:
             out.append(
                 f"- Software as described in {ref} (not counted toward this paper's Software row): "
                 + "; ".join(
-                    f"{m['name']} {m['version']}"
-                    if m.get("version")
-                    else f"{m['name']} (no version)"
-                    for m in software
+                    (
+                        f"{m['name']} {m['version']}"
+                        if m.get("version")
+                        else f"{m['name']} (no version)"
+                    )
+                    + f"  (fMRI use: «{_truncate_quote(use[m['name']]['fmri_use_quote'])}»)"
+                    for m in kept
                 )
             )
+        if dropped:
+            out.append(f"  Not listed, no quoted fMRI use: {', '.join(dropped)}")
         outside = (rec.get("scope") or {}).get("rows_outside_calls") or []
         if outside:
             out.append(f"Not asked (outside calls T and S): {', '.join(outside)}.")

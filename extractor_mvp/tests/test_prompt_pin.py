@@ -355,7 +355,30 @@ def test_the_performed_phrase_table_is_frozen() -> None:
 #: asks the tool for a step the citing paper describes without one (fork A widened) and the data
 #: releases the cited paper describes; the pin now covers the addendum and both asks
 #: (HOP_ADDENDUM + _TOOLS_ASK + _RELEASES_ASK). Supersedes the first draw for case one.
-_PINNED_HOP_ADDENDUM = "64d8979fd5267a7daafbd3893f0c512e63e622aa011e1f1de05d8885fd9257a6"
+#: Was 64d8979fd5267a7daafbd3893f0c512e63e622aa011e1f1de05d8885fd9257a6 (the second build). Re-pinned 2026-11-03 (later afternoon, the author's
+#: scoping ruling): the releases ask moved out of call S to its own call RD on the methods slice,
+#: since calls T and S now read only the fMRI preprocessing section; the pin covers
+#: HOP_ADDENDUM + _TOOLS_ASK. Supersedes the second build's draws.
+#: Was 097a8eb1435eb7b949169e1f4afad8eae3eb394014b5bddad432dcdfc84b6ec3 (the third build). Re-pinned 2026-11-03 (the author's scoping
+#: correction): the software list moved to its own call SW on the whole cited paper, asking each
+#: tool's fMRI use quote (_SOFTWARE_ASK); the pin covers HOP_ADDENDUM + _TOOLS_ASK + _SOFTWARE_ASK.
+#: Was f2785d924064367b2a21a83ffb3362dc758f7308624f2c2d2036b360d40865a7 (never drawn on case one). Re-pinned 2026-11-03: the use quote is asked
+#: from the fMRI processing sections, where fmri_use now checks it.
+_PINNED_HOP_ADDENDUM = "8f928a217ee9e60a413c2edcd46d604883aab7cc5dbea92354220b1f4c206816"
+
+#: Call RD, the releases the cited paper describes, on its methods slice (2026-11-03, later
+#: afternoon). Pinned at its first build.
+_PINNED_CITED_RELEASE_PROMPT = "f9324f34c0bc24d385ab039d203832b386e515fea4aaee84c2221765ad0c1413"
+
+
+def test_the_cited_release_prompt_is_hash_pinned() -> None:
+    from extractor_mvp.citation_hop import CITED_RELEASE_PROMPT
+
+    got = hashlib.sha256(CITED_RELEASE_PROMPT.encode("utf-8")).hexdigest()
+    assert got == _PINNED_CITED_RELEASE_PROMPT, (
+        f"CITED_RELEASE_PROMPT changed: {got}{_VINTAGE_NOTE}"
+    )
+
 
 #: The citing paper's data-release call R (first hop; the author's "described vs applied" ruling,
 #: 2026-11-03). Pinned at its first build, 2026-11-03.
@@ -370,9 +393,9 @@ def test_the_release_prompt_is_hash_pinned() -> None:
 
 
 def test_the_hop_addendum_is_hash_pinned() -> None:
-    from extractor_mvp.citation_hop import _RELEASES_ASK, _TOOLS_ASK, HOP_ADDENDUM, hop_prompt
+    from extractor_mvp.citation_hop import _SOFTWARE_ASK, _TOOLS_ASK, HOP_ADDENDUM, hop_prompt
 
-    got = hashlib.sha256((HOP_ADDENDUM + _TOOLS_ASK + _RELEASES_ASK).encode("utf-8")).hexdigest()
+    got = hashlib.sha256((HOP_ADDENDUM + _TOOLS_ASK + _SOFTWARE_ASK).encode("utf-8")).hexdigest()
     assert got == _PINNED_HOP_ADDENDUM, f"HOP_ADDENDUM changed: {got}{_VINTAGE_NOTE}"
     # the base prompt is untouched around the insertion
     p = hop_prompt(SPATIAL_PROMPT, ["smoothing_fwhm_mm"], False)

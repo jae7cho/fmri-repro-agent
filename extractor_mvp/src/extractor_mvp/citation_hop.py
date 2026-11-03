@@ -207,6 +207,98 @@ def resolve_local_pdf(entry: RefEntry, corpus_dirs: list[Path]) -> tuple[str, Pa
 
 
 # ---------------------------------------------------------------------------
+# 2b. The cited paper's fMRI sections (the author, 2026-11-03: every section whose heading names
+#     fMRI; dMRI and sMRI sections excluded)
+# ---------------------------------------------------------------------------
+
+#: A numbered heading line ("2.7.4. Resting-state fMRI analysis"): short, capitalised, and not a
+#: sentence (the caller drops a match that ends in a period).
+_NUMBERED_HEADING = re.compile(
+    r"^[ \t]*(?P<num>\d+(?:\.\d+)+)\.?[ \t]+(?:[A-Z]|[a-z]{1,3}MRI\b)[^\n]{0,78}$", re.MULTILINE
+)
+#: An unnumbered heading line that names an imaging modality: at most eight words, capitalised (or
+#: opening with "fMRI"/"sMRI"/"dMRI"), no punctuation inside, no closing period or hyphen. Only these, the numbered headings and the methods finder's own headings bound a
+#: section in a paper without numbered headings.
+_MODALITY_HEADING = re.compile(
+    r"^[ \t]*(?=[A-Z]|[a-z]{1,3}MRI\b)[^\n.,;:]{0,60}"
+    r"(?i:\bf(?:unctional[ \t-])?MRI\b|\bBOLD\b|\bdMRI\b|\bsMRI\b|diffusion|structural|anatomical)"
+    r"[^\n.,;:]{0,40}$",
+    re.MULTILINE,
+)
+_HEADING_WORDS = 8
+#: A heading names fMRI ("fMRI", "functional MRI", "BOLD", "resting-state", "rs-fMRI"); the dMRI and
+#: sMRI sections never do.
+_NAMES_FMRI = re.compile(
+    r"\bf(?:unctional[ \t-])?MRI\b|\bBOLD\b|resting[- ]state|\brs-?fMRI\b", re.IGNORECASE
+)
+_NAMES_OTHER = re.compile(r"\b[ds]MRI\b|diffusion|structural|anatomical", re.IGNORECASE)
+
+
+@dataclasses.dataclass(frozen=True)
+class FmriSections:
+    """What the hop's field calls read: the fMRI-headed sections, joined in order. ``sections``
+    holds each one's heading and its offsets in the cited paper's full text."""
+
+    text: str
+    sections: tuple[tuple[str, int, int], ...]
+    found_via: str  # headings | methods_fallback (no heading names fMRI)
+
+
+def _headings(methods_text: str) -> list[tuple[int, str, str | None]]:
+    """Every heading in the methods slice: (offset, heading, its number or None)."""
+    from extractor_mvp.methods_finder import _METHODS_RE, _NEXT_RE
+
+    found: dict[int, tuple[int, str, str | None]] = {}
+    for rx in (_NUMBERED_HEADING, _MODALITY_HEADING, *_METHODS_RE, *_NEXT_RE):
+        for m in rx.finditer(methods_text):
+            head = m.group(0).strip()
+            if head.endswith((".", "-")) or m.start() in found:
+                continue
+            if rx is _MODALITY_HEADING and len(head.split()) > _HEADING_WORDS:
+                continue
+            num = m.groupdict().get("num") if rx is _NUMBERED_HEADING else None
+            found[m.start()] = (m.start(), head, num)
+    return sorted(found.values())
+
+
+def find_fmri_sections(methods_text: str, methods_start: int = 0) -> FmriSections:
+    """The cited paper's fMRI sections, by heading as the methods finder slices: each section runs
+    from its heading to the next heading. Kept: a section whose heading names fMRI and no other
+    modality, and every numbered subsection of a kept numbered section (Hagler et al. (2019):
+    "2.7. fMRI processing and analysis" keeps 2.7.1 to 2.7.5, so the rest regression under
+    "2.7.4. Resting-state fMRI analysis" is read). No heading names fMRI: the whole methods slice,
+    recorded as ``methods_fallback``."""
+    heads = _headings(methods_text)
+    kept: list[tuple[str, int, int]] = []
+    parents: list[str] = []
+    for k, (start, head, num) in enumerate(heads):
+        end = heads[k + 1][0] if k + 1 < len(heads) else len(methods_text)
+        own = bool(_NAMES_FMRI.search(head)) and not _NAMES_OTHER.search(head)
+        child = num is not None and any(num.startswith(p + ".") for p in parents)
+        if own or child:
+            kept.append((head, start, end))
+            if num is not None and own:
+                parents.append(num)
+    if not kept:
+        return FmriSections(
+            methods_text,
+            (("(whole methods section)", methods_start, methods_start + len(methods_text)),),
+            "methods_fallback",
+        )
+    merged: list[tuple[str, int, int]] = []
+    for head, start, end in kept:
+        if merged and merged[-1][2] == start:
+            merged[-1] = (merged[-1][0], merged[-1][1], end)
+        else:
+            merged.append((head, start, end))
+    return FmriSections(
+        "\n\n".join(methods_text[a:b] for _, a, b in merged),
+        tuple((h, methods_start + a, methods_start + b) for h, a, b in merged),
+        "headings",
+    )
+
+
+# ---------------------------------------------------------------------------
 # 3. The scope (fork A) and the scoped calls
 # ---------------------------------------------------------------------------
 
@@ -345,7 +437,6 @@ listed above), value, verbatim_quote (copied exactly from the text), applies_to 
 for the variant, e.g. a scanner vendor). The field itself then carries only a value the text gives
 for all of its data, else "missing". Never choose one variant.
 [TOOLS]
-[RELEASES]
 
 """
 
@@ -354,34 +445,67 @@ _TOOLS_ASK = (
     "`tools`: field (exactly as listed here), tool (as written), verbatim_quote (copied exactly from "
     "the text). A step for which the text names no program: leave it out. Steps: {fields}."
 )
-_RELEASES_ASK = (
-    "Data releases: in `releases_described`, each named release of a dataset whose processing this "
-    "text describes (e.g. a dataset's release numbers): dataset, release (as written), "
-    "verbatim_quote (copied exactly from the text). None named: an empty list."
+
+#: The software ask on call SW (the whole cited paper; the author, 2026-11-03): each tool with the
+#: sentence in the fMRI sections where the fMRI data are processed with it or its product. The
+#: tool is kept only when that quote is found in those sections and names it (:func:`fmri_use`).
+_SOFTWARE_ASK = (
+    "List the software as the prompt asks, from the whole text. For each, also give fmri_use_quote: "
+    "a sentence, copied exactly from the text's fMRI processing sections, that names the tool "
+    "where the fMRI data are processed with it or with what it produces (e.g. masks, regions of "
+    "interest, surfaces); null when those sections state none."
 )
 
 _TEXT_MARKER = 'Text:\n"""'
 
 
-def hop_prompt(
-    base: str, attrs: list[str], software: bool, tools: Sequence[str] = (), releases: bool = False
-) -> str:
+def hop_prompt(base: str, attrs: list[str], software: bool, tools: Sequence[str] = ()) -> str:
     """``base`` (call T's or S's pinned prompt) with :data:`HOP_ADDENDUM` before its text block.
-    ``tools`` and ``releases`` are asked on call S only (its response model carries them)."""
+    ``tools`` are asked on call S only (its response model carries them)."""
     addendum = (
         HOP_ADDENDUM.replace("[ASKED]", ", ".join(attrs) or "(none)")
-        .replace(
-            "[SOFTWARE]",
-            "List the software as the prompt asks." if software else "Return no software list.",
-        )
+        .replace("[SOFTWARE]", _SOFTWARE_ASK if software else "Return no software list.")
         .replace(
             "[TOOLS]",
             _TOOLS_ASK.format(fields=", ".join(tools)) if tools else "Return no `tools`.",
         )
-        .replace("[RELEASES]", _RELEASES_ASK if releases else "Return no `releases_described`.")
     )
     i = base.rindex(_TEXT_MARKER)
     return base[:i] + addendum + base[i:]
+
+
+class HopSoftwareMention(SoftwareMentionResult):
+    """A software mention with the sentence that ties it to the fMRI processing (call SW)."""
+
+    fmri_use_quote: str | None = None
+
+
+HopSoftwareExtraction: type[BaseModel] = _response_model(
+    "HopSoftwareExtraction",
+    (),
+    {"software_mentions": (list[HopSoftwareMention], Field(default_factory=list))},
+)
+
+
+def fmri_use(name: str, quote: str | None, fmri_text: str) -> dict[str, Any]:
+    """The use check: kept when the quote is found in the cited paper's fMRI sections (where the
+    fMRI processing uses the tool or its product) and names the tool, by its name, a first-use
+    variant ("Analysis of Functional NeuroImages (AFNI)" -> "AFNI") or the name's first word, a
+    possessive aside. A sentence elsewhere naming the tool (FreeSurfer's sMRI segmentation, an
+    acquisition-time monitor) does not show an fMRI use."""
+    if not quote:
+        return {"fmri_use_quote": None, "quote_resolved": False, "names_tool": False, "kept": False}
+    from extractor_mvp.span_resolver import _first_use_variants
+
+    resolved = resolve_quote(quote, fmri_text).span is not None
+    forms = {v for v in _first_use_variants(name)} | ({name.split()[0]} if name.split() else set())
+    names = any(_in_quote(f, quote) for f in forms)
+    return {
+        "fmri_use_quote": quote,
+        "quote_resolved": resolved,
+        "names_tool": names,
+        "kept": resolved and names,
+    }
 
 
 class HopTool(BaseModel):
@@ -402,7 +526,6 @@ class DataRelease(BaseModel):
 
 
 _VARIANTS: tuple[Any, Any] = (list[HopVariant], Field(default_factory=list))
-_RELEASES: tuple[Any, Any] = (list[DataRelease], Field(default_factory=list))
 HopTemporalExtraction: type[BaseModel] = _response_model(
     "HopTemporalExtraction", CALL_T_SPECS, {"variants": _VARIANTS}
 )
@@ -413,9 +536,14 @@ HopSpatialExtraction: type[BaseModel] = _response_model(
         "software_mentions": (list[SoftwareMentionResult], Field(default_factory=list)),
         "variants": _VARIANTS,
         "tools": (list[HopTool], Field(default_factory=list)),
-        "releases_described": _RELEASES,
     },
 )
+
+
+def _tool_arguments(message: Any) -> str | None:
+    """A tool-calling reply's arguments, the raw reply in that mode (its content is empty)."""
+    calls = getattr(message, "tool_calls", None) or []
+    return "\n".join(str(c.function.arguments) for c in calls) or None
 
 
 class CallMeter:
@@ -452,7 +580,7 @@ class CallMeter:
                 "output_tokens": getattr(usage, "completion_tokens", None),
                 "cost_usd": cost,
                 "finish_reason": getattr(choice, "finish_reason", None),
-                "raw": getattr(message, "content", None),
+                "raw": getattr(message, "content", None) or _tool_arguments(message),
                 "parse_error": None,
             }
         )
@@ -463,10 +591,15 @@ class CallMeter:
         if self.calls:
             self.calls[-1]["parse_error"] = f"{type(error).__name__}: {error}"[:2000]
 
-    def client(self) -> Any:
+    def client(self, mode: str = "json") -> Any:
+        """``mode`` "json" (every client in this package today) or "tools" (instructor's tool
+        calling; the 2026-11-03 retry measurement, not a default)."""
         import instructor
 
-        client = instructor.from_litellm(self.completion, mode=instructor.Mode.JSON)
+        client = instructor.from_litellm(
+            self.completion,
+            mode={"json": instructor.Mode.JSON, "tools": instructor.Mode.TOOLS}[mode],
+        )
         client.on("parse:error", self.on_parse_error)
         return client
 
@@ -601,6 +734,7 @@ def run_hop(
             "fields": {},
             "variants": {},
             "software_mentions": [],
+            "software_use": {},
             "tools": {},
             "releases_described": [],
             "cited_deferrals": [],
@@ -629,11 +763,20 @@ def run_hop(
             "doi_confirmed": (m.entry.doi.lower() in full.lower()) if m.entry.doi else None,
         }
         methods = find_methods_section(full)
-        text = json_safe(methods.text)
+        fmri = find_fmri_sections(methods.text, methods.start_offset)
+        text = json_safe(fmri.text)
+        whole = json_safe(full)
         rec["methods"] = {
             "found_via": methods.found_via,
-            "chars": len(text),
-            "double_quotes_replaced": sum(methods.text.count(q) for q in '"\u201c\u201d'),
+            "chars": len(methods.text),
+            "start": methods.start_offset,
+            "end": methods.start_offset + len(methods.text),
+        }
+        rec["fmri_sections"] = {
+            "found_via": fmri.found_via,
+            "sections": [{"heading": h, "start": a, "end": b} for h, a, b in fmri.sections],
+            "chars": len(fmri.text),
+            "double_quotes_replaced": sum(fmri.text.count(q) for q in '"\u201c\u201d'),
         }
         asked = [a["field"] for a in scope["asked"]]
         t_specs = tuple(s for s in CALL_T_SPECS if s.dotted in asked)
@@ -658,19 +801,37 @@ def run_hop(
             raw_s = _create(
                 client,
                 model,
-                hop_prompt(
-                    SPATIAL_PROMPT,
-                    [s.attr for s in s_specs],
-                    scope["software"],
-                    tool_fields,
-                    releases=True,
-                ).format(text=text),
+                hop_prompt(SPATIAL_PROMPT, [s.attr for s in s_specs], False, tool_fields).format(
+                    text=text
+                ),
                 HopSpatialExtraction,
             )
             _process(raw_s, s_specs, text, processed)
-            if scope["software"]:
-                _process_software(raw_s, text, processed)
             raw_variants += [(v, {s.attr: s for s in s_specs}) for v in raw_s.variants]
+            if scope["software"]:
+                # the software list reads the whole cited paper (the author, 2026-11-03): a tool
+                # named outside the fMRI sections may feed them (FreeSurfer's aseg masks); the
+                # checking pass's use verdict keeps only those whose use is fMRI processing
+                meter.label = "SW"
+                raw_sw = _create(
+                    client,
+                    model,
+                    hop_prompt(SPATIAL_PROMPT, [], True).format(text=whole),
+                    HopSoftwareExtraction,
+                )
+                rec["software_use"] = {
+                    m.name: fmri_use(m.name, m.fmri_use_quote, text)
+                    for m in raw_sw.software_mentions
+                }
+                # a mention whose own quote is not found takes its use quote when that passed the
+                # use check (case one: AFNI quoted from a package list the text does not hold
+                # verbatim, its 3dvolreg sentence found in the fMRI sections)
+                for m in raw_sw.software_mentions:
+                    use = rec["software_use"][m.name]
+                    if use["kept"] and resolve_quote(m.verbatim_quote, whole).span is None:
+                        m.verbatim_quote = use["fmri_use_quote"]
+                        use["mention_quote_from_use"] = True
+                _process_software(raw_sw, whole, processed)
         except Exception as exc:  # the hop can never fail the citing paper
             rec["status"] = "call_failed"
             rec["error"] = f"{type(exc).__name__}: {exc}"[:500]
@@ -693,10 +854,7 @@ def run_hop(
         for t in raw_s.tools:
             if t.field in tool_fields:
                 rec["tools"].setdefault(t.field, []).append(_quoted(t.verbatim_quote, t.tool, text))
-        rec["releases_described"] = [
-            {"dataset": r.dataset, **_quoted(r.verbatim_quote, r.release, text, key="release")}
-            for r in raw_s.releases_described
-        ]
+        rec["rules"] = apply_rules(fields)
         rec["cited_deferrals"] = [
             {"field": d.field, "ref": d.ref_string, "target_kind": d.target_kind}
             for d in processed.deferrals
@@ -708,6 +866,9 @@ def run_hop(
             model,
             client=client,
             draft=_draft(fields, processed.software, rec["tools"]),
+        )
+        rec["releases_described"] = described_releases(
+            json_safe(methods.text), model, client=client, meter=meter
         )
         rec["status"] = "ok"
         rec["calls"] = meter.calls[n_calls:]
@@ -766,7 +927,14 @@ def extract_data_release(
     }
 
 
-_VERSION = re.compile(r"\d+(?:\.\d+)*")
+_VERSION = r"\d+(?:\.\d+)*"
+#: A release as a version or a range of versions ("2.0.1"; "1.0 \u2013 2.0.1"; "1.0 to 2.0.1"),
+#: after an optional release word. Anything else ("ABCD collection 3165") is not a release version.
+_RELEASE = re.compile(
+    rf"^\s*(?:(?:data\s+|fix\s+)?releases?\s+)?(?P<lo>{_VERSION})"
+    rf"(?:\s*(?:-|\u2013|\u2014|to|through)\s*(?P<hi>{_VERSION}))?\s*$",
+    re.IGNORECASE,
+)
 _DATASET_FILLER = re.compile(r"\b(data|dataset|study|releases?|cohort)\b")
 
 
@@ -778,8 +946,19 @@ def _dataset_key(name: str) -> str:
     return re.sub(r"[^a-z0-9]", "", base.lower())
 
 
-def _versions(release: str) -> list[tuple[int, ...]]:
-    return [tuple(int(p) for p in m.group(0).split(".")) for m in _VERSION.finditer(release)]
+def parse_release(release: str) -> tuple[tuple[int, ...], tuple[int, ...]] | None:
+    """``(low, high)`` version tuples: equal for one version, the two ends for a range (the
+    author, 2026-11-03: "1.0 \u2013 2.0.1" is a range). None when the string is not a release
+    version or range."""
+    m = _RELEASE.match(release)
+    if m is None:
+        return None
+
+    def v(x: str) -> tuple[int, ...]:
+        return tuple(int(p) for p in x.split("."))
+
+    lo, hi = v(m.group("lo")), v(m.group("hi") or m.group("lo"))
+    return (lo, hi) if lo <= hi else None
 
 
 def _checked(r: dict[str, Any]) -> bool:
@@ -789,18 +968,83 @@ def _checked(r: dict[str, Any]) -> bool:
 def release_relation(citing: dict[str, Any], described: list[dict[str, Any]]) -> str:
     """Whether a citing paper's release is later than every release of the same dataset the cited
     paper describes: ``postdates``, ``not_later``, or ``undetermined`` (no checked release of the
-    same dataset described, or a release that is not one version number). Release DATES are not
+    same dataset described, or a release that is not a version or range). Release DATES are not
     known here (the KB backlog's dataset-release table); only version numbers are compared."""
-    if not _checked(citing):
-        return "undetermined"
-    mine = _versions(str(citing.get("release", "")))
+    mine = parse_release(str(citing.get("release", ""))) if _checked(citing) else None
+    key = _dataset_key(str(citing.get("dataset", "")))
     same = [
-        v
+        r
         for d in described
-        if _checked(d)
-        and _dataset_key(str(d.get("dataset", ""))) == _dataset_key(str(citing.get("dataset", "")))
-        for v in _versions(str(d.get("release", "")))
+        if _checked(d) and _dataset_key(str(d.get("dataset", ""))) == key
+        for r in [parse_release(str(d.get("release", "")))]
+        if r is not None
     ]
-    if len(mine) != 1 or not same:
+    if mine is None or not same:
         return "undetermined"
-    return "postdates" if mine[0] > max(same) else "not_later"
+    return "postdates" if mine[0] > max(hi for _, hi in same) else "not_later"
+
+
+# ---------------------------------------------------------------------------
+# 5. The releases the cited paper describes (call RD, on its methods slice; 2026-11-03, afternoon)
+# ---------------------------------------------------------------------------
+
+CITED_RELEASE_PROMPT = """\
+You are reading the methods of a neuroimaging paper that describes a processing pipeline. List each
+named release of a dataset whose processing this text describes (e.g. a dataset's release numbers, or
+a range of them). For each: dataset (the dataset's name as written), release (the release number or
+range as written), verbatim_quote (copied exactly from the text). Only releases the text names. None
+named: an empty list.
+
+Text:
+\"\"\"
+{text}
+\"\"\"
+"""
+
+
+def described_releases(
+    text: str, model: str, *, client: Any, meter: CallMeter | None = None
+) -> list[dict[str, Any]]:
+    """The releases the cited paper describes, each quote-checked. Read on the methods slice, not
+    the fMRI section: a pipeline paper names its releases in its overview (Hagler et al. (2019),
+    \u00a72.1). A failed call is an empty list with the failure recorded in its call entry."""
+    if meter is not None:
+        meter.label = "RD"
+    try:
+        raw = _create(client, model, CITED_RELEASE_PROMPT.format(text=text), CitingReleases)
+    except Exception:
+        return []
+    return [
+        {"dataset": r.dataset, **_quoted(r.verbatim_quote, r.release, text, key="release")}
+        for r in raw.releases
+    ]
+
+
+# ---------------------------------------------------------------------------
+# 6. Deterministic rules on the hop's fields (the author, 2026-11-03, afternoon)
+# ---------------------------------------------------------------------------
+
+
+def apply_rules(fields: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    """Values that follow from an extracted value by rule, never written into the extraction arm.
+    Rule ``rigid_no_nonlinear``: an EXTRACTED rigid coregistration transform makes
+    ``coregistration.nonlinear_transform_type`` not applicable, when that field was not reported.
+    Recorded beside the fields (the spec's derived basis caps confidence at 0.70, which a rule that
+    always holds does not fit)."""
+    out: dict[str, dict[str, Any]] = {}
+    tr = fields.get("coregistration.transform")
+    nl = fields.get("coregistration.nonlinear_transform_type")
+    if (
+        tr is not None
+        and nl is not None
+        and tr.extraction.status == "EXTRACTED"
+        and nl.extraction.status == "MISSING_FROM_PAPER"
+        and any(str(getattr(t, "resolved", None)) == "rigid" for t in _terms(tr.extraction.value))
+    ):
+        out["coregistration.nonlinear_transform_type"] = {
+            "value": "not applicable",
+            "rule": "rigid_no_nonlinear",
+            "source_fields": ["coregistration.transform"],
+            "note": "the coregistration transform is rigid, so no nonlinear transform is used",
+        }
+    return out
