@@ -240,7 +240,7 @@ def drop_same_order_verdict(
     """The verifier record without a ``step_order`` verdict whose proposal equals the current order
     (:func:`same_order`); otherwise the record unchanged. Applied when the record is written and
     again when it is rendered, so records stored before the ruling read the same way."""
-    if not verifier or verifier.get("status") != "ok":
+    if not verifier or verifier.get("status") != "ok" or preprocessing is None:
         return verifier
     v = (verifier.get("fields") or {}).get("step_order")
     if v is None or v.get("verdict") != "wrong":
@@ -283,13 +283,16 @@ def run_verifier(
     model: str,
     *,
     client: Any | None = None,
+    draft: str | None = None,
 ) -> dict[str, Any]:
     """One ``create()`` after the draft exists. Returns the verifier record (a plain dict, stored
-    beside the record as ``verifier``); never raises."""
+    beside the record as ``verifier``); never raises. ``draft`` replaces :func:`compact_draft` for a
+    draft that is not a whole ``Preprocessing`` (the citation hop's scoped fields)."""
     from extractor_mvp.extractor import build_client
 
     t0 = time.perf_counter()
-    draft = compact_draft(preprocessing)
+    if draft is None:
+        draft = compact_draft(preprocessing)
     known_fields = {line.split(" | ", 1)[0] for line in draft.splitlines()}
     try:
         client = client or build_client()

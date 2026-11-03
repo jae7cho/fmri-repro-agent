@@ -289,6 +289,8 @@ def test_the_citation_resolver_attributeerror_propagates_through_the_real_extrac
             status="deferred",
             ref_string="Smith et al. 2013",
             deferral_sentence="Data were normalized as described in Smith et al. 2013.",
+            # a pipeline target: since fork E (2026-11-03) a paper target goes to the citation hop
+            target_kind="pipeline",
         ),
         resolution_mm=none,
         surface_registration=none,

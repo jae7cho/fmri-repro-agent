@@ -344,3 +344,21 @@ def test_the_performed_phrase_table_is_frozen() -> None:
         "PERFORMED_PHRASES changed: a performed cell's support now depends on a different table. "
         "Update the pin only with a dated note recording what changed and which vintage it supersedes."
     )
+
+
+#: The citation hop's addendum to calls T and S (DESIGN_citation_hop.md, forks ratified 2026-11-03):
+#: the fields asked and the per-variant question, inserted before the text block of the pinned
+#: TEMPORAL_VOLUME_PROMPT and SPATIAL_PROMPT, which stay unchanged. Pinned at its first build,
+#: 2026-11-03; first drawn on gracia-tabuenca_2024 -> Hagler et al. (2019). A change is a dated event.
+_PINNED_HOP_ADDENDUM = "a167221c5021b455834d984343bf1de561f57fd41cf5c78b6e55e7750e64ab7e"
+
+
+def test_the_hop_addendum_is_hash_pinned() -> None:
+    from extractor_mvp.citation_hop import HOP_ADDENDUM, hop_prompt
+
+    got = hashlib.sha256(HOP_ADDENDUM.encode("utf-8")).hexdigest()
+    assert got == _PINNED_HOP_ADDENDUM, f"HOP_ADDENDUM changed: {got}{_VINTAGE_NOTE}"
+    # the base prompt is untouched around the insertion
+    p = hop_prompt(SPATIAL_PROMPT, ["smoothing_fwhm_mm"], False)
+    head, tail = SPATIAL_PROMPT.rsplit('Text:\n"""', 1)
+    assert p.startswith(head) and p.endswith('Text:\n"""' + tail)

@@ -68,9 +68,11 @@ def _ex(value: str, quote: str) -> FieldExtractionResult:
     return FieldExtractionResult(status="extracted", value=value, verbatim_quote=quote)
 
 
-def _base_pipeline_deferred_payload() -> PreprocessingExtraction:
+def _base_pipeline_deferred_payload(target_kind: str = "pipeline") -> PreprocessingExtraction:
     """Extracted pipeline name + deferred ref -> base_pipeline EXTRACTED + one
-    base_pipeline DeferralRecord; all six step fields missing."""
+    base_pipeline DeferralRecord; all six step fields missing. The target is a pipeline by
+    default: since fork E (DESIGN_citation_hop.md, 2026-11-03) a paper target goes to the citation
+    hop, not to this resolver."""
     return PreprocessingExtraction(
         target_space=_missing(),
         resolution_mm=_missing(),
@@ -86,6 +88,7 @@ def _base_pipeline_deferred_payload() -> PreprocessingExtraction:
             status="deferred",
             deferral_sentence="Preprocessing followed Glasser et al. (2013).",
             ref_string="Glasser et al. 2013",
+            target_kind=target_kind,
         ),
     )
 
@@ -187,6 +190,23 @@ def test_citation_fallback_when_kb_unchanged(monkeypatch):
     assert calls["fill"] == 1  # KB path tried first
     assert resolver.bp_calls == 1  # then citation fallback
     assert "prior_publication" in _bases(prep)
+
+
+def test_a_paper_target_never_reaches_the_one_hop_resolver(monkeypatch):
+    """Fork E (DESIGN_citation_hop.md, ratified 2026-11-03): a deferral to a paper goes to the
+    citation hop, whose values stay beside the record; the resolver is not called for it."""
+    monkeypatch.setattr(kb_mod, "infer_base_pipeline_version", lambda prep, pd: prep)
+    monkeypatch.setattr(kb_mod, "fill_dependent_defaults", lambda prep, pd, **_kw: prep)
+    resolver = _StubResolver({})
+    prep, _d, _r = extract(
+        _paper(),
+        "m",
+        client=_fake_client(_base_pipeline_deferred_payload("paper")),
+        citation_resolver=resolver,
+        paper_date=date(2021, 1, 1),
+    )
+    assert resolver.bp_calls == 0
+    assert "prior_publication" not in _bases(prep)
 
 
 # --- 7c: _any_step_fields_left_missing -----------------------------------------

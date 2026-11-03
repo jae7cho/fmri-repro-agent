@@ -167,3 +167,47 @@ per run, cached by DOI.
   in its own text, the hop still shows every variant the cited paper reports, and the citing
   paper's own sentence sits on the first hop. Recommended as written; choosing a variant for the
   reader is a ruling for the author.
+
+## The author's rulings (dated 2026-11-03, sourced to the author)
+
+- **Forks A to F are ratified as recommended.** A: a base-pipeline deferral to a paper reaches every
+  D.3 row the citing paper did not report, plus the Software row's versions. B: the checking pass
+  runs on the cited paper. C: one deferral to two cited papers hops to each, and their values are
+  never merged. D: a dataset citation that is not a methods deferral gets no hop. E: the existing
+  resolver is disabled for paper targets in the change that adds the hop. F: every variant the
+  cited paper reports is shown, and the citing paper's own sentence stays on the first hop.
+- **Described vs applied.** A second-hop value renders "as described in <ref>": the cited paper
+  describes a pipeline, and the citing paper's data may have been processed by a later version of
+  it. The citing paper's data release, when it states one, is a first-hop field with its quote.
+  When that release postdates the cited paper, the line notes that the described pipeline may
+  differ from the one applied.
+- **KB backlog: per-tool exact-version rules with sources**, replacing FreeSurfer's special case in
+  `cobidas._EXACT_RELEASE_PARTS` (`docs/findings/kb-exact-version-rules-backlog.md`).
+
+## As built for case one (2026-11-03)
+
+`extractor_mvp/src/extractor_mvp/citation_hop.py`, `scripts/run_citation_hop.py`,
+`tests/test_citation_hop.py`. Where the build differs from the sections above, it says so here.
+
+- **Reference list.** `parse_reference_list` splits the last "References" section at lines that
+  start an entry ("Surname, I" or a number) after a line ending in a period, a DOI or a URL.
+  `match_reference` matches author-year on first author and year, and numbered refs one target per
+  number. The first author is matched on the whole name and its first word: gracia-tabuenca_2024's
+  list writes "Hagler Jr", and the first run of the hop matched on the last word and reported
+  `reference_not_found` with no model call.
+- **Target.** A local PDF only, named `<FirstAuthor>_<year>.pdf` in the corpus folder, with the
+  entry's DOI checked against the PDF's text (`doi_confirmed`). PubMed Central is not built; a
+  missing PDF renders "no local PDF (PubMed Central is not built yet)".
+- **Calls.** The pinned T and S prompts unchanged, with `HOP_ADDENDUM` (pinned
+  `a167221c…`) inserted before their text block: the fields asked by name, and the per-variant
+  question. A call with no asked field is not made. The checking pass runs on a scoped draft through
+  `run_verifier(..., draft=...)`.
+- **Record and render.** The `second_hop` record is written to its own file beside the citing
+  record, never into it. The report renders it as one section, "As described in cited papers",
+  placed before the COBIDAS coverage, with each value "as described in <ref>" and its variants
+  beneath it, rather than a line under each deferred field (§4). The Software row's second-hop
+  versions sit in that section, marked not counted.
+- **Fork E.** `_resolve_deferrals` no longer routes paper or supplement targets to the one-hop
+  resolver (`extractor.py`, `_hop_kinds`).
+- **Not built.** The citing paper's data release as a first-hop field, and its "described vs
+  applied" note, need a new field on the citing paper's calls; recorded, not built.

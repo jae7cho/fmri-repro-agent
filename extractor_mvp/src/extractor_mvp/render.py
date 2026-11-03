@@ -67,6 +67,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from fmri_repro.spec.preprocessing import PipelineRef, Preprocessing, SpecifiedTerm
@@ -831,6 +832,115 @@ def _unplaced_section(verifier: dict[str, Any] | None) -> list[str]:
     return out
 
 
+def _hop_value(value: Any) -> str:
+    """A second-hop value from its stored JSON dump."""
+    if isinstance(value, dict):
+        if value.get("verbatim") is not None or value.get("resolved") is not None:
+            return str(value.get("verbatim") or value.get("resolved"))
+        if "name" in value:
+            return str(value["name"])
+    if isinstance(value, list):
+        return ", ".join(_hop_value(v) for v in value)
+    if isinstance(value, float) and value.is_integer():
+        return str(value)
+    return str(value)
+
+
+_HOP_TARGET_STATE = {
+    "no_local_pdf": "no local PDF (PubMed Central is not built yet)",
+    "local_pdf_ambiguous": "more than one local PDF matches",
+    "fetch_failed": "the PDF could not be read",
+}
+
+
+def _second_hop_section(second_hop: list[dict[str, Any]] | None) -> list[str]:
+    """The citation hop (DESIGN_citation_hop.md, ratified 2026-11-03): every value the hop read in a
+    cited paper, shown "as described in <ref>, cited by this paper". Never counted toward this
+    paper's COBIDAS compliance; nothing here reaches the coverage section below. Emitted only when a
+    hop ran, so every other report is unchanged."""
+    if not second_hop:
+        return []
+    from extractor_mvp.verifier import effective
+
+    out = [
+        "## As described in cited papers (second hop, one hop only; never counted toward this "
+        "paper's COBIDAS compliance)"
+    ]
+    for rec in second_hop:
+        ref = rec.get("ref", "(unspecified)")
+        out.append(f"### {ref}, cited by this paper")
+        refstate = (rec.get("reference") or {}).get("state")
+        if refstate != "resolved":
+            words = {
+                "reference_not_found": "no entry in this paper's reference list matches it",
+                "reference_ambiguous": "more than one entry in this paper's reference list matches it",
+                "no_reference_section": "this paper's reference list was not found",
+            }.get(str(refstate), str(refstate))
+            out.append(f"Not read: {words}.")
+            out.append("")
+            continue
+        target = rec.get("target") or {}
+        if target.get("state") != "local_pdf":
+            out.append(
+                "Not retrievable: "
+                + _HOP_TARGET_STATE.get(str(target.get("state")), str(target))
+                + "."
+            )
+            out.append("")
+            continue
+        if rec.get("status") != "ok":
+            out.append(f"Not read: the hop's calls failed ({rec.get('error', 'no record')}).")
+            out.append("")
+            continue
+        doi = {True: "DOI confirmed on the PDF", False: "DOI not found on the PDF", None: "no DOI"}[
+            target.get("doi_confirmed")
+        ]
+        out.append(f"Read from a local PDF, {Path(str(target.get('path'))).name} ({doi}).")
+        verifier = rec.get("verifier") or {}
+        verdicts = (verifier.get("fields") or {}) if verifier.get("status") == "ok" else {}
+        for dotted, pf in (rec.get("fields") or {}).items():
+            ext = pf.get("extraction") or {}
+            check = effective(verdicts.get(dotted))
+            tag = f"   [check: {check}]" if check else ""
+            if ext.get("status") == "EXTRACTED":
+                quote = (ext.get("spans") or [{}])[0].get("text") or ""
+                out.append(
+                    f"- {dotted} = {_hop_value(ext.get('value'))} — as described in {ref}"
+                    f"  «{_truncate_quote(quote)}»{tag}"
+                )
+            elif ext.get("status") == "DEFERRED_TO_CITATION":
+                refs = ", ".join(d.get("ref", "") for d in ext.get("deferrals") or [])
+                out.append(f"- {dotted}: the cited paper defers further, to {refs} (not followed)")
+            else:
+                out.append(f"- {dotted}: not reported in {ref}{tag}")
+            for v in (rec.get("variants") or {}).get(dotted, []):
+                note = "" if v.get("quote_resolved") else "  (its quote was not found — unverified)"
+                out.append(
+                    f"    - {v.get('applies_to')}: {v.get('value')}"
+                    f"  «{_truncate_quote(v.get('verbatim_quote') or '')}»{note}"
+                )
+        software = [
+            pf["extraction"]["value"]
+            for pf in rec.get("software_mentions") or []
+            if (pf.get("extraction") or {}).get("status") == "EXTRACTED"
+        ]
+        if software:
+            out.append(
+                f"- Software as described in {ref} (not counted toward this paper's Software row): "
+                + "; ".join(
+                    f"{m['name']} {m['version']}"
+                    if m.get("version")
+                    else f"{m['name']} (no version)"
+                    for m in software
+                )
+            )
+        outside = (rec.get("scope") or {}).get("rows_outside_calls") or []
+        if outside:
+            out.append(f"Not asked (outside calls T and S): {', '.join(outside)}.")
+    out.append("")
+    return out
+
+
 def _verifier_summary_line(verifier: dict[str, Any] | None, rows: list[FieldRow]) -> str | None:
     """One header line: the checking pass's counts, marked unvalidated; or that it was unavailable."""
     if verifier is None:
@@ -873,6 +983,7 @@ def to_protocol(
     motion_inference: Any | None = None,
     multiple_pipelines: dict[str, Any] | None = None,
     verifier: dict[str, Any] | None = None,
+    second_hop: list[dict[str, Any]] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -991,6 +1102,7 @@ def to_protocol(
 
     # 2026-11-02, the author's item 2: what the checking pass found that no field captured.
     lines.extend(_unplaced_section(verifier))
+    lines.extend(_second_hop_section(second_hop))
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
     lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())
@@ -1011,6 +1123,7 @@ def to_report(
     motion_inference: Any | None = None,
     multiple_pipelines: dict[str, Any] | None = None,
     verifier: dict[str, Any] | None = None,
+    second_hop: list[dict[str, Any]] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -1026,6 +1139,7 @@ def to_report(
         motion_inference=motion_inference,
         multiple_pipelines=multiple_pipelines,
         verifier=verifier,
+        second_hop=second_hop,
     )
 
 

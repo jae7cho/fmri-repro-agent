@@ -1996,7 +1996,15 @@ def _resolve_deferrals(
 
         preprocessing = infer_base_pipeline_version(preprocessing, paper_date)
 
-    per_field = [d for d in deferral_records if d.field != "base_pipeline"]
+    # Fork E (DESIGN_citation_hop.md, ratified 2026-11-03): a deferral to a PAPER goes to the
+    # citation hop (citation_hop.py), which keeps its values beside the record; the one-hop resolver
+    # below keeps the other targets only. "supplement" is a paper target (extractor.py:826).
+    _hop_kinds = ("paper", "supplement")
+    per_field = [
+        d
+        for d in deferral_records
+        if d.field != "base_pipeline" and d.target_kind not in _hop_kinds
+    ]
     if citation_resolver is not None and per_field:
         preprocessing = _apply_resolved_citations(
             preprocessing, citation_resolver.resolve_all(per_field)
@@ -2020,10 +2028,13 @@ def _resolve_deferrals(
                 skip=frozenset({("temporal_filtering", "effective_band_hz")}),
             )
 
-        if citation_resolver is not None and _any_step_fields_left_missing(preprocessing):
-            resolved = citation_resolver.resolve_base_pipeline_deferral(
-                base_pipeline, preprocessing
-            )
+        to_resolver = [d for d in base_pipeline if d.target_kind not in _hop_kinds]
+        if (
+            citation_resolver is not None
+            and to_resolver
+            and _any_step_fields_left_missing(preprocessing)
+        ):
+            resolved = citation_resolver.resolve_base_pipeline_deferral(to_resolver, preprocessing)
             if resolved:
                 preprocessing = _apply_resolved_citations(preprocessing, resolved)
 
