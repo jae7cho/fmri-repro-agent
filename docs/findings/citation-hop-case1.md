@@ -163,3 +163,205 @@ only the motion tool's check changes, and the report outside the hop section is 
 
 The intensity correction row is the citing paper's sMRI bias correction; the key puts structural
 preprocessing out of scope.
+
+## Third round: calls read Hagler's fMRI preprocessing section (2026-11-03, later afternoon)
+
+The author's rulings of that day: scope the calls to the cited paper's fMRI preprocessing section,
+two deterministic rules, fork G decided. `DESIGN_citation_hop.md` "As built, third round".
+
+**Draw 13:06 ET** (`hop_case1_v5`, of record): section "2.7.1. fMRI preprocessing", characters 49973
+to 51537 of the PDF's text (1,564 characters), ended at "2.7.2. Task-fMRI behavioral measures".
+Calls T, S, checking pass, RD, R: one attempt each, no retry; 66.2 s; 35,460 tokens in, 6,396 out;
+$0.2226, against $0.3559 for the second build's draw on the whole methods slice.
+
+### The key against this draw (the same table)
+
+| field | key | hop | |
+|---|---|---|---|
+| distortion_correction.method | reversing phase-encode polarity, then gradient-nonlinearity correction | not reported (`value_unsupported_by_quote`); checking pass: missed, its sentence resolved | key-only |
+| brain_extraction (4 fields) | not stated for fMRI | not reported; checking pass: supported on all four | agree (4) |
+| slice_time_correction (6 fields) | not stated | not reported | agree (6) |
+| coregistration.performed | yes | yes, quoting the fMRI sentence | agree |
+| coregistration.method | not stated (in-house) | not reported; checking pass: missed, proposing "mutual information" | agree |
+| coregistration.transform | rigid, the fMRI sentence | rigid, the fMRI sentence | agree |
+| coregistration.nonlinear_transform_type | not applicable (rigid) | not applicable, by rule `rigid_no_nonlinear` | agree |
+| coregistration.cost_function | mutual information | mutual information | agree |
+| coregistration.interpolation | not stated | not reported | agree |
+| spatial_smoothing (6 fields) | not stated for fMRI | not reported | agree (6) |
+
+**Fields, 23: agree 22, differ 0, hop-only 0, key-only 1** (first draw: 19, 1, 0, 3). The checking
+pass's "missed" on coregistration.method proposes the cost function as the method; the key keeps
+the method not stated.
+
+| software (fMRI preprocessing) | key | hop | |
+|---|---|---|---|
+| AFNI 3dvolreg | no version | "AFNI's 3dvolreg", no version | agree |
+| FreeSurfer | 5.3 | not listed: its version sentence is at character 33080, in §2.5.2, outside the section | key-only |
+| FreeSurfer mri_vol2surf | (FreeSurfer 5.3) | not listed: at character 54998, outside the section | key-only |
+
+**Software, 3 entries across both: agree 1, differ 0, hop-only 0, key-only 2** (first draw: 5
+entries; agree 2, hop-only 2, key-only 1). MMPS and AtlasTrack no longer appear.
+
+| asked | key | hop | |
+|---|---|---|---|
+| motion_correction tool | AFNI 3dvolreg | AFNI's 3dvolreg; checking pass: supported | agree |
+| intensity_correction tool | in-house, unnamed | no tool named in Hagler | agree |
+| releases Hagler describes | 1.0 to 2.0.1 | 2.0; 2.0.1; 1.0–2.0.1 (a range); 1.1 | agree (the range, with three releases inside it) |
+| this paper's releases | ABCD 3.0; collection 3165 | the same two | agree (2) |
+| relation | 3.0 postdates; 3165 to verify | 3.0 postdates (note rendered); 3165 undetermined | agree |
+
+**What the slice traded.** Every field the key cites sits in §2.7.1, and the three fields the
+whole-methods draws missed now read the fMRI sentences. The Software row lost FreeSurfer 5.3 and
+mri_vol2surf, which Hagler names outside §2.7.1 (§2.5.2 and the fMRI analysis sections); the key
+counts both as fMRI preprocessing software.
+
+### MMPS (item 4)
+
+The first draw's quote for MMPS opens "We used a collection of processing steps contained within the
+Multi-Modal Processing Stream (MMPS)" and runs one sentence (the whole quote is in the stored
+record, `results/hop_case1/gracia-tabuenca_2024.second_hop.json`). It resolves in the methods slice at characters 15958
+to 16362 of the PDF's text, under "2.1. Overview". It does not resolve inside the fMRI section
+(`quote_not_found`), and the section does not name MMPS.
+
+### Build checks
+
+Tests: 633 extractor (not live), 235 root; hooks clean. Mutations, each diffed against the
+pre-mutation file before its run. The first run of N1 to N11 had a red baseline (one new test
+failing), so every "killed" in it meant nothing; the failing test had found a slicer bug (each
+heading pattern took only its first match, so a numbered sentence ending in a period hid the
+heading after it). After the fix the baseline was green (27 passed) and all were re-run:
+
+| mutation | result |
+|---|---|
+| N1 no fMRI heading ever found | killed |
+| N2 numbered headings do not end the section | killed |
+| N3 a numbered sentence ends the section | killed |
+| N4 calls T and S read the methods slice | killed |
+| N5 call RD reads the fMRI section | killed |
+| N6 the rule fires for any transform | killed |
+| N7 the rule overrides an extracted nonlinear type | killed |
+| N8 a range keeps only its low end | killed |
+| N9 a citing release compared with a range's low end | killed |
+| N10 the rule not rendered | killed |
+| N11 tool-calling mode maps to JSON | killed |
+| N12 only the first match per heading pattern (the bug fixed) | killed |
+| N13 a tool-calling reply's arguments not kept | killed |
+
+Identity gate, derived first (the render changes sit inside the second-hop section; no stored
+record has one): a1 19 identical, v2 19, v3 18, v4 18, against HEAD `069fe61`; negative control
+against `d31e8b7`: 0 of 19 identical. As derived.
+
+## Fourth round: every fMRI section, the software list from the whole paper (2026-11-03)
+
+The author's correction: the third round cut the slice one section too narrow. Field calls read every
+section whose heading names fMRI (dMRI and sMRI excluded); the software list reads the whole cited
+paper and keeps a tool only when its quoted use is fMRI processing or feeds it. The key stays at
+`docs/findings/keys/hop1_case_key.txt`, the only copy (the Downloads file, 12:07 ET, differs from it
+only by the final newline the hook added; it holds the release lines and the not-stated notes).
+
+**The slice.** "2.7. fMRI processing and analysis" and its subsections 2.7.1 to 2.7.5, characters
+49939 to 65626 of the PDF's text (15,687 characters). It holds the rest pre-analysis processing
+(§2.7.4), the surface sampling with mri_vol2surf and the initial-frame count (§2.7.3); no dMRI or
+sMRI section.
+
+**Four draws**, each after a build change, every one through the same gate (a1 19, v2 19, v3 18, v4
+18 identical; control 0 of 19):
+
+| draw (ET) | out dir | software rule | calls | wall (s) | cost (USD) |
+|---|---|---|---|---|---|
+| 13:26 | `hop_case1_v6` | the checking pass's yes/no use verdict | T, S, SW, checking pass, RD, R | 100.7 | 0.4191 |
+| 13:31 | `hop_case1_v7` | a use quote found anywhere, naming the tool | the same | 100.5 | 0.4199 |
+| 13:34 | `hop_case1_v8` | the use quote found in the fMRI sections, naming the tool (a first-use acronym counts) | the same | 101.9 | 0.4099 |
+| 13:39 | `hop_case1_v9` (of record) | as v8, and a mention whose own quote is not found takes its use quote when that passed | the same | 97.2 | 0.4122 |
+
+No call retried in any of the four. What each software rule did, in order:
+- v6: the checking pass dropped FreeSurfer (its verdict reads the sMRI segmentation quote) though its
+  own note says FreeSurfer is "used for surface sampling and ROI extraction". Its question is not
+  the author's, so the rule was replaced.
+- v7: kept MMPS (overview sentence), FreeSurfer (the sMRI sentence) and FIRMM (acquisition-time
+  monitoring); dropped AFNI, whose listed name "Analysis of Functional NeuroImages (AFNI)" the check
+  did not split. A quote anywhere naming the tool shows no fMRI use, so the rule was tightened.
+- v8: AFNI's mention quote (a package list the text does not hold verbatim) failed, so no tool was
+  listed; FreeSurfer's use quote was the sentence before the mri_vol2surf one, which does not name it.
+- v9: below.
+
+### The key against v9 (the same table)
+
+| field | key | hop | |
+|---|---|---|---|
+| distortion_correction.method | reversing phase-encode polarity, then gradient-nonlinearity correction | not reported (`value_unsupported_by_quote`); checking pass: missed | key-only |
+| brain_extraction (4) | not stated for fMRI | not reported | agree (4) |
+| slice_time_correction (6) | not stated | not reported | agree (6) |
+| coregistration.performed | yes | yes, the fMRI sentence | agree |
+| coregistration.method | not stated (in-house) | not reported; checking pass: missed | agree |
+| coregistration.transform | rigid | rigid, the fMRI sentence | agree |
+| coregistration.nonlinear_transform_type | not applicable | not applicable, by rule | agree |
+| coregistration.cost_function | mutual information | mutual information; checking pass: wrong | agree |
+| coregistration.interpolation | not stated | not reported | agree |
+| spatial_smoothing (6) | not stated for fMRI | not reported | agree (6) |
+
+**Fields, 23: agree 22, differ 0, hop-only 0, key-only 1** (as the third round).
+
+| software | key | hop | |
+|---|---|---|---|
+| AFNI (3dvolreg) | no version | AFNI, no version; use quote the 3dvolreg sentence (its mention quote failed and took the use quote) | agree |
+| FreeSurfer | 5.3 | extracted, 5.3, but its use quote is the sMRI segmentation sentence, outside the fMRI sections: not listed | key-only |
+| FreeSurfer mri_vol2surf | (FreeSurfer 5.3) | not named by call SW | key-only |
+
+**Software, 3 entries: agree 1, differ 0, hop-only 0, key-only 2.** MMPS, FIRMM and AtlasTrack are
+named by call SW and not listed (no use quote in the fMRI sections); none is in the key. The software
+list did not recover. The use rule did what it states in every case; what it never received is
+FreeSurfer's fMRI sentence ("derived from FreeSurfer's automated brain segmentation (aseg)", §2.7.4,
+or the mri_vol2surf one, §2.7.3). Across v7 to v9 the model gave the sMRI sentence twice and the
+sentence before the mri_vol2surf one once.
+
+Tools and releases as the third round: motion tool AFNI's 3dvolreg (agree), intensity no tool
+(agree), Hagler's releases including the 1.0–2.0.1 range (agree), the citing paper's two releases
+(agree), ABCD 3.0 postdates with the note rendered, collection 3165 undetermined.
+
+### Why distortion_correction.method misses
+
+A value-support miss, not a skip. In every draw call S returned a value with a quote from Hagler's
+fMRI distortion sentences:
+
+| draw | value | quote |
+|---|---|---|
+| v5 (13:06), v7 | "topup, gradunwarp" | the reversing-polarity sentence through the gradient-nonlinearity sentence |
+| v6, v8, v9 | "gradunwarp" | the gradient-nonlinearity sentence only |
+
+Each value is the field's list of tool names (`topup, fugue, gradunwarp, sdc_fieldmapless, other`),
+none of which the quote contains. The check that rejected it is the coverage value-in-quote check
+(`quote_support.coverage_value_supported`, the list rule: each member's aliases must occur in the
+quote; `topup` and `gradunwarp` have aliases only of their own names; `other` has none). The prompt
+allows "verbatim otherwise"; a verbatim "reversing polarity method" passes the same check against the
+same quote (tested directly). The checking pass flagged the miss in every draw with the method as
+the better value.
+
+### Instructor mode and the checking pass's retries (item 6)
+
+Every client in the package is JSON mode (`extractor.build_client`, `CallMeter.client`). The
+checking pass was run once per coverage_v4 paper in each mode (`scripts/measure_checking_pass_retries.py`;
+the pinned prompt, the batch's methods slice and draft; no held-out paper among the 18), both modes
+concurrently, 13:0x to 13:3x ET:
+
+| mode | papers | status ok | papers with a retry | retries | attempts | tokens in | tokens out | cost (USD) |
+|---|---|---|---|---|---|---|---|---|
+| JSON | 18 | 18 | 1 (liu_2013) | 1 | 19 | 241,509 | 158,690 | 3.4154 |
+| tool calling | 18 | 18 | 0 | 0 | 18 | 211,929 | 139,276 | 2.9974 |
+
+liu_2013's retry is the case-one failure on the first hop: the reply copied `"align_epi_anat.py"`
+with its double quotes unescaped (invalid JSON at line 293, column 162; finish reason stop). The
+first hop has no `json_safe`. One draw per mode; the counts show no retry under tool calling on these
+18 and do not establish a rate.
+
+**Proposal (not built):** switch `build_client` and `CallMeter.client` to tool calling, after a
+re-render gate on a vintage drawn under it, since the mode changes the request every call makes;
+`json_safe` stays on the hop either way.
+
+### Build checks
+
+Tests: 635 extractor (not live), 235 root; hooks clean. Mutations, each diffed against the
+pre-mutation file before its run, on a green baseline: S1 to S17 and N4 re-run on the final code,
+all killed after three test fixes (S6 and S10 first survived because a test never reached the
+case, S16 because no stub had a failed mention with a failing use quote; each test fixed and the
+mutation re-run). The third round's N1 to N3 and N12 tested the narrow slicer, which is removed.

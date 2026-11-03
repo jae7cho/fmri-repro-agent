@@ -304,3 +304,90 @@ curation: one entry per release, checked against the release's own documentation
   says so. Release dates are not known (the KB backlog); only version numbers are compared.
 - **Pins.** `HOP_ADDENDUM` re-pinned with a dated note (`64d8979f…`, covering the addendum and its
   tools and releases asks); the T, S and checking-pass prompts unchanged.
+
+## The author's rulings (dated 2026-11-03, later afternoon, sourced to the author)
+
+- **Hop scoping in code:** the scoped calls read the cited paper's fMRI preprocessing section,
+  sliced by heading as the methods finder slices, with the slice's offsets recorded.
+- **Deterministic rules:** a rigid transform makes `nonlinear_transform_type` not applicable;
+  release ranges ("1.0 – 2.0.1") parse as a range.
+- **Fork G: G1**, the new schema state carrying its basis. The design below is recorded; the build
+  waits until case one is stable.
+- **Instructor mode:** if the calls use JSON mode, propose tool calling, with the checking pass's
+  retries measured on the 18 coverage papers before and after.
+
+## Fork G, decided: `NotInDocumentedPipeline` (design only, 2026-11-03)
+
+A new inference state on `ProvenancedField`, beside `InferredDefault`, `LeftMissing` and
+`NotApplicable`:
+
+| field | content |
+|---|---|
+| `status` | `"NOT_IN_DOCUMENTED_PIPELINE"` |
+| `basis` | a new basis type `release_documentation`: dataset, release, document, section, source, date checked |
+| `note` | optional |
+
+- It carries no value and no confidence: it states that a document does not list the step, which
+  is checkable against the document, not estimated.
+- Coupling: allowed only with `MISSING_FROM_PAPER` or `DEFERRED_TO_CITATION` on the extraction arm,
+  as `InferredDefault` is; never with `EXTRACTED`.
+- Schema: a minor version with a migration that reads every older record unchanged (no older record
+  can hold the state). The report renders it on the inference arm as "not in the cited release's
+  documented pipeline (<release>, <document>)", never as "not performed", and the coverage section
+  counts the row as the paper reports it.
+- A rule basis for deterministic implications (today's `rigid_no_nonlinear`, kept beside the record
+  because the derived basis caps confidence at 0.70) belongs in the same schema change, so both land
+  in one migration.
+- **Build condition (the author's):** after case one is stable.
+
+## As built, third round (2026-11-03, later afternoon)
+
+- **The fMRI section.** `find_fmri_preprocessing` finds the first fMRI preprocessing heading in the
+  methods slice (numbered or not: "fMRI", "functional MRI", "BOLD", "resting-state fMRI", "task
+  fMRI", with "data" or "image" before "preprocessing") and ends at the next heading: a short
+  numbered heading line that is not a sentence, or any heading the methods finder knows. No such
+  heading: the whole methods slice, recorded as `methods_fallback` and rendered. The record keeps
+  `fmri_section` (heading, start and end in the PDF's text, the heading it ended at). Calls T and S
+  and the checking pass read the section only. Hagler et al. (2019): "2.7.1. fMRI preprocessing",
+  characters 49973 to 51537, ended at "2.7.2. Task-fMRI behavioral measures".
+- **Call RD.** The releases a cited paper describes sit in its overview, outside the section, so
+  they moved out of call S to their own call on the methods slice (`CITED_RELEASE_PROMPT`, pinned).
+  The addendum is re-pinned without the releases ask.
+- **Rules.** `apply_rules` records `rigid_no_nonlinear` beside the fields (`rules`), never on the
+  extraction arm; the report renders "not applicable — by rule, from coregistration.transform".
+- **Ranges.** `parse_release` reads a version or a range, after an optional "Data/Fix Release" word;
+  a range that runs backwards, or a string that is not a version ("ABCD collection 3165"), is not a
+  release. A citing release postdates only when it is later than the high end of every described
+  release of the same dataset.
+- **The meter's mode.** `CallMeter.client("json" | "tools")`; JSON stays the default everywhere. In
+  tool-calling mode the raw reply is the call's arguments.
+- **Fixed during the build:** each heading pattern took only its first match, so a numbered sentence
+  ending in a period hid the real heading after it (found by the first run of the mutation round,
+  whose baseline was red; that run's results were discarded and every mutation re-run on a green
+  baseline).
+
+## The author's correction (dated 2026-11-03, later afternoon, sourced to the author)
+
+The third round's slice was one section too narrow. Field calls read every section whose heading
+names fMRI, dMRI and sMRI excluded (Hagler puts regression, filtering and censoring under the
+resting-state analysis and surface sampling under the task section; COBIDAS D.3 counts them). The
+software list reads the whole cited paper and keeps a tool only when its quoted use is fMRI
+processing or feeds it (FreeSurfer through the aseg masks and ROIs; AtlasTrack not). One key copy:
+`docs/findings/keys/hop1_case_key.txt`.
+
+## As built, fourth round (2026-11-03, later afternoon)
+
+- **The fMRI sections.** `find_fmri_sections` lists every heading in the methods slice (numbered
+  heading lines, including ones opening "fMRI"/"sMRI"/"dMRI"; unnumbered lines of at most eight words
+  naming a modality; the methods finder's own headings), cuts a section at each, and keeps a section
+  whose heading names fMRI and no other modality, with every numbered subsection of a kept numbered
+  section; adjacent kept sections merge. The record keeps each section's heading and offsets.
+  `find_fmri_preprocessing` (third round) is removed.
+- **Call SW.** Call S no longer lists software. Call SW is call S's pinned prompt with no fields, on
+  the whole cited paper, asking each tool's `fmri_use_quote` (`_SOFTWARE_ASK`, in the addendum's pin).
+  `fmri_use` keeps a tool when that quote is found in the fMRI sections and names it (its name, a
+  first-use variant, or its first word). A mention whose own quote is not found takes its use quote
+  when that passed. The report lists kept tools with their use quote and names the rest "not listed,
+  no quoted fMRI use".
+- **Open.** On case one the model has not given FreeSurfer's fMRI sentence as its use quote in three
+  draws, so FreeSurfer is extracted with 5.3 and not listed.
