@@ -391,3 +391,36 @@ processing or feeds it (FreeSurfer through the aseg masks and ROIs; AtlasTrack n
   no quoted fMRI use".
 - **Open.** On case one the model has not given FreeSurfer's fMRI sentence as its use quote in three
   draws, so FreeSurfer is extracted with 5.3 and not listed.
+
+## The author's rulings (dated 2026-11-03, evening, sourced to the author)
+
+1. Distortion vocabulary: method families (reverse_phase_encoding with "reversing polarity",
+   "opposite phase-encoding", "blip-up/blip-down"; fieldmap; other), separate from the tool field.
+2. Software: a deterministic scan of the whole cited (and citing) paper for KB tool names; one
+   scoped question per mention, its use and whether that use is fMRI processing or feeds it. MMPS
+   added to `kb/tools` with Hagler as the source; the key notes, dated, that MMPS is in scope.
+3. Every client in tool-calling mode, recorded as a new vintage.
+4. Case one re-drawn; case two, poldrack_2015 -> ref 45 (Power et al. 2014), its motion answer
+   compared with power_2014's label; nothing else from case two shown until the author keys it.
+
+## As built, fifth round (2026-11-03, evening)
+
+- **Schema 0.6.1 (additive).** `DistortionMethod` gains reverse_phase_encoding and fieldmap; the five
+  program members stay valid so 0.6.0 documents parse unchanged. `DistortionCorrection.tool`
+  (optional) holds the program. The extractor resolves the method against the families only
+  (`DistortionFamily`), so a program name returned as the method stays unrecognized. Call S asks
+  `distortion_tool`; re-pinned with a dated note.
+- **The scan** (`software_scan.py`). `kb/tools` aliases matched whole and case-sensitively before the
+  reference list, a digit run after the name allowed ("SPM12", "AFNI48"), the longest alias where two
+  overlap, one mention per (package, sentence); a version written after the name read
+  deterministically (dotted only). One pinned question per mention (`SOFTWARE_USE_PROMPT`) on the
+  sentence with two either side: use, use quote, fMRI yes/no/unclear. A package is listed when a
+  mention answers yes with its quote found. The cited paper's scan replaces call SW; the citing
+  paper's renders as a first-hop line, outside the coverage section.
+- **Tool calling.** `extractor.INSTRUCTOR_MODE = "tools"`, pinned; `build_client`, `CallMeter` and the
+  motion probe use it; every batch record carries `instructor_mode`.
+- **Case two's shape.** A deferred method field that calls T and S do not carry is asked as the
+  step's tool on call S.
+- **Open.** FreeSurfer is not in `kb/tools`, whose schema requires a realignment program; the scan
+  cannot find it until it has an entry. The hop's tool answer has no tool-shape test (case two).
+  `other` in a family list can never be supported (case one's distortion method).

@@ -73,3 +73,9 @@ Gracia-Tabuenca uses:
 Match: partial. 3.0 postdates Hagler's 2.0.1. The FC matrices likely come from a
   different pipeline (DCAN ABCD-BIDS) — to verify; if so, Hagler does not describe the
   preprocessing of the FC data at all.
+
+## Co-adjudication correction, 2026-11-03 (the author's instruction)
+MMPS is in scope. Hagler names it as the processing package the fMRI preprocessing runs in
+("We used a collection of processing steps contained within the Multi-Modal Processing Stream
+(MMPS)", section 2.1). Add to the Software table: MMPS | not stated | the package the
+preprocessing steps run in | the sentence above. The table above is left as recorded.

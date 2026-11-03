@@ -365,3 +365,82 @@ pre-mutation file before its run, on a green baseline: S1 to S17 and N4 re-run o
 all killed after three test fixes (S6 and S10 first survived because a test never reached the
 case, S16 because no stub had a failed mention with a failing use quote; each test fixed and the
 mutation re-run). The third round's N1 to N3 and N12 tested the narrow slicer, which is removed.
+
+## Fifth round: the distortion family, the KB software scan, tool calling (2026-11-03, evening)
+
+The author's rulings of that evening: the distortion method names a family (reverse_phase_encoding,
+fieldmap, other), separate from the program (schema 0.6.1, `distortion_correction.tool`; call S
+re-pinned); the software list is a deterministic scan of the whole paper for `kb/tools` names with
+one scoped question per mention (MMPS added to the KB, Hagler et al. (2019) as the source); every
+client switched to tool calling, a new vintage. The key's MMPS line is corrected in the key file,
+dated (co-adjudication correction: MMPS in scope).
+
+**Draw 14:33 ET** (`hop_case1_v10`, of record; re-rendered as `hop_case1_v10_rerender` after the
+release parser accepted a trailing "release", no model call): T, S, eight per-mention questions, the
+checking pass, RD, R; no parse error, no retry; 116.7 s; $0.4188.
+
+| field | key | hop | |
+|---|---|---|---|
+| distortion_correction.method | reversing polarity, then gradient nonlinearity | not reported (`value_unsupported_by_quote`) | key-only |
+| brain_extraction (4) | not stated for fMRI | not reported | agree (4) |
+| slice_time_correction (6) | not stated | not reported | agree (6) |
+| coregistration (6) | performed yes; method not stated; rigid; not applicable; mutual information; interpolation not stated | the same (not applicable by rule) | agree (6) |
+| spatial_smoothing (6) | not stated for fMRI | not reported | agree (6) |
+
+**Fields, 23: agree 22, differ 0, hop-only 0, key-only 1.** The distortion miss changed cause: call S
+returned "reverse_phase_encoding, other" with the reversing-polarity and gradient-nonlinearity
+sentences. The family member is supported; `other` (the model's word for the gradient-nonlinearity
+correction) has no aliases, so the list rule (every member supported) rejects the whole value.
+
+| software (key, with the MMPS correction) | key | hop | |
+|---|---|---|---|
+| AFNI 3dvolreg | no version | AFNI, no version; use quote the 3dvolreg sentence | agree |
+| MMPS | not stated | named (§2.1); its question answered "unclear" for fMRI use: not listed | key-only |
+| FreeSurfer | 5.3 | not in `kb/tools`, so not looked for | key-only |
+| FreeSurfer mri_vol2surf | (5.3) | not in `kb/tools` | key-only |
+
+**Software, 4 entries: agree 1, differ 0, hop-only 0, key-only 3.** FSL is named twice (a package
+list, §2.1; the dMRI toolbox paragraph) and not listed (no fMRI use). Four AFNI mentions were
+answered yes; three of them are the task GLM (§2.7.3), which the key puts out of scope; the kept use
+quote is the 3dvolreg one (the first mention to count). Gracia-Tabuenca's own text names no
+`kb/tools` package (its FreeSurfer is not in the KB).
+
+Tools, releases and relation as the fourth round: AFNI's 3dvolreg (agree); intensity no tool
+(agree); Hagler's releases include the 1.0–2.0.1 range (agree); the citing paper's two releases
+(agree); ABCD 3.0 postdates, the note rendered after the re-render; collection 3165 undetermined.
+
+## Case two: poldrack_2015 -> ref 45, Power et al. (2014) (2026-11-03, evening)
+
+poldrack_2015 defers `motion_correction.method` to ref 45 (coverage_v4). Calls T and S do not carry
+the motion fields, so the deferred method is asked as the step's tool on call S (built this round).
+Only the motion answer is shown; case two's other fields wait for the author's key.
+
+- **Resolution:** reference entry 45 resolved (first author Power, 2014); target the local
+  `Power_2014.pdf`. The entry carries no DOI, so `doi_confirmed` is None: the PDF is matched on
+  first author and year only. Fields read in Power's "fMRI Pre-processing" section (characters
+  13339 to 26079).
+- **Calls:** S, the checking pass, RD, R, and four per-mention questions on Poldrack's own text; no
+  retry; 45.9 s; $0.2045.
+
+| | power_2014's label (motion workbook) | the hop |
+|---|---|---|
+| method state | described_only | a tool returned |
+| value | none (no tool named) | "rigid body realignment" |
+| quote | "(ii) rigid body realignment to correct for head movement within and across runs" | the same sentence (resolved; value in quote; checking pass: supported) |
+
+**Differ.** The hop put the step's description in the tool slot, and every check passed it: the
+quote is found, the value is in the quote, and the checking pass judged it supported. Nothing on the
+hop's tool path asks whether the value names a program. The first hop's motion arm has that test
+(`motion_guard.is_tool_shaped_frozen`, the described_only rule); applied to the hop's tool answer it
+would read "rigid body realignment" as described_only, which is the label. Not built: proposed.
+
+## Fifth-round build checks
+
+Tests: 649 extractor (not live), 236 root, 103 KB; hooks clean. Mutations, each diffed against the
+pre-mutation file on a green baseline, all killed: D1 to D3 (the family vocabulary), M1 and M2 (the
+mode), K1 to K8 (the scan), H1 to H3 (the hop), R1 (the release word). D1 and K1 first survived: the
+value check's word-form tolerance accepts "reversing polarity" without its alias, and no test
+resolved the phrase through extraction; no test had two aliases from one start. Both tests added.
+Identity gate, derived before each run: a1 19, v2 19, v3 18, v4 18 identical against HEAD `830e2ff`;
+negative control 0 of 19. Schema 0.6.1 is additive: the stored 0.6.0 records re-stamp with no
+transform and render unchanged.
