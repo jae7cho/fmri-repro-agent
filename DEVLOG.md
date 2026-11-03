@@ -3789,3 +3789,29 @@ first-level covariate example. Then a design for the citation hop, no model call
 
 Tests: 601 extractor (not live), 235 root; hooks clean. Commits allowed in working hours by the author
 for this set. Commits here: `b4aad5b`, `90dba8d`, `edc8b34`, then this entry.
+
+## 2026-11-03 (afternoon) — the citation hop, case one, against the author's key
+
+**What was asked.** The author recorded a co-adjudicated key for case one (gracia-tabuenca_2024 ->
+Hagler et al. (2019)) and asked for the hop's values compared field by field; fork A widened to ask
+the tool for a row the citing paper reports without one; the checking-pass retry fixed and the
+data-release field built; the released-derivatives state designed; and KB backlog items for release
+documentation and tool facts.
+
+- `c7618ce`: the hop as built in the morning (values withheld then). Fork E retires the one-hop
+  resolver for paper targets.
+- `7f349ad`: the second round. Against the key, the first draw's 23 fields: agree 19, differ 1,
+  hop-only 0, key-only 3; software, 5 entries: agree 2, hop-only 2, key-only 1. The three key-only
+  fields failed their quote checks because call S quoted Hagler's dMRI and sMRI sentences; the
+  checks held. The retry's cause, now on record: the checking pass copied a curly-quoted "drop-out"
+  as straight unescaped quotes into its JSON. Replacing straight quotes only did not stop it (two
+  draws retried at the same place); replacing every double quote one for one did, on one draw.
+  Re-run of record: 4 calls, 110.9 s, $0.3559; the motion tool (AFNI 3dvolreg) and both of the
+  citing paper's releases agree with the key, the intensity tool and Hagler's described releases
+  differ. Fourteen mutations, three survived first and were killed after their tests were fixed.
+  Identity gate, derived first: a1 19, v2 19, v3 18, v4 18 identical; control `d31e8b7` 0 of 19.
+  The key is copied into `docs/findings/keys/hop1_case_key.txt` (one change: a final newline added
+  by the end-of-file hook).
+
+Tests: 623 extractor (not live), 235 root; hooks clean. Commits allowed in working hours by the
+author for this set. Commits here: `c7618ce`, `7f349ad`, then this entry.
