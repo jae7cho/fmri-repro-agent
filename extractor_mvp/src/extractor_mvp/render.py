@@ -1608,8 +1608,8 @@ def to_cobidas_coverage(
                 m.name for m in mentions if not m.version and not m.major_only and not m.deferred_to
             ]
             major = [m.name for m in mentions if m.major_only]
-            inexact = [f"{m.name} {m.version}" for m in mentions if m.inexact]
-            having = [f"{m.name} {m.version}" for m in mentions if m.exact]
+            inexact = [_with_version(m.name, m.version) for m in mentions if m.inexact]
+            having = [_with_version(m.name, m.version) for m in mentions if m.exact]
             parts = [_deferred_mention(m) + "." for m in deferred]
             if lacking:
                 parts.append("Software named without a version: " + ", ".join(lacking) + ".")
@@ -1758,9 +1758,9 @@ def _expanded_rows_section(
                 _deferred_mention(m)
                 if m.deferred_to
                 else (
-                    f"{m.name} {m.version} (not an exact release)"
+                    f"{_with_version(m.name, m.version)} (not an exact release)"
                     if m.inexact
-                    else f"{m.name} {m.version}"
+                    else _with_version(m.name, m.version)
                     if m.version
                     else f"{m.name} (major version only)"
                     if m.major_only
@@ -1814,6 +1814,20 @@ def _expanded_rows_section(
         out.append(line)
     out.append("")
     return out
+
+
+def _with_version(name: str, version: str | None) -> str:
+    """The name and its version, the version once (fix 5, 2026-11-05): a name that already ends with
+    the version ("Statistical Parametric Mapping (SPM) 12", "SPM12" with version "12") is not given
+    it again. A longer number ending in the same digits ("1.12" for "12") is not the version."""
+    if not version:
+        return name
+    stripped = name.rstrip()
+    if stripped.endswith(version):
+        before = stripped[: -len(version)][-1:]
+        if not (before.isdigit() or before == "."):
+            return stripped
+    return f"{name} {version}"
 
 
 def _deferred_mention(m: Any) -> str:
