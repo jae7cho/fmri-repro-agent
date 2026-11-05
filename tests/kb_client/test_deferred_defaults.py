@@ -384,3 +384,34 @@ def test_the_schema_refuses_an_inference_on_these_fields_from_anything_but_a_sou
         alternative_inferences=[],
     ).model_dump()
     Coregistration.model_validate(payload)  # a sourced KB basis is accepted
+
+
+def test_a_value_the_paper_states_is_never_replaced_by_the_kb() -> None:
+    # the author's list of 2026-11-05, third round, item 3: extraction always wins. A field the
+    # paper states keeps its extracted value and gets no inference, even when the record's
+    # deferral list names it (a paper can state a value and also cite the pipeline for it).
+    prep = _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep")
+    c = _coreg(prep)
+    stated = _inner(Coregistration, "cost_function").model_validate(
+        {
+            "field_id": "cost_function",
+            "extraction": {
+                "status": "EXTRACTED",
+                "value": {"verbatim": "mutual information", "resolved": "mutual_information"},
+                "spans": [_span().model_dump()],
+                "confidence": 0.9,
+            },
+            "inference": {"status": "NOT_APPLICABLE"},
+        }
+    )
+    c.cost_function = stated
+    before = stated.model_dump()
+    prep, recs = fill_deferred_defaults(prep, _COREG)
+    by_field = {r["field"]: r for r in recs}
+    assert by_field["coregistration.cost_function"] == {
+        "field": "coregistration.cost_function",
+        "filled": False,
+        "reason": "not_deferred",
+    }
+    assert _coreg(prep).cost_function.model_dump() == before
+    assert by_field["coregistration.method"]["filled"]  # the deferred ones beside it still fill
