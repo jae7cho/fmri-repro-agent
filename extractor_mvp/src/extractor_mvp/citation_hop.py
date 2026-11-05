@@ -55,6 +55,10 @@ _REF_HEADING = re.compile(
 _NUMBERED_START = re.compile(r"[ \t]*\[?(\d{1,3})[\].][ \t]+\S")
 _SURNAME = r"[A-Z\u00c0-\u00de][A-Za-z\u00c0-\u017f'\-]+(?:[ \-][A-Z\u00c0-\u00de][A-Za-z\u00c0-\u017f'\-]+)?"
 _AUTHOR_START = re.compile(rf"[ \t]*(?P<surname>{_SURNAME}),[ \t]+[A-Z\u00c0-\u00de]")
+#: An NIH author manuscript's entry (PubMed Central's reference style; fix 5, 2026-11-05): the
+#: surname, then the initials in capitals with no comma between ("Adachi Y , Osada T, ...",
+#: "Alexander-Bloch AF, ..."). Sims_2021 (stress_v1) parsed to 5 entries without it.
+_AUTHOR_START_NIH = re.compile(rf"[ \t]*(?P<surname>{_SURNAME})[ \t]+[A-Z]{{1,4}}[ \t]*,")
 _YEAR = re.compile(r"\b((?:19|20)\d{2})[a-z]?\b")
 _DOI = re.compile(r"\b(10\.\d{4,9}/[^\s\"<>]+)", re.IGNORECASE)
 
@@ -103,8 +107,19 @@ def parse_reference_list(text: str) -> list[RefEntry]:
             or stripped_prev.endswith(".")
             or _DOI.search(stripped_prev.split(" ")[-1] if stripped_prev else "") is not None
             or stripped_prev.lower().startswith("http")
+            # such an entry closes with its PubMed identifier ("[PubMed: 21893683]", sometimes
+            # broken over two lines), not a period (fix 5, 2026-11-05)
+            or stripped_prev.endswith("]")
         )
-        if line.strip() and boundary and (_NUMBERED_START.match(line) or _AUTHOR_START.match(line)):
+        if (
+            line.strip()
+            and boundary
+            and (
+                _NUMBERED_START.match(line)
+                or _AUTHOR_START.match(line)
+                or _AUTHOR_START_NIH.match(line)
+            )
+        ):
             starts.append(pos + (len(line) - len(line.lstrip())))
         if line.strip():
             prev_line = line
@@ -116,7 +131,7 @@ def parse_reference_list(text: str) -> list[RefEntry]:
         e = s + len(body)
         num = _NUMBERED_START.match(body)
         author_body = body[num.end() - 1 :] if num else body
-        auth = _AUTHOR_START.match(author_body)
+        auth = _AUTHOR_START.match(author_body) or _AUTHOR_START_NIH.match(author_body)
         year = _YEAR.search(body)
         doi = _DOI.search(" ".join(body.split()))
         entries.append(

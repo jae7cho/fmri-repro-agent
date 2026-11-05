@@ -818,3 +818,32 @@ def test_a_tool_answer_that_names_no_program_renders_as_a_described_method(
         in report
     )
     assert "= rigid body realignment" not in report
+
+
+# --- NIH author manuscripts (fix 5, the author's list of 2026-11-05) ------------------------------
+
+_NIH = (
+    "Methods\nPreprocessing followed Glasser et al. (2013).\nReferences\n"
+    "Abbott QX , Brown R, 2012. A first title that runs over \n"
+    "two lines. J. Neurosci32 (7), 1-9. [PubMed: 11111111] \n"
+    "Glasser MF, Sotiropoulos SN, Wilson JA, 2013. The minimal preprocessing pipelines. \n"
+    "Neuroimage80, 105-124. [PubMed: \n23668970] \n"
+    "Zed-Smith AB, 2015. A third title. Neuroimage1, 2-3. [PubMed: 22222222] \n"
+)
+
+
+def test_an_nih_manuscript_reference_list_splits_at_each_entry() -> None:
+    from extractor_mvp.citation_hop import match_reference, parse_reference_list
+
+    entries = parse_reference_list(_NIH)
+    assert [e.year for e in entries] == ["2012", "2013", "2015"]
+    assert entries[0].first_author == "Abbott"  # surname, then initials with no comma between
+    [m] = match_reference("Glasser et al. (2013)", entries)
+    assert m.state == "resolved" and m.entry is not None and m.entry.year == "2013"
+
+
+def test_a_line_ending_in_a_bracket_inside_an_entry_starts_nothing_without_an_author() -> None:
+    from extractor_mvp.citation_hop import parse_reference_list
+
+    text = "References\nAbbott QX, 2012. A title [in press]\ncontinued here. J1, 1.\n"
+    assert len(parse_reference_list(text)) == 1
