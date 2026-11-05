@@ -195,11 +195,48 @@ def _tally(preprocessing: Any) -> dict[str, int]:
     return counts
 
 
-def _translate_spans(prep_dump: dict[str, Any], start_offset: int) -> None:
+#: A supplement shorter than this has no usable text layer (an image-only PDF), and is not read.
+SUPPLEMENT_MIN_CHARS = 500
+
+
+def supplement_marker(name: str) -> str:
+    """The line that joins the methods text and the supplement in the text the model reads."""
+    return f"\n\n[Supplementary material, read with the paper: {name}]\n"
+
+
+def load_supplement(path: Path) -> tuple[dict[str, Any], str]:
+    """Fix 4 (2026-11-05): "see Supplementary Material" is not a citation. A ``<stem>_supp.pdf``
+    beside the paper is read as part of it; the record says whether one was found and read, and why
+    not. Returns the record and the supplement's text ("" when not read)."""
+    supp = path.with_name(f"{path.stem}_supp.pdf")
+    rec: dict[str, Any] = {
+        "path": str(supp),
+        "present": supp.is_file(),
+        "read": False,
+        "n_chars": 0,
+        "reason": None,
+    }
+    if not rec["present"]:
+        rec["reason"] = "no supplement beside the paper"
+        return rec, ""
+    text, parser = load_pdf_text(supp)
+    rec["n_chars"] = len(text)
+    if parser == "failed" or len(text) < SUPPLEMENT_MIN_CHARS:
+        rec["reason"] = f"no usable text layer ({len(text)} characters)"
+        return rec, ""
+    rec["read"] = True
+    return rec, text
+
+
+def _translate_spans(
+    prep_dump: dict[str, Any], start_offset: int, supplement_start: int | None = None
+) -> None:
     """Add ``span_in_slice`` / ``span_in_full_paper`` to every extracted span.
 
     The model's spans are offsets into the methods slice; add the slice's
-    ``start_offset`` to recover full-paper offsets. Mutates in place.
+    ``start_offset`` to recover full-paper offsets. Mutates in place. A span at or after
+    ``supplement_start`` (fix 4, 2026-11-05) lies in the supplement read with the paper: it gets
+    ``span_in_supplement`` (offsets into the supplement's text) and no full-paper offsets.
     """
     for step in prep_dump.get("steps", []):
         for value in step.values():
@@ -210,6 +247,12 @@ def _translate_spans(prep_dump: dict[str, Any], start_offset: int) -> None:
                 continue
             for span in extraction.get("spans", []):
                 s, e = span["start"], span["end"]
+                if supplement_start is not None and s >= supplement_start:
+                    span["span_in_supplement"] = {
+                        "start": s - supplement_start,
+                        "end": e - supplement_start,
+                    }
+                    continue
                 span["span_in_slice"] = {"start": s, "end": e}
                 span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
 
@@ -310,8 +353,19 @@ def process_paper(
             None,
         )
     multi = _count_distinct_datasets(methods.text) >= 2
+    # fix 4 (2026-11-05): a supplement beside the paper is read with it (first hop), after the
+    # methods text and a marker line; the checking pass reads it too
+    supplement, supp_text = load_supplement(path)
+    supp_start: int | None = None
+    extraction_text = methods.text
+    full_text = text
+    if supplement["read"]:
+        marker = supplement_marker(Path(supplement["path"]).name)
+        supp_start = len(methods.text) + len(marker)
+        extraction_text = methods.text + marker + supp_text
+        full_text = text + marker + supp_text
     paper = ParsedPaper(
-        text=methods.text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
+        text=extraction_text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
     )
 
     resolutions: list[ResolutionRecord] = []
@@ -335,7 +389,7 @@ def process_paper(
             verifier_out=verifier_out,
             # fix 1a (2026-11-05): a suspicious slice is not trusted to hold what the checking pass
             # needs, so it reads the full text (on a fallback the slice is the full text already)
-            verifier_text=text if methods.suspicious else None,
+            verifier_text=full_text if methods.suspicious else None,
         )
     except _CODE_DEFECTS:
         # A tool defect, not this paper's problem. Let it abort the run loudly rather than write 19
@@ -376,6 +430,9 @@ def process_paper(
     report: str | None = None
     render_error: str | None = None
     try:
+        supplement["fields_deferred"] = [
+            d.field for d in deferrals if d.target_kind == "supplement"
+        ]
         report = to_report(
             preprocessing,
             source=paper_id,
@@ -383,6 +440,7 @@ def process_paper(
             motion_inference=(motion_inference[0] if motion_inference else None),
             multiple_pipelines=multiple_pipelines,
             verifier=verifier,
+            supplement=supplement,
         )
     except _CODE_DEFECTS:
         # Same split, and sharper here: the comment above argues to_report is pure and
@@ -395,9 +453,12 @@ def process_paper(
 
     counts = _tally(preprocessing)
     prep_dump = preprocessing.model_dump(mode="json")
-    _translate_spans(prep_dump, methods.start_offset)
+    supplement["fields_deferred"] = [d.field for d in deferrals if d.target_kind == "supplement"]
+    supplement["start_in_extraction_text"] = supp_start
+    _translate_spans(prep_dump, methods.start_offset, supp_start)
     extraction_json = {
         "methods": _methods_record(methods),
+        "supplement": supplement,  # fix 4 (2026-11-05): found, read, why not, and what defers to it
         "fmri_gate": fmri_gate,  # fix 1b (2026-11-05): the gate's answer, also when it let the paper on
         "likely_multi_acquisition": multi,
         "instructor_mode": INSTRUCTOR_MODE,  # 2026-11-03: a vintage is prompts AND mode

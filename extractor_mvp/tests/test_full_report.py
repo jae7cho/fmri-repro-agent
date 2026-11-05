@@ -55,7 +55,7 @@ def _with_deferrals(monkeypatch: pytest.MonkeyPatch, kinds: list[tuple[str, str]
     monkeypatch.setattr(full_report, "process_paper", pp)
 
 
-def test_the_hop_runs_once_per_distinct_paper_or_supplement_reference(
+def test_the_hop_runs_once_per_distinct_paper_reference_and_never_for_a_supplement(
     canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path
 ) -> None:
     seen: dict[str, Any] = {}
@@ -71,12 +71,13 @@ def test_the_hop_runs_once_per_distinct_paper_or_supplement_reference(
     )
     meter = CallMeter()
     out = full_report.run_paper("p1", pdf, "m", [tmp_path], meter=meter)
-    assert seen["refs"] == ["Smith 2013", "S1"]  # distinct, pipeline targets not hopped
+    # distinct; pipeline targets not hopped; a supplement is not a citation (fix 4, 2026-11-05)
+    assert seen["refs"] == ["Smith 2013"]
     assert seen["corpus"] == [tmp_path]
     assert seen["hop_meter"] is meter and seen["release_meter"] is meter
     assert seen["scan_meter"] is meter
     rec = out.record
-    assert rec is not None and len(rec["second_hop"]) == 2
+    assert rec is not None and len(rec["second_hop"]) == 1
     assert rec["data_release"] == {"status": "ok", "releases": []}
     assert rec["citing_software"] == [] and rec["hop_errors"] == []
     assert out.report is not None and "As described in cited papers" in out.report

@@ -755,6 +755,26 @@ def _motion_method_line(row: FieldRow, label: str, record: Any | None) -> str:
 _DEFERRED_INFERS = "   — not stated in this paper; AESPA infers {value} ({basis_type}, {source})"
 
 
+def _supplement_line(supplement: dict[str, Any]) -> str:
+    """Fix 4 (2026-11-05): one line under the title on the paper's own supplement."""
+    name = Path(str(supplement.get("path") or "")).name or "the supplement"
+    if supplement.get("read"):
+        return (
+            f"Supplement: {name}, read with the paper ({supplement.get('n_chars', 0)} characters)."
+        )
+    if supplement.get("present"):
+        return f"Supplement: {name} found beside the paper, not read ({supplement.get('reason')})."
+    return "Supplement: none found beside the paper; a field the paper sends there is not read."
+
+
+def _supplement_words(supplement: dict[str, Any] | None) -> str:
+    """A field the paper sends to its own supplement (fix 4): "see Supplementary Material" is not a
+    citation, so it is never looked up in the reference list."""
+    if supplement and supplement.get("read"):
+        return "in this paper's supplement, read with the paper; no value was taken from it"
+    return "in this paper's supplement, not read"
+
+
 def _deferred_inferred_line(row: FieldRow, label: str) -> str:
     refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
     return f"{label} = deferred to {refs}" + _DEFERRED_INFERS.format(
@@ -1173,6 +1193,7 @@ def to_protocol(
     second_hop: list[dict[str, Any]] | None = None,
     data_release: dict[str, Any] | None = None,
     citing_software: list[dict[str, Any]] | None = None,
+    supplement: dict[str, Any] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -1222,11 +1243,23 @@ def to_protocol(
             )
         lines.append("")
 
+    # fix 4 (2026-11-05): whether the paper's own supplement was read with it, and why not
+    if supplement is not None:
+        lines.append(_supplement_line(supplement))
+        lines.append("")
+    supp_fields = frozenset((supplement or {}).get("fields_deferred") or [])
+
     # --- Base pipeline (header line + optional version sub-line) ---
     base_rows = [r for r in rows if r.group == "base_pipeline"]
     base_main = next((r for r in base_rows if r.path == "base_pipeline"), None)
     version_row = next((r for r in base_rows if r.path == "base_pipeline.version"), None)
-    if base_main is not None:
+    if (
+        base_main is not None
+        and "base_pipeline" in supp_fields
+        and base_main.state == DEFERRED_TO_CITATION
+    ):
+        lines.append(f"Base pipeline: {_supplement_words(supplement)}")
+    elif base_main is not None:
         lines.append(_protocol_main(base_main, "Base pipeline", equals_for_extracted=False))
         lines.extend(f"    {n}" for n in _protocol_note_lines(base_main))
         if version_row is not None:
@@ -1294,6 +1327,8 @@ def to_protocol(
                 main = _motion_method_line(r, param, motion_inference)
             elif r.state == INFERRED_DEFAULT and r.extraction_status == DEFERRED_TO_CITATION:
                 main = _deferred_inferred_line(r, param)
+            elif r.path in supp_fields and r.state == DEFERRED_TO_CITATION:
+                main = f"{param}: {_supplement_words(supplement)}"
             else:
                 main = _protocol_main(r, param, equals_for_extracted=True)
             lines.append(_with_verdict(main, r, verifier))
@@ -1305,7 +1340,9 @@ def to_protocol(
     lines.extend(_second_hop_section(second_hop, data_release, citing_software))
 
     # --- COBIDAS D.3 coverage (grounds the gap figure in the standard) ---
-    lines.append(to_cobidas_coverage(preprocessing, verifier=verifier).rstrip())
+    lines.append(
+        to_cobidas_coverage(preprocessing, verifier=verifier, supplement=supplement).rstrip()
+    )
 
     return "\n".join(lines).rstrip() + "\n"
 
@@ -1326,6 +1363,7 @@ def to_report(
     second_hop: list[dict[str, Any]] | None = None,
     data_release: dict[str, Any] | None = None,
     citing_software: list[dict[str, Any]] | None = None,
+    supplement: dict[str, Any] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -1344,6 +1382,7 @@ def to_report(
         second_hop=second_hop,
         data_release=data_release,
         citing_software=citing_software,
+        supplement=supplement,
     )
 
 
@@ -1357,7 +1396,9 @@ REPORT_SURFACES: tuple[Callable[..., str], ...] = (to_report, to_protocol)
 
 
 def to_cobidas_coverage(
-    preprocessing: Preprocessing, verifier: dict[str, Any] | None = None
+    preprocessing: Preprocessing,
+    verifier: dict[str, Any] | None = None,
+    supplement: dict[str, Any] | None = None,
 ) -> str:
     """A COBIDAS D.3 (preprocessing) coverage section over ``flatten()``.
 
@@ -1520,7 +1561,11 @@ def to_cobidas_coverage(
     lines.append("")
 
     if expanded:
-        lines.extend(_expanded_rows_section(mandatory, states, rows, mentions, verifier, excluded))
+        lines.extend(
+            _expanded_rows_section(
+                mandatory, states, rows, mentions, verifier, excluded, supplement=supplement
+            )
+        )
 
     def _tag(rc: RowCoverage) -> str:
         # Distinct wording from the field-level "not assessed by current extractor" callout:
@@ -1678,11 +1723,13 @@ def _expanded_rows_section(
     mentions: list[Any] | None = None,
     verifier: dict[str, Any] | None = None,
     excluded: frozenset[str] = frozenset(),
+    supplement: dict[str, Any] | None = None,
 ) -> list[str]:
     """One line per mandatory row, D.3 order (R5): the aspect, the validation tag, the row state,
     the row's reported values (EXTRACTED and DEFERRED fields only) and the first extracted field's
     quote, truncated as the step lines truncate theirs."""
     out: list[str] = ["### Rows (every mandatory row; the tag says whether labels exist for it)"]
+    supp_fields = frozenset((supplement or {}).get("fields_deferred") or [])
     for rc in mandatory:
         state = states[rc.row.row_id]
         mapped = mapped_rows(rc, rows)
@@ -1699,6 +1746,8 @@ def _expanded_rows_section(
                 values.append(f"{param} = {_fmt_row_value(r)}")
                 if quote is None and r.span_text:
                     quote = r.span_text
+            elif r.extraction_status == DEFERRED_TO_CITATION and r.path in supp_fields:
+                values.append(f"{param}: {_supplement_words(supplement)}")  # fix 4 (2026-11-05)
             elif r.extraction_status == DEFERRED_TO_CITATION:
                 # fix 3 (2026-11-05): a deferral AESPA filled from the KB is still the paper's deferral
                 refs = ", ".join(r.deferral_refs or []) or "(unspecified)"

@@ -11,7 +11,7 @@ is that harness, moved into the package and retired from the scratchpad.
 1. :func:`batch.process_paper` with one metered client (the fMRI gate, the four extraction calls, the
    checking pass) -- every call it makes goes through the client it is given;
 2. the citation hop (:func:`citation_hop.run_hop`) once per distinct reference a field defers to,
-   for paper and supplement targets, against ``corpus_dirs``;
+   for paper targets, against ``corpus_dirs`` (a supplement is read with the paper, fix 4);
 3. call R (:func:`citation_hop.extract_data_release`) on the paper;
 4. the KB software scan and its one question per mention (:mod:`software_scan`);
 5. the report, rendered with the hop section.
@@ -36,8 +36,10 @@ from extractor_mvp.pdf_loader import load_pdf_text
 from extractor_mvp.render import to_report
 from extractor_mvp.software_scan import ask_uses, scan, tool_list
 
-#: The deferral targets the citation hop takes (Fork E, DESIGN_citation_hop.md).
-HOP_KINDS: tuple[str, ...] = ("paper", "supplement")
+#: The deferral targets the citation hop takes (Fork E, DESIGN_citation_hop.md). Not "supplement"
+#: since fix 4 (2026-11-05): "see Supplementary Material" is not a citation, and the paper's own
+#: supplement is read with the paper or reported as not read (batch.load_supplement).
+HOP_KINDS: tuple[str, ...] = ("paper",)
 
 
 @dataclass
@@ -174,7 +176,7 @@ def render_record(record: dict[str, Any]) -> str:
     rec = record.get("motion_inference")
     if isinstance(rec, dict):
         extra["motion_inference"] = SimpleNamespace(**rec)
-    for key in ("second_hop", "data_release", "citing_software"):
+    for key in ("second_hop", "data_release", "citing_software", "supplement"):
         if key in record:
             extra[key] = record[key]
     methods = MethodsSlice(text="", **record["methods"])
