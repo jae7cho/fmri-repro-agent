@@ -185,7 +185,12 @@ _PINNED = {
     #: 5832804631604a8d92c0154c8798cae4772a08b766824d00410f8b43ae8f44ee.
     #: UPDATED 2026-11-03, the author's ruling dated 2026-11-02: the SCOPE paragraph gains one generic example of a first-level model covariate sentence (written for the prompt, quoting no paper), after the GLM covariates refilled nuisance regression and detrend on gracia-tabuenca_2024 in coverage_v4. Not yet drawn. Superseded TEMPORAL_VOLUME_PROMPT value:
     #: a9230438e3f29e6d604cd13eb7840a921e0a5a44125af53ca3362fb6a08eb05e.
-    "TEMPORAL_VOLUME_PROMPT": "c043aa86afb437224aa68011827b746ff1515025252574e8493f401f6b5dd23e",
+    #: UPDATED 2026-11-05, fix 5 of the author's list after stress_v1 (schema 0.6.3): call T asks
+    #: filter_pass_type (high_pass, low_pass, band_pass), and the filter_type line says it is the
+    #: filter's design, not the band's shape; the six stress papers the checking pass said
+    #: filter_type missed all named a pass type. Superseded TEMPORAL_VOLUME_PROMPT value:
+    #: c043aa86afb437224aa68011827b746ff1515025252574e8493f401f6b5dd23e.
+    "TEMPORAL_VOLUME_PROMPT": "2ab16fbfeb7b0b744f09a1f58c3b5d8950f4677ded8f43a354ac849220410f90",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.

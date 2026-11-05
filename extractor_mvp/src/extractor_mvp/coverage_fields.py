@@ -51,6 +51,7 @@ from fmri_repro.spec.preprocessing import (
     SpecifiedTerm,
     TemporalFilteringRelativeToRegression,
     TemporalFilterType,
+    TemporalPassType,
     TissueClass,
     TissueRegressor,
 )
@@ -436,6 +437,12 @@ FILTER_TYPE: dict[str, list[str]] = {
     "chebyshev": ["Chebyshev"],
     "other": [],
 }
+#: fix 5 (2026-11-05, after stress_v1): the band's shape, asked apart from the filter's design.
+PASS_TYPE: dict[str, list[str]] = {
+    "high_pass": ["high-pass", "highpass", "high pass", "high-passed", "high-pass filtered"],
+    "low_pass": ["low-pass", "lowpass", "low pass", "low-passed", "low-pass filtered"],
+    "band_pass": ["band-pass", "bandpass", "band pass", "band-passed", "band-pass filtered"],
+}
 FILTER_RELATIVE: dict[str, list[str]] = {
     "before": ["before regression", "prior to regression", "before nuisance", "prior to nuisance"],
     "after": ["after regression", "following regression", "after nuisance", "following nuisance"],
@@ -622,6 +629,15 @@ CALL_T_SPECS = (
         "term",
         TemporalFilterType,
         FILTER_TYPE,
+    ),
+    _spec(
+        "T",
+        "filter_pass_type",
+        "temporal_filtering",
+        "pass_type",
+        "term",
+        TemporalPassType,
+        PASS_TYPE,
     ),
     _spec("T", "filter_order", "temporal_filtering", "order", "int"),
     _spec(

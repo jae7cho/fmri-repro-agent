@@ -46,7 +46,8 @@ def test_run_batch_end_to_end(canned_batch: None, tmp_path: Path):
     # 38 + 25 = 63 fields are not_stated_in_text beside the six (DESIGN_coverage_expansion.md B1).
     # 69 -> 75, 2026-10-29: call T's six temporal-filtering fields answered missing too.
     # 75 -> 76, 2026-11-03 (schema 0.6.1): call S's distortion_tool answered missing too.
-    assert r.n_missing_not_stated == 76
+    # 76 -> 77, 2026-11-05 (schema 0.6.3, fix 5): call T's filter_pass_type answered missing too.
+    assert r.n_missing_not_stated == 77
     assert r.likely_multi_acquisition is False
     assert r.error_message is None
 

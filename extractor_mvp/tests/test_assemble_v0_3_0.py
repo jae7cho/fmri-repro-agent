@@ -101,4 +101,5 @@ def test_protocol_renders_new_steps_generically(assembled: Preprocessing):
     #
     # 93 -> 94, 2026-11-03 (schema 0.6.1, the author's ruling): distortion_correction gains ``tool``,
     # the program, separate from the method family. 93 + 1 = 94.
-    assert out.count("not examined by the extractor") == 94
+    # 94 -> 95, 2026-11-05 (schema 0.6.3, fix 5): temporal_filtering gains ``pass_type``. 94 + 1 = 95.
+    assert out.count("not examined by the extractor") == 95

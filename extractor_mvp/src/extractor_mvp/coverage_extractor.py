@@ -235,7 +235,10 @@ step_order: the preprocessing steps IN THE ORDER THE PAPER STATES THEM, as a lis
 filter_performed: was the BOLD time series temporally filtered (band-pass, high-pass, low-pass)?
 filter_band_hz: the band in Hz as "low-high" ("0.01-0.1"); a high-pass only as "low-" ("0.008-");
   a low-pass only as "-high" ("-0.1"). The numbers exactly as the text writes them.
-filter_type: canonical butterworth, fir, iir, ideal_fft, chebyshev, other; verbatim otherwise.
+filter_pass_type: the band's shape: canonical high_pass, low_pass, band_pass ("high-pass",
+  "bandpass", ...).
+filter_type: the filter's design, not its band's shape: canonical butterworth, fir, iir,
+  ideal_fft, chebyshev, other; verbatim otherwise.
 filter_order: the filter order as an integer string, if stated.
 filter_relative_to_regression: canonical before, after (nuisance regression), simultaneous (in
   the same regression model, e.g. AFNI 3dTproject).

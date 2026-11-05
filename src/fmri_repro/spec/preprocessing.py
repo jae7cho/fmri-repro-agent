@@ -602,6 +602,11 @@ TEMPORAL_FILTERING_FIELD_META: dict[str, FieldMeta] = {
         inference_applicable=False,
         source="derived",
     ),
+    "pass_type": FieldMeta(  # 0.6.3, fix 5 (2026-11-05)
+        justification_axis="both",
+        inference_applicable=False,
+        source="derived",
+    ),
     "relative_to_regression": FieldMeta(  # 0.6.0, report v2 §1a
         justification_axis="both",
         inference_applicable=False,
@@ -1283,6 +1288,10 @@ TemporalFilteringMethod = Literal["butterworth_bandpass", "highpass_only", "wave
 
 # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1a): what the coverage call asks of a filter.
 TemporalFilterType = Literal["butterworth", "fir", "iir", "ideal_fft", "chebyshev", "other"]
+# 0.6.3 (2026-11-05, fix 5 after stress_v1): the band's shape, apart from the filter's design. The
+# six stress papers the checking pass said filter_type missed all named a pass type ("high-pass",
+# "band-pass"), which filter_type (butterworth, fir, ...) has no member for.
+TemporalPassType = Literal["high_pass", "low_pass", "band_pass"]
 TemporalFilteringRelativeToRegression = Literal["before", "after", "simultaneous"]
 
 
@@ -1293,6 +1302,7 @@ class TemporalFiltering(BaseModel):
     # family (Butterworth, FIR, ...), separate from ``method``'s band shape, which stays untargeted.
     performed: ProvenancedField[bool] | None = None
     filter_type: ProvenancedField[SpecifiedTerm[TemporalFilterType]] | None = None
+    pass_type: ProvenancedField[SpecifiedTerm[TemporalPassType]] | None = None  # 0.6.3
     relative_to_regression: (
         ProvenancedField[SpecifiedTerm[TemporalFilteringRelativeToRegression]] | None
     ) = None
@@ -1536,7 +1546,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.6.2"
+SCHEMA_VERSION = "0.6.3"
 
 
 class MigrationInfo(BaseModel):
@@ -1585,7 +1595,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.6.2"] = "0.6.2"
+    schema_version: Literal["0.6.3"] = "0.6.3"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

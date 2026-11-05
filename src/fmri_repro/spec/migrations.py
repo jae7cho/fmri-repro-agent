@@ -290,6 +290,10 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # 0.6.1 -> 0.6.2 (PATCH, pure re-stamp -- NO doc transform; 2026-11-03, the author's ruling):
     # DistortionMethod gains gradient_nonlinearity_correction. Every 0.6.1 document stays valid.
     #
+    # 0.6.2 -> 0.6.3 (PATCH, pure re-stamp -- NO doc transform; 2026-11-05, fix 5 of the author's
+    # list after stress_v1): TemporalFiltering gains an OPTIONAL ``pass_type`` (high_pass, low_pass,
+    # band_pass). A 0.6.2 document stays valid unchanged and simply does not carry it.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
