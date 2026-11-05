@@ -748,7 +748,10 @@ _NON_FLAGGED_CASES: list[tuple[type[BaseModel], str, Any, Any]] = [
         [_term("topup")],
         list[SpecifiedTerm[pp_mod.DistortionMethod]],
     ),
-    (Coregistration, "method", _term("flirt_bbr"), SpecifiedTerm[pp_mod.CoregistrationMethod]),
+    # Coregistration.method was here until 2026-11-05: fix 3's follow-up flipped it (and ten other
+    # fields the KB holds pipeline defaults for) to inference_applicable=True, dated catalog note.
+    # nonlinear_transform_type stands in for it.
+    (Coregistration, "nonlinear_transform_type", "SyN", str),
     (ICADenoise, "method", [_term("fix")], list[SpecifiedTerm[pp_mod.ICADenoiseMethod]]),
     (
         NuisanceRegression,

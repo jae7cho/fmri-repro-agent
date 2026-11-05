@@ -197,3 +197,15 @@ brain_extraction then segmentation. No KB defaults (`inference_applicable=False`
 ## Out of scope (do not build here)
 DWI (eddy/estimation/tractography), perfusion (ASL/DSC), RS feature derivation, citation resolution,
 base-pipeline step expansion (KB manifest answers those at query time, not stored).
+
+## Inference flipped for fields a paper defers to its pipeline (2026-11-05)
+
+Fix 3 of the author's list after stress_v1 (`docs/design/DESIGN_kb_deferred_defaults.md`).
+`inference_applicable` is now `True` for slice_time_correction.method, brain_extraction.method and
+.parameters, segmentation.method and .tissue_classes, intensity_correction.target and .method,
+coregistration.method and .transform, compcor.variance_threshold and .mask_source. The KB now holds a
+pipeline default for each: fMRIPrep 20.2.0 and 1.5.3 from the generated methods boilerplate, HCP
+minimal preprocessing from Glasser et al. (2013). The fill is limited to a field the paper defers to
+its base pipeline, on the inference arm. It is reported as "not stated in this paper; AESPA infers
+X", never as reported. This supersedes "flip when the KB lands" for these fields. The other entries
+keep their flags.

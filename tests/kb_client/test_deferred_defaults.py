@@ -256,3 +256,66 @@ def test_a_list_valued_field_is_filled_as_a_list_of_terms() -> None:
         "white_matter",
         "gray_matter",
     ]
+
+
+def test_every_filled_record_revalidates_as_a_whole() -> None:
+    # fix 3 follow-up (2026-11-05): the committed fill set arms the step's FieldMeta forbade, and
+    # setattr never ran the step validator; a live run then crashed on re-validation
+    from fmri_repro.spec.preprocessing import Segmentation
+
+    prep = _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep", compcor=True)
+    prep.steps.append(_step(Segmentation, {"method": "fMRIPrep", "tissue_classes": "fMRIPrep"}))
+    paths = [
+        *_COREG,
+        ("compcor.variance_threshold", "fMRIPrep"),
+        ("compcor.mask_source", "fMRIPrep"),
+        ("segmentation.method", "fMRIPrep"),
+        ("segmentation.tissue_classes", "fMRIPrep"),
+    ]
+    prep, recs = fill_deferred_defaults(prep, paths)
+    assert all(r["filled"] for r in recs)
+    Preprocessing.model_validate(prep.model_dump())  # raises if any arm breaks a step invariant
+
+
+def test_a_field_whose_meta_forbids_inference_is_never_filled(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real = bp.get_param_defaults
+
+    def with_extra(pid: str, version: str, fields: list[str], **kw: Any) -> Any:
+        out = real(pid, version, [*fields, "coregistration.method"], **kw)
+        r = out["coregistration.method"]
+        out["coregistration.nonlinear_transform_type"] = type(r)(
+            value="SyN",
+            basis_type=r.basis_type,
+            proposed_confidence=r.proposed_confidence,
+            source=r.source,
+            alternative_candidates=[],
+        )
+        return out
+
+    monkeypatch.setattr(bp, "get_param_defaults", with_extra)
+    prep = _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep")
+    c = _coreg(prep)
+    c.nonlinear_transform_type = _deferred(Coregistration, "nonlinear_transform_type", "fMRIPrep")
+    prep, recs = fill_deferred_defaults(
+        prep, [("coregistration.nonlinear_transform_type", "fMRIPrep")]
+    )
+    assert recs[0]["reason"] == "inference_not_applicable"
+    assert _coreg(prep).nonlinear_transform_type.inference.status == "LEFT_MISSING"
+
+
+def test_a_step_that_rejects_the_filled_arm_is_left_as_it_was(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    real = Coregistration.model_validate
+
+    def rejects(data: Any, *a: Any, **k: Any) -> Any:
+        return real({})  # any other step invariant failing raises the same way
+
+    monkeypatch.setattr(Coregistration, "model_validate", rejects)
+    prep, recs = fill_deferred_defaults(
+        _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep"), _COREG
+    )
+    assert all(r["reason"] == "step_rejects_inference" for r in recs)
+    assert _coreg(prep).method.inference.status == "LEFT_MISSING"

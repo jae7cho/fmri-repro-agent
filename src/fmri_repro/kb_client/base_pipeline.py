@@ -36,6 +36,7 @@ from fmri_defaults_kb import (
     resolve_version,
 )
 from fmri_defaults_kb import NotApplicable as KbNotApplicable
+from pydantic import BaseModel
 
 from fmri_repro.spec.preprocessing import (
     IntensityNormalization,
@@ -412,8 +413,11 @@ def _rebuild_provenanced_field(current: ProvenancedField, *, inference) -> Prove
 # --- fix 3 (2026-11-05): KB defaults for fields a paper defers to its pipeline ----------------
 
 
-def _step_of_kind(preprocessing: Preprocessing, kind: str) -> object | None:
-    return next((s for s in preprocessing.steps if getattr(s, "kind", None) == kind), None)
+def _step_of_kind(preprocessing: Preprocessing, kind: str) -> BaseModel | None:
+    step: BaseModel | None = next(
+        (s for s in preprocessing.steps if getattr(s, "kind", None) == kind), None
+    )
+    return step
 
 
 def _typed_value(current_pf: ProvenancedField, member: object) -> object:
@@ -520,11 +524,21 @@ def fill_deferred_defaults(
             continue
         step = _step_of_kind(preprocessing, kind)
         current_pf = getattr(step, name, None) if step is not None else None
-        if current_pf is None or current_pf.extraction.status != "DEFERRED_TO_CITATION":
+        if (
+            step is None
+            or current_pf is None
+            or current_pf.extraction.status != "DEFERRED_TO_CITATION"
+        ):
             entry["reason"] = "not_deferred"
             continue
         if current_pf.inference.status != "LEFT_MISSING":
             entry["reason"] = "inference_already_set"
+            continue
+        # fix 3 follow-up (2026-11-05): the step's FieldMeta says whether an inferred default is
+        # allowed at all; setattr does not run the step's validator, so it is checked here
+        meta = getattr(type(step), "ARM_REGISTRY", {}).get(name)
+        if meta is None or not meta.inference_applicable:
+            entry["reason"] = "inference_not_applicable"
             continue
         result = results.get(path)
         if result is None or isinstance(result.value, ConditionalParam):
@@ -545,5 +559,11 @@ def fill_deferred_defaults(
             entry["reason"] = "value_does_not_validate"
             continue
         setattr(step, name, rebuilt)
+        try:  # the whole step re-validates with the new arm, or the fill is undone
+            type(step).model_validate(step.model_dump())
+        except ValidationError:
+            setattr(step, name, current_pf)
+            entry["reason"] = "step_rejects_inference"
+            continue
         entry.update(filled=True, basis_type=inferred.basis.basis_type)
     return preprocessing, out

@@ -292,7 +292,9 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     #
     # 0.6.2 -> 0.6.3 (PATCH, pure re-stamp -- NO doc transform; 2026-11-05, fix 5 of the author's
     # list after stress_v1): TemporalFiltering gains an OPTIONAL ``pass_type`` (high_pass, low_pass,
-    # band_pass). A 0.6.2 document stays valid unchanged and simply does not carry it.
+    # band_pass). A 0.6.2 document stays valid unchanged and simply does not carry it. In the same
+    # version, fix 3's follow-up (2026-11-05) sets inference_applicable on eleven step fields the KB
+    # now holds pipeline defaults for: a relaxation, so every 0.6.2 document stays valid.
     #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.

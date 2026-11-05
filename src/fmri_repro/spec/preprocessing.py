@@ -140,7 +140,8 @@ SLICE_TIME_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "method": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "interpolation_order": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
@@ -260,12 +261,14 @@ BRAIN_EXTRACTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "parameters": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "manual_edits": FieldMeta(  # canonical
@@ -284,12 +287,14 @@ SEGMENTATION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "tissue_classes": FieldMeta(  # canonical
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
 }
@@ -308,12 +313,14 @@ COREGISTRATION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "transform": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "method": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "cost_function": FieldMeta(
@@ -337,12 +344,14 @@ INTENSITY_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "target": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "method": FieldMeta(
         justification_axis="both",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
 }
@@ -465,12 +474,14 @@ COMPCOR_FIELD_META: dict[str, FieldMeta] = {
     ),
     "variance_threshold": FieldMeta(
         justification_axis="pipeline",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
     "mask_source": FieldMeta(
         justification_axis="pipeline",
-        inference_applicable=False,
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        inference_applicable=True,
         source="derived",
     ),
 }
