@@ -903,18 +903,28 @@ def _second_hop_section(
 ) -> list[str]:
     """The citation hop (DESIGN_citation_hop.md, ratified 2026-11-03): every value the hop read in a
     cited paper, shown "as described in <ref>, cited by this paper". Never counted toward this
-    paper's COBIDAS compliance; nothing here reaches the coverage section below. Emitted only when a
-    hop ran, so every other report is unchanged."""
-    if not second_hop:
+    paper's COBIDAS compliance; nothing here reaches the coverage section below.
+
+    2026-11-05 (the author's list, second round, item 4): the KB software scan's line (and the data
+    release's) renders on every report that carries them, with or without a hop; a record with none
+    of the three (every record before the full aespa-report) renders as before."""
+    if not second_hop and data_release is None and citing_software is None:
         return []
     from extractor_mvp.citation_hop import release_relation
     from extractor_mvp.motion_guard import is_tool_shaped_frozen
     from extractor_mvp.verifier import effective
 
-    out = [
-        "## As described in cited papers (second hop, one hop only; never counted toward this "
-        "paper's COBIDAS compliance)"
-    ]
+    out = (
+        [
+            "## As described in cited papers (second hop, one hop only; never counted toward this "
+            "paper's COBIDAS compliance)"
+        ]
+        if second_hop
+        else [
+            "## Read in this paper beside the extraction (not counted toward its COBIDAS "
+            "compliance; no field defers to a cited paper, so no hop ran)"
+        ]
+    )
     named = (data_release or {}).get("releases") or []
     own = [r for r in named if _release_checked(r)]
     if data_release is not None:
@@ -954,7 +964,7 @@ def _second_hop_section(
             + (f"; named, no quoted fMRI use: {', '.join(rest)}" if rest else "")
             + "."
         )
-    for rec in second_hop:
+    for rec in second_hop or []:
         ref = rec.get("ref", "(unspecified)")
         out.append(f"### {ref}, cited by this paper")
         refstate = (rec.get("reference") or {}).get("state")

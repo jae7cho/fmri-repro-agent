@@ -221,3 +221,32 @@ def test_a_crash_still_reports_the_calls_it_made(
         full_report.run_paper("p1", pdf, "m", [tmp_path])
     err = capsys.readouterr().err
     assert "p1: crashed; calls made before the crash:" in err and "'n_calls': 1" in err
+
+
+def test_the_kb_scan_line_renders_on_a_report_with_no_hop(
+    canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path
+) -> None:
+    # 2026-11-05 (second round, item 4): every report carries the scan's line
+    seen: dict[str, Any] = {}
+    _stub_rest(monkeypatch, seen)
+    monkeypatch.setattr(
+        full_report,
+        "tool_list",
+        lambda _uses: [
+            {"display_name": "CONN", "version": None, "kept": True, "use_quote": "q"},
+            {"display_name": "SPM", "version": "12", "kept": False},
+        ],
+    )
+    out = full_report.run_paper("p1", pdf, "m", [tmp_path])
+    assert out.record is not None and out.record["second_hop"] == []
+    assert out.report is not None
+    assert "This paper's software by the KB scan" in out.report and "CONN  (fMRI use:" in out.report
+    assert "named, no quoted fMRI use: SPM" in out.report
+    assert "no field defers to a cited paper, so no hop ran" in out.report
+
+
+def test_a_record_with_no_scan_release_or_hop_renders_no_section() -> None:
+    from extractor_mvp.render import _second_hop_section
+
+    assert _second_hop_section(None, None, None) == []
+    assert _second_hop_section([], None, None) == []
