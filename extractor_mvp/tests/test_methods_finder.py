@@ -276,3 +276,97 @@ def test_cattarinussi_is_sliced_after_reflow() -> None:
     s = find_methods_section(text)
     assert s.found_via == "header_match" and s.ended_at == "Results"
     assert 0.1 < s.slice_ratio < 0.3
+
+
+# --- a supplement's MRI sections (the author's list of 2026-11-05, third round, item 1) ----------
+
+from extractor_mvp.methods_finder import (  # noqa: E402
+    SUPP_MIN_SLICE_CHARS,
+    find_supplement_mri_section,
+)
+
+_SUPP_BODY = "The scanner room was kept at a constant temperature throughout the session.\n" * 10
+
+
+def _supp(*parts: str) -> str:
+    return "".join(p if p.endswith("\n") else p + "\n" for p in parts)
+
+
+def test_a_supplement_is_sliced_from_its_mri_heading_to_the_next_table() -> None:
+    text = _supp(
+        "Supplemental Information",
+        "Table of Contents",
+        "Preprocessing procedures with fMRIPrep \u2013 pages 4-6",
+        "Participants",
+        _SUPP_BODY,
+        "fMRI acquisition",
+        _SUPP_BODY,
+        "Cross-participant alignment",
+        _SUPP_BODY,
+        "Table S2. Regions of interest",
+        _SUPP_BODY,
+    )
+    s = find_supplement_mri_section(text)
+    assert s.found_via == "header_match" and s.matched_header == "fMRI acquisition"
+    assert s.text.startswith("fMRI acquisition") and "Cross-participant alignment" in s.text
+    assert s.ended_at == "Table S2. Regions of interest" and "Table S2" not in s.text
+    assert text[s.start_offset : s.end_offset] == s.text
+
+
+def test_sentences_that_open_with_a_section_word_do_not_end_the_slice() -> None:
+    text = _supp(
+        "MRI acquisition and preprocessing",
+        _SUPP_BODY,
+        "reference volume and its skull-stripped version were generated",
+        "Results included in this manuscript come from the models in the main text",
+        _SUPP_BODY,
+        "Reference image creation",
+        _SUPP_BODY,
+        "Supplementary Results",
+        _SUPP_BODY,
+    )
+    s = find_supplement_mri_section(text)
+    assert s.ended_at == "Supplementary Results" and "Results included" in s.text
+    assert "Reference image creation" in s.text
+
+
+def test_a_supplement_without_an_mri_heading_is_read_whole() -> None:
+    text = _supp("Supplementary methods", _SUPP_BODY, "Table S1", _SUPP_BODY)
+    s = find_supplement_mri_section(text)
+    assert s.found_via == "fallback_full_text" and s.text == text
+    assert s.fallback_reason is not None and "names MRI" in s.fallback_reason
+
+
+def test_a_supplement_slice_under_the_floor_is_read_whole() -> None:
+    text = _supp("fMRI acquisition", "TR was 2 s.", "Table S1", _SUPP_BODY * 3)
+    s = find_supplement_mri_section(text)
+    assert s.found_via == "fallback_full_text" and s.text == text
+    assert s.fallback_reason is not None and "'fMRI acquisition' gave" in s.fallback_reason
+    long_enough = _supp("fMRI acquisition", "x" * SUPP_MIN_SLICE_CHARS, "Table S1", _SUPP_BODY)
+    assert find_supplement_mri_section(long_enough).found_via == "header_match"
+
+
+_STRESS_SUPPS = {
+    "Bakker_2012": ("fMRI acquisition", "end_of_text"),
+    "Cattarinussi_2026": ("MRI acquisition and preprocessing", "Supplementary Results"),
+    "Hermans_2024": ("fMRIPrep Methods Summary:", "end_of_text"),
+    "Ladouceur_2023": (
+        "Preprocessing procedures with fMRIPrep:",
+        "Framewise Displacement Sensitivity Analyses",
+    ),
+}
+
+
+@pytest.mark.skipif(not _STRESS.exists(), reason="corpus PDFs absent (e.g. CI)")
+@pytest.mark.parametrize("paper", sorted(_STRESS_SUPPS))
+def test_the_four_supplements_read_in_stress_v2_are_sliced_at_their_mri_headings(
+    paper: str,
+) -> None:
+    from extractor_mvp.pdf_loader import reflow_one_word_lines
+    from extractor_mvp.software_scan import _body_end
+
+    raw = load_pdf_text(_STRESS / f"{paper}_supp.pdf")[0]
+    text = reflow_one_word_lines(raw)[0]
+    s = find_supplement_mri_section(text[: _body_end(text)])
+    assert (s.matched_header, s.ended_at) == _STRESS_SUPPS[paper]
+    assert s.slice_ratio < 0.4

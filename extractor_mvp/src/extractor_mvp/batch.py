@@ -30,7 +30,11 @@ from extractor_mvp.batch_utils import build_citation_resolver
 from extractor_mvp.corpus import EXCLUDED_PAPERS, is_excluded
 from extractor_mvp.extractor import INSTRUCTOR_MODE, ResolutionRecord, extract
 from extractor_mvp.fmri_gate import ask_fmri, to_not_fmri_report
-from extractor_mvp.methods_finder import MethodsSlice, find_methods_section
+from extractor_mvp.methods_finder import (
+    MethodsSlice,
+    find_methods_section,
+    find_supplement_mri_section,
+)
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date, reflow_one_word_lines
 from extractor_mvp.render import to_report
@@ -232,7 +236,10 @@ def load_supplement(path: Path) -> tuple[dict[str, Any], str]:
 
 
 def _translate_spans(
-    prep_dump: dict[str, Any], start_offset: int, supplement_start: int | None = None
+    prep_dump: dict[str, Any],
+    start_offset: int,
+    supplement_start: int | None = None,
+    supplement_offset: int = 0,
 ) -> None:
     """Add ``span_in_slice`` / ``span_in_full_paper`` to every extracted span.
 
@@ -240,6 +247,8 @@ def _translate_spans(
     ``start_offset`` to recover full-paper offsets. Mutates in place. A span at or after
     ``supplement_start`` (fix 4, 2026-11-05) lies in the supplement read with the paper: it gets
     ``span_in_supplement`` (offsets into the supplement's text) and no full-paper offsets.
+    ``supplement_offset`` is where the slice of the supplement the model read starts in the
+    supplement's text (the author's list of 2026-11-05, third round, item 1).
     """
     for step in prep_dump.get("steps", []):
         for value in step.values():
@@ -252,8 +261,8 @@ def _translate_spans(
                 s, e = span["start"], span["end"]
                 if supplement_start is not None and s >= supplement_start:
                     span["span_in_supplement"] = {
-                        "start": s - supplement_start,
-                        "end": e - supplement_start,
+                        "start": s - supplement_start + supplement_offset,
+                        "end": e - supplement_start + supplement_offset,
                     }
                     continue
                 span["span_in_slice"] = {"start": s, "end": e}
@@ -378,6 +387,14 @@ def process_paper(
         supp_body = _body_end(supp_text)
         supplement["references_excluded_from"] = supp_body if supp_body < len(supp_text) else None
         supp_text = supp_text[:supp_body]
+    # the author's list of 2026-11-05, third round, item 1: a supplement is sliced like a paper, to
+    # its MRI and preprocessing sections; the whole supplement when it has no such heading
+    supp_offset = 0
+    if supplement["read"]:
+        supp_slice = find_supplement_mri_section(supp_text)
+        supplement["slice"] = _methods_record(supp_slice)
+        supplement["n_chars_read"] = len(supp_slice.text)
+        supp_text, supp_offset = supp_slice.text, supp_slice.start_offset
     supp_start: int | None = None
     if supplement["read"]:
         marker = supplement_marker(Path(supplement["path"]).name)
@@ -475,7 +492,7 @@ def process_paper(
     prep_dump = preprocessing.model_dump(mode="json")
     supplement["fields_deferred"] = [d.field for d in deferrals if d.target_kind == "supplement"]
     supplement["start_in_extraction_text"] = supp_start
-    _translate_spans(prep_dump, methods.start_offset, supp_start)
+    _translate_spans(prep_dump, methods.start_offset, supp_start, supp_offset)
     extraction_json = {
         "methods": _methods_record(methods),
         # 2026-11-05 (third round, item 4): line counts and one-word shares, or None if not reflowed

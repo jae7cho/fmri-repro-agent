@@ -759,8 +759,23 @@ def _supplement_line(supplement: dict[str, Any]) -> str:
     """Fix 4 (2026-11-05): one line under the title on the paper's own supplement."""
     name = Path(str(supplement.get("path") or "")).name or "the supplement"
     if supplement.get("read"):
+        sl = supplement.get("slice")
+        if sl is None:  # a record written before supplements were sliced
+            return (
+                f"Supplement: {name}, read with the paper "
+                f"({supplement.get('n_chars', 0)} characters)."
+            )
+        n_read, n_all = supplement.get("n_chars_read", 0), supplement.get("n_chars", 0)
+        # the author's list of 2026-11-05, third round, item 1: which part of it was read
+        if sl.get("found_via") == "header_match":
+            return (
+                f"Supplement: {name}, its MRI sections read with the paper (from "
+                f"{sl.get('matched_header')!r} to {sl.get('ended_at')!r}, {n_read} of {n_all} "
+                "characters)."
+            )
         return (
-            f"Supplement: {name}, read with the paper ({supplement.get('n_chars', 0)} characters)."
+            f"Supplement: {name}, read whole with the paper ({n_read} characters; "
+            f"{sl.get('fallback_reason')})."
         )
     if supplement.get("present"):
         return f"Supplement: {name} found beside the paper, not read ({supplement.get('reason')})."

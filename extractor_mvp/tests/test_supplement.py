@@ -59,7 +59,18 @@ def test_a_supplement_beside_the_paper_is_read_with_it(
     sup = r.extraction_json["supplement"]  # type: ignore[index]
     assert sup["present"] and sup["read"] and sup["n_chars"] == len(SUPP)
     assert sup["start_in_extraction_text"] == seen["text"].index(SUPP)
-    assert "Supplement: p_2020_supp.pdf, read with the paper" in (r.report or "")
+    assert "Supplement: p_2020_supp.pdf, read whole with the paper (712 characters; no heading" in (
+        r.report or ""
+    )
+
+
+def test_a_record_from_before_supplements_were_sliced_renders_as_it_did() -> None:
+    from extractor_mvp.render import _supplement_line
+
+    old = {"path": "x/p_2020_supp.pdf", "present": True, "read": True, "n_chars": 712}
+    assert _supplement_line(old) == (
+        "Supplement: p_2020_supp.pdf, read with the paper (712 characters)."
+    )
 
 
 def test_a_span_in_the_supplement_gets_supplement_offsets_not_full_paper_ones(
@@ -224,3 +235,42 @@ def test_a_supplement_repeating_the_paper_leaves_no_quote_ambiguous(
     ]
     in_paper = [sp for sp in spans if sp["text"] in FULL_TEXT]
     assert in_paper and all("span_in_full_paper" in sp for sp in in_paper)
+
+
+SUPP_WITH_MRI = (
+    "Supplementary Tables\nTable S1. Demographics\n"
+    + "Age and sex of each group are listed here for the record of the study.\n" * 8
+    + "fMRI acquisition\nSupplementary methods. Data were normalized to MNI152NLin6Asym at 2 mm. "
+    + "The scanner room was kept at a constant temperature throughout. " * 10
+    + "\nSupplementary Results\n"
+    + "Effects were seen in every region examined and in both hemispheres.\n" * 8
+)
+
+
+def test_only_the_supplements_mri_sections_are_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # the author's list of 2026-11-05, third round, item 1
+    seen = _setup(monkeypatch, tmp_path, SUPP_WITH_MRI)
+    r = batch.process_paper("p_2020", seen["pdf"], "m")
+    start = SUPP_WITH_MRI.index("fMRI acquisition")
+    end = SUPP_WITH_MRI.index("Supplementary Results")
+    assert seen["text"].endswith(SUPP_WITH_MRI[start:end])
+    assert "Demographics" not in seen["text"] and "Effects were seen" not in seen["text"]
+    sup = r.extraction_json["supplement"]  # type: ignore[index]
+    assert sup["n_chars"] == len(SUPP_WITH_MRI) and sup["n_chars_read"] == end - start
+    assert sup["slice"]["matched_header"] == "fMRI acquisition"
+    prep = r.extraction_json["preprocessing"]  # type: ignore[index]
+    spans = [
+        sp
+        for st in prep["steps"]
+        for f in st.values()
+        if isinstance(f, dict)
+        for sp in (f.get("extraction") or {}).get("spans") or []
+        if "span_in_supplement" in sp
+    ]
+    assert spans
+    for sp in spans:  # offsets into the supplement's own text, not into the slice
+        o = sp["span_in_supplement"]
+        assert SUPP_WITH_MRI[o["start"] : o["end"]] == sp["text"]
+    assert "its MRI sections read with the paper (from 'fMRI acquisition'" in (r.report or "")

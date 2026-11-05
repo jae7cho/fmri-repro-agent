@@ -9,7 +9,7 @@ full-paper offsets.
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal
 
 # The ``^...$`` line anchor is LOAD-BEARING: chen has a body line beginning "methods [22]
@@ -183,4 +183,97 @@ def find_methods_section(paper_text: str) -> MethodsSlice:
         slice_ratio=slice_ratio,
         ended_at=ended_at,
         suspicious=suspicious,
+    )
+
+
+# --- a supplement's MRI sections (the author's list of 2026-11-05, third round, item 1) ----------
+#
+# A supplement is sliced like a paper, to its MRI and preprocessing sections only. Supplements
+# rarely carry a "Methods" heading (none of the four read in stress_v2 does), so the slice starts
+# at the first heading-shaped line naming MRI, acquisition, preprocessing, imaging or fMRIPrep and
+# runs to the next heading that opens results, discussion, references, acknowledgements, a table or
+# figure, or a sensitivity analysis -- or to the end of the text. Headings verified 2026-11-05 on
+# the four stress_v1 supplements read in stress_v2: "fMRI acquisition" (Bakker_2012), "MRI
+# acquisition and preprocessing" (Cattarinussi_2026), "fMRIPrep Methods Summary:" (Hermans_2024),
+# "Preprocessing procedures with fMRIPrep:" (Ladouceur_2023).
+
+_SUPP_MRI = re.compile(
+    r"(?i)\b(?:f?MRI|fMRIPrep|acquisition|pre-?processing|neuroimaging|imaging)\b"
+)
+_SUPP_CAPTION = re.compile(r"^(?:Table|Fig(?:ure)?\.?)\s+S?\d", re.IGNORECASE)
+_SUPP_END = re.compile(
+    r"(?:supplementa(?:ry|l)\s+)?"
+    r"(?:results?|discussion|references?|acknowledge?ments?|tables?|figures?)(?:\s+\S+)?:?",
+    re.IGNORECASE,
+)
+_SUPP_SENSITIVITY = re.compile(r"sensitivity analys[ei]s", re.IGNORECASE)
+_PAGE_WORD = re.compile(r"\bpages?\b", re.IGNORECASE)
+#: A supplement slice shorter than this is not trusted; the whole supplement is read instead.
+SUPP_MIN_SLICE_CHARS = 500
+
+
+def _heading_shaped(line: str) -> bool:
+    """A short line that could be a heading: at most 8 words and 70 characters, starting with a
+    capital, a digit or "fMRI", not ending in sentence punctuation, and not a table-of-contents
+    entry (no "page")."""
+    s = line.strip()
+    return (
+        2 <= len(s) <= 70
+        and len(s.split()) <= 8
+        and not s.endswith((".", ",", ";"))
+        and (s[0].isupper() or s[0].isdigit() or s.startswith("fMRI"))
+        and _PAGE_WORD.search(s) is None
+    )
+
+
+def find_supplement_mri_section(text: str) -> MethodsSlice:
+    """Slice a supplement to its MRI and preprocessing sections (see the note above).
+
+    No MRI heading, or a slice under ``SUPP_MIN_SLICE_CHARS``, gives the whole supplement with
+    ``found_via='fallback_full_text'`` and the reason; the supplement is still read.
+    """
+    n = len(text)
+    start: tuple[int, str] | None = None
+    end, ended_at = n, "end_of_text"
+    off = 0
+    for line in text.split("\n"):
+        s = line.strip()
+        if start is None:
+            if _heading_shaped(line) and not _SUPP_CAPTION.match(s) and _SUPP_MRI.search(s):
+                start = (off, s)
+        elif _heading_shaped(line) and (
+            _SUPP_END.fullmatch(s) or _SUPP_CAPTION.match(s) or _SUPP_SENSITIVITY.search(s)
+        ):
+            end, ended_at = off, s
+            break
+        off += len(line) + 1
+    full = MethodsSlice(
+        text=text,
+        start_offset=0,
+        found_via="fallback_full_text",
+        matched_header=None,
+        end_offset=n,
+        slice_ratio=1.0,
+        ended_at="end_of_text",
+        suspicious=False,
+        fallback_reason="no heading in the supplement names MRI, acquisition or preprocessing",
+    )
+    if start is None:
+        return full
+    if end - start[0] < SUPP_MIN_SLICE_CHARS:
+        return replace(
+            full,
+            fallback_reason=(
+                f"{start[1]!r} gave {end - start[0]} characters, ending at {ended_at!r}"
+            ),
+        )
+    return MethodsSlice(
+        text=text[start[0] : end],
+        start_offset=start[0],
+        found_via="header_match",
+        matched_header=start[1],
+        end_offset=end,
+        slice_ratio=(end - start[0]) / n if n else 0.0,
+        ended_at=ended_at,
+        suspicious=False,
     )
