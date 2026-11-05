@@ -3897,3 +3897,28 @@ Commits here: ``, `249e5b2`, then this entry.
 `a36477e` (fmri-defaults-kb). No feature work until after 2026-11-14, except fixes found while
 building the poster; each such fix is committed alone, named as a poster fix, and passes the
 identity gate derived before it runs.
+
+## 2026-11-04 — FREEZE lifted (the author's decision)
+
+**FREEZE lifted (dated 2026-11-04, the author's decision).** The freeze recorded on 2026-11-03 at
+`3d451fe` (fmri-repro-agent) and `a36477e` (fmri-defaults-kb) is lifted. The clause in that note
+"each such fix is committed alone, named as a poster fix, and passes the identity gate derived
+before it runs" was Claude's addition, not the author's instruction; the author's instruction ended
+at "except fixes found while building the poster". The FREEZE section of
+`docs/design/DESIGN_citation_hop.md` is not changed by this entry.
+
+**Correction to the 2026-11-03 (late evening) entry on tool shape and the FREEZE, as committed in `52aacec`.** The shell expanded
+backticks and a dollar sign in the text handed to the commit, so four spans landed wrong and are
+corrected here rather than rewritten in history: the code commit in the bullet list and in "Commits
+here" is `3d451fe` (both landed empty); "Frozen at" names `3d451fe` (landed empty); the case one
+model cost is $0.5392 (landed as a shell path). The commit subject of `52aacec` is cut off after
+"FREEZE at" for the same reason; it should end "FREEZE at 3d451fe". The 2026-11-03 (late evening)
+entry on schema 0.6.1 and case two has the same damage in its model-call line: case one $0.4188, case two $0.2045
+(both landed as shell paths). In both entries the identity gate's control is `d31e8b7`, as in the
+2026-11-03 (evening) entry. The fmri-defaults-kb DEVLOG has no such span.
+
+## 2026-11-05 — work-hours commits allowed through 2026-11-14 (the author's standing instruction)
+
+**Standing instruction (dated 2026-11-05, the author's).** Commits and pushes are allowed during
+work hours, with `ALLOW_WORKHOURS_COMMIT=1`, through 2026-11-14 inclusive. From 2026-11-15 the
+Mon–Fri 09:00–17:00 America/New_York block applies again. Recorded once, here.
