@@ -1956,6 +1956,11 @@ def _apply_resolved_citations(
             if pf is None:
                 continue  # schema 0.5.2: an optional field absent from an older document
             inferred = resolved.get(f"{step.kind}.{pf.field_id}")
+            meta = getattr(type(step), "ARM_REGISTRY", {}).get(fname)
+            if meta is not None and getattr(meta, "inference_requires_kb_source", False):
+                # the author's ruling 1 (2026-11-05): this field takes an inferred value only from a
+                # sourced KB entry, never from a resolved citation; it stays LEFT_MISSING here
+                continue
             if inferred is not None and pf.extraction.status != "EXTRACTED":
                 updates[fname] = type(pf)(
                     field_id=pf.field_id,

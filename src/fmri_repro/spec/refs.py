@@ -22,6 +22,10 @@ class FieldMeta(BaseModel):
 
     justification_axis: Literal["cobidas", "pipeline", "both"]
     inference_applicable: bool
+    #: 2026-11-05, the author's ruling 1: an inferred value on this field must come from a sourced KB
+    #: entry (a version_default or date_inferred_version basis whose note carries the KB source);
+    #: anything else stays LEFT_MISSING. Set on the eleven fields flipped for fix 3.
+    inference_requires_kb_source: bool = False
     source: Literal["sidecar", "header", "derived", "none"]
     bids_key: str | None = None
     unit: str | None = None

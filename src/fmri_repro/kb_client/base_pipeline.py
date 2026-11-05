@@ -547,6 +547,9 @@ def fill_deferred_defaults(
         if result.value is KbNotApplicable:
             entry["reason"] = "kb_not_applicable"
             continue
+        if not (result.source or "").strip():  # ruling 1 (2026-11-05): a sourced entry or nothing
+            entry["reason"] = "kb_entry_unsourced"
+            continue
         try:
             inferred = InferredDefault(
                 value=_typed_value(current_pf, result.value),

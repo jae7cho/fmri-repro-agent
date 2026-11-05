@@ -91,3 +91,31 @@ def test_a_filled_deferral_keeps_its_row_from_being_flagged() -> None:
     }
     out = to_report(_with_performed(_resolved("pipeline")), source="t", verifier=verifier)
     assert "— flagged by the checking pass" not in _row(out)
+
+
+def test_a_resolved_citation_never_fills_a_field_reserved_for_the_kb() -> None:
+    # the author's ruling 1 (2026-11-05)
+    from fmri_repro.spec.preprocessing import SpecifiedTerm
+    from fmri_repro.spec.provenance import InferredDefault, PriorPublicationBasis
+
+    from extractor_mvp.extractor import _apply_resolved_citations
+
+    prep = _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep")
+    resolved = {
+        "coregistration.method": InferredDefault(
+            value=SpecifiedTerm(verbatim=None, resolved="flirt", resolution="resolved"),
+            basis=PriorPublicationBasis(citation="Smith 2004"),
+            confidence=0.6,
+            alternative_inferences=[],
+        ),
+        "coregistration.cost_function": InferredDefault(
+            value=SpecifiedTerm(verbatim=None, resolved="boundary_based", resolution="resolved"),
+            basis=PriorPublicationBasis(citation="Smith 2004"),
+            confidence=0.6,
+            alternative_inferences=[],
+        ),
+    }
+    out = _apply_resolved_citations(prep, resolved)
+    c = _coreg(out)
+    assert c.method.inference.status == "LEFT_MISSING"
+    assert c.cost_function.inference.status == "INFERRED_DEFAULT"  # not reserved: unchanged rule

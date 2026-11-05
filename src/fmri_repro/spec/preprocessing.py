@@ -140,8 +140,10 @@ SLICE_TIME_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "method": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "interpolation_order": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
@@ -261,14 +263,18 @@ BRAIN_EXTRACTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "parameters": FieldMeta(  # 2026-10-28 (R1): a D.3 item with no field before this build
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "manual_edits": FieldMeta(  # canonical
@@ -287,14 +293,18 @@ SEGMENTATION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "method": FieldMeta(  # TOOL
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "tissue_classes": FieldMeta(  # canonical
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
 }
@@ -313,14 +323,18 @@ COREGISTRATION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "transform": FieldMeta(
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "method": FieldMeta(
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "cost_function": FieldMeta(
@@ -344,14 +358,18 @@ INTENSITY_CORRECTION_FIELD_META: dict[str, FieldMeta] = {
     ),
     "target": FieldMeta(
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "method": FieldMeta(
         justification_axis="both",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
 }
@@ -474,14 +492,18 @@ COMPCOR_FIELD_META: dict[str, FieldMeta] = {
     ),
     "variance_threshold": FieldMeta(
         justification_axis="pipeline",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
     "mask_source": FieldMeta(
         justification_axis="pipeline",
-        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md)
+        # fix 3 (2026-11-05): the KB holds a pipeline default (DESIGN_kb_deferred_defaults.md);
+        # ruling 1 (2026-11-05): only from a sourced KB entry
         inference_applicable=True,
+        inference_requires_kb_source=True,
         source="derived",
     ),
 }
@@ -787,6 +809,15 @@ def _validate_step_invariants(
                 f"{name}: inference_applicable=False — "
                 "INFERRED_DEFAULT not permitted; use LEFT_MISSING."
             )
+        if meta.inference_requires_kb_source and pf.inference.status == "INFERRED_DEFAULT":
+            basis = pf.inference.basis
+            if basis.basis_type not in ("version_default", "date_inferred_version") or not (
+                (basis.note or "").strip()
+            ):
+                raise ValueError(
+                    f"{name}: an inferred value here must come from a sourced KB entry "
+                    "(the author's ruling 1, 2026-11-05); use LEFT_MISSING."
+                )
 
 
 # ---------------------------------------------------------------------------

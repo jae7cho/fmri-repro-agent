@@ -319,3 +319,68 @@ def test_a_step_that_rejects_the_filled_arm_is_left_as_it_was(
     )
     assert all(r["reason"] == "step_rejects_inference" for r in recs)
     assert _coreg(prep).method.inference.status == "LEFT_MISSING"
+
+
+# --- the author's ruling 1 (2026-11-05): an inferred value only from a sourced KB entry -----------
+
+
+def test_a_kb_entry_without_a_source_fills_nothing(monkeypatch: pytest.MonkeyPatch) -> None:
+    real = bp.get_param_defaults
+
+    def unsourced(pid: str, version: str, fields: list[str], **kw: Any) -> Any:
+        out = real(pid, version, fields, **kw)
+        r = out["coregistration.method"]
+        out["coregistration.method"] = type(r)(
+            value=r.value,
+            basis_type=r.basis_type,
+            proposed_confidence=r.proposed_confidence,
+            source="  ",
+            alternative_candidates=[],
+        )
+        return out
+
+    monkeypatch.setattr(bp, "get_param_defaults", unsourced)
+    prep, recs = fill_deferred_defaults(
+        _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep"), _COREG
+    )
+    assert recs[0]["reason"] == "kb_entry_unsourced"
+    assert _coreg(prep).method.inference.status == "LEFT_MISSING"
+
+
+def test_a_flipped_field_with_no_kb_entry_stays_left_missing() -> None:
+    # fMRIPrep 20.1.0 is on the timeline with no boilerplate entries: nothing to fill from
+    prep, recs = fill_deferred_defaults(
+        _prep("fMRIPrep", _version_extracted("20.1.0"), "fMRIPrep"), _COREG
+    )
+    assert all(r["reason"] == "not_in_kb" for r in recs)
+    assert _coreg(prep).method.inference.status == "LEFT_MISSING"
+
+
+def test_the_schema_refuses_an_inference_on_these_fields_from_anything_but_a_sourced_kb_entry() -> (
+    None
+):
+    from fmri_repro.spec.preprocessing import SpecifiedTerm
+    from fmri_repro.spec.provenance import DerivedBasis, PriorPublicationBasis
+
+    prep = _prep("fMRIPrep", _version_extracted("20.2.0"), "fMRIPrep")
+    c = _coreg(prep)
+    term = SpecifiedTerm(verbatim=None, resolved="bbregister", resolution="resolved")
+    for basis in (
+        PriorPublicationBasis(citation="Esteban 2019"),
+        DerivedBasis(source_field_ids=["base_pipeline"], note="x"),
+        VersionDefaultBasis(tool="fmriprep", version="20.2.0", note=None),
+    ):
+        payload = c.model_dump()
+        payload["method"]["inference"] = InferredDefault(
+            value=term, basis=basis, confidence=0.5, alternative_inferences=[]
+        ).model_dump()
+        with pytest.raises(ValueError, match="sourced KB entry"):
+            Coregistration.model_validate(payload)
+    payload = c.model_dump()
+    payload["method"]["inference"] = InferredDefault(
+        value=term,
+        basis=VersionDefaultBasis(tool="fmriprep", version="20.2.0", note="a source"),
+        confidence=0.9,
+        alternative_inferences=[],
+    ).model_dump()
+    Coregistration.model_validate(payload)  # a sourced KB basis is accepted
