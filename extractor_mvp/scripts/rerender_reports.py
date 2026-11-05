@@ -133,6 +133,12 @@ def _render_one(json_path: Path) -> str:
     from extractor_mvp.render import to_report
 
     data = json.loads(json_path.read_text(encoding="utf-8"))
+    if data.get("status") == "not_fmri":
+        # fix 1b (2026-11-05): the fMRI gate stopped the paper; its record has no preprocessing
+        from extractor_mvp.fmri_gate import to_not_fmri_report
+
+        stopped: str = to_not_fmri_report(data["paper_id"], data["fmri_gate"])
+        return stopped
     # The real MethodsSlice, not a shim: to_protocol reads four of its eight fields
     # (suspicious, found_via, slice_ratio, ended_at, at render.py:632-642) and `text` is
     # not among them, but constructing the real class means a schema change surfaces

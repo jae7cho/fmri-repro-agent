@@ -169,6 +169,24 @@ def stub_client(
     return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
 
 
+@pytest.fixture(autouse=True)
+def _no_model_call(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No test reaches a model (2026-11-05, with the fMRI gate): ``litellm.completion`` raises, so a
+    client built by ``build_client`` inside a test fails at the call instead of making a billed
+    draw. A test that wants an answer passes a stub client, as every test already does, or LiteLLM's
+    own ``mock_response``, which makes no request and is passed through."""
+    import litellm
+
+    real = litellm.completion
+
+    def _refuse(*a: object, **k: object) -> object:
+        if "mock_response" in k:
+            return real(*a, **k)
+        raise RuntimeError("a test reached litellm.completion: stub the client")
+
+    monkeypatch.setattr(litellm, "completion", _refuse)
+
+
 @pytest.fixture
 def canned_batch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Stub only the PDF loader and the model call; everything else stays real.

@@ -29,7 +29,8 @@ from extractor_mvp.batch_config import BatchConfig, load_batch_config
 from extractor_mvp.batch_utils import build_citation_resolver
 from extractor_mvp.corpus import EXCLUDED_PAPERS, is_excluded
 from extractor_mvp.extractor import INSTRUCTOR_MODE, ResolutionRecord, extract
-from extractor_mvp.methods_finder import find_methods_section
+from extractor_mvp.fmri_gate import ask_fmri, to_not_fmri_report
+from extractor_mvp.methods_finder import MethodsSlice, find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 from extractor_mvp.render import to_report
@@ -213,6 +214,21 @@ def _translate_spans(prep_dump: dict[str, Any], start_offset: int) -> None:
                 span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
 
 
+def _methods_record(methods: MethodsSlice) -> dict[str, Any]:
+    """The methods slice's metadata as the paper JSON stores it (``text`` is not stored)."""
+    return {
+        "found_via": methods.found_via,
+        "matched_header": methods.matched_header,
+        "start_offset": methods.start_offset,
+        "end_offset": methods.end_offset,
+        "slice_ratio": methods.slice_ratio,
+        "ended_at": methods.ended_at,
+        "suspicious": methods.suspicious,
+        # fix 1a (2026-11-05): stored so a re-render says why the slice is the full text
+        "fallback_reason": methods.fallback_reason,
+    }
+
+
 def process_paper(
     paper_id: str, path: Path, model: str, citation_resolver: CitationResolver | None = None
 ) -> PaperResult:
@@ -255,6 +271,35 @@ def process_paper(
         )
 
     methods = find_methods_section(text)
+    # fix 1b (2026-11-05): one cheap call first; a paper with no fMRI gets a report that says so and
+    # no extraction. Only a "no" whose sentence resolves stops it (fmri_gate.py).
+    fmri_gate = ask_fmri(text, model)
+    if fmri_gate["stop"]:
+        return PaperResult(
+            paper_id,
+            str(path),
+            "not_fmri",
+            parser,
+            methods.found_via,
+            methods.matched_header,
+            False,
+            0,  # n_extracted: nothing was extracted
+            0,  # n_deferred
+            0,  # n_deferral_quote_unresolved
+            0,  # n_inferred_from_kb
+            0,  # n_inferred_from_citation
+            0,  # n_missing_not_stated
+            0,  # n_missing_quote_unresolved
+            0,  # n_value_not_in_literal
+            {
+                "methods": _methods_record(methods),
+                "instructor_mode": INSTRUCTOR_MODE,
+                "fmri_gate": fmri_gate,
+            },
+            None,
+            to_not_fmri_report(paper_id, fmri_gate),
+            None,
+        )
     multi = _count_distinct_datasets(methods.text) >= 2
     paper = ParsedPaper(
         text=methods.text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
@@ -341,17 +386,8 @@ def process_paper(
     prep_dump = preprocessing.model_dump(mode="json")
     _translate_spans(prep_dump, methods.start_offset)
     extraction_json = {
-        "methods": {
-            "found_via": methods.found_via,
-            "matched_header": methods.matched_header,
-            "start_offset": methods.start_offset,
-            "end_offset": methods.end_offset,
-            "slice_ratio": methods.slice_ratio,
-            "ended_at": methods.ended_at,
-            "suspicious": methods.suspicious,
-            # fix 1a (2026-11-05): stored so a re-render says why the slice is the full text
-            "fallback_reason": methods.fallback_reason,
-        },
+        "methods": _methods_record(methods),
+        "fmri_gate": fmri_gate,  # fix 1b (2026-11-05): the gate's answer, also when it let the paper on
         "likely_multi_acquisition": multi,
         "instructor_mode": INSTRUCTOR_MODE,  # 2026-11-03: a vintage is prompts AND mode
         "wall_time_s": wall_time_s,
@@ -450,6 +486,9 @@ def run_batch(config: BatchConfig) -> list[PaperResult]:
                 file=sys.stderr,
             )
         else:
+            if result.status == "not_fmri":
+                print(f"  stop {paper.paper_id}: no fMRI in this paper (fMRI gate)")
+                continue
             flags = []
             if result.status == "methods_not_found":
                 flags.append("methods_not_found")

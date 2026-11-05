@@ -443,3 +443,15 @@ def test_the_instructor_mode_is_pinned_and_every_client_uses_it() -> None:
     assert INSTRUCTOR_MODE == _PINNED_INSTRUCTOR_MODE
     assert build_client().mode == instructor.Mode.TOOLS
     assert CallMeter().client().mode == instructor.Mode.TOOLS
+
+
+#: The fMRI gate (fix 1b, the author's list of 2026-11-05): one call before extraction. Pinned at its
+#: first build, 2026-11-05.
+_PINNED_FMRI_GATE_PROMPT = "14df0f33bd1c1d5313b65371ce826e287cd23f70066afc41a9f5e201625aa813"
+
+
+def test_the_fmri_gate_prompt_is_hash_pinned() -> None:
+    from extractor_mvp.fmri_gate import FMRI_GATE_PROMPT
+
+    got = hashlib.sha256(FMRI_GATE_PROMPT.encode("utf-8")).hexdigest()
+    assert got == _PINNED_FMRI_GATE_PROMPT, f"FMRI_GATE_PROMPT changed: {got}{_VINTAGE_NOTE}"
