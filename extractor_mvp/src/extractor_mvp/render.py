@@ -1399,9 +1399,25 @@ def to_cobidas_coverage(
     states = {rc.row.row_id: row_state(rc, rows) for rc in coverage} if expanded else {}
     lines.append(f"Mandatory rows: {len(mandatory)}")
     if expanded:
-        n_perf_no = sum(1 for rc in mand_assessed if states[rc.row.row_id] == "performed_no")
-        n_partial = sum(1 for rc in mand_assessed if rc.partial)
-        software_partial = any(rc.row.row_id == "software" and rc.partial for rc in mand_assessed)
+        # fix 1c (2026-11-05): a row the checking pass flags counts as "flagged", never as addressed
+        # (nor partially reported, performed=no or not reported), by the rule the per-row section
+        # uses. The segment appears only when a row is flagged, so other reports keep their bytes.
+        flagged = {
+            rc.row.row_id for rc in mand_assessed if _row_flagged(mapped_rows(rc, rows), verifier)
+        }
+        n_flagged = len(flagged)
+        n_flag_addressed = sum(1 for rc in mand_addressed if rc.row.row_id in flagged)
+        n_perf_no = sum(
+            1
+            for rc in mand_assessed
+            if states[rc.row.row_id] == "performed_no" and rc.row.row_id not in flagged
+        )
+        n_partial = sum(1 for rc in mand_assessed if rc.partial and rc.row.row_id not in flagged)
+        n_flag_not_reported = sum(1 for rc in mand_not_reported if rc.row.row_id in flagged)
+        software_partial = any(
+            rc.row.row_id == "software" and rc.partial and rc.row.row_id not in flagged
+            for rc in mand_assessed
+        )
         partial_seg = (
             f"partially reported {n_partial}"
             + (
@@ -1413,10 +1429,14 @@ def to_cobidas_coverage(
             if n_partial
             else ""
         )
+        flagged_seg = f"flagged {n_flagged} · " if n_flagged else ""
+        if "software" in flagged:
+            violation = ""  # the software values are flagged: no violation is claimed on them
         lines.append(
             f"  Assessed by AESPA: {len(mand_assessed)}  →  "
-            f"addressed {len(mand_addressed) - n_perf_no} · {partial_seg}performed=no {n_perf_no} · "
-            f"not reported {len(mand_not_reported) - n_partial}{violation}"
+            f"addressed {len(mand_addressed) - n_perf_no - n_flag_addressed} · {flagged_seg}"
+            f"{partial_seg}performed=no {n_perf_no} · "
+            f"not reported {len(mand_not_reported) - n_partial - n_flag_not_reported}{violation}"
         )
     else:
         lines.append(
@@ -1609,6 +1629,18 @@ _ROW_STATE_LABEL: dict[str, str] = {
 }
 
 
+def _row_flagged(mapped: list[FieldRow], verifier: dict[str, Any] | None) -> bool:
+    """report v2 §3 / F3b (2026-10-29): a row whose every addressing field (EXTRACTED or DEFERRED)
+    the checking pass marks wrong, with a resolved sentence, is flagged. One rule for the per-row
+    section and, since fix 1c (2026-11-05), the header."""
+    from extractor_mvp.verifier import effective
+
+    addressing = [r for r in mapped if r.state in (EXTRACTED, DEFERRED_TO_CITATION)]
+    return bool(addressing) and all(
+        effective(_verdict_for(r, verifier)) == "wrong" for r in addressing
+    )
+
+
 def _expanded_rows_section(
     mandatory: list[RowCoverage],
     states: dict[str, str],
@@ -1661,9 +1693,8 @@ def _expanded_rows_section(
         # wrong reads "flagged"; a missed field is named.
         from extractor_mvp.verifier import effective
 
-        addressing = [r for r in mapped if r.state in (EXTRACTED, DEFERRED_TO_CITATION)]
         verdicts = {r.path: effective(_verdict_for(r, verifier)) for r in mapped}
-        if addressing and all(verdicts.get(r.path) == "wrong" for r in addressing):
+        if _row_flagged(mapped, verifier):
             state = "flagged"
         missed = [r.path.split(".", 1)[1] for r in mapped if verdicts.get(r.path) == "missed"]
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"

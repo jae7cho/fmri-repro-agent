@@ -368,3 +368,61 @@ def test_the_checking_pass_reads_the_text_it_is_given_and_says_which() -> None:
     extract(paper, "m", client=stub_client(_prep_payload(), verifier=v), verifier_out=out2)
     assert out2[0]["read"] == "methods_slice"
     assert out2[0]["fields"]["spatial_smoothing.performed"]["relied_on_resolved"] is False
+
+
+def _header(report: str) -> str:
+    return next(ln for ln in report.splitlines() if ln.startswith("  Assessed by AESPA:"))
+
+
+def test_a_flagged_row_counts_as_flagged_never_as_addressed_in_the_header() -> None:
+    # fix 1c (2026-11-05)
+    struct = "Structural images were registered and resampled to an isotropic standard space."
+    wrong = FieldVerdict(
+        field="spatial_normalization.target_space",
+        verdict="wrong",
+        relied_on=struct,
+        better_value="not reported",
+    )
+    kw: dict[str, Any] = {
+        "shared": {"target_space": _ex("isotropic standard space", struct)},
+        "spatial": {"smoothing_performed": _ex("yes", _SMOOTH)},
+    }
+    _, _, plain = _run(verifier=VerifierExtraction(), **dict(kw))
+    _, _, flagged = _run(verifier=VerifierExtraction(fields=[wrong]), **dict(kw))
+    assert "flagged" not in _header(plain)
+    n = int(_header(plain).split("addressed ", 1)[1].split(" ", 1)[0])
+    assert f"addressed {n - 1} · flagged 1 · " in _header(flagged)
+    nr = _header(plain).split("not reported ", 1)[1].split(" ", 1)[0]
+    assert f"not reported {nr}" in _header(flagged)  # the flagged row is not moved there either
+    # an unresolved sentence is an unverified verdict: no effect, so not flagged
+    unresolved = wrong.model_copy(update={"relied_on": "Not a sentence of the paper."})
+    _, _, unverified = _run(verifier=VerifierExtraction(fields=[unresolved]), **dict(kw))
+    assert _header(unverified) == _header(plain)
+
+
+def test_a_row_with_one_supported_field_is_not_flagged() -> None:
+    wrong = FieldVerdict(field="spatial_smoothing.performed", verdict="wrong", relied_on=_SMOOTH)
+    ok = FieldVerdict(field="spatial_smoothing.fwhm_mm", verdict="supported", relied_on=_SMOOTH)
+    spatial = {"smoothing_performed": _ex("yes", _SMOOTH), "smoothing_fwhm_mm": _ex("6", _SMOOTH)}
+    _, _, report = _run(verifier=VerifierExtraction(fields=[wrong, ok]), spatial=spatial)
+    assert "flagged" not in _header(report)
+    _, _, both = _run(
+        verifier=VerifierExtraction(fields=[wrong, ok.model_copy(update={"verdict": "wrong"})]),
+        spatial=spatial,
+    )
+    assert "flagged 1 · " in _header(both)
+    assert "Spatial smoothing [unvalidated] — flagged by the checking pass" in both
+
+
+def test_a_flagged_software_row_claims_no_violation_in_the_header() -> None:
+    # fix 1c (2026-11-05): Gao_2026's Software row was flagged and still carried the violation label
+    stats = "Statistics were computed in R version 4.1.0."
+    kw: dict[str, Any] = {"shared": {"base_pipeline_name": _ex("R", stats)}}
+    _, _, plain = _run(verifier=VerifierExtraction(), **dict(kw))
+    wrong = FieldVerdict(field="base_pipeline", verdict="wrong", relied_on=stats)
+    _, _, flagged = _run(verifier=VerifierExtraction(fields=[wrong]), **dict(kw))
+    if "Software [validated against labels] — flagged" not in flagged:
+        raise AssertionError("the Software row is not flagged: the test's premise failed")
+    assert "Software — unconditional violation" in _header(plain)
+    assert "flagged 1 · " in _header(flagged)
+    assert "unconditional violation" not in _header(flagged)
