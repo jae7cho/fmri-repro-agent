@@ -13,12 +13,22 @@ _CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
 _corpus = pytest.mark.skipif(not _CORPUS.exists(), reason="corpus PDFs absent (e.g. CI)")
 
 
+#: Neutral methods prose, 2,040 characters: since fix 1a (2026-11-05) a slice under 2,000 characters
+#: is methods_not_found, so the synthetic papers below carry it to stay header slices.
+_PAD = "The scanner room was kept at a constant temperature throughout. " * 32 + "\n"
+
+
 def _text(name: str) -> str:
     return load_pdf_text(_CORPUS / f"{name}.pdf")[0]
 
 
 def test_header_match_slices_to_next_section():
-    text = "Intro blah blah\nMethods\nWe preprocessed with X at 2 mm.\nResults\nWe found Y."
+    text = (
+        "Intro blah blah\nMethods\nWe preprocessed with X at 2 mm.\n"
+        + _PAD
+        + "Results\nWe found Y."
+        + _PAD
+    )
     s = find_methods_section(text)
     assert s.found_via == "header_match"
     assert s.matched_header == "Methods"
@@ -29,7 +39,7 @@ def test_header_match_slices_to_next_section():
 
 def test_earliest_header_wins_over_later_subsection():
     # both top-level "Methods" and a "Preprocessing" subsection match; earliest wins
-    text = "Methods\nGeneral.\nPreprocessing\nDetails here.\nDiscussion\nend"
+    text = "Methods\nGeneral.\nPreprocessing\nDetails here.\n" + _PAD + "Discussion\nend" + _PAD
     s = find_methods_section(text)
     assert s.matched_header == "Methods"
     assert s.start_offset == text.index("Methods")
@@ -37,7 +47,12 @@ def test_earliest_header_wins_over_later_subsection():
 
 
 def test_subsection_header_when_no_toplevel_methods():
-    text = "Introduction\nstuff\nImage preprocessing\nNormalized to MNI.\nResults\nx"
+    text = (
+        "Introduction\nstuff\nImage preprocessing\nNormalized to MNI.\n"
+        + _PAD
+        + "Results\nx"
+        + _PAD
+    )
     s = find_methods_section(text)
     assert s.found_via == "header_match"
     assert "Normalized to MNI." in s.text
@@ -53,7 +68,7 @@ def test_no_match_falls_back_to_full_text():
 
 
 def test_runs_to_end_when_no_next_section():
-    text = "Methods\nWe did things and stopped."
+    text = "Methods\n" + _PAD + "We did things and stopped."
     s = find_methods_section(text)
     assert s.found_via == "header_match"
     assert s.text.endswith("stopped.")
@@ -72,9 +87,8 @@ def test_anchor_regression_body_line_starting_methods_not_matched() -> None:
         "methods [22] are relatively less reliable than independent component analysis\n"
         "more introduction text\n"
         "Methods and Analysis\n"
-        "We projected to fsaverage5.\n"
-        "Results\n"
-        "findings\n"
+        "We projected to fsaverage5.\n" + _PAD + "Results\n"
+        "findings\n" + _PAD
     )
     s = find_methods_section(text)
     assert s.matched_header == "Methods and Analysis"
@@ -94,7 +108,7 @@ def test_methods_and_x_matches_but_results_and_discussion_is_next() -> None:
 
 
 def test_diagnostics_fields_and_span_round_trip() -> None:
-    text = "Intro line\nMethods\nWe used X at 2 mm here.\nResults\ntail"
+    text = "Intro line\nMethods\nWe used X at 2 mm here.\n" + _PAD + "Results\ntail" + _PAD
     s = find_methods_section(text)
     assert s.end_offset == text.index("Results")
     assert s.ended_at == "Results"
@@ -124,7 +138,7 @@ def test_early_header_running_to_end_is_suspicious() -> None:
 def test_late_header_running_to_end_is_not_suspicious() -> None:
     # LATE (terminal) methods header running to end-of-text is the normal terminal-Methods
     # shape (Braun/Viduarre) — NOT a defect, must not cry wolf.
-    text = ("intro and results and discussion " * 40) + "\nMethods\nWe did a few things."
+    text = ("intro and results and discussion " * 140) + "\nMethods\nWe did a few things." + _PAD
     s = find_methods_section(text)
     assert s.found_via == "header_match"
     assert s.ended_at == "end_of_text"
@@ -193,3 +207,54 @@ def test_terminal_methods_papers_not_flagged_suspicious() -> None:
         assert s.ended_at == "end_of_text"
         assert (s.start_offset / len(_text(name))) > 0.5
         assert s.suspicious is False, name
+
+
+# --- fix 1a (2026-11-05): a slice too small to be a methods section, and the terminators ---------
+
+_BODY = "We preprocessed the data with a pipeline and smoothed at 6 mm FWHM. " * 60
+
+
+def test_experimental_procedures_is_a_methods_heading() -> None:
+    text = "Introduction\nintro\nExperimental Procedures\n" + _BODY + "\nResults\nfound"
+    s = find_methods_section(text)
+    assert s.found_via == "header_match"
+    assert s.matched_header == "Experimental Procedures"
+
+
+def test_a_lone_supplementary_line_does_not_end_the_slice_but_the_heading_does() -> None:
+    text = (
+        "Introduction\nintro\nMethods\n"
+        + _BODY
+        + "\nas described in the\nSupplementary\nMaterial, we then\n"
+        + _BODY
+        + "\nSupplementary Material\nsee web\nResults\nfound"
+    )
+    s = find_methods_section(text)
+    assert s.ended_at == "Supplementary Material"
+    assert "Material, we then" in s.text
+
+
+def test_a_slice_under_the_floor_is_methods_not_found_and_says_why() -> None:
+    text = "Introduction\n" + _BODY * 3 + "\nMethods\nToo short.\nResults\n" + _BODY * 3
+    s = find_methods_section(text)
+    assert s.found_via == "fallback_full_text" and s.suspicious
+    assert s.text == text and s.matched_header is None
+    assert s.fallback_reason is not None and "'Methods' gave" in s.fallback_reason
+
+
+def test_a_slice_under_the_ratio_floor_is_methods_not_found() -> None:
+    long_tail = "x " * 200_000  # 2,500 characters of methods in a 400,000-character text
+    text = "Methods\n" + "y" * 2500 + "\nResults\n" + long_tail
+    assert find_methods_section(text).found_via == "fallback_full_text"
+
+
+def test_a_one_word_per_line_text_layer_is_methods_not_found() -> None:
+    words = ("Methods\n" + "\n".join(_BODY.split()) + "\nResults\n").splitlines()
+    s = find_methods_section("\n".join(words))
+    assert s.found_via == "fallback_full_text"
+    assert s.fallback_reason is not None and "one word per line" in s.fallback_reason
+
+
+def test_an_ordinary_methods_slice_is_kept() -> None:
+    s = find_methods_section("Intro\nx\nMethods\n" + _BODY + "\nResults\nend")
+    assert s.found_via == "header_match" and s.fallback_reason is None

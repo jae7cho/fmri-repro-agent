@@ -351,3 +351,27 @@ def test_data_shaped_exceptions_are_deliberately_not_re_raised() -> None:
     assert ImportError in batch._CODE_DEFECTS
     assert IndexError not in batch._CODE_DEFECTS
     assert KeyError not in batch._CODE_DEFECTS
+
+
+def test_a_suspicious_slice_sends_the_full_text_to_the_checking_pass(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # fix 1a (2026-11-05): process_paper passes the full text to the checking pass when the slice
+    # is suspicious, and the methods slice otherwise
+    from conftest import FULL_TEXT, _canned_payload
+
+    seen: dict[str, Any] = {}
+
+    def fake_extract(paper: Any, model: str, **kwargs: Any) -> Any:
+        seen["verifier_text"] = kwargs.get("verifier_text")
+        seen["slice"] = paper.text
+        return extract(paper, model, client=stub_client(_canned_payload()))
+
+    monkeypatch.setattr(batch, "extract", fake_extract)
+    no_header = "Nothing here is a heading.\n" + FULL_TEXT.replace("Methods\n", "")
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (no_header, "pypdf"))
+    r = batch.process_paper("p", tmp_path / "p.pdf", "m")
+    assert r.status == "methods_not_found" and seen["verifier_text"] == no_header
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (FULL_TEXT, "pypdf"))
+    r = batch.process_paper("p", tmp_path / "p.pdf", "m")
+    assert r.status == "success" and seen["verifier_text"] is None

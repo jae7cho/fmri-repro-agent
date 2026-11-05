@@ -332,3 +332,39 @@ def test_an_order_verdict_proposing_the_current_order_is_dropped() -> None:
     assert "· order verdict dropped (its proposal is the current order)" in report
     report = render.to_report(prep, source="t", verifier=with_order(reversed_))
     assert "wrong 1" in report
+
+
+def test_the_checking_pass_reads_the_text_it_is_given_and_says_which() -> None:
+    # fix 1a (2026-11-05): on a suspicious slice the caller passes the full text; the sentences
+    # resolve against it, and the record says what was read
+    full = TEXT + " Head motion was corrected with MCFLIRT."
+    seen: list[str] = []
+    v = VerifierExtraction(
+        fields=[
+            FieldVerdict(
+                field="spatial_smoothing.performed",
+                verdict="missed",
+                relied_on="Head motion was corrected with MCFLIRT.",
+            )
+        ]
+    )
+    paper = ParsedPaper(text=TEXT, source="t", parser="manual")
+    out: list[Any] = []
+    from types import SimpleNamespace
+
+    inner = stub_client(_prep_payload(), verifier=v)
+
+    def create(**kw: Any) -> Any:
+        if kw.get("response_model") is VerifierExtraction:
+            seen.append(kw["messages"][0]["content"])
+        return inner.chat.completions.create(**kw)
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    extract(paper, "m", client=client, verifier_out=out, verifier_text=full)
+    assert out[0]["read"] == "full_text"
+    assert out[0]["fields"]["spatial_smoothing.performed"]["relied_on_resolved"] is True
+    assert any("MCFLIRT" in p for p in seen)
+    out2: list[Any] = []
+    extract(paper, "m", client=stub_client(_prep_payload(), verifier=v), verifier_out=out2)
+    assert out2[0]["read"] == "methods_slice"
+    assert out2[0]["fields"]["spatial_smoothing.performed"]["relied_on_resolved"] is False

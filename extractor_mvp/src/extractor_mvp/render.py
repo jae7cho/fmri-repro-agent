@@ -1175,7 +1175,16 @@ def to_protocol(
     lines.append("")
 
     if methods_slice is not None and methods_slice.suspicious:
-        if methods_slice.found_via == "fallback_full_text":
+        reason = getattr(methods_slice, "fallback_reason", None)
+        if methods_slice.found_via == "fallback_full_text" and reason:
+            # fix 1a (2026-11-05): a header matched but its slice was rejected, or the text layer
+            # cannot show a heading; the reason is said, and the checking pass read the full text
+            lines.append(
+                f"> ⚠ Methods section not identified — {reason}. Extracted from the FULL "
+                "document, and the checking pass read the full document; spans may resolve "
+                "against Introduction / Discussion / References."
+            )
+        elif methods_slice.found_via == "fallback_full_text":
             lines.append(
                 "> ⚠ Methods section not identified — extracted from the FULL document; "
                 "spans may resolve against Introduction / Discussion / References."

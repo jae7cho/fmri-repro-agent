@@ -54,7 +54,15 @@ def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item
 # The canned batch run. Used by test_batch.py and test_report_cli.py.
 # --------------------------------------------------------------------------------------------
 
-FULL_TEXT = "Methods\nData were normalized to MNI152NLin6Asym at 2 mm.\nResults\nFindings."
+# Padded on 2026-11-05 (fix 1a): a methods slice under 2,000 characters is methods_not_found now,
+# so the canned paper carries neutral filler in both sections (the methods slice stays under 60%).
+_FILLER = "Participants gave written informed consent before the session began. " * 32
+FULL_TEXT = (
+    "Methods\nData were normalized to MNI152NLin6Asym at 2 mm.\n"
+    + _FILLER
+    + "\nResults\nFindings.\n"
+    + _FILLER
+)
 
 
 def _canned_payload() -> PreprocessingExtraction:

@@ -277,6 +277,9 @@ def process_paper(
             motion_inference_out=motion_inference,
             coverage_out=coverage_out,
             verifier_out=verifier_out,
+            # fix 1a (2026-11-05): a suspicious slice is not trusted to hold what the checking pass
+            # needs, so it reads the full text (on a fallback the slice is the full text already)
+            verifier_text=text if methods.suspicious else None,
         )
     except _CODE_DEFECTS:
         # A tool defect, not this paper's problem. Let it abort the run loudly rather than write 19

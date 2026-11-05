@@ -2095,11 +2095,14 @@ def extract(
     motion_inference_out: list[Any] | None = None,
     coverage_out: list[Any] | None = None,
     verifier_out: list[Any] | None = None,
+    verifier_text: str | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Single-pass extraction with one-hop deferral resolution.
 
     ``verifier_out`` (report v2 §3, 2026-10-29): pass a list to run the checking pass on the
     finished draft (one more call) and receive its record; the default None makes no call.
+    ``verifier_text`` (2026-11-05, fix 1a): the text the checking pass reads instead of the methods
+    slice -- the caller passes the full paper when the slice is suspicious.
 
     ``resolutions`` (optional): forwarded to :func:`extract_preprocessing` to collect
     per-field :class:`ResolutionRecord`s (raw LLM value + resolved value/alias) for
@@ -2130,5 +2133,7 @@ def extract(
     if verifier_out is not None:
         from extractor_mvp.verifier import run_verifier
 
-        verifier_out.append(run_verifier(parsed_paper, preprocessing, model, client=client))
+        verifier_out.append(
+            run_verifier(parsed_paper, preprocessing, model, client=client, text=verifier_text)
+        )
     return preprocessing, diagnostics, deferral_records

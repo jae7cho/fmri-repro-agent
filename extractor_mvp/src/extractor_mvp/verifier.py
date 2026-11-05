@@ -284,13 +284,21 @@ def run_verifier(
     *,
     client: Any | None = None,
     draft: str | None = None,
+    text: str | None = None,
 ) -> dict[str, Any]:
     """One ``create()`` after the draft exists. Returns the verifier record (a plain dict, stored
     beside the record as ``verifier``); never raises. ``draft`` replaces :func:`compact_draft` for a
-    draft that is not a whole ``Preprocessing`` (the citation hop's scoped fields)."""
+    draft that is not a whole ``Preprocessing`` (the citation hop's scoped fields).
+
+    ``text`` (2026-11-05, fix 1a): the text the checking pass reads and resolves its sentences
+    against, when it is not the methods slice -- the full paper when the slice is suspicious. The
+    record says which (``read``)."""
     from extractor_mvp.extractor import build_client
 
     t0 = time.perf_counter()
+    read = "full_text" if text is not None else "methods_slice"
+    if text is None:
+        text = parsed_paper.text
     if draft is None:
         draft = compact_draft(preprocessing)
     known_fields = {line.split(" | ", 1)[0] for line in draft.splitlines()}
@@ -301,9 +309,7 @@ def run_verifier(
             messages=[
                 {
                     "role": "user",
-                    "content": VERIFIER_PROMPT.format(
-                        text=parsed_paper.text, draft=draft, rows=_ROW_CHOICES
-                    ),
+                    "content": VERIFIER_PROMPT.format(text=text, draft=draft, rows=_ROW_CHOICES),
                 }
             ],
             response_model=VerifierExtraction,
@@ -320,6 +326,7 @@ def run_verifier(
             "multiple_pipelines": None,
             "unplaced": [],
             "n_draft_lines": len(known_fields),
+            "read": read,
         }
     fields: dict[str, dict[str, Any]] = {}
     for fv in raw.fields:
@@ -328,7 +335,7 @@ def run_verifier(
             continue
         resolved = None
         if fv.relied_on:
-            res = resolve_quote(fv.relied_on, parsed_paper.text)
+            res = resolve_quote(fv.relied_on, text)
             resolved = res.span is not None
         fields[fv.field] = {
             "verdict": verdict,
@@ -340,15 +347,15 @@ def run_verifier(
     software = {
         sv.name: sv.preprocessing_use for sv in raw.software if sv.preprocessing_use is not None
     }
-    unplaced = [_unplaced_record(u, parsed_paper.text) for u in raw.unplaced if u.statement.strip()]
+    unplaced = [_unplaced_record(u, text) for u in raw.unplaced if u.statement.strip()]
     specs = {s.field_id: s for s in RECORD_SPECS}
     multiple = {
         "V": {
             "multiple_pipelines": _record_field(
-                raw.multiple_pipelines, specs["multiple_pipelines"], parsed_paper.text
+                raw.multiple_pipelines, specs["multiple_pipelines"], text
             ),
             "pipeline_variant_count": _record_field(
-                raw.pipeline_variant_count, specs["pipeline_variant_count"], parsed_paper.text
+                raw.pipeline_variant_count, specs["pipeline_variant_count"], text
             ),
         }
     }
@@ -363,6 +370,7 @@ def run_verifier(
                 "multiple_pipelines": multiple,
                 "unplaced": unplaced,
                 "n_draft_lines": len(known_fields),
+                "read": read,
             },
             preprocessing,
         )

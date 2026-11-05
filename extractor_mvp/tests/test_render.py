@@ -1220,6 +1220,20 @@ def test_to_protocol_methods_suspicious_warning() -> None:
         suspicious=True,
     )
     assert "Methods section not identified" in render.to_protocol(prep, methods_slice=fallback)
+    # fix 1a (2026-11-05): a rejected header slice says why, and that the checking pass read it all
+    rejected = MethodsSlice(
+        text="x",
+        start_offset=0,
+        found_via="fallback_full_text",
+        matched_header=None,
+        end_offset=1,
+        slice_ratio=1.0,
+        ended_at="end_of_text",
+        suspicious=True,
+        fallback_reason="'Methods' gave 613 characters (0.8% of the text), ending at 'x'",
+    )
+    out = render.to_protocol(prep, methods_slice=rejected)
+    assert "'Methods' gave 613 characters" in out and "checking pass read the full document" in out
     # bloated header slice -> the softer warning
     bloated = MethodsSlice(
         text="x",
