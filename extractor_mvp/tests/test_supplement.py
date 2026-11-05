@@ -165,3 +165,40 @@ def test_process_paper_records_and_renders_a_field_sent_to_the_supplement(
     sup = r.extraction_json["supplement"]  # type: ignore[index]
     assert sup["fields_deferred"] == ["spatial_normalization.resolution_mm"]
     assert "- resolution_mm: in this paper's supplement, not read" in (r.report or "")
+
+
+# --- 2026-11-05 (second round, item 2): the reference list is out of the extraction text ----------
+
+REFS = "\nReferences\nSmith, A., 2004. Advances in FSL. NeuroImage 23, 1.\n"
+
+
+def test_a_full_text_fallback_reads_no_reference_list(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    seen = _setup(monkeypatch, tmp_path, None)
+    paper = "Nothing here is a heading.\n" + FULL_TEXT.replace("Methods\n", "") + REFS
+    monkeypatch.setattr(batch, "load_pdf_text", lambda p: (paper, "pypdf"))
+    r = batch.process_paper("p_2020", seen["pdf"], "m")
+    assert r.status == "methods_not_found"
+    assert "Advances in FSL" not in seen["text"] and "Advances in FSL" not in seen["verifier_text"]
+    assert r.extraction_json["references_excluded_from"] == paper.index("\nReferences") + 1  # type: ignore[index]
+
+
+def test_a_supplement_s_reference_list_is_not_read(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    seen = _setup(monkeypatch, tmp_path, SUPP + REFS)
+    r = batch.process_paper("p_2020", seen["pdf"], "m")
+    assert seen["text"].endswith(SUPP + "\n") or seen["text"].endswith(SUPP)
+    assert "Advances in FSL" not in seen["text"]
+    sup = r.extraction_json["supplement"]  # type: ignore[index]
+    assert sup["references_excluded_from"] == len(SUPP) + 1
+
+
+def test_a_header_slice_before_the_references_is_unchanged(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    seen = _setup(monkeypatch, tmp_path, None)
+    monkeypatch.setattr(batch, "load_pdf_text", lambda p: (FULL_TEXT + REFS, "pypdf"))
+    r = batch.process_paper("p_2020", seen["pdf"], "m")
+    assert r.status == "success" and r.extraction_json["references_excluded_from"] is None  # type: ignore[index]

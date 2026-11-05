@@ -356,14 +356,27 @@ def process_paper(
     # fix 4 (2026-11-05): a supplement beside the paper is read with it (first hop), after the
     # methods text and a marker line; the checking pass reads it too
     supplement, supp_text = load_supplement(path)
+    # 2026-11-05 (the author's list, second round, item 2): the reference list is out of the text
+    # the model reads, not only out of the software scan's. A slice that runs past the paper's last
+    # reference heading (a full-text fallback) stops there; so does the supplement's text.
+    from extractor_mvp.software_scan import _body_end
+
+    body_end = _body_end(text)
+    refs_cut = methods.start_offset + len(methods.text) > body_end
+    extraction_text = (
+        methods.text[: max(0, body_end - methods.start_offset)] if refs_cut else methods.text
+    )
+    full_text = text[:body_end]
+    if supplement["read"]:
+        supp_body = _body_end(supp_text)
+        supplement["references_excluded_from"] = supp_body if supp_body < len(supp_text) else None
+        supp_text = supp_text[:supp_body]
     supp_start: int | None = None
-    extraction_text = methods.text
-    full_text = text
     if supplement["read"]:
         marker = supplement_marker(Path(supplement["path"]).name)
-        supp_start = len(methods.text) + len(marker)
-        extraction_text = methods.text + marker + supp_text
-        full_text = text + marker + supp_text
+        supp_start = len(extraction_text) + len(marker)
+        extraction_text = extraction_text + marker + supp_text
+        full_text = full_text + marker + supp_text
     paper = ParsedPaper(
         text=extraction_text, source=paper_id, parser="pypdf", pdf_date=pdf_creation_date(path)
     )
@@ -459,6 +472,8 @@ def process_paper(
     extraction_json = {
         "methods": _methods_record(methods),
         "supplement": supplement,  # fix 4 (2026-11-05): found, read, why not, and what defers to it
+        # where the reference list was cut from the extraction text (an offset into the paper), or None
+        "references_excluded_from": body_end if refs_cut else None,
         "fmri_gate": fmri_gate,  # fix 1b (2026-11-05): the gate's answer, also when it let the paper on
         "likely_multi_acquisition": multi,
         "instructor_mode": INSTRUCTOR_MODE,  # 2026-11-03: a vintage is prompts AND mode
