@@ -383,3 +383,33 @@ def test_a_suspicious_slice_sends_the_full_text_to_the_checking_pass(
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (FULL_TEXT, "pypdf"))
     r = batch.process_paper("p", tmp_path / "p.pdf", "m")
     assert r.status == "success" and seen["verifier_text"] is None
+
+
+def test_a_one_word_per_line_layer_is_reflowed_before_slicing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # the author's list of 2026-11-05, third round, item 4
+    from conftest import FULL_TEXT, _canned_payload
+
+    seen: dict[str, Any] = {}
+
+    def fake_extract(paper: Any, model: str, **kwargs: Any) -> Any:
+        seen["text"] = paper.text
+        return extract(paper, model, client=stub_client(_canned_payload()))
+
+    lines: list[str] = []
+    for ln in (FULL_TEXT + "\n").splitlines():
+        words = ln.split()
+        lines.extend([words[0], *(" " + w for w in words[1:])] if words else [" "])
+    layer = "\n".join(lines)
+    monkeypatch.setattr(batch, "extract", fake_extract)
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (layer, "pypdf"))
+    r = batch.process_paper("p", tmp_path / "p.pdf", "m")
+    assert r.extraction_json is not None
+    info = r.extraction_json["text_reflow"]
+    assert info is not None and info["one_word_share_before"] > 0.8
+    assert r.extraction_json["methods"]["found_via"] == "header_match"
+    assert "".join(seen["text"].split()) in "".join(FULL_TEXT.split())
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (FULL_TEXT, "pypdf"))
+    r = batch.process_paper("p", tmp_path / "p.pdf", "m")
+    assert r.extraction_json is not None and r.extraction_json["text_reflow"] is None

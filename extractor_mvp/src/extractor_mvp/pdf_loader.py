@@ -33,6 +33,61 @@ def load_pdf_text(path: Path) -> tuple[str, Literal["pypdf", "failed"]]:
     return text, "pypdf"
 
 
+#: A text layer whose non-blank lines are more than this share one word each, over at least
+#: ``REFLOW_MIN_LINES`` lines, is reflowed before slicing (the author's list of 2026-11-05, third
+#: round, item 4). Same threshold as ``methods_finder.MAX_ONE_WORD_LINE_SHARE``, which stays as the
+#: guard for a layer that reflow cannot rebuild.
+REFLOW_ONE_WORD_SHARE = 0.8
+REFLOW_MIN_LINES = 50
+
+
+def _one_word_share(text: str) -> tuple[int, float]:
+    lines = [ln for ln in text.splitlines() if ln.strip()]
+    if not lines:
+        return 0, 0.0
+    return len(lines), sum(1 for ln in lines if len(ln.split()) == 1) / len(lines)
+
+
+def reflow_one_word_lines(text: str) -> tuple[str, dict[str, object] | None]:
+    """Rebuild the lines of a one-word-per-line text layer; any other text is returned unchanged.
+
+    In such a layer (Cattarinussi_2026: 99.1% one-word lines) pypdf writes each word on its own
+    line and marks a word that continues the printed line with a leading space; a word that starts
+    a printed line has none, and a whitespace-only line separates blocks (a heading from its
+    paragraph). A line with a leading space is joined to the line before it, as written (its own
+    leading space is the separator); a whitespace-only line ends the current line. Only line breaks
+    and whitespace-only lines are removed; every other character is kept in order. Returns the text and a record of the reflow
+    (line counts and one-word shares before and after), or None when the text was not reflowed.
+    """
+    n_before, share_before = _one_word_share(text)
+    if n_before < REFLOW_MIN_LINES or share_before <= REFLOW_ONE_WORD_SHARE:
+        return text, None
+    out: list[str] = []
+    cur: str | None = None
+    for ln in text.split("\n"):
+        if not ln.strip():
+            if cur is not None:
+                out.append(cur)
+                cur = None
+            continue
+        if ln[0].isspace() and cur is not None:
+            cur += ln
+        else:
+            if cur is not None:
+                out.append(cur)
+            cur = ln
+    if cur is not None:
+        out.append(cur)
+    reflowed = "\n".join(out)
+    n_after, share_after = _one_word_share(reflowed)
+    return reflowed, {
+        "lines_before": n_before,
+        "one_word_share_before": round(share_before, 3),
+        "lines_after": n_after,
+        "one_word_share_after": round(share_after, 3),
+    }
+
+
 def pdf_creation_date(path: Path) -> date | None:
     """Best-effort PDF publication date from the ``/CreationDate`` metadata.
 

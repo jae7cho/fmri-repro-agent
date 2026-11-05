@@ -32,7 +32,7 @@ from extractor_mvp.extractor import INSTRUCTOR_MODE, ResolutionRecord, extract
 from extractor_mvp.fmri_gate import ask_fmri, to_not_fmri_report
 from extractor_mvp.methods_finder import MethodsSlice, find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
+from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date, reflow_one_word_lines
 from extractor_mvp.render import to_report
 
 if TYPE_CHECKING:
@@ -215,11 +215,14 @@ def load_supplement(path: Path) -> tuple[dict[str, Any], str]:
         "read": False,
         "n_chars": 0,
         "reason": None,
+        "text_reflow": None,
     }
     if not rec["present"]:
         rec["reason"] = "no supplement beside the paper"
         return rec, ""
     text, parser = load_pdf_text(supp)
+    # 2026-11-05 (third round, item 4): a one-word-per-line layer is reflowed before slicing
+    text, rec["text_reflow"] = reflow_one_word_lines(text)
     rec["n_chars"] = len(text)
     if parser == "failed" or len(text) < SUPPLEMENT_MIN_CHARS:
         rec["reason"] = f"no usable text layer ({len(text)} characters)"
@@ -301,6 +304,9 @@ def process_paper(
     a metered one.
     """
     text, parser = load_pdf_text(path)
+    # 2026-11-05 (the author's list, third round, item 4): a one-word-per-line text layer is
+    # reflowed before slicing; every offset below is into the reflowed text
+    text, text_reflow = reflow_one_word_lines(text)
     if parser == "failed":
         return PaperResult(
             paper_id,
@@ -345,6 +351,7 @@ def process_paper(
             0,  # n_value_not_in_literal
             {
                 "methods": _methods_record(methods),
+                "text_reflow": text_reflow,
                 "instructor_mode": INSTRUCTOR_MODE,
                 "fmri_gate": fmri_gate,
             },
@@ -471,6 +478,8 @@ def process_paper(
     _translate_spans(prep_dump, methods.start_offset, supp_start)
     extraction_json = {
         "methods": _methods_record(methods),
+        # 2026-11-05 (third round, item 4): line counts and one-word shares, or None if not reflowed
+        "text_reflow": text_reflow,
         "supplement": supplement,  # fix 4 (2026-11-05): found, read, why not, and what defers to it
         # where the reference list was cut from the extraction text (an offset into the paper), or None
         "references_excluded_from": body_end if refs_cut else None,

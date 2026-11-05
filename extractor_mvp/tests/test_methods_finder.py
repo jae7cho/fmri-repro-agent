@@ -258,3 +258,21 @@ def test_a_one_word_per_line_text_layer_is_methods_not_found() -> None:
 def test_an_ordinary_methods_slice_is_kept() -> None:
     s = find_methods_section("Intro\nx\nMethods\n" + _BODY + "\nResults\nend")
     assert s.found_via == "header_match" and s.fallback_reason is None
+
+
+_STRESS = Path("/Users/cwook/Documents/neurorepro/tested_lit/stress_v1")
+
+
+@pytest.mark.skipif(not (_STRESS / "Cattarinussi_2026.pdf").exists(), reason="corpus PDF absent")
+def test_cattarinussi_is_sliced_after_reflow() -> None:
+    # the author's list of 2026-11-05, third round, item 4: its one-word-per-line layer had made it
+    # methods_not_found (fix 1a); reflowed, its Methods heading slices to its Results heading
+    from extractor_mvp.pdf_loader import reflow_one_word_lines
+
+    raw = load_pdf_text(_STRESS / "Cattarinussi_2026.pdf")[0]
+    assert find_methods_section(raw).found_via == "fallback_full_text"
+    text, info = reflow_one_word_lines(raw)
+    assert info is not None and info["one_word_share_after"] < 0.8
+    s = find_methods_section(text)
+    assert s.found_via == "header_match" and s.ended_at == "Results"
+    assert 0.1 < s.slice_ratio < 0.3

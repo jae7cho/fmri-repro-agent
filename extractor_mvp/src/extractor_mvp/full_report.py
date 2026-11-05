@@ -33,7 +33,7 @@ from typing import Any
 from extractor_mvp.batch import PaperResult, process_paper
 from extractor_mvp.citation_hop import CallMeter, extract_data_release, json_safe, run_hop
 from extractor_mvp.methods_finder import MethodsSlice
-from extractor_mvp.pdf_loader import load_pdf_text
+from extractor_mvp.pdf_loader import load_pdf_text, reflow_one_word_lines
 from extractor_mvp.render import to_report
 from extractor_mvp.software_scan import ask_uses, scan, tool_list
 
@@ -119,6 +119,8 @@ def run_paper(
 
     prep = parse_any_version(record["preprocessing"])
     citing_text, _parser = load_pdf_text(pdf)
+    # the same text the extraction read (2026-11-05, third round, item 4)
+    citing_text, _reflow = reflow_one_word_lines(citing_text)
     refs: list[str] = []
     for d in record.get("deferred_fields") or []:
         if d.get("target_kind") in HOP_KINDS and d.get("ref_string") not in refs:

@@ -250,3 +250,31 @@ def test_a_record_with_no_scan_release_or_hop_renders_no_section() -> None:
 
     assert _second_hop_section(None, None, None) == []
     assert _second_hop_section([], None, None) == []
+
+
+def test_the_scan_and_call_r_read_the_reflowed_text_the_extraction_read(
+    canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path
+) -> None:
+    # the author's list of 2026-11-05, third round, item 4: one text for every step of the report
+    import extractor_mvp.batch as batch
+    from conftest import FULL_TEXT
+
+    seen: dict[str, Any] = {}
+    _stub_rest(monkeypatch, seen)
+
+    def release(text: str, _model: str, **kw: Any) -> dict:
+        seen["release_text"] = text
+        return {"status": "ok", "releases": []}
+
+    monkeypatch.setattr(full_report, "extract_data_release", release)
+    lines: list[str] = []
+    for ln in (FULL_TEXT + "\n").splitlines():
+        words = ln.split()
+        lines.extend([words[0], *(" " + w for w in words[1:])] if words else [" "])
+    layer = "\n".join(lines)
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (layer, "pypdf"))
+    monkeypatch.setattr(full_report, "load_pdf_text", lambda _p: (layer, "pypdf"))
+    out = full_report.run_paper("p1", pdf, "m", [tmp_path])
+    assert out.record is not None and out.record["text_reflow"] is not None
+    assert seen["release_text"] != layer
+    assert "".join(seen["release_text"].split()) == "".join(layer.split())

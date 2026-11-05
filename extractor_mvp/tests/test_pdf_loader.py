@@ -48,3 +48,68 @@ def test_load_pdf_text_failure_on_non_pdf(tmp_path: Path):
     text, parser = load_pdf_text(p)
     assert parser == "failed"
     assert text == ""
+
+
+# --- reflow of a one-word-per-line text layer (the author's list of 2026-11-05, third round, 4) ---
+
+from extractor_mvp.pdf_loader import reflow_one_word_lines  # noqa: E402
+
+_PROSE = (
+    "Methods\n"
+    "Functional images were realigned to the first volume and smoothed\n"
+    "with a 6 mm kernel before any further analysis was run.\n"
+    "\n"
+    "Results\n"
+    "The main effect of condition was seen in both hemispheres.\n"
+)
+
+
+def _one_word_layer(text: str, *, repeat: int = 8) -> str:
+    """The layer pypdf writes for such a PDF: a word per line, a word that continues the printed
+    line carries a leading space, and a whitespace-only line stands for a blank one."""
+    out: list[str] = []
+    for ln in (text * repeat).splitlines():
+        words = ln.split()
+        if not words:
+            out.append(" ")
+            continue
+        out.append(words[0])
+        out.extend(" " + w for w in words[1:])
+    return "\n".join(out)
+
+
+def test_a_one_word_layer_gets_its_printed_lines_back() -> None:
+    layer = _one_word_layer(_PROSE)
+    text, info = reflow_one_word_lines(layer)
+    assert text.splitlines()[:4] == [ln for ln in _PROSE.splitlines() if ln][:4]
+    assert info is not None and info["one_word_share_before"] > 0.8
+    assert info["lines_after"] == len([ln for ln in (_PROSE * 8).splitlines() if ln])
+    assert info["one_word_share_after"] < 0.8
+
+
+def test_reflow_changes_nothing_but_line_breaks() -> None:
+    layer = _one_word_layer(_PROSE)
+    text, _ = reflow_one_word_lines(layer)
+    assert "".join(text.split()) == "".join(layer.split())
+    # every character of the reflowed text, line breaks aside, is the layer's, in order
+    kept = iter(layer)
+    assert all(any(c == k for k in kept) for c in text.replace("\n", ""))
+
+
+def test_ordinary_text_is_not_reflowed() -> None:
+    ordinary = _PROSE * 20
+    assert reflow_one_word_lines(ordinary) == (ordinary, None)
+
+
+def test_a_short_one_word_text_is_not_reflowed() -> None:
+    short = "\n".join(["word"] * 49)
+    assert reflow_one_word_lines(short) == (short, None)
+    assert reflow_one_word_lines("\n".join(["word"] * 50))[1] is not None
+
+
+def test_a_whitespace_only_line_ends_the_line_even_before_a_leading_space() -> None:
+    # Cattarinussi_2026's layer has 383 whitespace-only lines; 6 are followed by a word that carries
+    # a leading space, and the block still ends there
+    layer = _one_word_layer(_PROSE) + "\n \n Table\n 1"
+    text, _ = reflow_one_word_lines(layer)
+    assert text.splitlines()[-1] == " Table 1"
