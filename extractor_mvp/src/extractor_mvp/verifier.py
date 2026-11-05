@@ -165,8 +165,12 @@ def compact_draft(preprocessing: Any) -> str:
             state, value = "extracted", _fmt(r.value)
         elif r.state == "DEFERRED_TO_CITATION":
             state, value = "deferred", "deferred to " + ", ".join(r.deferral_refs or [])
+        elif r.state == "INFERRED_DEFAULT" and r.extraction_status == "DEFERRED_TO_CITATION":
+            # fix 1d (2026-11-05): the checking pass sees what the paper said, never AESPA's
+            # inference; the extraction arm is shown, the inferred value is not
+            state, value = "deferred", "deferred to " + ", ".join(r.deferral_refs or [])
         elif r.state == "INFERRED_DEFAULT":
-            state, value = "not reported (a default was inferred, not stated)", _fmt(r.value)
+            state, value = "not reported", "-"
         else:
             from extractor_mvp.cobidas import _UNVERIFIABLE_GAP_BASES, _gap_base
 

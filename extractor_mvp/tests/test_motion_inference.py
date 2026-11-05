@@ -342,3 +342,86 @@ def test_the_copied_tool_shape_rules_equal_the_frozen_heuristic() -> None:
         "EPI images",
     ):
         assert g.is_tool_shaped_frozen(v) == mvk.is_tool_shaped(v), v
+
+
+# --- fix 1d (2026-11-05): the checking pass never sees or judges an inference ----------------
+
+
+def _inferred_prep() -> tuple[Preprocessing, Any]:
+    prep = _prep(_method("deferred", ref="C-PAC"), "C-PAC", _version("extracted", "1.8.6"))
+    return infer_motion_method(prep)
+
+
+def test_the_draft_shows_the_paper_s_deferral_never_the_inferred_program() -> None:
+    from extractor_mvp.verifier import compact_draft
+
+    prep, _ = _inferred_prep()
+    line = next(
+        ln for ln in compact_draft(prep).splitlines() if ln.startswith("motion_correction.")
+    )
+    assert line.startswith("motion_correction.method | deferred | deferred to C-PAC |")
+    assert "3dvolreg" not in line and "inferred" not in line
+
+
+def test_a_missing_field_with_an_inference_is_drafted_as_not_reported() -> None:
+    from extractor_mvp.verifier import compact_draft
+
+    prep = _prep(_missing_pf("method", Any, "not_stated_in_text"), "C-PAC", _version("extracted"))
+    prep, _rec = infer_motion_method(prep)
+    assert _method_pf(prep).inference.status == "INFERRED_DEFAULT"
+    line = next(
+        ln for ln in compact_draft(prep).splitlines() if ln.startswith("motion_correction.")
+    )
+    assert line.startswith("motion_correction.method | not reported | - |")
+
+
+def test_an_inferred_field_is_labelled_aespa_s_and_a_stored_verdict_on_it_is_not_judged() -> None:
+    prep, rec = _inferred_prep()
+    wrong = {
+        "verdict": "wrong",
+        "reason": "the paper does not name it",
+        "relied_on": None,
+        "relied_on_resolved": True,
+        "better_value": "not reported",
+    }
+    verifier = {
+        "status": "ok",
+        "fields": {"motion_correction.method": wrong},
+        "software": {},
+        "unplaced": [],
+        "n_draft_lines": 1,
+    }
+    report = to_report(prep, source="t", motion_inference=rec, verifier=verifier)
+    line = _method_line(report)
+    assert "AESPA infers 3dvolreg" in line
+    assert line.endswith("[AESPA's inference: not checked against the text]")
+    assert "WRONG" not in report
+    header = next(ln for ln in report.splitlines() if ln.startswith("Checking pass"))
+    assert "wrong 0" in header and "AESPA's inferences, not judged 1" in header
+    assert "not checked 0" in header
+
+
+def test_a_missed_verdict_on_an_inferred_field_is_not_named_on_its_row() -> None:
+    from fmri_repro.spec.preprocessing import SliceTimeCorrection
+
+    prep, rec = _inferred_prep()
+    # an expanded record (a step with ``performed``), so the per-row section is drawn
+    stc = SliceTimeCorrection(
+        **{
+            n: _missing_pf(n, Any, "not_targeted_by_mvp")
+            for n in SliceTimeCorrection.model_fields
+            if n != "kind"
+        }
+    )
+    prep = prep.model_copy(update={"steps": [*prep.steps, stc]})
+    missed = {
+        "verdict": "missed",
+        "reason": "",
+        "relied_on": "a sentence",
+        "relied_on_resolved": True,
+        "better_value": "x",
+    }
+    verifier = {"status": "ok", "fields": {"motion_correction.method": missed}, "n_draft_lines": 1}
+    report = to_report(prep, source="t", motion_inference=rec, verifier=verifier)
+    assert "### Rows" in report  # the section the clause acts on is drawn
+    assert "missed per the checking pass" not in report and "MISSED" not in report

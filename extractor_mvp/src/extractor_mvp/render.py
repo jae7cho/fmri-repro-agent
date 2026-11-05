@@ -788,6 +788,10 @@ def _with_verdict(main: str, row: FieldRow, verifier: dict[str, Any] | None) -> 
     from extractor_mvp.verifier import effective
 
     v = _verdict_for(row, verifier)
+    if row.state == INFERRED_DEFAULT and verifier and verifier.get("status") == "ok":
+        # fix 1d (2026-11-05): an inference is AESPA's, not the paper's; it is never judged against
+        # the text, and a verdict a record carries on it (one drawn before the fix) is not shown
+        return f"- {main}   [AESPA's inference: not checked against the text]"
     if v is None:
         return f"- {main}"
     eff = effective(v)
@@ -1115,17 +1119,24 @@ def _verifier_summary_line(verifier: dict[str, Any] | None, rows: list[FieldRow]
     from extractor_mvp.verifier import effective
 
     counts = {"supported": 0, "wrong": 0, "missed": 0, "unverified": 0}
-    for v in verifier.get("fields", {}).values():
+    # fix 1d (2026-11-05): a field AESPA filled by inference is not judged; its verdict, if the
+    # record carries one, is not counted, and the field is counted apart
+    inferred = {r.path for r in rows if r.state == INFERRED_DEFAULT}
+    for path, v in verifier.get("fields", {}).items():
+        if path in inferred:
+            continue
         eff = effective(v)
         counts[eff if eff in counts else "unverified"] += 1
     n_lines = int(verifier.get("n_draft_lines") or 0)
     # 2026-11-02, the author's ruling: a dropped same-order verdict was checked, not "not checked"
     dropped = 1 if verifier.get("dropped_same_order") else 0
-    not_checked = max(0, n_lines - sum(counts.values()) - dropped)
+    n_inferred = len(inferred)
+    not_checked = max(0, n_lines - sum(counts.values()) - dropped - n_inferred)
     return (
         "Checking pass (unvalidated — spot-checked against a human reading before it is trusted): "
         f"supported {counts['supported']} · wrong {counts['wrong']} · missed {counts['missed']} · "
         f"unverified {counts['unverified']} · not checked {not_checked}"
+        + (f" · AESPA's inferences, not judged {n_inferred}" if n_inferred else "")
         + (" · order verdict dropped (its proposal is the current order)" if dropped else "")
     )
 
@@ -1696,7 +1707,11 @@ def _expanded_rows_section(
         verdicts = {r.path: effective(_verdict_for(r, verifier)) for r in mapped}
         if _row_flagged(mapped, verifier):
             state = "flagged"
-        missed = [r.path.split(".", 1)[1] for r in mapped if verdicts.get(r.path) == "missed"]
+        missed = [
+            r.path.split(".", 1)[1]
+            for r in mapped
+            if verdicts.get(r.path) == "missed" and r.state != INFERRED_DEFAULT
+        ]
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)
