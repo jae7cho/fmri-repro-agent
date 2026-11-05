@@ -3922,3 +3922,112 @@ entry on schema 0.6.1 and case two has the same damage in its model-call line: c
 **Standing instruction (dated 2026-11-05, the author's).** Commits and pushes are allowed during
 work hours, with `ALLOW_WORKHOURS_COMMIT=1`, through 2026-11-14 inclusive. From 2026-11-15 the
 Mon–Fri 09:00–17:00 America/New_York block applies again. Recorded once, here.
+
+## 2026-11-05 — the stress_v1 fixes (the author's list of 2026-11-05)
+
+Fixes 1a to 5 from the stress run of 2026-11-04 (`results/stress_v1`, 12 papers), each with tests,
+mutations (each diff shown non-empty before the run), and an identity gate derived before it ran over
+`batch_a1_acceptance` (19), `batch_coverage_v4` (18) and `stress_v1` (12). The gate is a scratchpad
+copy of `scripts/rerender_reports.py` that renders with the hop section, checks that each library
+copy imports from where it should, and prints held-out ids as states only. Commits were allowed in
+work hours by the author's standing instruction (entry above).
+
+- `23d3f33`, `b82899f` — **1a**: a methods slice under 2,000 characters or 3% of the text is
+  methods_not_found, with the reason rendered and stored. A text layer with more than 80% one-word
+  lines is methods_not_found; that rule is Claude's call, because Cattarinussi_2026's slice otherwise
+  ended at an in-sentence word. A lone "Supplementary" line no longer ends a slice, and "Experimental
+  Procedures" is a methods heading. On a suspicious slice the checking pass reads the full text.
+  8 + 1 mutations killed; gate 49/49 identical. Re-run at `23d3f33` ($1.5733):
+  - Cattarinussi: was 0 of 14 rows addressed and 80 supported. Now the full text is read; 3
+    addressed, 4 wrong, 9 missed; the base pipeline is named.
+  - Bakker: now sliced at "Experimental Procedures", with no fallback warning; the base pipeline
+    named AFNI.
+  - Cole_2013's slice now ends 90 characters earlier, at its "Supplementary Material" heading.
+- `c145aee` — **1b**: the fMRI gate is one call before extraction (`FMRI_GATE_PROMPT` pinned
+  `14df0f33…`); only a "no" whose sentence resolves stops a paper. Tests are guarded against live
+  calls: `litellm.completion` raises in every test. 8 mutations killed; gate 49/49 identical. Run on
+  the 12 papers (12 calls, $0.6344): Gao_2026 stopped (`not_fmri`), the other 11 answered yes.
+- `99985fd` — **1c**: a row the checking pass flags counts "flagged" in the header, never
+  "addressed", and a flagged Software row claims no violation. 6 mutations killed. Gate as derived:
+  coverage_v4 8 changed and stress_v1 6 changed, header line only.
+- `e60f0c1` — **1d**: the checking pass sees an inferred field as the paper left it; the report
+  labels the inference AESPA's and does not judge it, counted apart in the header. 7 mutations
+  killed. Gate as derived: chen, vanderwal, weber (header); Hermans and Sims (header and motion line).
+- `b776e2c`, `6838b6a` — **2**: `aespa-report` runs `full_report.run_paper`:
+  - the gate, then extraction with the checking pass and the KB arm, on one metered client;
+  - the hop per paper reference, then call R, then the KB software scan;
+  - a run record beside the report, one entry per attempt, with totals.
+
+  A crash prints the totals of the calls it made. The scratchpad harness is retired. 12 + 1
+  mutations killed; gate 49/49; `render_record` equals the gate's render on 12 of 12.
+- `a983239`, `cd79b3a`, `ef01f5b` (fmri-defaults-kb `1ae10d3`) — **3**: design first
+  (`docs/design/DESIGN_kb_deferred_defaults.md`), then the build.
+  - **KB:** fMRIPrep 20.2.0 and 1.5.3 (1.5.3 added to the timeline) get 12 fields from each tag's
+    `__desc__` boilerplate and CLI defaults; CompCor's masks differ by version. HCP minimal
+    preprocessing gets 6 fields from Glasser et al. (2013), each source saying the scripts at the
+    tags were not read.
+  - **`fill_deferred_defaults`** fills only deferred-to-pipeline fields, on the inference arm, as
+    `version_default`. On a date-inferred version it uses the motion arm's stability rule under
+    `date_inferred_version` (Claude's call against the list's wording).
+  - **Defect in `cd79b3a`, fixed in `ef01f5b`:** the fill wrote inferred defaults on fields whose
+    FieldMeta forbids inference. The first live runs of Hermans and Sims crashed; both were billed
+    and unmetered. Eleven flags were flipped to `inference_applicable=True` with a dated catalog
+    note, and the fill now re-validates the whole step.
+  - **Gate prediction wrong:** first derived as 49/49 identical; it was wrong. Re-derived: Hermans
+    and Sims change, their motion rows naming the deferral they already carried. The run matched.
+  - 18 mutations killed. Dry run on the stored records (no model call): Hermans 10 of 20 pipeline
+    deferrals filled, Ladouceur 8 of 11, Sims 6 of 12.
+  - **Run that counts for no commit:** a Ladouceur run launched from the working tree imported fix
+    4 mid-edit ($1.5966).
+- `50a4f0e` — **4**: "see Supplementary Material" is not a citation. A `<stem>_supp.pdf` is read
+  with the paper; a supplement under 500 characters is not read. A field sent there renders "in this
+  paper's supplement, not read". Supplements are never hopped. 10 mutations killed; gate 49/49.
+- `097329f`, `9d43615`, `d1e354a` (fmri-defaults-kb `bda087b`) — **5**:
+  - **`pass_type`, schema 0.6.3**, after confirming the cause: all six of the checking pass's
+    `filter_type` misses proposed a pass type. Call T was re-pinned `2ab16fbf…`.
+  - **kb/tools adds fMRIPrep, CONN and CAT12.** Title-case "Conn" matches only inside a toolbox
+    phrase.
+  - **The Software row gives a version once.** Gate as derived: weber_2024 and Li_2024.
+  - **NIH author-manuscript reference lists** split at "Surname INITIALS," and after "]". Sims went
+    from 5 entries to 105. This is broad across the corpus (e.g. Power_2014 3 → 32, Ciric_2017 8 →
+    73).
+
+  10 mutations killed (pass_type 5, version 2, parser 3); 1 survived (a redundant rule, removed).
+
+**Re-run of the 8 affected papers at `d1e354a`** (from a worktree pinned at that commit;
+`results/stress_v1_rerun`; 8 of 8 exit 0, no crash; $7.2354, 1,404.9 s in all):
+
+| paper | fix | change |
+|---|---|---|
+| Achuthan, Dimitrova, Li, Sims | 5 | `pass_type` filled (band/high/band/band); the `filter_type` "missed" verdict gone |
+| Hermans, Ladouceur | 5 | `pass_type` high_pass; Ladouceur's checking pass unavailable, see below |
+| Hermans | 4 | supplement read (18,743 characters); 26 fields specified (was 10); deferrals 22 → 1 (base_pipeline, to the supplement); the two "not read" hop sections gone |
+| Ladouceur | 4 | supplement read (58,771 characters); 38 specified (was 20); deferrals 11 → 0 |
+| Bakker | 4 | supplement read (18,892 characters) |
+| Cattarinussi | 4 | supplement read (136,624 characters) |
+| Sims | 3 | supplement not read (313 characters); four pipeline deferrals filled from Glasser 2013 (parameters, transform, cost function, interpolation) under `date_inferred_version` |
+| Sims | 5 | "Glasser et al. (2013)" now resolves in the reference list |
+| Achuthan, Li | 5 | the KB scan keeps CONN |
+| Hermans, Ladouceur | 5 | the KB scan keeps fMRIPrep |
+| Li | 5 | "SPM 12 12" is now "SPM 12" |
+
+Because the supplements were read, fix 3 filled nothing live in Hermans or Ladouceur.
+
+**Open.**
+- Deferred by the list: pipeline-variant detection (Silchenko) and glyph repair (Dimitrova).
+- Found in the re-run:
+  - **Glasser PDF not found.** The hop finds no local PDF for Glasser 2013. The local-file rule
+    wants exactly `Glasser_2013.pdf`; the file is `Glasser_2013_HCP_pipelines.pdf`.
+  - **Ladouceur's checking pass unavailable.** It failed validation twice and the run went on
+    without it; the meter recorded both attempts.
+  - **KB scan line hidden.** The scan's result renders only when the paper has a hop section, so
+    the CONN and fMRIPrep finds are in the record but not on the page.
+  - **Bakker's base pipeline** reads "value present in source but span unresolved".
+  - **Cattarinussi** cost $2.2813 with its supplement.
+  - **Two runs unmetered.** The two crashed fix 3 runs left no record of their cost.
+
+**Model calls today** (metered): $11.0397. The two crashed runs are not metered.
+
+Commits here: `7c4d579`, `23d3f33`, `b82899f`, `c145aee`, `99985fd`, `e60f0c1`, `b776e2c`, `a983239`,
+`cd79b3a`, `50a4f0e`, `097329f`, `ef01f5b`, `6838b6a`, `9d43615`, `d1e354a`, then this entry.
+fmri-defaults-kb: `1ae10d3`, `bda087b`.
