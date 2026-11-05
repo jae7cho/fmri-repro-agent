@@ -4031,3 +4031,81 @@ Because the supplements were read, fix 3 filled nothing live in Hermans or Ladou
 Commits here: `7c4d579`, `23d3f33`, `b82899f`, `c145aee`, `99985fd`, `e60f0c1`, `b776e2c`, `a983239`,
 `cd79b3a`, `50a4f0e`, `097329f`, `ef01f5b`, `6838b6a`, `9d43615`, `d1e354a`, then this entry.
 fmri-defaults-kb: `1ae10d3`, `bda087b`.
+
+## 2026-11-05 (afternoon) — the author's rulings on the stress_v1 fixes; four more fixes; stress_v2
+
+**Rulings (dated 2026-11-05, the author's).**
+1. The `inference_applicable` flips of `ef01f5b` stand, on the condition that a field takes an
+   inferred value only from a sourced KB entry, otherwise LEFT_MISSING. Built and tested in
+   `77ec42a`.
+2. Sims_2021's basis rule (date_inferred_version under the motion arm's stability rule) stands as
+   built.
+3. The one-word-per-line detector stands. Line reflow before slicing joins glyph repair on the open
+   list.
+
+**Fixes.** Each has tests, its mutations shown non-empty and killed, and a gate derived before
+running over a1 (19), coverage_v4 (18) and stress_v1 (12).
+
+- `b87f867` — **Ladouceur_2023's checking pass.** Its rejected responses were not truncated: each
+  ended with `finish_reason` `tool_calls`, at 6,727–10,110 output tokens. Each sent the verdict
+  array as a JSON string, and the string was broken by an unescaped double quote from a copied
+  sentence; I read the structure with letters masked. No output limit was raised and no split made.
+  The checking pass's text and its draft's quotes now go through `json_safe`, and a list sent as a
+  valid JSON string is read as the list. 3 mutations; gate 49/49 identical. In stress_v2 the pass
+  ran on Ladouceur (80 supported, 8 wrong, 6 missed) with no retry.
+- `77ec42a` — **ruling 1.** FieldMeta gains `inference_requires_kb_source`, set on the eleven
+  flipped fields. The step validator refuses an inferred value there unless its basis is a sourced
+  KB basis; the fill refuses an unsourced entry, and the citation resolver's fill skips these fields.
+  4 mutations; gate 49/49 identical.
+- `9cac678` — **the reference list out of the extraction text.** This covers a full-text fallback,
+  the checking pass's full text, and a supplement's own reference list. 4 mutations; gate 49/49.
+  Bakker re-run at `9cac678` ($0.5561): 1,595 characters of its supplement's references were cut.
+  Its base pipeline still reads "span unresolved"; the recorded reason is `quote_ambiguous`, not
+  the references (see below).
+- `3941bf9` — **the local-PDF lookup.** Candidates come by first author and year from the file name
+  (`<FirstAuthor>_<year>`, alone or followed by `_`/`-`). Each is confirmed by the DOI printed in
+  the PDF: equal to the entry's DOI when the entry has one; otherwise the DOI's CrossRef record has
+  the entry's first author and year. The second route is Claude's reading of the ruling: Sims's
+  Glasser 2013 entry carries only a PubMed ID, and case two's ref 45 carries neither. Live check:
+  Glasser_2013_HCP_pipelines.pdf and Power_2014.pdf both resolve through CrossRef. 6 mutations; gate
+  49/49.
+- `fd5ab8c` — **the KB software-scan line on every report** that carries it. 2 mutations. The gate,
+  as derived: the 10 stress papers without a hop gain the section, additions only; the other 39
+  reports are identical.
+- `1051709` — **found by stress_v2.** The per-row section named a missed field by the text after
+  its first dot, and the Software row's `base_pipeline` has none. Silchenko_2023's checking pass
+  marked it missed, and the final render raised after a complete extraction. Silchenko's report was
+  rendered from its saved record after the fix, with no model call. 1 mutation; gate 49/49.
+
+**stress_v2.** All 12 papers, full `aespa-report`, from a worktree pinned at `fd5ab8c` with
+fmri-defaults-kb `93199df` ($9.3625, 1,944.0 s; v1 was $6.2979, 1,756.0 s). The per-paper tables are
+in `results/stress_v2/V1_V2.md`. In short:
+
+| paper | what moved |
+|---|---|
+| Gao | stopped by the gate ($0.0846) |
+| Cattarinussi | 0 → 2 rows addressed |
+| Hermans | deferrals 22 → 0 |
+| Ladouceur | deferrals 11 → 0, 2 fields KB-filled |
+| Sims | 4 KB-filled fields; the Glasser hop now runs |
+
+v1's header counted flagged rows as addressed, and the tables show them apart.
+
+**New failure modes in stress_v2.**
+- **Silchenko's render raised** on a dotless path (fixed in `1051709`).
+- **Bakker's ambiguous quotes.** Reading its supplement made 6 quotes ambiguous (0 in v1),
+  including the base pipeline's: the supplement repeats sentences of the paper, so a quote matches
+  twice.
+- **Cattarinussi's unresolved quotes.** With the full text and the supplement it has 10 quotes not
+  found (0 in v1), all on nuisance regression and temporal filtering; the cause is unread.
+- **Cattarinussi's retry.** Its shared extraction call retried once: the model set a deferral
+  sentence on an extracted `base_pipeline_ref`. Its cost was $2.4175, up from $0.4459.
+- **Sims's cost.** It doubled ($0.5794 → $1.1405) now that the Glasser hop runs.
+
+**Open.**
+- Line reflow before slicing, and glyph repair (ruling 3).
+- Pipeline-variant detection.
+- Quote resolution when a supplement repeats the paper.
+- Cattarinussi's unresolved quotes.
+
+Commits here: `b87f867`, `77ec42a`, `9cac678`, `3941bf9`, `fd5ab8c`, `1051709`, then this entry.
