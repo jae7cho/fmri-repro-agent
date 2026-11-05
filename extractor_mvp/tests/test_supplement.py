@@ -202,3 +202,25 @@ def test_a_header_slice_before_the_references_is_unchanged(
     monkeypatch.setattr(batch, "load_pdf_text", lambda p: (FULL_TEXT + REFS, "pypdf"))
     r = batch.process_paper("p_2020", seen["pdf"], "m")
     assert r.status == "success" and r.extraction_json["references_excluded_from"] is None  # type: ignore[index]
+
+
+def test_a_supplement_repeating_the_paper_leaves_no_quote_ambiguous(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    # the author's list of 2026-11-05, third round, item 2 (Bakker_2012: 6 quotes ambiguous in v2)
+    alone = batch.process_paper("p_2020", _setup(monkeypatch, tmp_path, None)["pdf"], "m")
+    seen = _setup(monkeypatch, tmp_path, FULL_TEXT + "\n" + SUPP)
+    r = batch.process_paper("p_2020", seen["pdf"], "m")
+    diags = r.extraction_json["diagnostics"]  # type: ignore[index]
+    assert not [d for d in diags if "quote_ambiguous" in (d.get("failure_reason") or "")]
+    assert r.n_extracted >= alone.n_extracted
+    prep = r.extraction_json["preprocessing"]  # type: ignore[index]
+    spans = [
+        sp
+        for st in prep["steps"]
+        for f in st.values()
+        if isinstance(f, dict)
+        for sp in (f.get("extraction") or {}).get("spans") or []
+    ]
+    in_paper = [sp for sp in spans if sp["text"] in FULL_TEXT]
+    assert in_paper and all("span_in_full_paper" in sp for sp in in_paper)

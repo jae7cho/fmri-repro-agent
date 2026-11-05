@@ -508,7 +508,41 @@ def _strip_trailing_sentence_punct(quote: str) -> str:
     return stripped
 
 
+#: The line ``batch.supplement_marker`` writes between the paper's text and its supplement's in the
+#: text the model reads (fix 4, 2026-11-05). Kept here so the resolver can tell the two documents
+#: apart; test_span_resolver checks the two agree.
+SUPPLEMENT_MARKER_RE = re.compile(
+    r"\n\n\[Supplementary material, read with the paper: [^\]\n]*\]\n"
+)
+
+
 def resolve_quote(quote: str, text: str) -> SpanResolution:
+    """Resolve ``quote`` in ``text`` one document at a time (the author's list of 2026-11-05, third
+    round, item 2).
+
+    When ``text`` is a paper and its supplement joined by the supplement marker line, the quote is
+    resolved in the paper first; a match there, or an ambiguity there, is the answer. Only a quote
+    the paper does not hold is resolved in the supplement, and its span is shifted into ``text``.
+    So identical text in both documents resolves to the paper's occurrence, and a quote is
+    ambiguous only when it matches twice within one document. Any other text is one document.
+    """
+    marks = list(SUPPLEMENT_MARKER_RE.finditer(text))
+    if len(marks) != 1:
+        return _resolve_in_one_document(quote, text)
+    m = marks[0]
+    in_paper = _resolve_in_one_document(quote, text[: m.start()])
+    if in_paper.failure_reason != "quote_not_found":
+        return in_paper
+    in_supp = _resolve_in_one_document(quote, text[m.end() :])
+    if in_supp.span is None:
+        return in_supp
+    shifted = in_supp.span.model_copy(
+        update={"start": in_supp.span.start + m.end(), "end": in_supp.span.end + m.end()}
+    )
+    return SpanResolution(shifted, None, recovered=in_supp.recovered, repairs=in_supp.repairs)
+
+
+def _resolve_in_one_document(quote: str, text: str) -> SpanResolution:
     """Resolve ``quote`` to a grounded ``Span`` (see :func:`_resolve_quote_once` for tiers).
 
     Adds ONE fallback, fired only after a primary ``quote_not_found`` (never after success

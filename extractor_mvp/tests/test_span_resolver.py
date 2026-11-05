@@ -341,3 +341,57 @@ def test_trailing_punct_fallback_noop_when_primary_resolves():
     assert primary.failure_reason is None and primary.span is not None
     assert TEXT[primary.span.start : primary.span.end].endswith(".")  # period kept
     assert resolve_quote(quote, TEXT) == primary  # wrapper == core, no divergence
+
+
+# --- one document at a time (the author's list of 2026-11-05, third round, item 2) ---------------
+
+from extractor_mvp.batch import supplement_marker  # noqa: E402
+from extractor_mvp.span_resolver import SUPPLEMENT_MARKER_RE  # noqa: E402
+
+_PAPER = "Images were smoothed with a 6 mm kernel. Data were high-pass filtered at 128 s. "
+_SUPP = (
+    "Extra detail on the scanner. Images were smoothed with a 6 mm kernel. Field maps were used. "
+)
+_MARK = supplement_marker("p_2020_supp.pdf")
+_JOINED = _PAPER + _MARK + _SUPP
+
+
+def test_the_marker_batch_writes_is_the_one_the_resolver_splits_on() -> None:
+    assert [m.group(0) for m in SUPPLEMENT_MARKER_RE.finditer(_JOINED)] == [_MARK]
+
+
+def test_text_in_both_documents_resolves_to_the_papers_occurrence() -> None:
+    q = "Images were smoothed with a 6 mm kernel."
+    r = resolve_quote(q, _JOINED)
+    assert r.failure_reason is None and r.span is not None
+    assert r.span.start == _PAPER.index(q) and _JOINED[r.span.start : r.span.end] == q
+
+
+def test_a_quote_only_the_supplement_holds_resolves_there_in_joined_offsets() -> None:
+    q = "Field maps were used."
+    r = resolve_quote(q, _JOINED)
+    assert r.span is not None and r.span.start >= len(_PAPER) + len(_MARK)
+    assert _JOINED[r.span.start : r.span.end] == q and r.span.text == q
+
+
+def test_a_quote_twice_in_the_paper_is_ambiguous() -> None:
+    joined = _PAPER + _PAPER + _MARK + _SUPP
+    assert resolve_quote("Images were smoothed with a 6 mm kernel.", joined).failure_reason == (
+        "quote_ambiguous"
+    )
+
+
+def test_a_quote_twice_in_the_supplement_and_not_in_the_paper_is_ambiguous() -> None:
+    joined = _PAPER + _MARK + _SUPP + _SUPP
+    assert resolve_quote("Field maps were used.", joined).failure_reason == "quote_ambiguous"
+
+
+def test_a_quote_in_neither_document_is_not_found() -> None:
+    assert resolve_quote("Slice timing was corrected.", _JOINED).failure_reason == "quote_not_found"
+
+
+def test_text_without_the_marker_is_one_document() -> None:
+    one = _PAPER + _SUPP
+    assert resolve_quote("Images were smoothed with a 6 mm kernel.", one).failure_reason == (
+        "quote_ambiguous"
+    )
