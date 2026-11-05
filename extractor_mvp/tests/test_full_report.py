@@ -202,3 +202,22 @@ def test_run_paper_hands_process_paper_the_meter_s_client(
         mock_response="ok",
     )
     assert len(meter.calls) == n + 1  # a call through it lands in the meter
+
+
+def test_a_crash_still_reports_the_calls_it_made(
+    monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path, capsys: Any
+) -> None:
+    def crash(*_a: Any, client: Any = None, **_k: Any) -> Any:
+        client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": "x"}],
+            response_model=None,
+            mock_response="ok",
+        )
+        raise ValueError("a code defect")
+
+    monkeypatch.setattr(full_report, "process_paper", crash)
+    with pytest.raises(ValueError):
+        full_report.run_paper("p1", pdf, "m", [tmp_path])
+    err = capsys.readouterr().err
+    assert "p1: crashed; calls made before the crash:" in err and "'n_calls': 1" in err

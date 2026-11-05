@@ -23,6 +23,7 @@ an attempt above 1. A paper the fMRI gate stops, or one with no extraction, ends
 
 from __future__ import annotations
 
+import sys
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -90,7 +91,14 @@ def run_paper(
     meter = meter or CallMeter()
     meter.label = ""  # the first hop's calls are labelled by their response model
     t0 = time.perf_counter()
-    first = process_paper(paper_id, pdf, model, client=meter.client())
+    try:
+        first = process_paper(paper_id, pdf, model, client=meter.client())
+    except BaseException:
+        # a code defect escapes process_paper by design (batch._CODE_DEFECTS); the calls it made were
+        # billed, so their totals are said before it goes (2026-11-05, after two such crashes)
+        totals = run_totals(meter.calls, time.perf_counter() - t0)
+        print(f"{paper_id}: crashed; calls made before the crash: {totals}", file=sys.stderr)
+        raise
     record: dict[str, Any] | None = None
     if first.extraction_json is not None:
         record = {
