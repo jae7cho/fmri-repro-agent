@@ -21,11 +21,12 @@ drafter; its verdicts are spot-checked against the author's reading before anyon
 
 from __future__ import annotations
 
+import json
 import re
 import time
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from extractor_mvp.cobidas import COBIDAS_D3_ROWS
 from extractor_mvp.coverage_fields import RECORD_SPECS
@@ -144,6 +145,23 @@ class VerifierExtraction(BaseModel):
     multiple_pipelines: FieldExtractionResult = Field(default_factory=_missing_field)
     pipeline_variant_count: FieldExtractionResult = Field(default_factory=_missing_field)
 
+    @field_validator("fields", "unplaced", "software", mode="before")
+    @classmethod
+    def _a_list_sent_as_a_json_string(cls, v: Any) -> Any:
+        """2026-11-05, after Ladouceur_2023's checking pass came back unavailable twice in stress_v1:
+        every rejected attempt was complete (finish_reason tool_calls, 6,727-10,110 output tokens)
+        and sent ``fields`` as a JSON-encoded string of the array instead of the array. A string
+        that parses to a list is read as that list; anything else is left for validation to reject.
+        The JSON schema the model sees is unchanged (a before-validator adds nothing to it)."""
+        if isinstance(v, str):
+            try:
+                parsed = json.loads(v)
+            except ValueError:
+                return v
+            if isinstance(parsed, list):
+                return parsed
+        return v
+
 
 def _fmt(value: Any) -> str:
     from extractor_mvp.render import _fmt_value
@@ -155,6 +173,7 @@ def compact_draft(preprocessing: Any) -> str:
     """One line per TARGETED field (untargeted fillers omitted), full quotes, plus the software
     mentions and the stated step order -- the draft the verifier checks (§3: full, untruncated
     quotes, which avoids the misreading the author caught on chen)."""
+    from extractor_mvp.citation_hop import json_safe
     from extractor_mvp.render import flatten
 
     lines: list[str] = []
@@ -177,13 +196,13 @@ def compact_draft(preprocessing: Any) -> str:
             base = _gap_base(r.left_missing_reason)
             state = "unverifiable" if base in _UNVERIFIABLE_GAP_BASES else "not reported"
             value = "-"
-        quote = " ".join((r.span_text or "").split())
+        quote = json_safe(" ".join((r.span_text or "").split()))  # no double quote to copy back
         reason = r.left_missing_reason or ""
         lines.append(f'{r.path} | {state} | {value} | quote: "{quote}" | reason: {reason}')
     for pf in getattr(preprocessing, "software_mentions", None) or []:
         if pf.extraction.status == "EXTRACTED":
             v = pf.extraction.value
-            quote = " ".join(pf.extraction.spans[0].text.split())
+            quote = json_safe(" ".join(pf.extraction.spans[0].text.split()))
             lines.append(
                 f"software_mentions.{v.name} | extracted | version {v.version or 'not stated'}; "
                 f'used for {v.used_for or "not stated"} | quote: "{quote}" | reason: '
@@ -191,7 +210,9 @@ def compact_draft(preprocessing: Any) -> str:
     source = getattr(preprocessing, "step_order_source", None)
     if source is not None:
         order = ", ".join(s.kind for s in preprocessing.steps)
-        quotes = " ".join(" ".join(sp.text.split()) for sp in preprocessing.step_order_spans or [])
+        quotes = json_safe(
+            " ".join(" ".join(sp.text.split()) for sp in preprocessing.step_order_spans or [])
+        )
         lines.append(f'step_order | {source} | {order} | quote: "{quotes}" | reason: ')
     return "\n".join(lines)
 
@@ -303,6 +324,13 @@ def run_verifier(
     read = "full_text" if text is not None else "methods_slice"
     if text is None:
         text = parsed_paper.text
+    # 2026-11-05 (Ladouceur_2023, stress_v1): the text the checking pass reads and resolves against
+    # has every double quotation mark made an apostrophe, one character for one (citation_hop's
+    # json_safe, case one's fix for the hop calls). A copied sentence opening with a quote was sent
+    # unescaped, the reply did not parse, and the pass came back unavailable after two attempts.
+    from extractor_mvp.citation_hop import json_safe
+
+    text = json_safe(text)
     if draft is None:
         draft = compact_draft(preprocessing)
     known_fields = {line.split(" | ", 1)[0] for line in draft.splitlines()}

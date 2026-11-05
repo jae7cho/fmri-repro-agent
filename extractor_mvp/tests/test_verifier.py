@@ -426,3 +426,67 @@ def test_a_flagged_software_row_claims_no_violation_in_the_header() -> None:
     assert "Software — unconditional violation" in _header(plain)
     assert "flagged 1 · " in _header(flagged)
     assert "unconditional violation" not in _header(flagged)
+
+
+# --- 2026-11-05: Ladouceur_2023's checking pass (stress_v1) ---------------------------------------
+
+
+def test_a_verdict_list_sent_as_a_json_string_is_read_as_the_list() -> None:
+    import json
+
+    row = {"field": "spatial_smoothing.performed", "verdict": "supported"}
+    v = VerifierExtraction.model_validate({"fields": json.dumps([row]), "unplaced": "[]"})
+    assert [f.field for f in v.fields] == ["spatial_smoothing.performed"] and v.unplaced == []
+    # a string that is not a JSON list is still rejected, never guessed at
+    import pytest
+    from pydantic import ValidationError
+
+    with pytest.raises(ValidationError):
+        VerifierExtraction.model_validate({"fields": '[{"field": "x", "verdict": ""broken"}]'})
+
+
+def test_the_checking_pass_reads_no_double_quote_and_its_sentences_still_resolve() -> None:
+    quoted = 'The data were "scrubbed" at 0.5 mm. ' + TEXT
+    seen: list[str] = []
+    v = VerifierExtraction(
+        fields=[
+            FieldVerdict(
+                field="spatial_smoothing.performed",
+                verdict="missed",
+                relied_on="The data were 'scrubbed' at 0.5 mm.",
+            )
+        ]
+    )
+    from types import SimpleNamespace
+
+    inner = stub_client(_prep_payload(), verifier=v)
+
+    def create(**kw: Any) -> Any:
+        if kw.get("response_model") is VerifierExtraction:
+            seen.append(kw["messages"][0]["content"])
+        return inner.chat.completions.create(**kw)
+
+    client = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    out: list[Any] = []
+    extract(
+        ParsedPaper(text=quoted, source="t", parser="manual"), "m", client=client, verifier_out=out
+    )
+    body = seen[0].split('Methods text:\n"""', 1)[1].split('"""', 1)[0]
+    assert '"scrubbed"' not in body and "'scrubbed'" in body
+    assert out[0]["fields"]["spatial_smoothing.performed"]["relied_on_resolved"] is True
+
+
+def test_the_draft_s_quotes_carry_no_double_quote() -> None:
+    sent = 'Images were smoothed with a "6 mm" FWHM Gaussian kernel.'
+    paper = ParsedPaper(text=sent + " " + TEXT, source="t", parser="manual")
+    prep, _, _ = extract(
+        paper,
+        "m",
+        client=stub_client(
+            _prep_payload(), spatial=SpatialExtraction(smoothing_fwhm_mm=_ex("6", sent))
+        ),
+    )
+    line = next(
+        ln for ln in compact_draft(prep).splitlines() if ln.startswith("spatial_smoothing.fwhm_mm")
+    )
+    assert "'6 mm'" in line and '"6 mm"' not in line
