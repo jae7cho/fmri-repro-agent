@@ -372,6 +372,13 @@ def test_a_suspicious_slice_sends_the_full_text_to_the_checking_pass(
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (no_header, "pypdf"))
     r = batch.process_paper("p", tmp_path / "p.pdf", "m")
     assert r.status == "methods_not_found" and seen["verifier_text"] == no_header
+    assert r.extraction_json is not None and r.extraction_json["methods"]["fallback_reason"] is None
+    tiny = "Methods\nToo short.\nResults\n" + FULL_TEXT.replace("Methods\n", "")
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (tiny, "pypdf"))
+    r = batch.process_paper("p", tmp_path / "p.pdf", "m")
+    assert r.extraction_json is not None
+    assert "'Methods' gave" in r.extraction_json["methods"]["fallback_reason"]
+    assert "'Methods' gave" in (r.report or "")
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (FULL_TEXT, "pypdf"))
     r = batch.process_paper("p", tmp_path / "p.pdf", "m")
     assert r.status == "success" and seen["verifier_text"] is None

@@ -349,6 +349,8 @@ def process_paper(
             "slice_ratio": methods.slice_ratio,
             "ended_at": methods.ended_at,
             "suspicious": methods.suspicious,
+            # fix 1a (2026-11-05): stored so a re-render says why the slice is the full text
+            "fallback_reason": methods.fallback_reason,
         },
         "likely_multi_acquisition": multi,
         "instructor_mode": INSTRUCTOR_MODE,  # 2026-11-03: a vintage is prompts AND mode
