@@ -211,6 +211,11 @@ def _pdf_dois(path: Path, read_text: Any) -> set[str]:
     return {m.group(1).rstrip(".,;)").lower() for m in _DOI.finditer(head)}
 
 
+#: The client name CrossRef sees. The author's ruling of 2026-11-05: a generic client name and no
+#: email in the request (no "mailto" polite-pool parameter, no contact header).
+CROSSREF_USER_AGENT = "aespa-citation-hop (fmri-repro-agent)"
+
+
 def crossref_author_year(doi: str) -> tuple[str, str] | None:
     """The first author's family name and the year CrossRef records for ``doi``; None when the call
     fails or the record lacks either. One HTTP GET per DOI per process (cached); no user data is
@@ -222,9 +227,7 @@ def crossref_author_year(doi: str) -> tuple[str, str] | None:
     import urllib.request
 
     url = f"https://api.crossref.org/works/{urllib.parse.quote(doi)}"
-    req = urllib.request.Request(
-        url, headers={"User-Agent": "aespa-citation-hop (fmri-repro-agent)"}
-    )
+    req = urllib.request.Request(url, headers={"User-Agent": CROSSREF_USER_AGENT})
     out: tuple[str, str] | None = None
     try:
         with urllib.request.urlopen(req, timeout=15) as resp:

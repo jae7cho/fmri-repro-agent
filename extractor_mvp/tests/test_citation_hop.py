@@ -895,3 +895,31 @@ def test_a_line_ending_in_a_bracket_inside_an_entry_starts_nothing_without_an_au
 
     text = "References\nAbbott QX, 2012. A title [in press]\ncontinued here. J1, 1.\n"
     assert len(parse_reference_list(text)) == 1
+
+
+def test_the_crossref_request_carries_the_doi_a_generic_client_name_and_no_email(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # the author's ruling of 2026-11-05: CrossRef confirmation stands, with a generic client name
+    # and no email in the request
+    import io
+    import json as _json
+    import urllib.request
+
+    from extractor_mvp import citation_hop
+
+    sent: list[Any] = []
+
+    def urlopen(req: Any, timeout: float = 0) -> Any:
+        sent.append(req)
+        body = {"message": {"author": [{"family": "Power"}], "issued": {"date-parts": [[2014]]}}}
+        return io.BytesIO(_json.dumps(body).encode())
+
+    monkeypatch.setattr(urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(citation_hop, "_CROSSREF_CACHE", {})
+    assert citation_hop.crossref_author_year("10.1016/j.example.2014.01.001") == ("Power", "2014")
+    (req,) = sent
+    assert req.full_url == "https://api.crossref.org/works/10.1016/j.example.2014.01.001"
+    assert req.header_items() == [("User-agent", citation_hop.CROSSREF_USER_AGENT)]
+    everything = req.full_url + " ".join(f"{k} {v}" for k, v in req.header_items())
+    assert "@" not in everything and "mailto" not in everything.lower()
