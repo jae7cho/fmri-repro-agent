@@ -464,3 +464,25 @@ def test_negative_control_unknown_pipeline_skips_kb_param_lookup():
         }[step_kind]
         pf = _step_field(prep, step_cls, field_name)
         assert pf.inference.status == "LEFT_MISSING"
+
+
+def test_a_stated_version_spelled_without_the_kbs_leading_v_still_fills() -> None:
+    """2026-11-05 (found by the third-round re-run, Ladouceur_2023 "v1.5.3" against the KB's
+    "1.5.3"): the version is matched with a leading "v" removed or added, and the basis names the
+    KB's spelling."""
+    prep = _make_preprocessing(
+        _extracted_hcp_minimal_with_version("4.1.3"), include_temporal_filtering=False
+    )
+    fill_dependent_defaults(prep, CHO_2021_DATE)
+    pf = _step_field(prep, SpatialNormalization, "resolution_mm")
+    assert pf.inference.status == "INFERRED_DEFAULT"
+    assert pf.inference.basis.version == "v4.1.3"
+
+
+def test_a_stated_version_the_kb_does_not_list_fills_nothing_and_fails_nothing() -> None:
+    """2026-11-05: this raised KbUnknownVersionError and failed the paper (since 471e6d4)."""
+    prep = _make_preprocessing(
+        _extracted_hcp_minimal_with_version("v9.9.9"), include_temporal_filtering=False
+    )
+    before = prep.model_dump()
+    assert fill_dependent_defaults(prep, CHO_2021_DATE).model_dump() == before

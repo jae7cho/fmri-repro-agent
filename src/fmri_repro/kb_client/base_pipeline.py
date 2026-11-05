@@ -211,10 +211,17 @@ def fill_dependent_defaults(
         return preprocessing
 
     field_paths = [f"{kind}.{name}" for kind, name in SEVEN_DEMOTED_FIELDS]
+    # 2026-11-05 (found by the third-round re-run): a version the paper states as the KB does not
+    # spell it ("v1.5.3" for fMRIPrep's "1.5.3") raised KbUnknownVersionError here and failed the
+    # whole paper. The version is matched as fill_deferred_defaults matches it; a version the KB
+    # does not list fills nothing.
     try:
-        results = get_param_defaults(pipeline_id, version, field_paths)
+        found = _kb_versions(pipeline_id, version, field_paths)
     except KbUnknownPipelineError:
         return preprocessing
+    if found is None:
+        return preprocessing
+    version, results = found
 
     for kind, name in SEVEN_DEMOTED_FIELDS:
         # ``skip`` (2026-10-29, DESIGN_report_v2.md F1a): fields a caller holds back from KB
