@@ -4109,3 +4109,99 @@ v1's header counted flagged rows as addressed, and the tables show them apart.
 - Cattarinussi's unresolved quotes.
 
 Commits here: `b87f867`, `77ec42a`, `9cac678`, `3941bf9`, `fd5ab8c`, `1051709`, then this entry.
+
+## 2026-11-05 (evening) — the author's third-round list: supplement slicing, per-document quotes, Sims explained, reflow
+
+**Rulings (dated 2026-11-05, the author's).**
+1. The CrossRef confirmation stands, with a generic client name and no email in the request. The
+   request already sent only the DOI and a client name; `47958c0` names the client constant and pins
+   the ruling with a test (no mailto parameter, no From header, no contact in the client name).
+2. Held-out DOIs: the clean cells were spent on 2026-10-27, so there was no contamination. Held-out
+   ids stay out of tracked files.
+
+**Fixes.** Each has tests, its mutations shown non-empty and killed, and a gate derived before
+running over a1 (19), coverage_v4 (18) and stress_v1 (12): 49/49 identical each time, as derived (no
+render path reads what these change, and the render change in `893c3f6` applies only to records
+carrying a supplement slice, which no stored record does). The 11 extracted stress_v2 records also
+re-render identically under `893c3f6`.
+
+- `7c2e130` — **Line reflow (item 4).** A text layer with more than 80% one-word lines over at least
+  50 lines is reflowed before slicing: a line with a leading space joins the line before it, and a
+  whitespace-only line ends one. Only line breaks and whitespace-only lines are removed. It is
+  applied to the paper and its supplement, and to the text the scan and call R read. Of 58 local PDFs
+  only Cattarinussi_2026 is reflowed (10,334 lines at 99.1% one-word, to 543 at 14.9%). Its Methods
+  heading now slices to Results (13,168 characters), where fix 1a had made it methods_not_found.
+  6 mutations; one survived (a whitespace-only line not ending the line) until a test for the 6
+  such places in Cattarinussi's layer was added.
+- `71e64ed` — **Per-document quotes (item 2).** A quote is resolved in the paper first; only a quote
+  the paper does not hold is resolved in the supplement. Ambiguity is only within one document. The
+  resolver splits on the marker line batch writes, and a test checks the two agree. Bakker_2012's 6
+  ambiguous quotes in stress_v2, re-resolved offline, all resolve to the paper. 5 mutations.
+- `893c3f6` — **Supplements sliced (item 1).** `find_supplement_mri_section` starts at the first
+  heading-shaped line naming MRI, acquisition, preprocessing, imaging or fMRIPrep. It runs to the next
+  heading-shaped line opening results, discussion, references, acknowledgements, a table or figure,
+  or a sensitivity analysis. With no such heading, or a slice under 500 characters, the supplement is
+  read whole and the record says why. Spans keep offsets into the supplement's own text, and the
+  report line names the headings and the characters read. 9 mutations; one survived (a sentence
+  opening with a section word ending the slice) until "Reference image creation" was added to the
+  test.
+- `4fa8c63` — **Sims (item 3), a test only.** 19 → 16 specified and 2 → 7 inferred. The KB fill took
+  none of the stated fields.
+  - The 5 new inferences (coregistration cost_function, interpolation and transform,
+    brain_extraction parameters, segmentation method) were deferred to HCP in v1, and filled from
+    Glasser on the date-inferred version.
+  - 4 stated fields were lost, none to the KB: scrub criterion (its quote no longer states the
+    value), scrub interpolation_method, nuisance motion_expansion and filtering_integrated (now not
+    reported, the model's own answer in v2).
+  - pass_type is new in schema 0.6.3 (+1). Net 19 → 16.
+  - intensity_correction method and target went from deferred to not reported, by the model's
+    answer, not the fill.
+  - The test sets a stated cost_function in the deferral list: it is not filled and is unchanged.
+    With both of the fill's guards mutated away, the step's schema still refuses the fill. 2
+    mutations.
+- `c416da1` — **Found by the re-run.** `fill_dependent_defaults` looked up the version exactly as
+  written and caught only an unknown pipeline. Ladouceur_2023 at `893c3f6` extracted fMRIPrep
+  "v1.5.3", the KB lists "1.5.3", and the paper ended extraction_failed after 5 billed calls
+  ($0.5886, no report). Present since `471e6d4` (2026-06-06): any stated version the KB lists
+  differently, or not at all, failed the paper. It is now matched as the deferred fill matches it,
+  and an unlisted version fills nothing. Both tests fail before the fix. 3 mutations.
+
+**Re-runs**, each from a worktree pinned at the commit under test, KB `93199df`. Tables are in
+`results/stress_v3/V2_V3.md`. Cost beside stress_v2:
+
+| paper | stress_v2 | re-runs |
+|---|---|---|
+| Bakker_2012 | $0.5440 | $0.5491 (`71e64ed`); $0.4971 (`893c3f6`) |
+| Cattarinussi_2026 | $2.4175 | $1.5125 (`7c2e130`); $0.5641 (`893c3f6`) |
+| Hermans_2024 | $0.6717 | $0.6342 (`893c3f6`) |
+| Ladouceur_2023 | $1.2329 | failed $0.5886 (`893c3f6`); $0.8687 (`c416da1`) |
+
+This round's billed total is $5.2143. Characters of supplement read, before → after slicing:
+- Bakker: 17,297 → 5,410
+- Cattarinussi: 133,419 → 6,846
+- Hermans: 18,743 → 6,078
+- Ladouceur: 58,537 → 20,596
+
+Bakker's ambiguous quotes went 6 → 0, and its base pipeline resolves. Ladouceur's brain_extraction
+method and parameters are now taken from its supplement where v2 inferred them from the KB.
+
+**Cattarinussi's unresolved quotes.** Reflow did not resolve them: 11 in v2, 10 at `7c2e130`, 11 at
+`893c3f6`, all on nuisance regression, temporal filtering and step order. Reflow changes only
+whitespace, and the resolver already absorbs whitespace. The cause is an inline superscript
+citation number, with no brackets, between two sentences of the preprocessing paragraph. The
+resolver drops only bracketed markers. With that number removed, all 11 resolve, in v2's text and in
+the `893c3f6` run's.
+
+**New failure modes.**
+- `fill_dependent_defaults` failed a paper on a version spelling. Fixed in `c416da1`.
+- Cattarinussi's matched methods header is "32\nMethods". The header pattern's optional section
+  number matched a citation number at the end of the line before. The slice starts 3 characters
+  early; this is cosmetic.
+
+**Open.**
+- Unbracketed inline citation numbers in quote resolution (Cattarinussi).
+- Glyph repair.
+- Pipeline-variant detection.
+- A section number on the line before a methods header.
+
+Commits here: `7c2e130`, `71e64ed`, `893c3f6`, `4fa8c63`, `47958c0`, `c416da1`, then this entry.
