@@ -230,7 +230,12 @@ def _methods_record(methods: MethodsSlice) -> dict[str, Any]:
 
 
 def process_paper(
-    paper_id: str, path: Path, model: str, citation_resolver: CitationResolver | None = None
+    paper_id: str,
+    path: Path,
+    model: str,
+    citation_resolver: CitationResolver | None = None,
+    *,
+    client: Any | None = None,
 ) -> PaperResult:
     """One PDF in, one :class:`PaperResult` out — the whole chain for a single paper.
 
@@ -247,6 +252,10 @@ def process_paper(
     come back as a populated field on the result — ``status``, ``error_message``,
     ``render_error`` — so a batch can continue. A single-paper caller has no batch to protect
     and should inspect ``report is None`` to decide its exit code.
+
+    ``client`` (2026-11-05, fix 2): the one client every model call here uses (the fMRI gate, the
+    extraction calls, the checking pass); None builds the default. ``full_report.run_paper`` passes
+    a metered one.
     """
     text, parser = load_pdf_text(path)
     if parser == "failed":
@@ -273,7 +282,7 @@ def process_paper(
     methods = find_methods_section(text)
     # fix 1b (2026-11-05): one cheap call first; a paper with no fMRI gets a report that says so and
     # no extraction. Only a "no" whose sentence resolves stops it (fmri_gate.py).
-    fmri_gate = ask_fmri(text, model)
+    fmri_gate = ask_fmri(text, model, client=client)
     if fmri_gate["stop"]:
         return PaperResult(
             paper_id,
@@ -316,6 +325,8 @@ def process_paper(
         preprocessing, diagnostics, deferrals = extract(
             paper,
             model,
+            # fix 2 (2026-11-05): one client for every call, so a caller can meter them all
+            client=client,
             citation_resolver=citation_resolver,
             paper_date=paper.pdf_date,
             resolutions=resolutions,

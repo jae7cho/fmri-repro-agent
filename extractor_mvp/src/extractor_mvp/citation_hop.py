@@ -526,6 +526,14 @@ class CallMeter:
     def completion(self, *args: Any, **kwargs: Any) -> Any:
         from litellm import completion, completion_cost
 
+        if not self.label:
+            # fix 2 (2026-11-05): a call made with no label set (the first hop's, inside
+            # process_paper) is labelled by its response model's tool name, "first:<name>"
+            tools = kwargs.get("tools") or []
+            name = (tools[0].get("function") or {}).get("name") if tools else None
+            label = f"first:{name or 'unlabelled'}"
+        else:
+            label = self.label
         t0 = time.perf_counter()
         resp = completion(*args, **kwargs)
         usage = getattr(resp, "usage", None)
@@ -537,8 +545,8 @@ class CallMeter:
         message = getattr(choice, "message", None)
         self.calls.append(
             {
-                "call": self.label,
-                "attempt": 1 + sum(1 for c in self.calls if c["call"] == self.label),
+                "call": label,
+                "attempt": 1 + sum(1 for c in self.calls if c["call"] == label),
                 "wall_s": round(time.perf_counter() - t0, 3),
                 "input_tokens": getattr(usage, "prompt_tokens", None),
                 "output_tokens": getattr(usage, "completion_tokens", None),

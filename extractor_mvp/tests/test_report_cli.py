@@ -54,7 +54,9 @@ def test_missing_pdf_names_the_path(tmp_path: Path) -> None:
 
 def test_exits_nonzero_when_no_report_is_produced(monkeypatch: Any, capsys: Any, pdf: Path) -> None:
     """process_paper never raises for a bad paper; the single-paper caller inspects instead."""
-    monkeypatch.setattr(report, "process_paper", lambda *a, **k: _failed_result(str(pdf)))
+    from extractor_mvp import full_report
+
+    monkeypatch.setattr(full_report, "process_paper", lambda *a, **k: _failed_result(str(pdf)))
     assert report.main([str(pdf)]) == 1
     assert "FAILED" in capsys.readouterr().err
 
