@@ -750,6 +750,20 @@ def _motion_method_line(row: FieldRow, label: str, record: Any | None) -> str:
     return line
 
 
+#: A field the paper defers to its pipeline and AESPA fills from the KB (fix 3, 2026-11-05): the
+#: paper's words first, then the inference, as the motion line words it.
+_DEFERRED_INFERS = "   — not stated in this paper; AESPA infers {value} ({basis_type}, {source})"
+
+
+def _deferred_inferred_line(row: FieldRow, label: str) -> str:
+    refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+    return f"{label} = deferred to {refs}" + _DEFERRED_INFERS.format(
+        value=_fmt_row_value(row),
+        basis_type=row.basis_type,
+        source=getattr(row.basis, "note", None) or "(source not recorded)",
+    )
+
+
 def _multiple_pipelines_line(answers: dict[str, Any] | None) -> str | None:
     """Item 5 (2026-10-28): one header line on the steps section when either coverage call
     answered that the text describes more than one preprocessing variant. ``answers`` is the
@@ -1278,6 +1292,8 @@ def to_protocol(
             param = r.path.split(".", 1)[1] if "." in r.path else r.path
             if r.path == "motion_correction.method":
                 main = _motion_method_line(r, param, motion_inference)
+            elif r.state == INFERRED_DEFAULT and r.extraction_status == DEFERRED_TO_CITATION:
+                main = _deferred_inferred_line(r, param)
             else:
                 main = _protocol_main(r, param, equals_for_extracted=True)
             lines.append(_with_verdict(main, r, verifier))
@@ -1646,9 +1662,12 @@ def _row_flagged(mapped: list[FieldRow], verifier: dict[str, Any] | None) -> boo
     section and, since fix 1c (2026-11-05), the header."""
     from extractor_mvp.verifier import effective
 
-    addressing = [r for r in mapped if r.state in (EXTRACTED, DEFERRED_TO_CITATION)]
+    # fix 3 (2026-11-05): a deferred field AESPA filled from the KB still addresses its row by the
+    # paper's deferral, and its verdict is not judged (fix 1d), so it never makes a row flagged
+    addressing = [r for r in mapped if r.extraction_status in (EXTRACTED, DEFERRED_TO_CITATION)]
     return bool(addressing) and all(
-        effective(_verdict_for(r, verifier)) == "wrong" for r in addressing
+        r.state != INFERRED_DEFAULT and effective(_verdict_for(r, verifier)) == "wrong"
+        for r in addressing
     )
 
 
@@ -1680,7 +1699,8 @@ def _expanded_rows_section(
                 values.append(f"{param} = {_fmt_row_value(r)}")
                 if quote is None and r.span_text:
                     quote = r.span_text
-            elif r.state == DEFERRED_TO_CITATION:
+            elif r.extraction_status == DEFERRED_TO_CITATION:
+                # fix 3 (2026-11-05): a deferral AESPA filled from the KB is still the paper's deferral
                 refs = ", ".join(r.deferral_refs or []) or "(unspecified)"
                 values.append(f"{param}: deferred to {refs}")
         if rc.row.row_id == "software" and mentions:

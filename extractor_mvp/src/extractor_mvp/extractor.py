@@ -2069,6 +2069,20 @@ def _resolve_deferrals(
             if resolved:
                 preprocessing = _apply_resolved_citations(preprocessing, resolved)
 
+    # Fix 3 (2026-11-05, DESIGN_kb_deferred_defaults.md): a field the paper defers to its base
+    # pipeline gets the KB's default for that pipeline at that version on its inference arm
+    # (version_default on a certain version; the motion arm's stability rule on a date-inferred
+    # one). Never the extraction arm; never a field another route already filled.
+    to_pipeline = [
+        (d.field, d.ref_string)
+        for d in deferral_records
+        if d.target_kind == "pipeline" and d.field != "base_pipeline"
+    ]
+    if to_pipeline:
+        from fmri_repro.kb_client.base_pipeline import fill_deferred_defaults
+
+        preprocessing, _filled = fill_deferred_defaults(preprocessing, to_pipeline)
+
     # The motion method's inference arm (docs/design/DESIGN_motion_inference_arm.md, the author's
     # rulings of 2026-10-28), after the base pipeline's version is settled: a recognized pipeline's
     # documented realignment program or a package the paper names for its preprocessing as a whole.

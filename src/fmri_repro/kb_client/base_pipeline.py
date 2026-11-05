@@ -20,6 +20,7 @@ Two entry points:
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from datetime import date
 from typing import Final, cast
 
@@ -406,3 +407,143 @@ def _rebuild_provenanced_field(current: ProvenancedField, *, inference) -> Prove
     payload["inference"] = inference.model_dump()
     # type(current) is type[ProvenancedField[Any]]; model_validate widens to Any.
     return cast(ProvenancedField, type(current).model_validate(payload))
+
+
+# --- fix 3 (2026-11-05): KB defaults for fields a paper defers to its pipeline ----------------
+
+
+def _step_of_kind(preprocessing: Preprocessing, kind: str) -> object | None:
+    return next((s for s in preprocessing.steps if getattr(s, "kind", None) == kind), None)
+
+
+def _typed_value(current_pf: ProvenancedField, member: object) -> object:
+    """The KB member in the field's own type: a ``SpecifiedTerm`` (verbatim None -- nothing was
+    stated in the paper), a list of them, or the bare value."""
+    import typing
+
+    (inner,) = type(current_pf).__pydantic_generic_metadata__["args"]
+    if isinstance(inner, type) and issubclass(inner, SpecifiedTerm):
+        return inner(verbatim=None, resolved=member, resolution="resolved")
+    if typing.get_origin(inner) is list:
+        (item,) = typing.get_args(inner)
+        if isinstance(item, type) and issubclass(item, SpecifiedTerm) and isinstance(member, list):
+            return [item(verbatim=None, resolved=m, resolution="resolved") for m in member]
+    return member
+
+
+def _kb_versions(pipeline_id: str, version: str, paths: list[str]) -> tuple[str, dict] | None:
+    """The KB's param defaults at ``version``, matched exactly, then with a leading "v" removed or
+    added ("v1.5.3" is fMRIPrep's 1.5.3). None when the KB lists no such version."""
+    from fmri_defaults_kb.errors import KbUnknownVersionError
+
+    tries = [version, version[1:] if version[:1] in ("v", "V") else "v" + version]
+    for v in tries:
+        try:
+            return v, get_param_defaults(pipeline_id, v, paths)
+        except KbUnknownVersionError:
+            continue
+    return None
+
+
+def fill_deferred_defaults(
+    preprocessing: Preprocessing, deferred: list[tuple[str, str]]
+) -> tuple[Preprocessing, list[dict[str, object]]]:
+    """Fill the INFERENCE arm of each field the paper defers to its base pipeline, from the KB's
+    defaults for that pipeline at that version (DESIGN_kb_deferred_defaults.md, fix 3).
+
+    ``deferred``: (field path, the deferral's reference string) for each field whose deferral
+    target kind is ``pipeline``. A field is filled only when its extraction arm is
+    ``DEFERRED_TO_CITATION``, its inference arm is ``LEFT_MISSING``, its reference names the same
+    pipeline as the base pipeline, the KB documents the field at the version, and the value
+    validates as the field's type. The extraction arm is never touched.
+
+    Basis: a certain version (stated, or KB ``version_default``) gives ``VersionDefaultBasis`` (at
+    most 0.95); a date-inferred version gives ``DateInferredVersionBasis`` (at most 0.75), and only
+    for a value identical at the inferred version and every alternative (the motion arm's stability
+    rule). The KB source is the basis note. Returns the record and one entry per field considered.
+    """
+    from pydantic import ValidationError
+
+    out: list[dict[str, object]] = []
+    pipeline_ref = _get_pipeline_ref(preprocessing.base_pipeline)
+    pipeline_id = recognize(pipeline_ref.name) if pipeline_ref is not None else None
+    if pipeline_ref is None or pipeline_id is None or not deferred:
+        return preprocessing, out
+    paths = [p for p, _ in deferred]
+    certain = certain_version(pipeline_ref.version)
+    inf = pipeline_ref.version.inference
+    basis_for: Callable[[str], VersionDefaultBasis | DateInferredVersionBasis]
+    if certain is not None:
+        found = _kb_versions(pipeline_id, certain, paths)
+        if found is None:
+            return preprocessing, out
+        kb_version, results = found
+
+        def basis_for(note: str) -> VersionDefaultBasis | DateInferredVersionBasis:
+            return VersionDefaultBasis(tool=pipeline_id, version=kb_version, note=note)
+
+        ceiling = BASIS_CEILINGS["version_default"]
+    elif inf.status == "INFERRED_DEFAULT" and inf.basis.basis_type == "date_inferred_version":
+        versions = [str(inf.value)] + [str(a.value) for a in inf.alternative_inferences]
+        per_version = [_kb_versions(pipeline_id, v, paths) for v in versions]
+        if any(f is None for f in per_version):
+            return preprocessing, out
+        results = {}
+        first = per_version[0][1]  # type: ignore[index]
+        for path, r in first.items():
+            if all(
+                path in f[1] and f[1][path].value == r.value  # type: ignore[index]
+                for f in per_version
+            ):
+                results[path] = r
+        paper_date = inf.basis.paper_date
+        inferred_version = str(inf.value)
+
+        def basis_for(note: str) -> VersionDefaultBasis | DateInferredVersionBasis:
+            return DateInferredVersionBasis(
+                tool=pipeline_id,
+                inferred_version=inferred_version,
+                paper_date=paper_date,
+                note=note,
+            )
+
+        ceiling = BASIS_CEILINGS["date_inferred_version"]
+    else:
+        return preprocessing, out
+
+    for path, ref in deferred:
+        kind, _, name = path.partition(".")
+        entry: dict[str, object] = {"field": path, "filled": False}
+        out.append(entry)
+        if recognize(ref) != pipeline_id:
+            entry["reason"] = "reference_names_another_pipeline"
+            continue
+        step = _step_of_kind(preprocessing, kind)
+        current_pf = getattr(step, name, None) if step is not None else None
+        if current_pf is None or current_pf.extraction.status != "DEFERRED_TO_CITATION":
+            entry["reason"] = "not_deferred"
+            continue
+        if current_pf.inference.status != "LEFT_MISSING":
+            entry["reason"] = "inference_already_set"
+            continue
+        result = results.get(path)
+        if result is None or isinstance(result.value, ConditionalParam):
+            entry["reason"] = "not_in_kb"
+            continue
+        if result.value is KbNotApplicable:
+            entry["reason"] = "kb_not_applicable"
+            continue
+        try:
+            inferred = InferredDefault(
+                value=_typed_value(current_pf, result.value),
+                basis=basis_for(result.source),
+                confidence=min(result.proposed_confidence, ceiling),
+                alternative_inferences=[],
+            )
+            rebuilt = _rebuild_provenanced_field(current_pf, inference=inferred)
+        except ValidationError:
+            entry["reason"] = "value_does_not_validate"
+            continue
+        setattr(step, name, rebuilt)
+        entry.update(filled=True, basis_type=inferred.basis.basis_type)
+    return preprocessing, out
