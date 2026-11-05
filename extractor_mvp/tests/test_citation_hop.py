@@ -141,17 +141,65 @@ def test_a_numbered_ref_gives_one_target_per_number() -> None:
     assert [(m.part, m.state) for m in matches] == [("47", "resolved"), ("48", "resolved")]
 
 
-def test_a_local_pdf_is_found_by_first_author_and_year(tmp_path: Path) -> None:
+_DOE_DOI = "10.1016/j.neuroimage.2019.116091"
+
+
+def _texts(mapping: dict[str, str]) -> Any:
+    return lambda p: (mapping.get(Path(p).name, ""), "pypdf")
+
+
+def test_a_local_pdf_is_found_by_first_author_and_year_and_confirmed_by_its_doi(
+    tmp_path: Path,
+) -> None:
+    # 2026-11-05, the author's ruling: author and year, the DOI confirmed in the PDF's text
     [m] = match_reference("Doe et al. (2019)", parse_reference_list(CITING))
-    assert m.entry is not None
-    assert resolve_local_pdf(m.entry, [tmp_path]) == ("no_local_pdf", None)
-    (tmp_path / "Doe_2019.pdf").write_bytes(b"%PDF")
-    state, path = resolve_local_pdf(m.entry, [tmp_path])
-    assert state == "local_pdf" and path == (tmp_path / "Doe_2019.pdf").resolve()
+    assert m.entry is not None and m.entry.doi == _DOE_DOI
+    assert resolve_local_pdf(m.entry, [tmp_path]) == ("no_local_pdf", None, None)
+    (tmp_path / "Doe_2019_the_pipeline.pdf").write_bytes(b"%PDF")
+    read = _texts({"Doe_2019_the_pipeline.pdf": f"A title. doi:{_DOE_DOI}. Abstract."})
+    state, path, how = resolve_local_pdf(m.entry, [tmp_path], read_text=read)
+    assert state == "local_pdf" and path == (tmp_path / "Doe_2019_the_pipeline.pdf").resolve()
+    assert how == "entry_doi_in_pdf"
+    wrong = _texts({"Doe_2019_the_pipeline.pdf": "A title. doi:10.1000/another.1. Abstract."})
+    assert resolve_local_pdf(m.entry, [tmp_path], read_text=wrong)[0] == "local_pdf_unconfirmed"
     other = tmp_path / "other"
     other.mkdir()
     (other / "doe_2019.pdf").write_bytes(b"%PDF")
-    assert resolve_local_pdf(m.entry, [tmp_path, other]) == ("local_pdf_ambiguous", None)
+    both = _texts({"Doe_2019_the_pipeline.pdf": _DOE_DOI, "doe_2019.pdf": _DOE_DOI})
+    assert resolve_local_pdf(m.entry, [tmp_path, other], read_text=both)[0] == "local_pdf_ambiguous"
+
+
+def test_a_file_name_that_only_starts_like_the_author_is_no_candidate(tmp_path: Path) -> None:
+    [m] = match_reference("Doe et al. (2019)", parse_reference_list(CITING))
+    assert m.entry is not None
+    (tmp_path / "Doelman_2019.pdf").write_bytes(b"%PDF")
+    (tmp_path / "Doe_20190.pdf").write_bytes(b"%PDF")
+    read = _texts({"Doelman_2019.pdf": _DOE_DOI, "Doe_20190.pdf": _DOE_DOI})
+    assert resolve_local_pdf(m.entry, [tmp_path], read_text=read)[0] == "no_local_pdf"
+
+
+def test_an_entry_without_a_doi_is_confirmed_by_the_pdf_doi_s_author_and_year(
+    tmp_path: Path,
+) -> None:
+    # Sims_2021's Glasser 2013 entry carries a PubMed ID and no DOI; case two's ref 45 neither
+    text = "References\nGlasser MF, Sotiropoulos SN, 2013. The pipelines. Neuroimage80, 105-124.\n"
+    [m] = match_reference("Glasser et al. (2013)", parse_reference_list(text))
+    assert m.entry is not None and m.entry.doi is None
+    (tmp_path / "Glasser_2013_HCP_pipelines.pdf").write_bytes(b"%PDF")
+    read = _texts({"Glasser_2013_HCP_pipelines.pdf": "doi:10.1016/j.neuroimage.2013.04.127"})
+    seen: list[str] = []
+
+    def lookup(doi: str) -> tuple[str, str] | None:
+        seen.append(doi)
+        return ("Glasser", "2013")
+
+    state, path, how = resolve_local_pdf(m.entry, [tmp_path], read_text=read, lookup=lookup)
+    assert path == (tmp_path / "Glasser_2013_HCP_pipelines.pdf").resolve()
+    assert state == "local_pdf" and how == "crossref_author_year"
+    assert seen == ["10.1016/j.neuroimage.2013.04.127"]
+    for meta in (("Smith", "2013"), ("Glasser", "2016"), None):
+        got = resolve_local_pdf(m.entry, [tmp_path], read_text=read, lookup=lambda _d, x=meta: x)
+        assert got == ("local_pdf_unconfirmed", None, None)
 
 
 # --- the scope (fork A) -------------------------------------------------------------------------

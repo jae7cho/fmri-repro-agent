@@ -198,27 +198,108 @@ def _one(part: str, hits: list[RefEntry]) -> RefMatch:
 # ---------------------------------------------------------------------------
 
 
-def resolve_local_pdf(entry: RefEntry, corpus_dirs: list[Path]) -> tuple[str, Path | None]:
-    """``("local_pdf", path)`` when exactly one PDF in the corpus folders is named
-    ``<FirstAuthor>_<year>.pdf`` (exact after lowercasing and stripping accents, the rule
-    ``paper_fetcher.py`` states); otherwise a reported state and None."""
+#: How far into a cited PDF its own DOI is looked for (the first page and a half, where journals
+#: print it).
+_PDF_DOI_CHARS = 10_000
+_CROSSREF_CACHE: dict[str, tuple[str, str] | None] = {}
+
+
+def _pdf_dois(path: Path, read_text: Any) -> set[str]:
+    """The DOIs printed near the start of a PDF, lower-cased, trailing punctuation stripped."""
+    text, _parser = read_text(path)
+    head = " ".join(text[:_PDF_DOI_CHARS].split())
+    return {m.group(1).rstrip(".,;)").lower() for m in _DOI.finditer(head)}
+
+
+def crossref_author_year(doi: str) -> tuple[str, str] | None:
+    """The first author's family name and the year CrossRef records for ``doi``; None when the call
+    fails or the record lacks either. One HTTP GET per DOI per process (cached); no user data is
+    sent, only the DOI (2026-11-05)."""
+    if doi in _CROSSREF_CACHE:
+        return _CROSSREF_CACHE[doi]
+    import json
+    import urllib.parse
+    import urllib.request
+
+    url = f"https://api.crossref.org/works/{urllib.parse.quote(doi)}"
+    req = urllib.request.Request(
+        url, headers={"User-Agent": "aespa-citation-hop (fmri-repro-agent)"}
+    )
+    out: tuple[str, str] | None = None
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            msg = json.loads(resp.read().decode("utf-8"))["message"]
+        family = (msg.get("author") or [{}])[0].get("family")
+        parts = (msg.get("issued") or msg.get("published") or {}).get("date-parts") or [[None]]
+        year = parts[0][0]
+        if family and year:
+            out = (str(family), str(year))
+    except Exception:  # a failed lookup leaves the PDF unconfirmed, never fails the paper
+        out = None
+    _CROSSREF_CACHE[doi] = out
+    return out
+
+
+def _stem_matches(stem: str, keys: set[str], year: str) -> bool:
+    """``<surname>_<year>`` exactly or followed by ``_``/``-`` and more ("Glasser_2013_HCP_pipelines")."""
+    for k in keys:
+        base = f"{k}_{year}"
+        if stem == base or stem.startswith(base + "_") or stem.startswith(base + "-"):
+            return True
+    return False
+
+
+def resolve_local_pdf(
+    entry: RefEntry,
+    corpus_dirs: list[Path],
+    *,
+    read_text: Any | None = None,
+    lookup: Any | None = None,
+) -> tuple[str, Path | None, str | None]:
+    """A local PDF for a reference entry (the author's ruling, 2026-11-05): candidates by first
+    author and year from the file name (``<FirstAuthor>_<year>`` exactly, or followed by ``_``/``-``
+    and more), each confirmed by the DOI printed in its own text: equal to the entry's DOI when the
+    entry carries one; otherwise the DOI's CrossRef record has the entry's first author and year.
+    Returns ``(state, path, confirmed_by)``: ``local_pdf`` with exactly one confirmed candidate;
+    ``no_local_pdf`` (no candidate), ``local_pdf_unconfirmed`` (candidates, none confirmed) or
+    ``local_pdf_ambiguous`` (more than one confirmed), with no path. Before 2026-11-05 the file had
+    to be named ``<FirstAuthor>_<year>.pdf`` exactly and nothing was confirmed."""
     if not entry.first_author or not entry.year:
-        return "no_local_pdf", None
-    want = {f"{k}_{entry.year}" for k in _surname_keys(entry.first_author)}
-    hits = sorted(
+        return "no_local_pdf", None, None
+    keys = _surname_keys(entry.first_author)
+    candidates = sorted(
         {
             p.resolve()
             for d in corpus_dirs
             if d.is_dir()
             for p in d.glob("*.pdf")
-            if _norm_name(p.stem) in want
+            if _stem_matches(_norm_name(p.stem), keys, entry.year)
         }
     )
-    if not hits:
-        return "no_local_pdf", None
-    if len(hits) > 1:
-        return "local_pdf_ambiguous", None
-    return "local_pdf", hits[0]
+    if not candidates:
+        return "no_local_pdf", None, None
+    if read_text is None:
+        from extractor_mvp import pdf_loader
+
+        read_text = pdf_loader.load_pdf_text
+    lookup = lookup or crossref_author_year
+    confirmed: list[tuple[Path, str]] = []
+    for c in candidates:
+        dois = _pdf_dois(c, read_text)
+        if entry.doi:
+            if entry.doi.rstrip(".,;)").lower() in dois:
+                confirmed.append((c, "entry_doi_in_pdf"))
+            continue
+        for d in sorted(dois):
+            meta = lookup(d)
+            if meta and _norm_name(meta[0]) in keys and meta[1] == entry.year:
+                confirmed.append((c, "crossref_author_year"))
+                break
+    if not confirmed:
+        return "local_pdf_unconfirmed", None, None
+    if len(confirmed) > 1:
+        return "local_pdf_ambiguous", None, None
+    return "local_pdf", confirmed[0][0], confirmed[0][1]
 
 
 # ---------------------------------------------------------------------------
@@ -732,7 +813,7 @@ def run_hop(
             rec["status"] = m.state
             continue
         rec["reference"].update(dataclasses.asdict(m.entry))
-        state, path = resolve_local_pdf(m.entry, corpus_dirs)
+        state, path, confirmed_by = resolve_local_pdf(m.entry, corpus_dirs)
         if path is None:
             rec["status"] = "not_retrievable"
             rec["target"] = {"state": state}
@@ -747,7 +828,8 @@ def run_hop(
             "state": state,
             "path": str(path),
             "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "doi_confirmed": (m.entry.doi.lower() in full.lower()) if m.entry.doi else None,
+            "doi_confirmed": True,  # resolve_local_pdf confirms by the PDF's DOI (2026-11-05)
+            "confirmed_by": confirmed_by,
         }
         methods = find_methods_section(full)
         fmri = find_fmri_sections(methods.text, methods.start_offset)
