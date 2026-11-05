@@ -490,3 +490,20 @@ def test_the_draft_s_quotes_carry_no_double_quote() -> None:
         ln for ln in compact_draft(prep).splitlines() if ln.startswith("spatial_smoothing.fwhm_mm")
     )
     assert "'6 mm'" in line and '"6 mm"' not in line
+
+
+def test_a_missed_verdict_on_the_base_pipeline_names_it_on_the_software_row() -> None:
+    # stress_v2 (2026-11-05): Silchenko_2023's checking pass marked base_pipeline missed; the per-row
+    # section took the text after a dot that path does not have and raised IndexError
+    missed = FieldVerdict(
+        field="base_pipeline",
+        verdict="missed",
+        relied_on="Statistics were computed in R version 4.1.0.",
+        better_value="R",
+    )
+    _, _, report = _run(
+        verifier=VerifierExtraction(fields=[missed]),
+        spatial={"smoothing_performed": _ex("yes", _SMOOTH)},
+    )
+    row = next(ln for ln in report.splitlines() if ln.startswith("- Software ["))
+    assert "[missed per the checking pass: base_pipeline]" in row

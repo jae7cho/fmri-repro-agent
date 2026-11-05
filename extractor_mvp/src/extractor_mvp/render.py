@@ -1787,7 +1787,9 @@ def _expanded_rows_section(
         if _row_flagged(mapped, verifier):
             state = "flagged"
         missed = [
-            r.path.split(".", 1)[1]
+            # [-1]: the Software row maps base_pipeline, a path with no dot (Silchenko_2023's checking
+            # pass marked it missed in stress_v2 and the render raised IndexError, 2026-11-05)
+            r.path.split(".", 1)[-1]
             for r in mapped
             if verdicts.get(r.path) == "missed" and r.state != INFERRED_DEFAULT
         ]
