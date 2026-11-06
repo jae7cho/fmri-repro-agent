@@ -59,6 +59,29 @@ NEXT_SECTION_HEADERS = [
 ]
 
 _METHODS_RE = [re.compile(p, re.IGNORECASE | re.MULTILINE) for p in METHODS_HEADERS]
+
+#: GROBID text only (the author's fix 3 of 2026-11-06): each TEI <head> is its own line there, and
+#: GROBID runs a section heading into its first subsection's ("Methods and Analysis Participants",
+#: chen_2015; "METHODS 28andMe Experimental Protocol", mueller_2021). A short line whose first words
+#: are a top-level methods keyword opens the section. Heading-shaped only (at most
+#: ``_HEAD_PREFIX_MAX_WORDS`` words, no sentence-final period), so a paragraph that begins with
+#: "Methods ..." never does; on pypdf text the whole-line match above stays the only one.
+_HEAD_PREFIX_MAX_WORDS = 8
+_METHODS_PREFIX_RE = re.compile(
+    r"^[ \t]*(?:\d+\.?[ \t]+)?(?:\w+ and methods?|methods? and \w+|online methods?|methods?"
+    r"|experimental procedures?)\b[^\n]*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+
+
+def _methods_prefix_heading(paper_text: str) -> re.Match[str] | None:
+    for m in _METHODS_PREFIX_RE.finditer(paper_text):
+        line = m.group(0).strip()
+        if len(line.split()) <= _HEAD_PREFIX_MAX_WORDS and not line.endswith("."):
+            return m
+    return None
+
+
 _NEXT_RE = [re.compile(p, re.IGNORECASE | re.MULTILINE) for p in NEXT_SECTION_HEADERS]
 
 _SUSPICIOUS_RATIO = 0.6
@@ -98,11 +121,13 @@ class MethodsSlice:
     fallback_reason: str | None = None
 
 
-def find_methods_section(paper_text: str) -> MethodsSlice:
+def find_methods_section(paper_text: str, *, text_source: str = "pypdf") -> MethodsSlice:
     """Slice the methods section by header regex, with diagnostics.
 
     Takes everything from the earliest-in-text methods header until the first subsequent
     next-section header (or end). No methods header -> whole document, ``fallback_full_text``.
+    ``text_source="grobid"`` also accepts a heading line that starts with a methods keyword
+    (:data:`_METHODS_PREFIX_RE`).
     """
     n = len(paper_text)
 
@@ -127,6 +152,10 @@ def find_methods_section(paper_text: str) -> MethodsSlice:
     earliest: tuple[int, re.Match[str]] | None = None
     for rx in _METHODS_RE:
         m = rx.search(paper_text)
+        if m is not None and (earliest is None or m.start() < earliest[0]):
+            earliest = (m.start(), m)
+    if text_source == "grobid":
+        m = _methods_prefix_heading(paper_text)
         if m is not None and (earliest is None or m.start() < earliest[0]):
             earliest = (m.start(), m)
 

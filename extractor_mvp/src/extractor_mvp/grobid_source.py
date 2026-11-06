@@ -6,7 +6,7 @@ through a running GROBID server; anything else, the default, reads it with pypdf
 
 A PDF goes to ``/api/processFulltextDocument`` once; the TEI is cached on disk by the PDF's sha256,
 the GROBID image label and the server version, so the full and CRF images never share an entry. The text is the TEI
-body flattened (:func:`flatten_tei`). If the server is unreachable, or answers with no TEI, the paper
+body and back matter flattened (:func:`flatten_tei`). If the server is unreachable, or answers with no TEI, the paper
 is read with pypdf and the record says why (``text_source_fallback``).
 
 The text source is recorded as ``grobid-<version>-<image>`` (e.g. ``grobid-0.9.1-full``) or
@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -47,24 +48,41 @@ def text_source_requested() -> str:
 # --- flattening -----------------------------------------------------------------------------------
 
 
-def _ref_marker(ref: ET.Element) -> str:
-    """``[n]`` for a bibliographic ref: n is the reference's position in the paper's list, from
-    its target (GROBID's ``#b0`` is the first entry, so n = index + 1, the number a numbered style
-    prints); without a usable target, the ref's own text in brackets."""
-    target = (ref.get("target") or "").strip()
-    if target.startswith("#b") and target[2:].isdigit():
-        return f"[{int(target[2:]) + 1}]"
+#: A ref whose own text is bare numerals: digits, ranges (3-5, 3\u20135) and comma lists, as a
+#: numbered style prints them (cattarinussi_2026: "4 , 5", "5 -7"; cole_2013: "1,").
+_NUM = r"\d+(?:\s*[-\u2013\u2014]\s*\d+)?"
+_BARE_NUMERALS = re.compile(rf"{_NUM}(?:\s*,\s*{_NUM})*\s*,?")
+
+
+def _ref_marker(ref: ET.Element, inside_bracket: bool) -> str:
+    """A bibliographic ref as the paper prints it (the author's fix 1 of 2026-11-06): its own text
+    verbatim, bracketed as ``[..]`` only when that text is bare numerals and the paper has not
+    already opened a bracket around it (weber_2024 prints ``[5, 25, 35]``, GROBID's refs reading
+    ``[5,``, ``25,`` and ``35]``). Never the reference's index."""
     own = " ".join("".join(ref.itertext()).split())
-    return f"[{own}]"
+    if not inside_bracket and _BARE_NUMERALS.fullmatch(own):
+        return f"[{own}]"
+    return own
+
+
+def _open_bracket(parts: list[str]) -> bool:
+    """True when the text so far has a ``[`` not yet closed."""
+    depth = 0
+    for c in "".join(parts):
+        if c == "[":
+            depth += 1
+        elif c == "]" and depth:
+            depth -= 1
+    return depth > 0
 
 
 def _inline(el: ET.Element) -> str:
-    """The text of a <head> or <p>, a bibliographic ref replaced by its marker, any figure or table
+    """The text of a <head> or <p>, a bibliographic ref as its marker, any figure or table
     inside it dropped, every other element's text kept."""
     out = [el.text or ""]
     for ch in el:
         if ch.tag == TEI + "ref" and ch.get("type") == "bibr":
-            out.append(_ref_marker(ch))
+            out.append(_ref_marker(ch, _open_bracket(out)))
         elif ch.tag in (TEI + "figure", TEI + "table"):
             pass
         else:
@@ -75,8 +93,8 @@ def _inline(el: ET.Element) -> str:
 
 def _walk(el: ET.Element, lines: list[str]) -> None:
     for ch in el:
-        if ch.tag in (TEI + "figure", TEI + "table"):
-            continue  # captions, cells and figure text are not the paper's prose
+        if ch.tag in (TEI + "figure", TEI + "table", TEI + "listBibl"):
+            continue  # captions, cells, figure text and the reference list are not the paper's prose
         if ch.tag in (TEI + "head", TEI + "p"):
             line = " ".join(_inline(ch).split())
             if line:
@@ -86,15 +104,20 @@ def _walk(el: ET.Element, lines: list[str]) -> None:
 
 
 def flatten_tei(tei: bytes | str) -> str:
-    """The TEI ``<body>`` as text: each <head> and <p> on its own line, in document order;
-    ``<ref type="bibr">`` as ``[n]``; <figure> and <table> excluded; <back> (the reference list,
-    acknowledgements, annexes) excluded, as is everything outside <body>."""
+    """The TEI ``<body>`` and then ``<back>`` as text: each <head> and <p> on its own line, in
+    document order; a ``<ref type="bibr">`` as the paper prints it (:func:`_ref_marker`); <figure>,
+    <table> and <listBibl> excluded, as is everything outside <text>. <back> is read (the author's
+    fix 2 of 2026-11-06): GROBID files a methods section printed after the main text (PNAS,
+    Nature Communications) as ``<div type="annex">`` there; viduarre_2017's methods sit in one."""
     root = ET.fromstring(tei)
-    body = root.find(f".//{TEI}text/{TEI}body")
-    if body is None:
+    text = root.find(f".//{TEI}text")
+    if text is None:
         return ""
     lines: list[str] = []
-    _walk(body, lines)
+    for part in ("body", "back"):
+        el = text.find(f"{TEI}{part}")
+        if el is not None:
+            _walk(el, lines)
     return "\n".join(lines)
 
 

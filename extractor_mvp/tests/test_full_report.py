@@ -277,3 +277,32 @@ def test_the_scan_and_call_r_read_the_reflowed_text_the_extraction_read(
     assert out.record is not None and out.record["text_reflow"] is not None
     assert seen["release_text"] != layer
     assert "".join(seen["release_text"].split()) == "".join(layer.split())
+
+
+@pytest.mark.parametrize("source", ["grobid", "pypdf"])
+def test_the_methods_slice_and_call_r_are_told_the_text_source(
+    canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path, source: str
+) -> None:
+    # the author's fix 3 of 2026-11-06: the GROBID-only heading rule reaches every methods slice
+    import extractor_mvp.batch as batch
+    from conftest import FULL_TEXT
+
+    seen: dict[str, Any] = {"slice": []}
+    _stub_rest(monkeypatch, seen)
+
+    def release(_text: str, _model: str, **kw: Any) -> dict:
+        seen["release_source"] = kw.get("text_source")
+        return {"status": "ok", "releases": []}
+
+    real_find = batch.find_methods_section
+
+    def find(text: str, **kw: Any) -> Any:
+        seen["slice"].append(kw.get("text_source"))
+        return real_find(text, **kw)
+
+    prov = {"text_source": "grobid-0.9.1-full" if source == "grobid" else "pypdf"}
+    monkeypatch.setattr(batch, "load_text", lambda _p: (FULL_TEXT, source, prov))
+    monkeypatch.setattr(batch, "find_methods_section", find)
+    monkeypatch.setattr(full_report, "extract_data_release", release)
+    full_report.run_paper("p1", pdf, "m", [tmp_path])
+    assert seen["slice"] == [source] and seen["release_source"] == source

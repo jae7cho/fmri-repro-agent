@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structure of GROBID 0.9.1-full's TEI for viduarre_2017 (PNAS: the Methods section printed after
+     the main text, filed by GROBID in <back> as <div type="annex"> after the acknowledgements and a
+     funding <listOrg>; the reference list last). The prose is synthetic. -->
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader><fileDesc><titleStmt><title level="a" type="main">Synthetic title</title></titleStmt></fileDesc></teiHeader>
+  <text xml:lang="en">
+    <body>
+      <div><head>Results</head>
+        <p>Networks switched between two states.</p>
+      </div>
+      <div><head>Discussion</head>
+        <p>The states were stable across sessions.</p>
+      </div>
+    </body>
+    <back>
+      <div type="acknowledgement"><div><head>ACKNOWLEDGMENTS.</head><p>Thanks are given to the volunteers.</p></div></div>
+      <listOrg type="funding"><org type="funding"><idno type="grant-number">000</idno></org></listOrg>
+      <div type="annex"><div><head>Methods</head>
+        <p>Data were the public resting scans, preprocessed by the consortium <ref type="bibr" target="#b11">(12)</ref>.</p>
+        <p>Time series were cleaned with independent components <ref type="bibr" target="#b12">(13)</ref>.</p>
+      </div>
+      <div><head>Estimation and Statistical Testing</head>
+        <p>A hidden Markov model was fitted to all sessions.</p>
+      </div></div>
+      <div type="references"><listBibl>
+        <biblStruct xml:id="b11"><analytic><title>A reference title, not prose</title></analytic></biblStruct>
+      </listBibl></div>
+    </back>
+  </text>
+</TEI>

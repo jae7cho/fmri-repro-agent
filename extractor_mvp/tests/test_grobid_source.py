@@ -1,6 +1,6 @@
 """GROBID as a text source (the author's request of 2026-11-06): the flattener on TEI fixtures with
-gordon_2014's and cattarinussi_2026's structure (synthetic prose), the flag, the cache, the
-fallback. Offline: the server is stubbed; no model call."""
+gordon_2014's, cattarinussi_2026's and viduarre_2017's structure (synthetic prose), the flag, the
+cache, the fallback. Offline: the server is stubbed; no model call."""
 
 from __future__ import annotations
 
@@ -19,6 +19,7 @@ from extractor_mvp.span_resolver import resolve_quote
 FIX = Path(__file__).parent / "fixtures" / "grobid"
 GORDON = (FIX / "gordon_2014_structure.tei.xml").read_bytes()
 CATT = (FIX / "cattarinussi_2026_structure.tei.xml").read_bytes()
+VIDUARRE = (FIX / "viduarre_2017_structure.tei.xml").read_bytes()
 
 
 # --- the flattener --------------------------------------------------------------------------------
@@ -31,29 +32,79 @@ def test_each_head_and_paragraph_is_a_line_in_document_order() -> None:
     assert lines[-2:] == ["RESULTS", "Connectivity changed after the task (Fig. 1)."]
 
 
-def test_a_citation_becomes_its_position_in_the_reference_list() -> None:
+def test_a_numbered_citation_is_bracketed_and_its_index_never_used() -> None:
     text = flatten_tei(CATT)
-    # GROBID's #b33 is the 34th entry, printed 34 in a numbered style
+    # GROBID's target #b33 would be the 34th entry; the ref's own text is what is printed
     assert "pipeline. [34] Briefly" in text
     assert "signals [34] , [35] and" in text
+    assert "no entry [36]." in text
 
 
-def test_a_citation_without_a_target_keeps_its_own_text() -> None:
-    assert "One citation has no entry [36]." in flatten_tei(CATT)
+def test_a_pair_and_a_range_in_one_ref_are_bracketed_whole() -> None:
+    assert "one ref [4 , 5] and so do ranges [5 -7] here." in flatten_tei(CATT)
 
 
-def test_an_author_year_citation_is_rendered_by_its_position_too() -> None:
+def test_an_author_year_citation_keeps_the_papers_own_text() -> None:
     text = flatten_tei(GORDON)
-    assert "long ago [3] [40]." in text
-    assert "earlier resting work [5]." in text
-    assert "Author et al." not in text
+    assert "long ago [Author et al., 2000; Other et al., 2006]." in text
+    assert "earlier resting work [Author, 1995]." in text
+    assert "[3]" not in text and "[5]" not in text
 
 
-def test_figures_tables_and_back_matter_are_not_text() -> None:
-    gordon, catt = flatten_tei(GORDON), flatten_tei(CATT)
+def _p(inner: str) -> bytes:
+    return (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><div><p>'
+        + inner
+        + "</p></div></body></text></TEI>"
+    ).encode()
+
+
+def test_numerals_inside_a_bracket_the_paper_opened_stay_as_printed() -> None:
+    # weber_2024's shape: GROBID splits "[5, 25, 35]" into refs "[5,", "25," and "35]"
+    tei = _p(
+        'shown before <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b24">'
+        '25,</ref><ref type="bibr" target="#b34">35]</ref> and after <ref type="bibr">7</ref>.'
+    )
+    assert flatten_tei(tei) == "shown before [5,25,35] and after [7]."
+
+
+def test_superscript_numerals_with_a_trailing_comma_are_bracketed() -> None:
+    # cole_2013's shape: refs "1," and "2" with no bracket in the paper
+    tei = _p('most active <ref type="bibr" target="#b0">1,</ref><ref type="bibr">2</ref> here')
+    assert flatten_tei(tei) == "most active [1,][2] here"
+
+
+def test_a_ref_that_is_not_bare_numerals_is_never_bracketed() -> None:
+    tei = _p('as before <ref type="bibr" target="#b1">(12)</ref> and <ref type="bibr">S3</ref>.')
+    assert flatten_tei(tei) == "as before (12) and S3."
+
+
+def test_figures_tables_and_the_reference_list_are_not_text() -> None:
+    gordon, catt, vid = flatten_tei(GORDON), flatten_tei(CATT), flatten_tei(VIDUARRE)
     assert "caption" not in gordon and "Figure 1" not in gordon
     assert "cell text" not in catt and "Table 1" not in catt
-    assert "Acknowledgments" not in catt and "Not body text" not in catt
+    assert "reference title" not in catt and "reference title" not in vid
+    assert "000" not in vid  # the funding listOrg is not prose either
+
+
+def test_back_matter_prose_follows_the_body() -> None:
+    catt = flatten_tei(CATT).splitlines()
+    assert catt[-2:] == ["Acknowledgments", "Not body text."]
+    vid = flatten_tei(VIDUARRE).splitlines()
+    assert vid[:4] == [
+        "Results",
+        "Networks switched between two states.",
+        "Discussion",
+        "The states were stable across sessions.",
+    ]
+    assert vid[4:7] == ["ACKNOWLEDGMENTS.", "Thanks are given to the volunteers.", "Methods"]
+    assert vid[-1] == "A hidden Markov model was fitted to all sessions."
+
+
+def test_a_quote_in_an_annex_methods_section_resolves() -> None:
+    vid = flatten_tei(VIDUARRE)
+    q = "Time series were cleaned with independent components (13)."
+    assert resolve_quote(q, vid).span is not None
 
 
 def test_a_non_citation_ref_keeps_its_text() -> None:
@@ -64,6 +115,8 @@ def test_a_sentence_comes_out_whole_and_a_quote_across_a_citation_resolves() -> 
     gordon = flatten_tei(GORDON)
     quote = "Finally, a band-pass filter kept frequencies between 0.01 Hz and 0.1 Hz"
     assert resolve_quote(quote, gordon).span is not None
+    # gordon_2014's three filtering quotes end with the paper's own author-year citation
+    assert resolve_quote(quote + ", as in earlier resting work [Author, 1995].", gordon).span
     catt = flatten_tei(CATT)
     assert resolve_quote("with the consortium pipeline. Briefly, the steps", catt).span is not None
 
@@ -197,3 +250,35 @@ def test_the_cli_flag_sets_the_text_source(monkeypatch: pytest.MonkeyPatch, tmp_
     with pytest.raises(SystemExit):
         report.main([str(pdf), "--text-source", "grobid"])
     assert seen["source"] == "grobid"
+
+
+def test_the_data_release_slice_uses_the_text_source(monkeypatch: pytest.MonkeyPatch) -> None:
+    import extractor_mvp.methods_finder as mf
+    from extractor_mvp.citation_hop import extract_data_release
+
+    seen: list[str] = []
+
+    class StopError(Exception):
+        pass
+
+    def spy(text: str, *, text_source: str = "pypdf") -> Any:
+        seen.append(text_source)
+        raise StopError
+
+    monkeypatch.setattr(mf, "find_methods_section", spy)
+    for source in ("grobid", "pypdf"):
+        with pytest.raises(StopError):
+            extract_data_release("text", "m", client=object(), text_source=source)
+    with pytest.raises(StopError):
+        extract_data_release("text", "m", client=object())
+    assert seen == ["grobid", "pypdf", "pypdf"]
+
+
+def test_a_heading_inside_the_reference_list_is_not_text() -> None:
+    # TEI allows <head> in <listBibl>; none of the 36 cached TEIs of 2026-11-06 has one
+    tei = (
+        b'<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><div><p>Prose.</p></div></body>'
+        b'<back><div type="references"><listBibl><head>Cited works</head><biblStruct/></listBibl>'
+        b"</div></back></text></TEI>"
+    )
+    assert flatten_tei(tei) == "Prose."

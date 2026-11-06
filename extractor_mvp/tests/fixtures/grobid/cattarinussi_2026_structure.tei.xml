@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Structure of GROBID 0.9.1-full's TEI for cattarinussi_2026 (numbered citations as refs with
-     targets, #b0 printed as 1; one ref with no target; a table in the body; a footnote; the
+     targets, #b0 printed as 1; refs with no target, one a pair and one a range; a table in the body; a footnote; the
      reference list in <back>). The prose is synthetic. -->
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
   <teiHeader><fileDesc><titleStmt><title level="a" type="main">Synthetic title</title></titleStmt></fileDesc></teiHeader>
@@ -10,6 +10,7 @@
       <div><head>MRI Acquisition and Preprocessing</head>
         <p>Data were preprocessed with the consortium pipeline. <ref type="bibr" target="#b33">34</ref> Briefly, the steps were demeaning and detrending, then regression of nuisance signals <ref type="bibr" target="#b33">34</ref> , <ref type="bibr" target="#b34">35</ref> and a band-pass filter.</p>
         <p>One citation has no entry <ref type="bibr">36</ref>.</p>
+        <p>Paired citations come as one ref <ref type="bibr">4 , 5</ref> and so do ranges <ref type="bibr">5 -7</ref> here.</p>
       </div>
       <div><head>Results</head>
         <p>Exposure was associated with connectivity.</p>
@@ -19,7 +20,7 @@
     </body>
     <back>
       <div type="acknowledgement"><div><head>Acknowledgments</head><p>Not body text.</p></div></div>
-      <div type="references"><listBibl><biblStruct xml:id="b0"/></listBibl></div>
+      <div type="references"><listBibl><biblStruct xml:id="b0"><analytic><title>A reference title, not prose</title></analytic></biblStruct></listBibl></div>
     </back>
   </text>
 </TEI>

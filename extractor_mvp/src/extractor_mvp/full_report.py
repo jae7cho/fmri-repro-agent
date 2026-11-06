@@ -121,7 +121,7 @@ def run_paper(
     # the same text layer the extraction read (2026-11-06: pypdf or GROBID, batch.load_text)
     from extractor_mvp.batch import load_text
 
-    citing_text, _parser, _source = load_text(pdf)
+    citing_text, parser, _source = load_text(pdf)
     # the same text the extraction read (2026-11-05, third round, item 4)
     citing_text, _reflow = reflow_one_word_lines(citing_text)
     refs: list[str] = []
@@ -145,7 +145,9 @@ def run_paper(
             )
         except Exception as exc:  # a hop never costs the paper its report
             hop_errors.append({"ref": ref, "error": f"{type(exc).__name__}: {exc}"[:500]})
-    release = extract_data_release(citing_text, model, client=meter.client(), meter=meter)
+    release = extract_data_release(
+        citing_text, model, client=meter.client(), meter=meter, text_source=parser
+    )
     try:
         uses = ask_uses(scan(json_safe(citing_text)), model, client=meter.client(), meter=meter)
     except Exception as exc:

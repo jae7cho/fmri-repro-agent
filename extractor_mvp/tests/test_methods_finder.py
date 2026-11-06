@@ -370,3 +370,65 @@ def test_the_four_supplements_read_in_stress_v2_are_sliced_at_their_mri_headings
     s = find_supplement_mri_section(text[: _body_end(text)])
     assert (s.matched_header, s.ended_at) == _STRESS_SUPPS[paper]
     assert s.slice_ratio < 0.4
+
+
+# --- GROBID text: a heading line that starts with a methods keyword (the author's fix 3, 2026-11-06)
+
+
+def _merged(head: str) -> str:
+    return (
+        "Introduction\nPrior work exists.\n"
+        + head
+        + "\nWe scanned 20 adults.\n"
+        + _PAD
+        + "Results\nfindings\n"
+        + _PAD
+    )
+
+
+@pytest.mark.parametrize(
+    "head",
+    [
+        "Methods and Analysis Participants",  # chen_2015
+        "METHODS 28andMe Experimental Protocol",  # mueller_2021
+        "METHOD Pilot Study: Task-Unrelated Thought",  # binder_1999
+        "METHODS ANALYSIS APPROACH",  # liu_2013
+    ],
+)
+def test_grobid_heading_merged_with_its_first_subsection_opens_methods(head: str) -> None:
+    text = _merged(head)
+    s = find_methods_section(text, text_source="grobid")
+    assert s.found_via == "header_match" and s.matched_header == head
+    assert s.start_offset == text.index(head) and s.ended_at == "Results"
+
+
+def test_a_merged_heading_is_not_methods_on_pypdf_text() -> None:
+    text = _merged("Methods and Analysis Participants")
+    assert find_methods_section(text).found_via == "fallback_full_text"
+    assert find_methods_section(text, text_source="pypdf").found_via == "fallback_full_text"
+
+
+def test_a_paragraph_that_opens_with_methods_is_not_a_heading_on_grobid_text() -> None:
+    para = "Methods that regress global signal remain debated in the field."  # a sentence
+    long = "methods [22] are relatively less reliable than independent component analysis"
+    for line in (para, long):
+        text = _merged(line)
+        assert find_methods_section(text, text_source="grobid").found_via == "fallback_full_text"
+
+
+def test_on_grobid_text_a_whole_line_heading_still_wins_when_earlier() -> None:
+    text = "Methods\n" + _PAD + "Methods and Analysis Participants\nmore\n" + _PAD + "Results\n"
+    assert find_methods_section(text, text_source="grobid").matched_header == "Methods"
+
+
+def test_a_short_sentence_that_opens_with_methods_is_not_a_heading_on_grobid_text() -> None:
+    text = _merged("Methods were as described before.")  # five words, a sentence
+    assert find_methods_section(text, text_source="grobid").found_via == "fallback_full_text"
+
+
+def test_on_grobid_text_an_earlier_subsection_heading_still_wins() -> None:
+    # the earliest heading opens the slice, as on pypdf text; the prefix rule only adds candidates
+    text = (
+        "Data Analysis\n" + _PAD + "Methods and Analysis Participants\nmore\n" + _PAD + "Results\n"
+    )
+    assert find_methods_section(text, text_source="grobid").matched_header == "Data Analysis"

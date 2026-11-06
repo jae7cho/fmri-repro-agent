@@ -959,7 +959,12 @@ class CitingReleases(BaseModel):
 
 
 def extract_data_release(
-    citing_text: str, model: str, *, client: Any | None = None, meter: CallMeter | None = None
+    citing_text: str,
+    model: str,
+    *,
+    client: Any | None = None,
+    meter: CallMeter | None = None,
+    text_source: str = "pypdf",
 ) -> dict[str, Any]:
     """The citing paper's own data release(s), each with its quote, from one call (``R``) on its
     methods. A first-hop field: it is read in the citing paper, never in the cited one. Never
@@ -968,7 +973,7 @@ def extract_data_release(
 
     meter = meter or CallMeter()
     client = client or meter.client()
-    text = find_methods_section(citing_text).text
+    text = find_methods_section(citing_text, text_source=text_source).text
     meter.label = "R"
     try:
         raw = _create(client, model, RELEASE_PROMPT.format(text=text), CitingReleases)

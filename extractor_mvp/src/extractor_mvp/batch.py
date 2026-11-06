@@ -361,7 +361,7 @@ def process_paper(
             "pypdf returned no text",
         )
 
-    methods = find_methods_section(text)
+    methods = find_methods_section(text, text_source=parser)
     # fix 1b (2026-11-05): one cheap call first; a paper with no fMRI gets a report that says so and
     # no extraction. Only a "no" whose sentence resolves stops it (fmri_gate.py).
     fmri_gate = ask_fmri(text, model, client=client)
