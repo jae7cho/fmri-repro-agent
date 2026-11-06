@@ -4331,3 +4331,48 @@ match or no match only, and the other 16 papers read "no record" there. States, 
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `f51a687` (the score file), then this entry.
+
+## 2026-11-06 (afternoon) — GROBID as a text source behind a flag; the gate
+
+- `84154b8` — **GROBID as a text source.** `batch.load_text` is now the one text-layer interface
+  for the paper, its supplement and full_report's re-read.
+  - **Default** is pypdf, unchanged. The current default is pypdf, not pdftotext, and records say
+    `pypdf`.
+  - **With `AESPA_TEXT_SOURCE=grobid`** (or `aespa-report --text-source grobid`), the PDF goes to a
+    running GROBID server. Its TEI is cached by PDF sha256, image label and version
+    (`extractor_mvp/.grobid_cache`, ignored), and the text is the flattened `<body>` (each head and
+    p a line; citations as `[n]`; figures, tables and back matter out).
+  - **Fallback:** an unreachable server, or a reply that is not TEI, falls back to pypdf, and the
+    record says why. Every record carries `text_source` (`grobid-<version>-<image>` or `pypdf`).
+  - **Tests:** the fixtures keep gordon_2014's and cattarinussi_2026's TEI structure with synthetic
+    prose, so no paper text is committed. 15 tests; 12 mutations killed.
+  - **Gate:** 49/49 identical with the flag off, as derived. No model calls.
+- `9ab2b08` — **`docs/findings/grobid_gate.md`** (GROBID 0.9.1, full image, amd64, 37.4 GB; CRF
+  image, arm64, 1.7 GB).
+  - **cattarinussi_2026:** its 11 unresolved quotes all resolve on the bracketed flattening, with
+    nothing stripped.
+  - **gordon_2014:** its 3 filtering quotes come out with the sentence whole and no page header.
+    They still fail, because each ends with an author-year citation the flattening renders `[5]`;
+    each resolves up to the citation.
+  - **Quote gate, three record sets:** 747 quotes, 690 found on pypdf, 472 on GROBID. 232 lost:
+    - A, 171: the `[n]` rendering of citations inside a quote.
+    - B, 6: outside the body (Silchenko_2023).
+    - C, 55: not in the TEI. viduarre_2017 has none of its 74 pypdf methods sentences in the body;
+      Hermans_2024, agtzidis_2020, Sims_2021 and liu_2005 have the rest.
+    - 14 quotes were gained.
+  - **Quote gate, label workbooks:** 67 quotes, 49 on pypdf, 35 on GROBID; 14 lost (A 10, C 4).
+  - **Methods slice:** the end heading changes for 9 of 19 papers.
+    - 4 papers become methods_not_found: GROBID runs the section heading into the first
+      subsection's.
+    - viduarre_2017 also becomes methods_not_found: no heading in its body names methods.
+    - poldrack_2015 and oconnor_2017 lose their end heading to `<back>`.
+    - cole_2013 and gordon_2014 end elsewhere.
+  - **CRF against full:** cattarinussi_2026 identical; gordon_2014 and power_2014 differ only inside
+    citation markers.
+  - Starting the CRF container beside the full one killed the full one by memory (exit 137). It was
+    restarted and is running.
+  - Held-out papers appear as counts only; no quote text is reproduced in the report.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `84154b8`, `9ab2b08`, then this entry.
