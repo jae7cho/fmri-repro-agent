@@ -273,7 +273,6 @@ def test_the_scan_and_call_r_read_the_reflowed_text_the_extraction_read(
         lines.extend([words[0], *(" " + w for w in words[1:])] if words else [" "])
     layer = "\n".join(lines)
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (layer, "pypdf"))
-    monkeypatch.setattr(full_report, "load_pdf_text", lambda _p: (layer, "pypdf"))
     out = full_report.run_paper("p1", pdf, "m", [tmp_path])
     assert out.record is not None and out.record["text_reflow"] is not None
     assert seen["release_text"] != layer

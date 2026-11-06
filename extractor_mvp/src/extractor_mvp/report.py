@@ -76,7 +76,21 @@ def main(argv: list[str] | None = None) -> int:
         "--paper-id",
         help="identifier used as the report's title and span source (default: the PDF filename stem)",
     )
+    ap.add_argument(
+        "--text-source",
+        choices=("pypdf", "grobid"),
+        default=None,
+        help="the text layer: pypdf (default) or GROBID's TEI body from a running server "
+        "(AESPA_GROBID_URL, default http://localhost:8070); falls back to pypdf when it is "
+        "unreachable. Same as AESPA_TEXT_SOURCE.",
+    )
     args = ap.parse_args(argv)
+    if args.text_source is not None:
+        import os
+
+        from extractor_mvp.grobid_source import TEXT_SOURCE_ENV
+
+        os.environ[TEXT_SOURCE_ENV] = args.text_source
 
     pdf = args.pdf.expanduser().resolve()
     if not pdf.is_file():

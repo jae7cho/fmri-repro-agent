@@ -33,7 +33,7 @@ from typing import Any
 from extractor_mvp.batch import PaperResult, process_paper
 from extractor_mvp.citation_hop import CallMeter, extract_data_release, json_safe, run_hop
 from extractor_mvp.methods_finder import MethodsSlice
-from extractor_mvp.pdf_loader import load_pdf_text, reflow_one_word_lines
+from extractor_mvp.pdf_loader import reflow_one_word_lines
 from extractor_mvp.render import to_report
 from extractor_mvp.software_scan import ask_uses, scan, tool_list
 
@@ -118,7 +118,10 @@ def run_paper(
     from fmri_repro.spec.migrations import parse_any_version
 
     prep = parse_any_version(record["preprocessing"])
-    citing_text, _parser = load_pdf_text(pdf)
+    # the same text layer the extraction read (2026-11-06: pypdf or GROBID, batch.load_text)
+    from extractor_mvp.batch import load_text
+
+    citing_text, _parser, _source = load_text(pdf)
     # the same text the extraction read (2026-11-05, third round, item 4)
     citing_text, _reflow = reflow_one_word_lines(citing_text)
     refs: list[str] = []

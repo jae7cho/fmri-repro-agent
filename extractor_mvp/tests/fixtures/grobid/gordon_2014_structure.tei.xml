@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Structure of GROBID 0.9.1-full's TEI for gordon_2014 (author-year citations whose ref text
+     carries the bracket; a figure with its caption in the body; the reference list in <back>).
+     The prose is synthetic: the paper's own text is not reproduced here. -->
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader><fileDesc><titleStmt><title level="a" type="main">Synthetic title</title></titleStmt></fileDesc></teiHeader>
+  <text xml:lang="en">
+    <body>
+      <div><head>INTRODUCTION</head>
+        <p>Resting networks were described long ago <ref type="bibr" target="#b2">[Author et al., 2000;</ref> <ref type="bibr" target="#b39">Other et al., 2006]</ref>.</p>
+      </div>
+      <div><head>METHODS</head></div>
+      <div><head>Image Preprocessing</head>
+        <p>Images were realigned and smoothed with an 8 mm kernel. Finally, a band-pass filter kept frequencies between 0.01 Hz and 0.1 Hz, as in earlier resting work <ref type="bibr" target="#b4">[Author, 1995]</ref>.</p>
+      </div>
+      <div><head>RESULTS</head>
+        <p>Connectivity changed after the task <ref type="figure" target="#fig_0">(Fig. 1)</ref>.</p>
+      </div>
+      <figure xml:id="fig_0"><head>Figure 1 .</head><label>1</label><figDesc>A caption that is not prose.</figDesc><graphic/></figure>
+    </body>
+    <back>
+      <div type="references"><listBibl>
+        <biblStruct xml:id="b0"/><biblStruct xml:id="b1"/><biblStruct xml:id="b2"/>
+      </listBibl></div>
+    </back>
+  </text>
+</TEI>

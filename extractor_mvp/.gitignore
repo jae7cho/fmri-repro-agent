@@ -2,3 +2,6 @@
 # The directory itself is tracked via citation_cache/.gitkeep.
 citation_cache/*.pdf
 citation_cache/index.yaml
+
+# GROBID TEI cache (2026-11-06): full text of papers, keyed by PDF sha256; never committed.
+.grobid_cache/

@@ -30,6 +30,12 @@ from extractor_mvp.batch_utils import build_citation_resolver
 from extractor_mvp.corpus import EXCLUDED_PAPERS, is_excluded
 from extractor_mvp.extractor import INSTRUCTOR_MODE, ResolutionRecord, extract
 from extractor_mvp.fmri_gate import ask_fmri, to_not_fmri_report
+from extractor_mvp.grobid_source import (
+    PYPDF,
+    GrobidUnavailableError,
+    grobid_text,
+    text_source_requested,
+)
 from extractor_mvp.methods_finder import (
     MethodsSlice,
     find_methods_section,
@@ -203,6 +209,23 @@ def _tally(preprocessing: Any) -> dict[str, int]:
 SUPPLEMENT_MIN_CHARS = 500
 
 
+def load_text(path: Path) -> tuple[str, str, dict[str, Any]]:
+    """The text-layer interface (the author's request of 2026-11-06): ``(text, parser, provenance)``.
+    pypdf by default; GROBID's flattened TEI body when ``AESPA_TEXT_SOURCE=grobid``, falling back to
+    pypdf when the server cannot give it. ``provenance`` is recorded on every record:
+    ``text_source`` (``grobid-<version>-<image>`` or ``pypdf``) and, after a fallback, why."""
+    prov: dict[str, Any] = {"text_source": PYPDF, "text_source_fallback": None}
+    if text_source_requested() == "grobid":
+        try:
+            got = grobid_text(path)
+        except GrobidUnavailableError as exc:
+            prov["text_source_fallback"] = f"grobid unavailable: {exc}"
+        else:
+            return got.text, "grobid", {**prov, "text_source": got.text_source}
+    text, parser = load_pdf_text(path)
+    return text, parser, prov
+
+
 def supplement_marker(name: str) -> str:
     """The line that joins the methods text and the supplement in the text the model reads."""
     return f"\n\n[Supplementary material, read with the paper: {name}]\n"
@@ -220,11 +243,12 @@ def load_supplement(path: Path) -> tuple[dict[str, Any], str]:
         "n_chars": 0,
         "reason": None,
         "text_reflow": None,
+        "text_source": None,
     }
     if not rec["present"]:
         rec["reason"] = "no supplement beside the paper"
         return rec, ""
-    text, parser = load_pdf_text(supp)
+    text, parser, rec["text_source"] = load_text(supp)
     # 2026-11-05 (third round, item 4): a one-word-per-line layer is reflowed before slicing
     text, rec["text_reflow"] = reflow_one_word_lines(text)
     rec["n_chars"] = len(text)
@@ -312,7 +336,7 @@ def process_paper(
     extraction calls, the checking pass); None builds the default. ``full_report.run_paper`` passes
     a metered one.
     """
-    text, parser = load_pdf_text(path)
+    text, parser, text_source = load_text(path)
     # 2026-11-05 (the author's list, third round, item 4): a one-word-per-line text layer is
     # reflowed before slicing; every offset below is into the reflowed text
     text, text_reflow = reflow_one_word_lines(text)
@@ -361,6 +385,7 @@ def process_paper(
             {
                 "methods": _methods_record(methods),
                 "text_reflow": text_reflow,
+                "text_source": text_source,
                 "instructor_mode": INSTRUCTOR_MODE,
                 "fmri_gate": fmri_gate,
             },
@@ -497,6 +522,8 @@ def process_paper(
         "methods": _methods_record(methods),
         # 2026-11-05 (third round, item 4): line counts and one-word shares, or None if not reflowed
         "text_reflow": text_reflow,
+        # 2026-11-06: which text layer the paper was read from (grobid-<version>-<image> or pypdf)
+        "text_source": text_source,
         "supplement": supplement,  # fix 4 (2026-11-05): found, read, why not, and what defers to it
         # where the reference list was cut from the extraction text (an offset into the paper), or None
         "references_excluded_from": body_end if refs_cut else None,
