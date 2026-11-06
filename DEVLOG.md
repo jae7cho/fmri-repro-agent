@@ -4277,3 +4277,57 @@ Commits here: `7c2e130`, `71e64ed`, `893c3f6`, `4fa8c63`, `47958c0`, `c416da1`, 
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted, as asked.
 
 Commits here: `4db6fa6`, `d62e411`, `cfef398`, then this entry.
+
+## 2026-11-06 — the three clean papers through the full report, scored; gordon_2014's filtering diagnosed
+
+**Runs.** liu_2005, wheaton_2004 and tang_2025 through the full `aespa-report`, from a worktree
+pinned at `35e4081`, KB `93199df`, into `results/heldout_sf_v1` (gitignored). Records went to
+`papers/<id>.json` via `--record`, so the scorer reads them unchanged. Only each run's summary line
+was printed; the reports, records and logs were not read.
+
+| paper | status | calls | cost | wall |
+|---|---|---|---|---|
+| liu_2005 | methods_not_found (extracted from the full text) | 8 | $0.7136 | 136.4 s |
+| wheaton_2004 | success | 9 | $0.4894 | 131.3 s |
+| tang_2025 | success | 9 | $0.5573 | 161.4 s |
+
+Total $1.7603.
+
+**Scored** with `scripts/score_smoothing_filtering.py` (`d62e411`). The output is committed as
+`ground_truth/smoothing_filtering_score_heldout_sf_v1.md`: its held-out rows carry states and
+match or no match only, and the other 16 papers read "no record" there. States, and match or no match:
+
+| paper | sheet | label state | record state | values |
+|---|---|---|---|---|
+| liu_2005 | Smoothing | stated_not_performed | stated_not_performed (agree) | no match, no match |
+| wheaton_2004 | Smoothing | reported | reported (agree) | match, match |
+| tang_2025 | Smoothing | 2 rows | stream not separable | — |
+| liu_2005 | Filtering | reported | unverifiable (disagree) | no match, no match |
+| wheaton_2004 | Filtering | reported | reported (agree) | band no match, pass type match |
+| tang_2025 | Filtering | 2 rows | stream not separable | — |
+
+- **No match** here also covers "nothing to compare". A stated_not_performed row has no labelled
+  width or kernel, which is why liu_2005's smoothing values read no match.
+- **tang_2025** stays "stream not separable" until records carry applies_to
+  (`DESIGN_applies_to.md`, staged, not built). It was not worked around.
+
+**gordon_2014, filtering unverifiable on `batch_coverage_v4` (co-adjudicated); diagnosis only.**
+- **Values:** the model answered `performed` yes, `effective_band_hz` 0.01-0.1, and
+  `relative_to_regression` after. Each is right against the label.
+- **Quote:** each quote is the paper's sentence on the band-pass filter (the third also includes the
+  sentence before it).
+- **Rejected by:** the span resolver (`span_resolver.resolve_quote`, called at `extractor.py:654`)
+  found none of the three. All tiers fail, both in the methods slice and in the full text, so each
+  field is MISSING_FROM_PAPER with reason `extraction_quote_unresolved:quote_not_found`.
+- **Why it reads unverifiable:** `kind_state` makes a step whose only gaps are unresolved quotes
+  unverifiable (`cobidas.py:151-155`, `_UNVERIFIABLE_GAP_BASES`).
+- **Cause:** a page break inside the sentence. pypdf's text puts the journal's running header (the
+  author line, the page number and its glyphs) between "signal" and "variation". The quote resolves
+  for its first 71 of 252 characters and breaks there. The resolver's tolerant tier deletes
+  whitespace, hyphens and bracketed citation markers, not a page header.
+- This is the same class as the "page header broke the text" the labels' README notes for its own
+  quotes. Not fixed.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `f51a687` (the score file), then this entry.
