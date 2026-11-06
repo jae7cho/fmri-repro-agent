@@ -495,8 +495,21 @@ ROW_STATES: tuple[str, ...] = (
 )
 
 
+#: Rows scored against the author's labels as a diagnostic (the author's request of 2026-11-05): row
+#: id -> papers scored. scripts/score_smoothing_filtering.py at d62e411, on batch_coverage_v4 read
+#: with the current code: 14 papers scored on each sheet (of 19 labelled; chen_2015 and ciric_2017
+#: (smoothing) and chen_2015 and power_2014 (filtering) are multi-stream and not separable in a
+#: record without applies_to; liu_2005, tang_2025 and wheaton_2004 have no record in that vintage).
+#: temporal_filtering has no D.3 row; its tag sits on its beyond-COBIDAS line.
+DIAGNOSTIC_ROWS: dict[str, int] = {"spatial_smoothing": 14, "temporal_filtering": 14}
+
+
 def validation_tag(row_id: str) -> str:
-    return "validated against labels" if row_id in VALIDATED_ROWS else "unvalidated"
+    if row_id in VALIDATED_ROWS:
+        return "validated against labels"
+    if row_id in DIAGNOSTIC_ROWS:
+        return f"validated against labels (diagnostic, {DIAGNOSTIC_ROWS[row_id]} papers)"
+    return "unvalidated"
 
 
 def is_expanded(preprocessing: Any) -> bool:

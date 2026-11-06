@@ -24,10 +24,12 @@ from conftest import stub_client
 from extractor_mvp import render
 from extractor_mvp.cobidas import (
     COBIDAS_D3_ROWS,
+    DIAGNOSTIC_ROWS,
     VALIDATED_ROWS,
     assess_coverage,
     is_expanded,
     row_state,
+    validation_tag,
 )
 from extractor_mvp.coverage_extractor import (
     SPATIAL_PROMPT,
@@ -270,7 +272,10 @@ def test_performed_no_is_a_report_and_the_parameters_are_not_applicable() -> Non
     assert row_state(cov["spatial_smoothing"], render.flatten(prep)) == "performed_no"
     out = render.to_cobidas_coverage(prep)
     assert "performed=no 1" in out
-    assert "- Spatial smoothing [unvalidated] — performed: no: performed = False" in out
+    assert (
+        "- Spatial smoothing [validated against labels (diagnostic, 14 papers)] — performed: no: performed = False"
+        in out
+    )
     assert "not applicable — the paper states this step was not performed" in render.to_report(prep)
     assert "not applicable (step stated as not performed)" in render.to_report(prep)
 
@@ -288,7 +293,7 @@ def test_performed_yes_with_its_quote_reports_the_row_and_the_values_render() ->
     assert kernel.extraction.value.verbatim == "Gaussian"
     out = render.to_cobidas_coverage(prep)
     assert (
-        '- Spatial smoothing [unvalidated] — reported: performed = True; fwhm_mm = 6.0; kernel_type = gaussian (paper: "Gaussian")'
+        '- Spatial smoothing [validated against labels (diagnostic, 14 papers)] — reported: performed = True; fwhm_mm = 6.0; kernel_type = gaussian (paper: "Gaussian")'
         in out
     )
     assert "«Images were smoothed with a 6 mm FWHM Gaussian kernel.»" in out
@@ -403,7 +408,8 @@ def _unverifiable(prep: Preprocessing, row_id: str, kind: str, field: str) -> No
     assert (rc.addressed, rc.covered_by_extractor, rc.unverifiable) == (False, False, True)
     assert row_state(rc, render.flatten(prep)) == "unverifiable"
     out = render.to_cobidas_coverage(prep)
-    assert f"{rc.row.d3_aspect} [unvalidated] — examined; the extractor could not verify" in out
+    tag = validation_tag(rc.row.row_id)
+    assert f"{rc.row.d3_aspect} [{tag}] — examined; the extractor could not verify" in out
     assert f"- {rc.row.d3_aspect}  (no fields assessed by current extractor)" not in out
 
 
@@ -502,7 +508,23 @@ def test_the_validation_tags_name_the_three_rows_with_labels_and_no_other() -> N
     assert "- Intersubject registration [validated against labels]" in out
     assert "- Motion correction [validated against labels]" in out
     assert out.count("[validated against labels]") == 3
-    assert out.count("[unvalidated]") == 11
+    assert out.count("[unvalidated]") == 10
+
+
+def test_smoothing_and_filtering_carry_the_diagnostic_tag() -> None:
+    # the author's request of 2026-11-05: scripts/score_smoothing_filtering.py at d62e411
+    assert DIAGNOSTIC_ROWS == {"spatial_smoothing": 14, "temporal_filtering": 14}
+    out = render.to_cobidas_coverage(_run())
+    assert "- Spatial smoothing [validated against labels (diagnostic, 14 papers)]" in out
+    assert (
+        "- Temporal filtering [beyond COBIDAS; validated against labels (diagnostic, 14 papers)]"
+        in out
+    )
+    assert out.count("(diagnostic, 14 papers)") == 2
+    assert validation_tag("temporal_filtering") == (
+        "validated against labels (diagnostic, 14 papers)"
+    )
+    assert validation_tag("despike_row_that_does_not_exist") == "unvalidated"
     assert "### Rows" in out
 
 
@@ -705,7 +727,10 @@ def test_rows_with_sibling_kinds_name_the_kind_on_each_field() -> None:
     )
     assert "Volume censoring [unvalidated] — reported: scrub.performed = True" in out
     # a one-kind row stays bare
-    assert "Spatial smoothing [unvalidated] — reported: performed = True" in out
+    assert (
+        "Spatial smoothing [validated against labels (diagnostic, 14 papers)] — reported: performed = True"
+        in out
+    )
     assert "spatial_smoothing.performed" not in out
 
 
@@ -1051,7 +1076,7 @@ def test_the_band_is_extracted_digit_exact_and_shown_beyond_cobidas() -> None:
     assert _field(prep, "temporal_filtering", "low_hz").inference.reason == "not_targeted_by_mvp"
     out = render.to_cobidas_coverage(prep)
     assert (
-        "- Temporal filtering [beyond COBIDAS] — reported: performed = True; filter_type = butterworth "
+        "- Temporal filtering [beyond COBIDAS; validated against labels (diagnostic, 14 papers)] — reported: performed = True; filter_type = butterworth "
         '(paper: "Butterworth"); effective_band_hz = 0.02\u20130.1 Hz' in out
     )
     assert "- temporal_filtering" in out  # listed under Beyond COBIDAS, never in the 14

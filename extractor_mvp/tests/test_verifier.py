@@ -411,7 +411,10 @@ def test_a_row_with_one_supported_field_is_not_flagged() -> None:
         spatial=spatial,
     )
     assert "flagged 1 · " in _header(both)
-    assert "Spatial smoothing [unvalidated] — flagged by the checking pass" in both
+    assert (
+        "Spatial smoothing [validated against labels (diagnostic, 14 papers)] — flagged by the checking pass"
+        in both
+    )
 
 
 def test_a_flagged_software_row_claims_no_violation_in_the_header() -> None:

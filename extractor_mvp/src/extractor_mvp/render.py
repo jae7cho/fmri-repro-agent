@@ -1833,7 +1833,8 @@ def _expanded_rows_section(
                 values.append(
                     f"{param}: deferred to {', '.join(r.deferral_refs or []) or '(unspecified)'}"
                 )
-        line = f"- Temporal filtering [beyond COBIDAS] — {_ROW_STATE_LABEL[state]}"
+        tag = validation_tag("temporal_filtering")
+        line = f"- Temporal filtering [beyond COBIDAS; {tag}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)
         if quote:
