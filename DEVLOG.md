@@ -4376,3 +4376,44 @@ Commits here: `f51a687` (the score file), then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `84154b8`, `9ab2b08`, then this entry.
+
+## 2026-11-06 (late afternoon) — three GROBID flattening fixes; the gate re-run
+
+- `e157475` — **the author's three fixes.** The default text source stays pypdf.
+  1. **Citations:** a `<ref type="bibr">` is printed as its own text, bracketed only when bare
+     numerals. A numeral inside a bracket the paper already opened stays as printed (my addition:
+     weber_2024 prints "[5, 25, 35]" as three refs). The reference index is never used.
+  2. **Back matter:** `<back>` is flattened after `<body>`; only `<listBibl>` is excluded (with
+     figures and tables).
+  3. **Methods finder, GROBID text only:** a short heading line whose first words are a methods
+     keyword opens the section. Callers pass the source: the batch slice and call R's slice.
+  - **Checks:** 49/49 identical vs `4c14054`; positive control 12/12 changed. My first control
+    attempt perturbed a function the gate does not call; it is reported and not counted.
+  - **Mutations:** 18 shown and killed (3 after added tests). 799 passed.
+- `66cbc59` — **`docs/findings/grobid_gate_v2.md`.**
+  - **Diagnosis first.** v1's 65 cause-B and cause-C quotes:
+    - viduarre_2017, 24: in a `<back>` annex div.
+    - Silchenko_2023, 6: in a figure with no label or graphic.
+    - 35 begin in the body and diverge. Hermans_2024 (22) and Sims_2021 (4): GROBID rewrites the
+      second ref of a same-author year list. agtzidis_2020 (7): the multiplication sign. liu_2005,
+      held out: 2.
+    - v1 had counted viduarre's 24 as absent: its whole-TEI search text repeated div text, and the
+      quotes came back ambiguous. Corrected.
+  - **Citation test:** cattarinussi_2026 11/11; gordon_2014's 3 filtering quotes all found.
+  - **Quote gate:** lost 232 → 52 in the record sets and 14 → 3 in the workbooks. The 55 are:
+    - N, 14: bare numerals that pypdf prints inline, now bracketed (cole_2013, poldrack_2015,
+      tang_2025);
+    - R, 26;
+    - G, 7;
+    - F, 6;
+    - X, 2 (held out).
+  - **Methods slice:** 16/16 papers with a pypdf slice keep one. The end heading changed on 5 of 19
+    (binder, cole, gordon, oconnor, poldrack), each at a heading GROBID places differently.
+  - **CRF vs full** (from the cached TEIs, no container started): gordon and cattarinussi identical.
+    power differs by one 9-word competing-interests paragraph in the full TEI's `<back>`.
+  - **Flip criterion:** the slice and gordon parts are met; lost quotes near zero is not.
+  - Docker's VM memory is unchanged (8.3 GB). The full container is running.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `e157475`, `66cbc59`, then this entry.
