@@ -4205,3 +4205,75 @@ the `893c3f6` run's.
 - A section number on the line before a methods header.
 
 Commits here: `7c2e130`, `71e64ed`, `893c3f6`, `4fa8c63`, `47958c0`, `c416da1`, then this entry.
+
+## 2026-11-05 (night) — smoothing and filtering labels committed, scored, and the report tagged
+
+- `4db6fa6` — **`ground_truth/smoothing_filtering_labels_v1.xlsx`**, the author's, committed alone
+  by explicit path.
+  - sha256 `edbeb0ffbae0010b61eba28e2cfcd270db3f3018a2bbaff79837f2e75f1be1d5`, 13,907 bytes; the
+    staged blob (`74e3bff`) hashed to the same.
+  - Checked before the commit, printing ids and counts only (22 rows on each sheet, 19 papers): every
+    state is in the README sheet's vocabulary, applies_to is non-empty, every reported row has a
+    value and a quote, and no adjudication says pending.
+  - No failures. A copy with one planted defect of each kind failed all four checks.
+- `d62e411` — **`extractor_mvp/scripts/score_smoothing_filtering.py`**: no model calls, counts and no
+  rates.
+  - **Vintage.** It reads `batch_coverage_v4`, read with the current code. That is the latest store
+    of the 16 corpus papers carrying both steps (schema 0.6.0). The three clean papers have no record
+    in it: v3 and v4 excluded them, their clean cells having been spent on 2026-10-27. coverage_v2
+    holds them but has no temporal filtering step, and a1 (0.5.1) has neither step.
+  - **Matching.** A label row matches by paper and applies_to. One "all" row matches the record's
+    single stream. A paper with two or more rows on a sheet is "stream not separable" unless the
+    record carries applies_to. No stored record carries it yet, and one that does stops the scorer
+    until per-stream reading is built.
+  - **States** are the report's own (`cobidas.row_state`, `kind_state`). On coverage_v4 they equal
+    the current-code report's row state on all 34 rows compared. The other 2 (binder_1999 and
+    ciric_2017 smoothing) show in the report as flagged by the checking pass; the scorer scores the
+    extractor's state.
+  - **Values** are compared as stated: FWHM 6 agrees with 6.0, and a sigma width or a cutoff in
+    seconds or cycles is a measure or unit mismatch, never converted.
+  - **Classes.** liu_2005 is author-ruled with assistant exposure, wheaton_2004 author alone, and the
+    rest co-adjudicated, tang_2025 included. liu_2005, tang_2025 and wheaton_2004 print states and
+    match or no match only.
+  - 20 tests. 13 mutations; two survived until tests were added (a two-row paper with one "all"
+    row; a record carrying applies_to).
+- **Counts on coverage_v4** (rows; the full table is in
+  `extractor_mvp/results/smoothing_filtering_score_coverage_v4.md`). 14 papers scored on each sheet.
+
+  | sheet | class | label state | agree | disagree | not separable | no record |
+  |---|---|---|---|---|---|---|
+  | Smoothing | co-adjudicated | reported | 9 | 0 | 2 | 1 |
+  | Smoothing | co-adjudicated | not_reported | 1 | 1 | 1 | 1 |
+  | Smoothing | co-adjudicated | stated_not_performed | 1 | 0 | 1 | 0 |
+  | Smoothing | co-adjudicated | deferred | 1 | 1 | 0 | 0 |
+  | Smoothing | author-ruled, exposure | stated_not_performed | 0 | 0 | 0 | 1 |
+  | Smoothing | author alone | reported | 0 | 0 | 0 | 1 |
+  | Filtering | co-adjudicated | reported | 6 | 1 | 3 | 2 |
+  | Filtering | co-adjudicated | partially_reported | 0 | 2 | 0 | 0 |
+  | Filtering | co-adjudicated | not_reported | 3 | 0 | 1 | 0 |
+  | Filtering | co-adjudicated | deferred | 0 | 2 | 0 | 0 |
+  | Filtering | author-ruled, exposure | reported | 0 | 0 | 0 | 1 |
+  | Filtering | author alone | reported | 0 | 0 | 0 | 1 |
+
+  State disagreements, by paper:
+  - Smoothing: binder_1999 (label not_reported for stat-map smoothing, record reported) and
+    viduarre_2017 (deferred, record not_reported).
+  - Filtering: braun_2015 and viduarre_2017 (deferred, record not_reported); ciric_2017 (partially
+    reported, record reported); cole_2013 (partially reported, record performed: no); gordon_2014
+    (reported, record unverifiable).
+
+  Values:
+  - poldrack_2015's width is labelled as sigma, and the record has no FWHM.
+  - derosa_2025's cutoff is labelled in seconds, and the record has no cutoff.
+  - pass_type is not in schema 0.6.0, so it is not scored on this vintage.
+- `cfef398` — **the report tag.** Spatial smoothing and Temporal filtering read "validated against
+  labels (diagnostic, 14 papers)", naming `d62e411` in `cobidas.DIAGNOSTIC_ROWS`. Temporal filtering
+  has no D.3 row, so its tag joins "beyond COBIDAS".
+  - Gate, derived from the records first: a1 19 identical; coverage_v4 18 and stress_v1 12 changed,
+    on exactly the two tag lines.
+  - As run, 30 of 30 changed reports differ only there, and the same after the hooks' reformatting.
+  - 4 mutations.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted, as asked.
+
+Commits here: `4db6fa6`, `d62e411`, `cfef398`, then this entry.
