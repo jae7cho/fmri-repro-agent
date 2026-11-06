@@ -9,9 +9,18 @@ the GROBID image label and the server version, so the full and CRF images never 
 body and back matter flattened (:func:`flatten_tei`). If the server is unreachable, or answers with no TEI, the paper
 is read with pypdf and the record says why (``text_source_fallback``).
 
-The text source is recorded as ``grobid-<version>-<image>`` (e.g. ``grobid-0.9.1-full``) or
+The text source is recorded as ``grobid-<version>-<image>`` (e.g. ``grobid-0.9.1-crf``) or
 ``pypdf``. GROBID's API reports its version but not its image, so the image label comes from
-``AESPA_GROBID_IMAGE`` (default ``full``).
+``AESPA_GROBID_IMAGE`` (default ``crf``).
+
+The image AESPA expects (the author's ruling 4 of 2026-11-06) is ``lfoppiano/grobid:0.9.1-crf``:
+native arm64, 1.7 GB, and its flattened text matched the full image's on the three papers compared
+except one competing-interests paragraph (``docs/findings/grobid_gate_v2.md`` section 6). Run it as::
+
+    docker run -d --name grobid -p 8070:8070 lfoppiano/grobid:0.9.1-crf
+
+``lfoppiano/grobid:0.9.1-full`` (amd64 only, 37.4 GB) remains an option; run it on the same port and
+set ``AESPA_GROBID_IMAGE=full`` so records and the cache say which image read the paper.
 """
 
 from __future__ import annotations
@@ -25,6 +34,8 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 
+from extractor_mvp.span_resolver import CITATION_CLOSE, CITATION_OPEN
+
 TEI = "{http://www.tei-c.org/ns/1.0}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
 
@@ -34,7 +45,7 @@ GROBID_URL_ENV = "AESPA_GROBID_URL"
 GROBID_IMAGE_ENV = "AESPA_GROBID_IMAGE"
 GROBID_CACHE_ENV = "AESPA_GROBID_CACHE"
 DEFAULT_URL = "http://localhost:8070"
-DEFAULT_IMAGE = "full"
+DEFAULT_IMAGE = "crf"
 DEFAULT_CACHE = Path(__file__).resolve().parents[2] / ".grobid_cache"
 
 PYPDF = "pypdf"
@@ -58,11 +69,15 @@ def _ref_marker(ref: ET.Element, inside_bracket: bool) -> str:
     """A bibliographic ref as the paper prints it (the author's fix 1 of 2026-11-06): its own text
     verbatim, bracketed as ``[..]`` only when that text is bare numerals and the paper has not
     already opened a bracket around it (weber_2024 prints ``[5, 25, 35]``, GROBID's refs reading
-    ``[5,``, ``25,`` and ``35]``). Never the reference's index."""
+    ``[5,``, ``25,`` and ``35]``). Never the reference's index. The citation is carried between
+    ``span_resolver.CITATION_OPEN`` and ``CITATION_CLOSE`` (the author's ruling 2 of 2026-11-06),
+    so a quote matches with or without any citation text (tier 5b)."""
     own = " ".join("".join(ref.itertext()).split())
+    if not own:
+        return ""
     if not inside_bracket and _BARE_NUMERALS.fullmatch(own):
-        return f"[{own}]"
-    return own
+        own = f"[{own}]"
+    return f"{CITATION_OPEN}{own}{CITATION_CLOSE}"
 
 
 def _open_bracket(parts: list[str]) -> bool:

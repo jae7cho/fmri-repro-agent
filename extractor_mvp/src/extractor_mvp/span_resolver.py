@@ -134,7 +134,7 @@ def _hyphenation_drop_indices(text: str) -> set[int]:
     return drops
 
 
-def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
+def normalize_with_offset_map(text: str, keep_citations: bool = False) -> tuple[str, list[int]]:
     """NFKD-fold + strip combining marks + apply explicit mappings, tracking offsets.
 
     Returns ``(normalized, offset_map)`` where ``offset_map`` has length
@@ -145,12 +145,17 @@ def normalize_with_offset_map(text: str) -> tuple[str, list[int]]:
     combining marks — pypdf-split measurement whitespace (see
     :func:`_measurement_ws_drop_indices`) — and line-wrap soft-hyphens (see
     :func:`_hyphenation_drop_indices`) contribute no normalized char and no offset entry.
+    The citation delimiters of GROBID text (:data:`CITATION_OPEN`, :data:`CITATION_CLOSE`) are
+    dropped too, so tiers 3 to 6 read GROBID text as a reader does, citations inline; only tier 5b
+    keeps them (``keep_citations=True``).
     """
     drop_idx = _measurement_ws_drop_indices(text) | _hyphenation_drop_indices(text)
     out_chars: list[str] = []
     out_offsets: list[int] = []
     for orig_idx, ch in enumerate(text):
         if orig_idx in drop_idx:
+            continue
+        if not keep_citations and ch in (CITATION_OPEN, CITATION_CLOSE):
             continue
         if ch in _EXPLICIT_NORMALIZATIONS:
             for nc in _EXPLICIT_NORMALIZATIONS[ch]:
@@ -344,6 +349,14 @@ def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
     if ac > 1:
         return SpanResolution(None, "quote_ambiguous")
 
+    # 5b. Citations as skippable regions (the author's ruling 2 of 2026-11-06). GROBID text carries
+    #     every <ref type="bibr"> between CITATION_OPEN and CITATION_CLOSE; a quote may hold any text
+    #     there, or none. Reached only after tier 5 failed, and only for text that carries regions.
+    if CITATION_OPEN in text:
+        across = _resolve_across_citations(text, n_quote)
+        if across is not None:
+            return across
+
     # 6. The named source-text repair (2026-10-28; module note). Reached only after tier 5 failed,
     #    on the same deletion-normalized strings, so a quote any earlier tier resolves never enters
     #    here. Each candidate start walks the quote with at most _MAX_REPAIRS substitution events;
@@ -379,6 +392,189 @@ def _resolve_quote_once(quote: str, text: str) -> SpanResolution:
         )
 
     return SpanResolution(None, "quote_not_found")
+
+
+# --- Tier 5b: citations as skippable regions ---------------------------------------------------
+
+#: The delimiters GROBID text puts around each citation (``grobid_source.flatten_tei``): Unicode's
+#: interlinear annotation anchor and terminator, format characters no PDF text layer emits. The
+#: model reads the citation between them; the matcher need not find it in the quote.
+CITATION_OPEN = "\ufff9"
+CITATION_CLOSE = "\ufffb"
+_GROUP_SEP = re.compile(r"[\s,;]*")
+_REGION_RE = re.compile(f"{CITATION_OPEN}[^{CITATION_OPEN}{CITATION_CLOSE}]*{CITATION_CLOSE}")
+#: How much quote text a citation region may stand for: twice the region's own text (after
+#: deletion-normalizing) plus this many characters. Bounded so a region is never a wildcard
+#: for a sentence.
+_REGION_SLACK = 20
+#: The quote prefix that anchors a candidate start.
+_ANCHOR = 12
+
+
+@dataclass(frozen=True)
+class _Gap:
+    n_start: int  # the first region's start in the normalized text
+    n_end: int  # the last region's end (exclusive)
+    bound: int  # the most quote characters the gap may absorb
+    digits: str  # the regions' digits, in order
+    letters: str  # the regions' letters, in order
+
+
+def _delete_with_regions(s: str) -> tuple[str, list[int], dict[int, _Gap]]:
+    """Tier 5's deletion (whitespace, hyphens, bracketed markers) with every citation region taken
+    out and remembered as a gap at the position it occupied; adjacent regions are one gap. Returns
+    ``(deleted, index_map, gaps)``, ``index_map`` into ``s`` with a trailing sentinel."""
+    skip = bytearray(len(s))
+    for m in _MARKER_RE.finditer(s):
+        for i in range(m.start(), m.end()):
+            skip[i] = 1
+    regions = {m.start(): m.end() for m in _REGION_RE.finditer(s)}
+    out: list[str] = []
+    idx: list[int] = []
+    gaps: dict[int, _Gap] = {}
+    i = 0
+    while i < len(s):
+        if i in regions:
+            end = regions[i]
+            own = s[i + 1 : end - 1]
+            size = sum(1 for c in own if not c.isspace())
+            digits = "".join(c for c in own if c.isdigit())
+            letters = "".join(_LETTERS.findall(own))
+            pos = len(out)
+            prev = gaps.get(pos)
+            if prev is None:
+                gaps[pos] = _Gap(i, end, 2 * size + _REGION_SLACK, digits, letters)
+            else:
+                gaps[pos] = _Gap(
+                    prev.n_start,
+                    end,
+                    prev.bound + 2 * size,
+                    prev.digits + digits,
+                    prev.letters + letters,
+                )
+            # a citation group: only whitespace and separators before the next citation, so the
+            # separators belong to the gap ("[34] , [35]" is one place a quote may leave out)
+            sep = _GROUP_SEP.match(s, end)
+            i = sep.end() if sep and s.startswith(CITATION_OPEN, sep.end()) else end
+            continue
+        c = s[i]
+        if not (skip[i] or c.isspace() or c == "-" or c in (CITATION_OPEN, CITATION_CLOSE)):
+            out.append(c)
+            idx.append(i)
+        i += 1
+    idx.append(len(s))
+    return "".join(out), idx, gaps
+
+
+_DIGITS = re.compile(r"\d+")
+_LETTERS = re.compile(r"[^\W\d_]+")
+
+
+def _drawn_from(x: str, gap: _Gap) -> bool:
+    """The quote's text at a citation is drawn from that citation: every run of digits in it occurs
+    in the citation's digits, and every run of letters in the citation's letters (both in order,
+    whitespace and punctuation aside; tier 5 has already deleted the quote's whitespace and hyphens,
+    so "3-5" arrives as "35"). Punctuation is free. So a quote may print a citation its own way
+    (the paper's "(Author et al., 2019, 2020" where GROBID's refs read "(Author et al., 2019" and
+    "(Author et al., , 2020") but never put a word or a number there that the citation lacks."""
+    return all(d in gap.digits for d in _DIGITS.findall(x)) and all(
+        w in gap.letters for w in _LETTERS.findall(x)
+    )
+
+
+def _walk_gapped(
+    t: str, gaps: dict[int, _Gap], q: str, j: int, i: int, gap_done: bool, seen: set
+) -> tuple[int, _Gap | None] | None:
+    """Match ``q[i:]`` against ``t`` from ``j``; at a gap the quote may hold up to the gap's bound
+    of any characters, or none. Returns ``(t end, the gap the quote ends inside, if any)``."""
+    while True:
+        if i == len(q):
+            return j, None
+        if j in gaps and not gap_done:
+            key = (j, i)
+            if key in seen:
+                return None
+            seen.add(key)
+            g = gaps[j]
+            for x in range(min(g.bound, len(q) - i) + 1):
+                if x and not _drawn_from(q[i : i + x], g):
+                    continue
+                if i + x == len(q):
+                    return (j, g) if x else (j, None)
+                r = _walk_gapped(t, gaps, q, j, i + x, True, seen)
+                if r is not None:
+                    return r
+            return None
+        if j >= len(t) or t[j] != q[i]:
+            return None
+        i += 1
+        j += 1
+        gap_done = False
+
+
+def _gapped_matches(t: str, gaps: dict[int, _Gap], q: str) -> set[tuple[int, int, int, int]]:
+    """Every distinct match of ``q`` in ``t`` across gaps, as ``(start, lead_gap_start, end,
+    tail_gap_end)`` with -1 for no leading or trailing citation text."""
+    k = min(_ANCHOR, len(q))
+    starts: set[tuple[int, int]] = set()  # (t start, quote start)
+    p = t.find(q[:k])
+    while p != -1:
+        starts.add((p, 0))
+        p = t.find(q[:k], p + 1)
+    for g, gap in gaps.items():
+        for n in range(1, k):  # the quote's first characters end right at a gap
+            if g - n >= 0 and t[g - n : g] == q[:n]:
+                starts.add((g - n, 0))
+        for x in range(1, min(gap.bound, len(q) - 1) + 1):  # the quote opens with citation text
+            kk = min(k, len(q) - x)
+            if t[g : g + kk] == q[x : x + kk] and _drawn_from(q[:x], gap):
+                starts.add((g, x))
+    out: set[tuple[int, int, int, int]] = set()
+    for p, x in starts:
+        r = _walk_gapped(t, gaps, q, p, x, x > 0 or p in gaps, set())
+        if r is None or r[0] <= p:
+            continue
+        lead = gaps[p].n_start if x > 0 else -1
+        out.add((p, lead, r[0], r[1].n_end if r[1] is not None else -1))
+    return out
+
+
+def _resolve_across_citations(text: str, n_quote: str) -> SpanResolution | None:
+    """Tier 5b. ``None`` when nothing matches (the caller goes on to tier 6)."""
+    n_text, t_off = normalize_with_offset_map(text, keep_citations=True)
+    s = n_text.lower()
+    t, idx, gaps = _delete_with_regions(s)
+    if not gaps:
+        return None
+    q = _delete_with_map(n_quote.lower())[0]
+    q = q.replace(CITATION_OPEN, "").replace(CITATION_CLOSE, "")
+    if not q:
+        return None
+    hits = _gapped_matches(t, gaps, q)
+    spans = set()
+    for p, lead, end, tail in hits:
+        n_start = lead if lead >= 0 else idx[p]
+        n_end = tail if tail >= 0 else idx[end - 1] + 1
+        spans.add((t_off[n_start], t_off[n_end]))
+    if not spans:
+        return None
+    if len(spans) > 1:
+        return SpanResolution(None, "quote_ambiguous")
+    o_start, o_end = spans.pop()
+    if o_end <= o_start:
+        return SpanResolution(None, "quote_not_found")
+    # fail-closed re-verification: on the recovered slice alone the quote must match once, from
+    # the slice's first character to its last
+    re_n, _ = normalize_with_offset_map(text[o_start:o_end], keep_citations=True)
+    re_t, _, re_gaps = _delete_with_regions(re_n.lower())
+    whole = {
+        (p, end)
+        for p, lead, end, tail in _gapped_matches(re_t, re_gaps, q)
+        if (p == 0 or lead >= 0) and end == len(re_t)
+    }
+    if len(whole) != 1:
+        return SpanResolution(None, "quote_not_found")
+    return SpanResolution(_make_span(text, o_start, o_end), None, recovered=True)
 
 
 # --- Tier 6 helpers -----------------------------------------------------------------------------

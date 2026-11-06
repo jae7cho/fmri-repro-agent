@@ -33,7 +33,7 @@ from typing import Any
 from extractor_mvp.batch import PaperResult, process_paper
 from extractor_mvp.citation_hop import CallMeter, extract_data_release, json_safe, run_hop
 from extractor_mvp.methods_finder import MethodsSlice
-from extractor_mvp.pdf_loader import reflow_one_word_lines
+from extractor_mvp.pdf_loader import load_pdf_text, reflow_one_word_lines
 from extractor_mvp.render import to_report
 from extractor_mvp.software_scan import ask_uses, scan, tool_list
 
@@ -124,6 +124,12 @@ def run_paper(
     citing_text, parser, _source = load_text(pdf)
     # the same text the extraction read (2026-11-05, third round, item 4)
     citing_text, _reflow = reflow_one_word_lines(citing_text)
+    # the hop's reference list (the author's answer of 2026-11-06): GROBID text leaves out
+    # <listBibl>, so a hop on GROBID text reads the reference list from the same PDF's pypdf text
+    reference_text = citing_text
+    record["hop_reference_list_source"] = "pypdf"
+    if parser == "grobid":
+        reference_text = reflow_one_word_lines(load_pdf_text(pdf)[0])[0]
     refs: list[str] = []
     for d in record.get("deferred_fields") or []:
         if d.get("target_kind") in HOP_KINDS and d.get("ref_string") not in refs:
@@ -134,7 +140,7 @@ def run_paper(
         try:
             hops.extend(
                 run_hop(
-                    citing_text,
+                    reference_text,
                     prep,
                     ref,
                     corpus_dirs,

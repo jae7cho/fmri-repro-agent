@@ -14,12 +14,17 @@ import pytest
 import extractor_mvp.batch as batch
 from extractor_mvp import grobid_source as gs
 from extractor_mvp.grobid_source import flatten_tei
-from extractor_mvp.span_resolver import resolve_quote
+from extractor_mvp.span_resolver import CITATION_CLOSE, CITATION_OPEN, resolve_quote
 
 FIX = Path(__file__).parent / "fixtures" / "grobid"
 GORDON = (FIX / "gordon_2014_structure.tei.xml").read_bytes()
 CATT = (FIX / "cattarinussi_2026_structure.tei.xml").read_bytes()
 VIDUARRE = (FIX / "viduarre_2017_structure.tei.xml").read_bytes()
+
+
+def _vis(tei: bytes) -> str:
+    """The flattened text without the citation delimiters, as a reader sees it."""
+    return flatten_tei(tei).replace(CITATION_OPEN, "").replace(CITATION_CLOSE, "")
 
 
 # --- the flattener --------------------------------------------------------------------------------
@@ -33,7 +38,7 @@ def test_each_head_and_paragraph_is_a_line_in_document_order() -> None:
 
 
 def test_a_numbered_citation_is_bracketed_and_its_index_never_used() -> None:
-    text = flatten_tei(CATT)
+    text = _vis(CATT)
     # GROBID's target #b33 would be the 34th entry; the ref's own text is what is printed
     assert "pipeline. [34] Briefly" in text
     assert "signals [34] , [35] and" in text
@@ -41,11 +46,11 @@ def test_a_numbered_citation_is_bracketed_and_its_index_never_used() -> None:
 
 
 def test_a_pair_and_a_range_in_one_ref_are_bracketed_whole() -> None:
-    assert "one ref [4 , 5] and so do ranges [5 -7] here." in flatten_tei(CATT)
+    assert "one ref [4 , 5] and so do ranges [5 -7] here." in _vis(CATT)
 
 
 def test_an_author_year_citation_keeps_the_papers_own_text() -> None:
-    text = flatten_tei(GORDON)
+    text = _vis(GORDON)
     assert "long ago [Author et al., 2000; Other et al., 2006]." in text
     assert "earlier resting work [Author, 1995]." in text
     assert "[3]" not in text and "[5]" not in text
@@ -65,18 +70,18 @@ def test_numerals_inside_a_bracket_the_paper_opened_stay_as_printed() -> None:
         'shown before <ref type="bibr" target="#b4">[5,</ref><ref type="bibr" target="#b24">'
         '25,</ref><ref type="bibr" target="#b34">35]</ref> and after <ref type="bibr">7</ref>.'
     )
-    assert flatten_tei(tei) == "shown before [5,25,35] and after [7]."
+    assert _vis(tei) == "shown before [5,25,35] and after [7]."
 
 
 def test_superscript_numerals_with_a_trailing_comma_are_bracketed() -> None:
     # cole_2013's shape: refs "1," and "2" with no bracket in the paper
     tei = _p('most active <ref type="bibr" target="#b0">1,</ref><ref type="bibr">2</ref> here')
-    assert flatten_tei(tei) == "most active [1,][2] here"
+    assert _vis(tei) == "most active [1,][2] here"
 
 
 def test_a_ref_that_is_not_bare_numerals_is_never_bracketed() -> None:
     tei = _p('as before <ref type="bibr" target="#b1">(12)</ref> and <ref type="bibr">S3</ref>.')
-    assert flatten_tei(tei) == "as before (12) and S3."
+    assert _vis(tei) == "as before (12) and S3."
 
 
 def test_figures_tables_and_the_reference_list_are_not_text() -> None:
@@ -171,9 +176,10 @@ def test_the_flag_reads_the_tei_body_and_names_version_and_image(
     monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "grobid")
     text, parser, prov = batch.load_text(server["pdf"])
     assert parser == "grobid" and text == flatten_tei(GORDON)
-    assert prov == {"text_source": "grobid-0.9.1-full", "text_source_fallback": None}
-    monkeypatch.setenv(gs.GROBID_IMAGE_ENV, "crf")
-    assert batch.load_text(server["pdf"])[2]["text_source"] == "grobid-0.9.1-crf"
+    # the image AESPA expects is CRF (the author's ruling 4 of 2026-11-06); full is an option
+    assert prov == {"text_source": "grobid-0.9.1-crf", "text_source_fallback": None}
+    monkeypatch.setenv(gs.GROBID_IMAGE_ENV, "full")
+    assert batch.load_text(server["pdf"])[2]["text_source"] == "grobid-0.9.1-full"
 
 
 def test_the_tei_is_cached_by_pdf_sha_image_and_version(
@@ -184,8 +190,8 @@ def test_the_tei_is_cached_by_pdf_sha_image_and_version(
     batch.load_text(server["pdf"])
     assert server["posts"] == 1
     sha = gs.pdf_sha256(server["pdf"])
-    assert (server["cache"] / f"{sha}.full.0.9.1.tei.xml").is_file()
-    monkeypatch.setenv(gs.GROBID_IMAGE_ENV, "crf")
+    assert (server["cache"] / f"{sha}.crf.0.9.1.tei.xml").is_file()
+    monkeypatch.setenv(gs.GROBID_IMAGE_ENV, "full")
     batch.load_text(server["pdf"])
     assert server["posts"] == 2  # another image is another entry
 

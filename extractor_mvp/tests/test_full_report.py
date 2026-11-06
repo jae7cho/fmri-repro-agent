@@ -306,3 +306,30 @@ def test_the_methods_slice_and_call_r_are_told_the_text_source(
     monkeypatch.setattr(full_report, "extract_data_release", release)
     full_report.run_paper("p1", pdf, "m", [tmp_path])
     assert seen["slice"] == [source] and seen["release_source"] == source
+
+
+@pytest.mark.parametrize("source", ["grobid", "pypdf"])
+def test_the_hop_reads_the_reference_list_from_pypdf_text(
+    canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path, source: str
+) -> None:
+    # the author's answer of 2026-11-06: GROBID text leaves out <listBibl>, so a hop on GROBID text
+    # reads the reference list from the same PDF's pypdf text; on pypdf text nothing changes
+    import extractor_mvp.batch as batch
+    from conftest import FULL_TEXT
+
+    seen: dict[str, Any] = {}
+    _stub_rest(monkeypatch, seen)
+    texts: list[str] = []
+
+    def hop(text: str, _prep: Any, ref: str, corpus: list[Path], _model: str, **kw: Any) -> list:
+        texts.append(text)
+        return []
+
+    monkeypatch.setattr(full_report, "run_hop", hop)
+    _with_deferrals(monkeypatch, [("Smith 2013", "paper")])
+    prov = {"text_source": "grobid-0.9.1-crf" if source == "grobid" else "pypdf"}
+    monkeypatch.setattr(batch, "load_text", lambda _p: (FULL_TEXT, source, prov))
+    monkeypatch.setattr(full_report, "load_pdf_text", lambda _p: ("References\n1. Smith.", "pypdf"))
+    out = full_report.run_paper("p1", pdf, "m", [tmp_path])
+    assert texts == (["References\n1. Smith."] if source == "grobid" else [FULL_TEXT])
+    assert out.record is not None and out.record["hop_reference_list_source"] == "pypdf"
