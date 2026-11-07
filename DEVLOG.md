@@ -4417,3 +4417,35 @@ Commits here: `84154b8`, `9ab2b08`, then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `e157475`, `66cbc59`, then this entry.
+
+## 2026-11-06 to 2026-11-07 — citations as skippable regions; CRF; the GROBID corpus re-run
+
+- `4c3b4b4` — **the author's rulings 2 and 4, and the hop answer.**
+  - **Citations:** GROBID text carries each citation between U+FFF9 and U+FFFB. Tiers 3 to 6 drop
+    the delimiters. A new tier 5b matches a quote with or without any text at a citation, provided
+    that text is drawn from the citation's own digits and letters, and is bounded.
+  - **Image:** CRF is the expected image and the default label.
+  - **Hop:** on GROBID text it reads the reference list from pypdf text.
+  - **Quote gate:** lost 52 → 14 in the record sets and 3 → 1 in the workbooks; full and CRF give
+    the same counts.
+  - **Checks:** 49/49 identical vs `ac6f998`; positive control 12/12 changed. 17 mutations: 16
+    killed, 1 equivalent (the re-verification on the slice, unchanged on all 69 gate rows).
+- `1488ffb` — **`scripts/score_motion.py`** (the author's answer): bullet 1 under the
+  pre-registered state map. 16 tests, 6 mutations killed.
+- **Docker:** VM memory set to 16 GB (Docker Desktop's `settings-store.json`, then a restart). The
+  full container was replaced by `lfoppiano/grobid:0.9.1-crf` on port 8070; the full image is kept.
+- `9613c6f` — **`docs/findings/grobid_rerun_v1.md`.**
+  - **Run:** 19 papers, aespa-report `--text-source grobid`, from a worktree pinned at `4c3b4b4`. No
+    fallback. $11.1419 metered over 186 calls.
+  - **Interruptions:** the machine slept mid-run, and two papers hung on open AWS connections. A
+    watchdog relaunch made 20 killed attempts while it slept. None wrote a record; their cost is
+    unmetered. The last ten papers were re-run on 2026-11-07, awake.
+  - **Side by side against the pypdf vintage** (code `a3908c3` / `35e4081`, so code differs too):
+    - unverifiable D.3 rows: 15 → 7;
+    - quote-unresolved fields: 28 → 14;
+    - `quote_not_found` diagnostics: 37 → 15;
+    - state agreements: 34 → 31 (smoothing 14 → 12, filtering 10 → 11, motion 10 → 8).
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `4c3b4b4`, `1488ffb`, `9613c6f`, then this entry.
