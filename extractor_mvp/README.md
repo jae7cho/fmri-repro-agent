@@ -28,3 +28,17 @@ for the MVP. If a field is unstated, the MVP returns `MissingFromPaper`, **not**
 python -m extractor_mvp.demo --text examples/schwartz_2018_methods.txt \
   --model bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0 --output results/schwartz_2018.json
 ```
+
+## Text source
+
+`batch.load_text` reads a PDF through GROBID by default (since 2026-11-08,
+`docs/findings/grobid_rerun_v1.md`). The expected server is the CRF image:
+
+```bash
+docker run -d --name grobid -p 8070:8070 lfoppiano/grobid:0.9.1-crf
+```
+
+When the server is unreachable the paper is read with pypdf and the record's
+`text_source.text_source_fallback` says why. `--text-source pypdf` (aespa-report) or
+`AESPA_TEXT_SOURCE=pypdf` reads with pypdf directly. Every record names its source in
+`text_source.text_source` (`grobid-0.9.1-crf` or `pypdf`).

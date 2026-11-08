@@ -187,6 +187,14 @@ def _no_model_call(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(litellm, "completion", _refuse)
 
 
+@pytest.fixture(autouse=True)
+def _text_source_pypdf(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No test reaches a GROBID server (2026-11-08, when GROBID became the default text source):
+    every test reads pypdf unless it sets ``AESPA_TEXT_SOURCE`` itself. A test of the default
+    deletes the variable and stubs the server (``test_grobid_source.py``)."""
+    monkeypatch.setenv("AESPA_TEXT_SOURCE", "pypdf")
+
+
 @pytest.fixture
 def canned_batch(monkeypatch: pytest.MonkeyPatch) -> None:
     """Stub only the PDF loader and the model call; everything else stays real.

@@ -80,9 +80,9 @@ def main(argv: list[str] | None = None) -> int:
         "--text-source",
         choices=("pypdf", "grobid"),
         default=None,
-        help="the text layer: pypdf (default) or GROBID's TEI body from a running server "
-        "(AESPA_GROBID_URL, default http://localhost:8070); falls back to pypdf when it is "
-        "unreachable. Same as AESPA_TEXT_SOURCE.",
+        help="the text layer: GROBID's TEI body from a running server (default; "
+        "AESPA_GROBID_URL, default http://localhost:8070), falling back to pypdf when it is "
+        "unreachable, or pypdf. Same as AESPA_TEXT_SOURCE.",
     )
     args = ap.parse_args(argv)
     if args.text_source is not None:

@@ -1,7 +1,8 @@
 """GROBID as a text source, behind the text-layer interface (the author's request of 2026-11-06).
 
-Flag-gated: ``AESPA_TEXT_SOURCE=grobid`` (or ``aespa-report --text-source grobid``) reads a paper
-through a running GROBID server; anything else, the default, reads it with pypdf as before
+GROBID is the default text source (the author's ruling 1 of 2026-11-08, after
+``docs/findings/grobid_rerun_v1.md``): a paper is read through a running GROBID server.
+``AESPA_TEXT_SOURCE=pypdf`` (or ``aespa-report --text-source pypdf``) reads it with pypdf as before
 (``pdf_loader.load_pdf_text``). No model calls.
 
 A PDF goes to ``/api/processFulltextDocument`` once; the TEI is cached on disk by the PDF's sha256,
@@ -39,7 +40,7 @@ from extractor_mvp.span_resolver import CITATION_CLOSE, CITATION_OPEN
 TEI = "{http://www.tei-c.org/ns/1.0}"
 XML_ID = "{http://www.w3.org/XML/1998/namespace}id"
 
-#: Environment switches. The default text source is pypdf; GROBID only when asked for.
+#: Environment switches. The default text source is GROBID; pypdf when asked for.
 TEXT_SOURCE_ENV = "AESPA_TEXT_SOURCE"
 GROBID_URL_ENV = "AESPA_GROBID_URL"
 GROBID_IMAGE_ENV = "AESPA_GROBID_IMAGE"
@@ -52,8 +53,8 @@ PYPDF = "pypdf"
 
 
 def text_source_requested() -> str:
-    """ "grobid" when the flag asks for it, else "pypdf" (the default)."""
-    return "grobid" if os.environ.get(TEXT_SOURCE_ENV, "").strip().lower() == "grobid" else PYPDF
+    """ "pypdf" when the flag asks for it, else "grobid" (the default since 2026-11-08)."""
+    return PYPDF if os.environ.get(TEXT_SOURCE_ENV, "").strip().lower() == PYPDF else "grobid"
 
 
 # --- flattening -----------------------------------------------------------------------------------

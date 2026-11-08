@@ -157,10 +157,23 @@ def server(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> dict[str, Any]:
     return seen
 
 
-def test_the_default_text_source_is_pypdf_and_grobid_is_never_asked(
+def test_the_default_text_source_is_grobid(
     server: dict[str, Any], monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # the author's ruling 1 of 2026-11-08
     monkeypatch.delenv(gs.TEXT_SOURCE_ENV, raising=False)
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: ("pypdf text", "pypdf"))
+    text, parser, prov = batch.load_text(server["pdf"])
+    assert parser == "grobid" and text == flatten_tei(GORDON)
+    assert prov == {"text_source": "grobid-0.9.1-crf", "text_source_fallback": None}
+    assert server["posts"] == 1
+
+
+@pytest.mark.parametrize("flag", ["pypdf", "PyPDF", " pypdf "])
+def test_the_pypdf_flag_reads_pypdf_and_grobid_is_never_asked(
+    server: dict[str, Any], monkeypatch: pytest.MonkeyPatch, flag: str
+) -> None:
+    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, flag)
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: ("pypdf text", "pypdf"))
     assert batch.load_text(server["pdf"]) == (
         "pypdf text",
@@ -229,11 +242,14 @@ def test_every_record_names_its_text_source(
 
     monkeypatch.setattr(batch, "extract", fake_extract)
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (FULL_TEXT, "pypdf"))
-    monkeypatch.delenv(gs.TEXT_SOURCE_ENV, raising=False)
+    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "pypdf")
     r = batch.process_paper("p", tmp_path / "p.pdf", "m")
     assert r.extraction_json is not None
-    assert r.extraction_json["text_source"]["text_source"] == "pypdf"
-    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "grobid")
+    assert r.extraction_json["text_source"] == {
+        "text_source": "pypdf",
+        "text_source_fallback": None,
+    }
+    monkeypatch.delenv(gs.TEXT_SOURCE_ENV, raising=False)  # the default: GROBID, here unreachable
     server["down"] = True
     r = batch.process_paper("p", tmp_path / "p.pdf", "m")
     assert r.extraction_json is not None
@@ -253,6 +269,12 @@ def test_the_cli_flag_sets_the_text_source(monkeypatch: pytest.MonkeyPatch, tmp_
     monkeypatch.setattr(report, "run_paper", stop)
     pdf = tmp_path / "p.pdf"
     pdf.write_bytes(b"%PDF")
+    with pytest.raises(SystemExit):
+        report.main([str(pdf)])
+    assert seen["source"] == "grobid"  # the default
+    with pytest.raises(SystemExit):
+        report.main([str(pdf), "--text-source", "pypdf"])
+    assert seen["source"] == "pypdf"
     with pytest.raises(SystemExit):
         report.main([str(pdf), "--text-source", "grobid"])
     assert seen["source"] == "grobid"

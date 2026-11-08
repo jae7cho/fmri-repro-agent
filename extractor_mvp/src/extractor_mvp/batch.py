@@ -211,8 +211,8 @@ SUPPLEMENT_MIN_CHARS = 500
 
 def load_text(path: Path) -> tuple[str, str, dict[str, Any]]:
     """The text-layer interface (the author's request of 2026-11-06): ``(text, parser, provenance)``.
-    pypdf by default; GROBID's flattened TEI body when ``AESPA_TEXT_SOURCE=grobid``, falling back to
-    pypdf when the server cannot give it. ``provenance`` is recorded on every record:
+    GROBID's flattened TEI body by default (since 2026-11-08), falling back to pypdf when the server
+    cannot give it; pypdf when ``AESPA_TEXT_SOURCE=pypdf``. ``provenance`` is recorded on every record:
     ``text_source`` (``grobid-<version>-<image>`` or ``pypdf``) and, after a fallback, why."""
     prov: dict[str, Any] = {"text_source": PYPDF, "text_source_fallback": None}
     if text_source_requested() == "grobid":
