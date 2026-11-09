@@ -4729,3 +4729,35 @@ Commits here: `9093f01`, then this entry; fmri-defaults-kb `20b210a`, `cd22005`.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `1b9265e`, `5dd74fa`, `5773e4e`, then this entry; fmri-defaults-kb `3e9c6a3`, `2883fcb`.
+
+## 2026-11-09 (night, 3) — the realignment tool by precedence; resolved_tool in the motion labels; the freeze tag moved again
+
+- `7d96e0b`
+  - **The tool by precedence:** a program the paper names (EXTRACTED), then a cited program
+    (EXTRACTED [C]), then a named package (INFERRED_DEFAULT), then a pipeline (INFERRED_DEFAULT, or
+    INFERRED_MODEL when configurable or version-dependent), then the model. A lower tier never
+    overrides a higher one, and a disagreement is kept as "conflict: paper names X, pipeline
+    default Y".
+  - **The package tier** reads the mention's use: bound to the step, or to the preprocessing or
+    analysis as a whole. An APPLY use does not count, and two packages are not attributable.
+  - **The raw answer is stored** from now on.
+  - **`reresolve.py`** re-resolves stored records with no model call.
+  - **The motion labels:** `resolved_tool` and `resolved_basis` are filled by code for the 9
+    named_tool labels; the other 10 are left blank for the author. `score_motion_resolved` added.
+  - Tests: extractor_mvp 967 passed; root 287. CI pins KB `8ea0350`.
+- **KB** (fmri-defaults-kb `ef27524`, DEVLOG `8ea0350`): `recognize_program`.
+- `c776c36` — `docs/findings/resolution_precedence_v1.md`.
+  - **The 45 re-resolved, no model call:** 18 rows changed, 2 of them display only.
+    - derosa → fsl MCFLIRT (FSL named; conflict with CONN's SPM).
+    - greene → spm Realign (SPM12 named; conflict with HCP's FLIRT).
+    - glasser_2013 → FLIRT, EXTRACTED.
+    - ciric, hermans, ladouceur and hagler → EXTRACTED (program named).
+    - dimitrova and liu_2005 → model-only (no qualifying package use).
+  - **The raw answers** for records before `7d96e0b` are rebuilt from the stored resolution.
+  - **Resolved-tool score on the 19:** KB-confirmed 8 agree, 0 disagree, 5 label blank; model-only
+    0 / 1 / 5.
+- **Tag `sfn2026-freeze` moved** from `4b909b6` to this entry's commit, at the author's request.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `7d96e0b`, `c776c36`, then this entry; fmri-defaults-kb `ef27524`, `8ea0350`.
