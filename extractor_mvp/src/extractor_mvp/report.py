@@ -130,6 +130,14 @@ def main(argv: list[str] | None = None) -> int:
         out.parent.mkdir(parents=True, exist_ok=True)
         out.write_text(full.report, encoding="utf-8")
         print(f"wrote {out}")
+        # 2026-11-09: the reconstructed preprocessing beside the report, <paper>.preproc.txt
+        from extractor_mvp.pseudocode import render_pseudocode
+
+        code = render_pseudocode(full.record) if full.record is not None else None
+        if code is not None:
+            pp = out.with_suffix(".preproc.txt")
+            pp.write_text(code, encoding="utf-8")
+            print(f"wrote {pp}")
 
     if full.status not in ("success", "not_fmri"):
         # methods_not_found is the live case: extraction ran on the full document and the

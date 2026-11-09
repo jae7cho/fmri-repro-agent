@@ -259,4 +259,8 @@ def render_record(record: dict[str, Any]) -> str:
     extra["checker_supplied"] = checker_supplied(record)
     methods = MethodsSlice(text="", **record["methods"])
     report: str = to_report(prep, source=record["paper_id"], methods_slice=methods, **extra)
-    return report
+    # 2026-11-09 (the author's request): the reconstructed preprocessing, appended after every
+    # existing section so those sections render byte for byte as before
+    from extractor_mvp.pseudocode import report_block
+
+    return report + report_block(record)
