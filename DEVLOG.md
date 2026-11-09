@@ -4477,3 +4477,28 @@ Commits here: `4c3b4b4`, `1488ffb`, `9613c6f`, then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `cdca5c9`, `536463d`, then this entry.
+
+## 2026-11-08 (evening) — the GROBID plausibility check; liu_2005 re-run
+
+- `45a1878` — **the author's ruling after liu_2005: a short GROBID body falls back to pypdf.**
+  - **Rule:** under 25% of pypdf's text for the same PDF, or under 5,000 characters, the record says
+    `text_source_fallback_reason: grobid_short_output` with both lengths. It fires only when pypdf's
+    text is the longer. The unreachable-server fallback now records `grobid_unavailable`.
+  - **Tests:** 12 new (the 5-line fixture falls back, a normal body does not, the bounds, the guard,
+    the record). 850 passed.
+  - **Checks:** gate derived first (render never calls `load_text`; of 19 corpus PDFs only liu_2005
+    trips the check), then run: 87/87 identical vs `2231164`; positive control 31/31 changed.
+    10 mutations shown and killed.
+- `1b69fa8` — **`text_source_ab_v1.md`: gordon restated; section 5.**
+  - **gordon filtering:** the pypdf run's quotes resolve on GROBID text, not on pypdf's (0 of 4);
+    the GROBID run's spans resolve on GROBID text, not on pypdf's (0 of 3).
+  - **liu_2005's short output:** no pdfalto warning or error in the container log for the request.
+    The TEI holds 15,768 characters in all (pypdf 50,672). The full image is as short.
+  - **liu_2005 re-run** (default source, pinned at `45a1878`): fallback fired; $0.7371 over 8 calls.
+  - **Side by side with the re-run** (pypdf / GROBID): unverifiable D.3 rows 15 / 14;
+    quote-unresolved fields 41 / 26; `quote_not_found` 50 / 31; state agreements 29 / 32. liu_2005's
+    empty GROBID record had been contributing zeros: 7 of section 2's unverifiable gap was liu_2005.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `45a1878`, `1b69fa8`, then this entry.
