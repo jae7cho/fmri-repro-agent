@@ -246,7 +246,9 @@ def render_record(record: dict[str, Any]) -> str:
     if record.get("verifier") is not None:
         extra["verifier"] = record["verifier"]
     rec = record.get("motion_inference")
-    if isinstance(rec, dict):
+    # 2026-11-09 (item 1): a record with a resolution call renders that instead of the lookup-based
+    # motion inference it may still carry from an earlier run
+    if isinstance(rec, dict) and record.get("resolution") is None:
         extra["motion_inference"] = SimpleNamespace(**rec)
     for key in ("second_hop", "data_release", "citing_software", "supplement", "resolution"):
         if key in record:

@@ -219,3 +219,41 @@ def test_an_echoed_index_prefix_is_still_confirmed() -> None:
     assert tool["provenance"] == "INFERRED_DEFAULT" and tool["value"] == "spm"
     assert tool["as_answered"] == "tool spm"
     assert out["resolved_pipeline"]["value"] == "conn" and out["resolved_pipeline"]["kb"] is True
+
+
+def test_a_stored_lookup_inference_is_not_rendered_beside_a_resolution() -> None:
+    from extractor_mvp.full_report import render_record
+
+    prep = _prep(_method("described_only", phrase="realigned"), None)
+    lookup = {
+        "field": "motion_correction.method",
+        "path": "diagnostic",
+        "reason": "r",
+        "program": "LookupProgram",
+        "basis_name": "package",
+        "basis_type": "derived",
+        "confidence": 0.7,
+        "source": "a lookup source",
+        "note": None,
+        "alternatives": [],
+    }
+    record = {
+        "paper_id": "synthetic",
+        "status": "success",
+        "preprocessing": prep.model_dump(mode="json"),
+        "methods": {
+            "found_via": "header_match",
+            "matched_header": "Methods",
+            "start_offset": 0,
+            "end_offset": 10,
+            "slice_ratio": 0.1,
+            "ended_at": None,
+            "suspicious": False,
+            "fallback_reason": None,
+        },
+        "motion_inference": lookup,
+    }
+    assert "LookupProgram" in render_record(record)
+    record["resolution"] = interpret(_answer("spm"), _record("spm"), TEXT)
+    out = render_record(record)
+    assert "LookupProgram" not in out and "realignment tool: spm → Realign" in out
