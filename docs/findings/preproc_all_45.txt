@@ -1,0 +1,1383 @@
+# Reconstructed preprocessing — achuthan_2023
+# pipeline: Conn toolbox's default preprocessing pipeline for volume-based analyses (version not stated); resolved: conn
+# tools: CONN (version not stated); SPM (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="realigned and unwarped" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="4th degree B-spline" [M], similarity_metric="least squares" [M], susceptibility_correction="unwarping" [E])  # «All participants' functional images were realigned and unwarped and head motion…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=? [?])  # «The functional and structural images were normalized onto a standard MNI (Montr…»
+segmentation(method=? [?], tissue_classes="gray_matter, white_matter, csf" [E])  # «The functional and structural images were normalized onto a standard MNI (Montr…»
+spatial_smoothing(method=? [?], fwhm_mm=5 [E], space="mni_volume" [E], kernel_type="gaussian" [E], approach=? [?])  # «The spatially normalized images were subjected to smoothing using a spatial con…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="before" [E], applied_to=? [?], effective_band_hz=[0.008, 0.09] [E], order=? [?])  # «A band pass filter of 0.008-0.09 Hz was applied to the smoothed data.»
+scrub(method=? [?], criterion=? [?], threshold=? [?], remediation=? [?], interpolation_method=? [?])  # performed: «The aCompcor corrects for physiological noise by regressing the white matter an…»
+compcor(variant="a" [E], n_components=? [?], variance_threshold=? [?], mask_source="white matter and CSF" [E])  # «Denoising was achieved using a procedure called aCompcor (anatomical componentb…»
+nuisance_regression(regressor_list="white matter and CSF parameters derived from outlier scans or scrubbing, six head motion parameters (x, y, and z directions of translation; and pitch, roll, and yaw angles of rotation) and their first order derivatives of realignment" [E], motion_expansion="six head motion parameters and their first order derivatives" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition="segmented into gray matter, white matter, and cerebrospinal fluid" [E], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «The aCompcor corrects for physiological noise by regressing the white matter an…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+distortion_correction(source="susceptibility_fieldmap" [E], method="reverse_phase_encoding" [E], tool=? [?])  # «The resting fMRI data were acquired using a multiband sequence involving two ac…»
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise()  [x]  # «Denoising was achieved using a procedure called aCompcor (anatomical componentb…»
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 5 · flagged 3 · performed=no 0 · not reported 6 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — agtzidis_2020
+# pipeline: SPM12 (version not stated)
+# tools: SPM 12
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="realigning" [E], tool=spm.Realign [D], reference_scan="register to mean (two passes: to the first image, then to the mean of the realigned images)" [D], interpolation="estimate: 2nd degree B-spline; reslice: 4th degree B-spline" [D], similarity_metric="least squares" [D], susceptibility_correction="none" [E])  # «The process comprised realigning the functional data to the mean image of each…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «The process comprised realigning the functional data to the mean image of each…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=3 [E])  # «The process comprised realigning the functional data to the mean image of each…»
+spatial_smoothing(method=? [?], fwhm_mm=8 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «Finally, we applied smoothing with a Gaussian kernel of 8 mm at full width half…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction()  [x]  # «The process comprised realigning the functional data to the mean image of each…»
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="six head movement components" [E], motion_expansion="6param" [E], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend=? [?], method="spm" [E], filtering_integrated=? [?])  # «Apart from the previous regressors, we also used the six head movement componen…»
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · flagged 1 · performed=no 1 · not reported 8 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — bakker_2012
+# pipeline: Analysis of Functional Neuroimages (version not stated)
+# tools: none recorded
+# data release: not stated
+# order: as stated in the paper
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «The functional images were first co-registered to correct for slice timing and…»
+motion_correction(method="three dimensional registration algorithm" [E], tool="afni" [M], reference_scan=? [?], interpolation="Fourier interpolation" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «The functional images were first co-registered to correct for slice timing and…»
+scrub(method="custom" [E], criterion="significant head motion" [E], threshold=? [?], remediation="censor" [E], interpolation_method=? [?])  # «The functional images were first co-registered to correct for slice timing and…»
+coregistration(...)  [?]  # nothing reported for this step
+segmentation(method="manual segmentation" [E], tissue_classes=? [?])  # «Subregions of the medial temporal lobe and the hippocampus were manually segmen…»
+spatial_normalization(target_space="Talairach" [E], resolution_mm=? [?])  # «Initial affine registration was used to transform the subject's anatomical and…»
+spatial_smoothing(method=? [?], fwhm_mm=3 [E], space=? [?], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «The statistical maps were then smoothed using a Gaussian kernel of 3 mm to acco…»
+nonsteadystate_removal()  [x]  # «Four dummy scans were completed at the beginning of each run to allow for stabi…»
+brain_extraction(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · flagged 1 · performed=no 0 · not reported 7 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — bassett_2011
+# pipeline: FSL (version not stated)
+# tools: FSL (version not stated)
+# data release: not stated
+# order: as stated in the paper
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="FMRIB's linear image registration tool" [E], tool=fsl.MCFLIRT [D], reference_scan="middle volume" [D], interpolation="trilinear" [D], similarity_metric="normalised correlation (normcorr)" [D], susceptibility_correction=? [?])  # «Image preprocessing was performed using the Oxford Center for Functional Magnet…»
+temporal_filtering(filter_type=? [?], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «Images were high-pass filtered with a 50 s cutoff period.»
+spatial_smoothing(method=? [?], fwhm_mm=8 [E], space=? [?], kernel_type=? [?], approach=? [?])  # «Spatial smoothing was performed using a kernel where full width at half maximum…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 2 · performed=no 0 · not reported 12 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — binder_1999
+# pipeline: not stated
+# tools: none recorded
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="iterative procedure that minimizes variance in voxel intensity differences between images" [E], tool="afni" [M], reference_scan=? [?], interpolation="Fourier interpolation" [M], similarity_metric="variance in voxel intensity differences" [E], susceptibility_correction=? [?])  # «All EPI images were spatially coregistered using an iterative procedure that mi…»
+spatial_normalization(target_space="Talairach" [E], resolution_mm=? [?])  # «Individual anatomical (SPGR) scans and SPMs were then projected into the standa…»
+spatial_smoothing(method=? [?], fwhm_mm=4 [E], space="template_volume" [E], kernel_type="gaussian" [E], approach=? [?])  # «To compensate for normal variation in anatomy across subjects (Toga et al., 199…»
+nonsteadystate_removal(n_nonsteadystate_discarded=4 [E])  # «Each 100-image EPI series began with four baseline images (16 sec) to allow the…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function="minimizes variance in voxel intensity differences" [E], interpolation=? [?])  # «All EPI images were spatially coregistered using an iterative procedure that mi…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 1 · flagged 4 · performed=no 0 · not reported 9 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — braun_2015
+# pipeline: deferred to refs. 47 and 48
+# tools: none recorded
+# data release: not stated
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+motion_correction(method=see("refs. 47 and 48") [C], tool=? [?], reference_scan=? [?], interpolation=? [?], similarity_metric=? [?], susceptibility_correction=? [?])
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 1 · performed=no 0 · not reported 13 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — cabral_2017
+# (no extraction: not_fmri)
+
+
+# Reconstructed preprocessing — cattarinussi_2026
+# pipeline: ABCD Data Analysis and Informatics Core's standardized pipeline (version not stated); resolved: abcd_daic
+# tools: FreeSurfer 7.1
+# data release: ABCD Study data release 5.1
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nuisance_regression(regressor_list="head motion, white matter, cerebrospinal fluid, and the global signal" [E], motion_expansion=? [?], tissue_regressors="white_matter, ventricles, whole_brain" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear" [E], method="general linear model" [E], filtering_integrated=False [E])  # «Functional MRI data were preprocessed using the ABCD Data Analysis and Informat…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.008, 0.09] [E], order=? [?])  # «Functional MRI data were preprocessed using the ABCD Data Analysis and Informat…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(performed=? [?], method=see("FreeSurfer 7.1") [C], parameters=see("FreeSurfer 7.1") [C], manual_edits=? [?])
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter" [E])  # «Cortical surface reconstruction (using the Desikan-Killiany atlas) and subcorti…»
+motion_correction(method=see("[3,][4]") [C], tool="AFNI's 3dvolreg" [C], reference_scan=? [?], interpolation=? [?], similarity_metric=? [?], susceptibility_correction=? [?])  # 34 «Head motion is corrected by registering each…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(target_surface="FreeSurfer's cortical surface" [E], surface_registration=? [?])  # «For fMRI analyses, fMRI time courses were projected onto FreeSurfer's cortical…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 3 · flagged 2 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 8
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — chen_2015
+# pipeline: Connectome Computation System (CCS) (version not stated); resolved: ccs
+# tools: FreeSurfer (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(n_nonsteadystate_discarded=5 [E])  # «The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 se…»
+despike(method=? [?], threshold=? [?])  # performed: «removed and interpolated temporal spikes (see instructions in [56,57] regarding…»
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «removed and interpolated temporal spikes (see instructions in [56,57] regarding…»
+motion_correction(method="corrected acquisition timing among image slices and head motion among image volumes" [E], tool=afni.3dvolreg [D], reference_scan="middle volume" [M], interpolation="Fourier interpolation" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 se…»
+intensity_normalization(convention="fsl_grand_mean_10000" [E], value=10000 [E])  # «The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 se…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function="bbr" [E], interpolation=? [?])  # «White surfaces were then employed by a boundary-based registration (BBR) algori…»
+nuisance_regression(regressor_list="friston24, white_matter, csf, linear_trend, quadratic_trend" [M], motion_expansion="friston24" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition="mean time series" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear, quadratic" [E], method=? [?], filtering_integrated=? [?])  # «To further eliminate the effect of head motion and physiological noises during…»
+surface_projection(target_surface="fsaverge5" [E], surface_registration="sphere registration" [E])  # «Finally, the data were projected onto the fsaverage surface grid (average inter…»
+brain_extraction(method=? [?], parameters=? [?], manual_edits=True [E])  # «Using this image, the skull was then stripped and manually edited for a better…»
+segmentation(method=? [?], tissue_classes="gray_matter, white_matter, csf" [E])  # «Using this image, the skull was then stripped and manually edited for a better…»
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(target_space="Montreal Neurological Institute (MNI) space" [E], resolution_mm=? [?])  # «individual pial (GM/CSF boundary) and white (GM/WM boundary) surfaces were reco…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="before" [E], applied_to=? [?], effective_band_hz=[0.01, 0.1] [E], order=? [?])  # «This surface-based ReHo was derived from the non-smoothed but temporally band-p…»
+scrub(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space="native_surface" [E], kernel_type="gaussian" [E], approach=? [?])  # «Both ALFF and fALFF were derived from spatially smoothed rfMRI data (6 mm full-…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 9 · flagged 1 · performed=no 0 · not reported 4 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — cho_2021
+# pipeline: HCP minimal preprocessing pipeline (version not stated); resolved: hcp_minimal
+# tools: none recorded
+# data release: HCP S1200 release
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(n_nonsteadystate_discarded=5 [E])  # «Briefly, preprocessing steps for functional data using the CCS included: remova…»
+despike(method=? [?], threshold=? [?])  # performed: «Briefly, preprocessing steps for functional data using the CCS included: remova…»
+motion_correction(method="FLIRT" [D], tool=fsl.FLIRT [D], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="field map-based correction applied" [M])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+nuisance_regression(regressor_list="Friston's 24 head motion parameters, mean signals from white matter (WM) and cerebrospinal fluid (CSF), and linear and quadratic trends" [E], motion_expansion="friston24" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition="mean signals" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="quadratic" [E], method=? [?], filtering_integrated=? [?])  # «In line with prior resting-state studies, nuisance regression, and bandpass fil…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.01, 0.1] [E], order=? [?])  # «In line with prior resting-state studies, nuisance regression, and bandpass fil…»
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «The preprocessing steps included for this data included slice timing correction…»
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=none [D], tissue_classes="white_matter, csf" [E])  # «The nuisance regressors included Friston's 24 head motion parameters, mean sign…»
+distortion_correction(source=? [?], method=? [?], tool=? [?])  # performed: «The fMRI data were co-registered to the first session for distortion correction…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «The fMRI data were co-registered to the first session for distortion correction…»
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise()  [x]  # «Of note, we used the resting without ICA-FIX, consistent with the preprocessing…»
+compcor(...)  [?]  # nothing reported for this step
+scrub(method=? [?], criterion="fd_power" [E], threshold=0.3 [E], remediation="censor" [E], interpolation_method=? [?])  # «Instead of using the temporal mask (FD < 0.2 mm) provided with the preprocessed…»
+intensity_normalization(convention="grand mean scaling" [E], value=? [?])  # «The preprocessing steps included for this data included slice timing correction…»
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space="native_surface" [E], kernel_type=? [?], approach=? [?])  # «Finally, the preprocessed data were projected to the cortical surface and smoot…»
+temporal_standardization(method="z-score normalization" [E])  # «As commonly performed in the literature, z-score normalization was conducted fo…»
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · flagged 6 · performed=no 0 · not reported 4 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — ciric_2017
+# pipeline: XCP Engine (version not stated)
+# tools: ANTs (version not stated); FSL (version not stated); AFNI (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+# note: the paper describes 14 preprocessing variants; the record does not separate them by stream (no applies_to), so one block is shown
+
+distortion_correction(source="susceptibility_fieldmap" [E], method="fieldmap" [E], tool="fugue" [E])  # «correction for distortions induced by magnetic field inhomogeneities using FSL'…»
+nonsteadystate_removal(n_nonsteadystate_discarded=4 [E])  # «Common elements of preprocessing included (1) correction for distortions induce…»
+motion_correction(method="MCFLIRT" [E], tool=fsl.MCFLIRT [D], reference_scan="a selected reference volume" [E], interpolation="trilinear" [D], similarity_metric="normalised correlation (normcorr)" [D], susceptibility_correction="FSL FUGUE" [E])  # «realignment of all volumes to a selected reference volume using MCFLIRT (Jenkin…»
+nuisance_regression(regressor_list="6 movement estimates and 3 physiological time series, as well as their temporal derivatives and quadratic expansions" [E], motion_expansion="friston24" [E], tissue_regressors="white_matter, ventricles, whole_brain" [E], tissue_definition="masks derived from the segmentation of each subject's structural image; these masks were eroded using AFNI's 3dmask tool" [E], tissue_signal_definition="averaging within masks" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear, quadratic" [E], method=? [?], filtering_integrated=False [E])  # «Models 1-5 used nuisance parameters derived from 6 movement estimates and 3 phy…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function="bbr" [E], interpolation=? [?])  # «co-registration of functional data to the high-resolution structural image usin…»
+temporal_filtering(filter_type="butterworth" [E], pass_type="band_pass" [E], relative_to_regression="before" [E], applied_to=? [?], effective_band_hz=[0.01, 0.08] [E], order=1 [E])  # «Common elements of preprocessing included (1) correction for distortions induce…»
+slice_time_correction()  [x]  # «We did not apply slice timing correction during preprocessing, as recent data s…»
+brain_extraction(method="ants" [E], parameters="Study-specific tissue priors were used to guide brain extraction" [E], manual_edits=? [?])  # «Study-specific tissue priors were used to guide brain extraction and segmentati…»
+segmentation(method="ants" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Study-specific tissue priors were used to guide brain extraction and segmentati…»
+intensity_correction(target="bias_field" [E], method=? [?])  # «Following bias field correction (Tustison et al., 2010), each structural image…»
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(method="aroma" [E], training_set=? [?], threshold=? [?], aggressive=? [?])  # «ICA-AROMA (automatic removal of motion artifact) is a recently-introduced, wide…»
+compcor(variant="a, t" [E], n_components=5 [E], variance_threshold=? [?], mask_source="anatomically defined tissue class of interest" [E])  # «Numerous variants of CompCor have been developed; here, our focus will be on an…»
+despike(method="afni_3dDespike" [E], threshold=? [?])  # «Despiking was implemented in AFNI using the 3dDespike utility (Cox, 1996) as pa…»
+scrub(method=? [?], criterion="fd_power" [E], threshold=0.2 [E], remediation="interpolate" [E], interpolation_method="spectral" [E])  # «For scrubbing, the framewise displacement (FD) (Power et al., 2012) was compute…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space=? [?], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «The input to ICA-AROMA is a voxelwise time series that has been smoothed at 6mm…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 11 · performed=no 1 · not reported 2 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — cole_2013
+# pipeline: AFNI (version not stated)
+# tools: AFNI (version not stated); FreeSurfer (version not stated); FSL (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «Like standard functional connectivity preprocessing [23] , we performed slice t…»
+motion_correction(method="motion correction" [E], tool=afni.3dvolreg [D], reference_scan="first volume (sub-brick 0)" [D], interpolation="estimate: heptic (7th order polynomial); Fourier in older releases; reslice: the estimation mode (heptic; Fourier in older releases)" [D], similarity_metric="weighted least squares" [D], susceptibility_correction=? [?])  # «Preprocessing consisted of standard functional connectivity preprocessing (typi…»
+spatial_normalization(target_space="Talairach" [E], resolution_mm=? [?])  # «Like standard functional connectivity preprocessing [23] , we performed slice t…»
+nuisance_regression(regressor_list="motion, ventricle, and white matter signals, along with their derivatives" [E], motion_expansion="motion parameters and their derivatives" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition="Freesurfer was used to identify ventricle, white matter, and gray matter anatomical structures for each participant" [E], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method="linear regression" [E], filtering_integrated=? [?])  # «Like standard functional connectivity preprocessing [23] , we performed slice t…»
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space="gray matter mask" [E], kernel_type=? [?], approach=? [?])  # «Like standard functional connectivity preprocessing [23] , we performed slice t…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Freesurfer was used to identify ventricle, white matter, and gray matter anatom…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+temporal_filtering()  [x]  # «Unlike standard resting-state functional connectivity preprocessing, whole brai…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · performed=no 0 · not reported 8 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — derosa_2025
+# pipeline: FSL suite (version 5.0.10); resolved: conn
+# tools: FSL (version not stated); SPM 12; CONN (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="FSL" [E], tool=spm.Realign [D], reference_scan="middle volume" [M], interpolation="trilinear" [M], similarity_metric="normalized correlation" [M], susceptibility_correction=? [?])  # «Standard fMRI preprocessing procedures were carried out using the FSL suite (ve…»
+temporal_filtering(filter_type=? [?], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «Standard fMRI preprocessing procedures were carried out using the FSL suite (ve…»
+brain_extraction(method="bet" [E], parameters=? [?], manual_edits=? [?])  # «Standard fMRI preprocessing procedures were carried out using the FSL suite (ve…»
+coregistration(transform="rigid" [E], nonlinear_transform_type=? [?], method="flirt" [E], cost_function="bbr" [E], interpolation=? [?])  # «Individual subject EPI images were registered to that subject's MPRAGE structur…»
+spatial_normalization(target_space="MNI-152" [E], resolution_mm=? [?])  # «Individual subject EPI images were registered to that subject's MPRAGE structur…»
+spatial_smoothing(method=? [?], fwhm_mm=8 [E], space=? [?], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «The resulting EPI images were smoothed using an 8 mm full-width half-maximum Ga…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(method="aroma" [E], training_set=? [?], threshold=? [?], aggressive=? [?])  # «Standard fMRI preprocessing procedures were carried out using the FSL suite (ve…»
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="rest and other nuisance covariates (such as motion and physiological regressors)" [E], motion_expansion=? [?], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="physiological regressors" [E], physio_n_regressors=? [?], detrend=? [?], method="other" [E], filtering_integrated=? [?])  # «We employed Generalized FC, a method developed by Elliott et al. (2019), which…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(method="voxel_temporal_zscore" [E])  # «Activation patterns were standardized prior to further analysis to ensure consi…»
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 5 · flagged 1 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 7
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — dimitrova_2002
+# pipeline: SPM99 (version not stated)
+# tools: none recorded
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(n_nonsteadystate_discarded=5 [E])  # «The first five volumes in each subject were discarded to minimize the magnetiza…»
+motion_correction(method="rigid body transformations" [E], tool=spm.Realign [D], reference_scan="first volume" [E], interpolation="trilinear" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «All individual volumes were realigned after the six head-movement parameters we…»
+spatial_normalization(target_space="Talairach" [E], resolution_mm=2 [E])  # «The functional and structural images were realigned and then spatially normaliz…»
+spatial_smoothing(method=? [?], fwhm_mm=4 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «The functional images were subsampled to a voxel size of 2 ϫ 2 ϫ 2 mm 3 and smo…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(filter_type=? [?], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «A high-pass filter was used to remove low-frequency drifts and fluctuations of…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(convention="proportional scaling" [E], value=? [?])  # «A high-pass filter was used to remove low-frequency drifts and fluctuations of…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · performed=no 0 · not reported 10 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — gao_2026
+# (no extraction: not_fmri)
+
+
+# Reconstructed preprocessing — glasser2016_nature
+# pipeline: not stated; resolved: hcp_minimal
+# tools: FreeSurfer (version not stated)
+# data release: HCP 500-subject data release
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="motion correction" [E], tool="fsl.FLIRT, fsl.MCFLIRT" [M], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="yes" [M])  # «The fMRIVolume pipeline includes removing image distortions due to gradient non…»
+distortion_correction(source="susceptibility_fieldmap, gradient_nonlinearity" [E], method="fieldmap, gradient_nonlinearity_correction" [E], tool=? [?])  # «The PreFreeSurfer pipeline includes: (i) aligning and averaging repeated T1w an…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method="bbregister" [E], cost_function="bbr" [E], interpolation="spline" [E])  # «cross modal alignment to the T1w image with BBR (Greve and Fischl, 2009)»
+spatial_normalization(target_space="MNI" [E], resolution_mm=2 [E])  # «The data were projected into the 2 mm standard CIFTI grayordinates space, which…»
+intensity_normalization(convention="fsl_grand_mean_10000" [E], value=10000 [E])  # «Several intensity normalization steps occur, including a crude fMRI bias field…»
+ica_denoise(method="fix" [E], training_set=? [?], threshold=? [?], aggressive="not reported" [M])  # «For rfMRI runs, the ICA+FIX pipeline (Beckmann et al., 2005;Griffanti et al., 2…»
+nuisance_regression(regressor_list="24 motion parameters" [E], motion_expansion="friston24" [E], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend="linear" [E], method=? [?], filtering_integrated=? [?])  # «regression out of the data and all ICA components of 24 motion parameters (whic…»
+nonsteadystate_removal(n_nonsteadystate_discarded=? [?])  # performed: «highpass temporal filtering with a sigma of 1,000 s (run length = 864 s) to rem…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method="freesurfer_recon_all" [E], parameters=? [?], manual_edits=? [?])  # «A customized version of Freesurfer version 5.3's recon-all was used to generate…»
+segmentation(method="freesurfer_recon_all" [E], tissue_classes=? [?])  # «A customized version of Freesurfer version 5.3's recon-all was used to generate…»
+intensity_correction(target="bias_field" [E], method="sqrt(T1w X T2w)" [E])  # «bias field correction using sqrt(T1w X T2w)»
+surface_projection(target_surface="fsLR_32k" [E], surface_registration="msm_sulc" [E])  # «For most analyses we used a lower-resolution mesh (32,492 vertices; the '32k_fs…»
+compcor(...)  [?]  # nothing reported for this step
+temporal_filtering(filter_type=? [?], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «highpass temporal filtering with a sigma of 1,000 s (run length = 864 s) to rem…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=2 [E], space="native_surface" [E], kernel_type=? [?], approach=? [?])  # «The fMRISurface pipeline was then used to map grey matter timeseries data into…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 10 · flagged 1 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 2
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — glasser_2013_hcp_pipelines
+# pipeline: not stated
+# tools: FreeSurfer (version not stated); FSL (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+intensity_correction(target="bias_field" [E], method=? [?])  # «Once the T1w and T2w images are in the same space, the same intensity inhomogen…»
+motion_correction(method="FLIRT" [E], tool=fsl.MCFLIRT [D], reference_scan="single-band reference image" [E], interpolation="trilinear" [D], similarity_metric="normalised correlation (normcorr)" [D], susceptibility_correction="topup" [E])  # «Next is realignment of the timeseries to correct for subject motion, which is a…»
+distortion_correction(source="susceptibility_fieldmap, gradient_nonlinearity" [E], method="reverse_phase_encoding, fieldmap, gradient_nonlinearity_correction" [E], tool="topup, gradunwarp" [E])  # «To more rapidly measure the b0 field for correction EPI distortions, we acquire…»
+coregistration(transform="rigid" [E], nonlinear_transform_type=? [?], method="flirt" [E], cost_function="bbr" [E], interpolation=? [?])  # «The single-band reference image is corrected for distortions using spline inter…»
+spatial_normalization(target_space=? [?], resolution_mm=2 [E])  # «The functional data are acquired at 2mm isotropic, which is of unusually high s…»
+surface_projection(target_surface="fsLR_32k" [E], surface_registration=? [?])  # «The 91,282 standard grayordinates (CIFTI) space is made up of a standard subcor…»
+spatial_smoothing(method="geodesic Gaussian surface smoothing" [E], fwhm_mm=2 [E], space="native_surface" [E], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «The smoothing is performed using a novel geodesic Gaussian surface smoothing al…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction()  [x]  # «It reduces the need for slice timing correction, as all slices in each volume a…»
+brain_extraction(method=? [?], parameters=? [?], manual_edits=? [?])  # performed: «After this "acpc alignment" step, a robust initial brain extraction is performe…»
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Important steps that are performed prior this stage include automated segmentat…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(convention="fsl_grand_mean_10000" [E], value=10000 [E])  # «The data are then masked by the final brain mask from the PostFreeSurfer pipeli…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 9 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 1 · not reported 3
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — gordon_2014
+# pipeline: SPM8 (version not stated)
+# tools: SPM 8
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="SPM8" [E], tool=spm.Realign [D], reference_scan="first image of each scanning run" [E], interpolation="trilinear interpolation" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Using SPM8 (Wellcome Department of Cognitive Neurology, London, UK) implemented…»
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="after" [E], interpolation=? [?], interpolation_order=? [?])  # «images were corrected for translational and rotational motion by realigning to…»
+spatial_normalization(target_space="EPI template" [E], resolution_mm=? [?])  # «Images were then slice-time corrected, normalized to an EPI template, and smoot…»
+spatial_smoothing(method=? [?], fwhm_mm=8 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «Images were then slice-time corrected, normalized to an EPI template, and smoot…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.01, 0.1] [E], order=? [?])  # «Finally, a band-pass filter was applied to the data to restrict signal variatio…»
+nonsteadystate_removal(n_nonsteadystate_discarded=4 [E])  # «The first four images of each functional run were discarded to allow for signal…»
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="white_matter, csf" [E])  # «Physiological noise timecourses were approximated by obtaining signal timecours…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="motion and physiological noise timecourses" [E], motion_expansion="6param" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition="segmentations of the MPRAGE image" [E], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «Connectivity between two nodes in a given run was calculated by conducting part…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · flagged 1 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 6
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — gracia-tabuenca_2024
+# pipeline: deferred to Hagler et al. (2019); resolved: abcd_bids
+# tools: FreeSurfer 5.3
+# data release: ABCD 3.0; ABCD-BIDS Community Collection ABCD collection 3165
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="corrected for motion" [E], tool="AFNI's 3dvolreg" [C], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="yes" [E])  # «fMRI volumes were corrected for motion, susceptibility distortion, and gradient…»
+distortion_correction(source="susceptibility_fieldmap, gradient_nonlinearity" [E], method=? [?], tool=? [?])  # «fMRI volumes were corrected for motion, susceptibility distortion, and gradient…»
+scrub(method=? [?], criterion="fd_power" [E], threshold=0.9 [E], remediation="censor" [E], interpolation_method=? [?])  # «Also, time points with a framewise displacement (FD) above 0.9 mm were censored.»
+nonsteadystate_removal(n_nonsteadystate_discarded=? [?])  # performed: «Rest-fMRI underwent additional preprocessing steps including removal of initial…»
+nuisance_regression(regressor_list="baseline, quadratic trends, motion estimates, and their derivatives" [E], motion_expansion="motion estimates and their derivatives" [E], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend="quadratic" [E], method=? [?], filtering_integrated=? [?])  # «GLM included as covariates baseline, quadratic trends, motion estimates, and th…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.009, 0.08] [E], order=? [?])  # «Rest-fMRI underwent additional preprocessing steps including removal of initial…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method="freesurfer_recon_all" [E], tissue_classes=? [?])  # «Cortical surface and subcortical segmentations were extracted using FreeSurfer…»
+coregistration(performed=True [C], transform="rigid" [C], nonlinear_transform_type=? [?], method=? [?], cost_function="mutual_information" [C], interpolation=? [?])  # Hagler et al. (2019) «Automated registration between the spin-echo…»
+intensity_correction(target="bias_field" [E], method="B1-bias field estimation" [E])  # «Briefly, structural MRI (sMRI) underwent scannerspecific gradient nonlinearity…»
+spatial_normalization(target_space="isotropic standard space" [E], resolution_mm=? [?])  # «structural MRI (sMRI) underwent scannerspecific gradient nonlinearity distortio…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 12  →  addressed 6 · flagged 3 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 2
+#   Not assessed by AESPA: 2  →  never targeted 0 · targeted but unverifiable 2
+
+
+# Reconstructed preprocessing — greene_2022
+# pipeline: HCP minimal preprocessing pipeline (version not stated); resolved: hcp_minimal
+# tools: FSL (version not stated); SPM 12; BioImage Suite (version not stated)
+# data release: HCP HCP 900 Subjects release
+# order: as stated in the paper
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="SPM12" [E], tool=fsl.FLIRT [D], reference_scan="first scan (Yale dataset) or middle scan (UCLA dataset)" [E], interpolation=? [?], similarity_metric=? [?], susceptibility_correction=? [?])  # «Motion correction was performed in SPM12»
+brain_extraction(method="optiBET" [E], parameters=? [?], manual_edits=? [?])  # «Structural scans were skull stripped using an optimized version of the FMRIB's…»
+coregistration(transform="affine" [E], nonlinear_transform_type=? [?], method="FSL and BioImage Suite linear registration tools" [E], cost_function=? [?], interpolation=? [?])  # «linear registration of the functional to the structural images was performed us…»
+spatial_normalization(applied_by="data_provider" [E], release="HCP HCP 900 Subjects release" [E], target_space="standard space" [E], resolution_mm=? [?])  # «The HCP minimal preprocessing pipeline was used on these data 122 , which inclu…»
+nuisance_regression(regressor_list="mean time courses in white matter, cerebrospinal fluid and grey matter; linear, quadratic, and cubic drift; 24 motion parameters" [E], motion_expansion="friston24" [E], tissue_regressors="white_matter, ventricles, gray_matter" [E], tissue_definition=? [?], tissue_signal_definition="mean time courses" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="cubic" [E], method="custom" [E], filtering_integrated=True [E])  # «All additional preprocessing steps were performed in BioImage Suite, and includ…»
+temporal_filtering(filter_type="other" [E], pass_type="band_pass" [E], relative_to_regression="simultaneous" [E], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «All additional preprocessing steps were performed in BioImage Suite, and includ…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub()  [x]  # «We restricted our analyses to those participants who completed all fMRI scans (…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 5 · flagged 2 · performed=no 0 · not reported 7
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — hagler_2019
+# pipeline: Multi-Modal Processing Stream (MMPS) (version not stated); resolved: mmps
+# tools: FreeSurfer 5.3; AFNI (version not stated)
+# data release: ABCD Data Release 2.0; ABCD Fix Release 2.0.1; ABCD Data Release 2.0/Fix Release 2.0.1; ABCD Data Release 2.0/2.0.1; ABCD Data Release 1.1
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="AFNI's 3dvolreg" [E], tool=afni.3dvolreg [D], reference_scan="first volume" [E], interpolation="estimate: heptic (7th order polynomial); Fourier in older releases; reslice: the estimation mode (heptic; Fourier in older releases)" [D], similarity_metric="weighted least squares" [D], susceptibility_correction=? [?])  # «Head motion is corrected by registering each frame to the first using AFNI's 3d…»
+distortion_correction(source=? [?], method=? [?], tool=? [?])  # performed: «T 1 w and T 2 w structural images are corrected for gradient nonlinearity disto…»
+coregistration(transform="rigid" [E], nonlinear_transform_type=? [?], method=? [?], cost_function="mutual_information" [E], interpolation=? [?])  # «A registration matrix is provided to specify the rigid-body transformation betw…»
+nuisance_regression(regressor_list="quadratic trends, signals correlated with estimated motion time courses, and the mean time courses of cerebral white matter, ventricles, and whole brain, as well as their first derivatives" [E], motion_expansion=? [?], tissue_regressors="white_matter, ventricles, whole_brain" [E], tissue_definition="derived from FreeSurfer's automated brain segmentation (aseg), resampled into voxel-wise alignment with the fMRI data, and then eroded by a single fMRI-resolution voxel" [E], tissue_signal_definition="mean time courses" [E], physio_regressors=? [?], physio_n_regressors=? [?], detrend="quadratic" [E], method="custom" [E], filtering_integrated=False [E])  # «we normalize voxel time series by dividing by the mean across time of each voxe…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.009, 0.08] [E], order=? [?])  # «After regression, time courses are band-pass filtered between 0.009 and 0.08 Hz»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method="freesurfer_recon_all" [E], parameters=? [?], manual_edits=? [?])  # «Cortical surface reconstruction and subcortical segmentation are performed usin…»
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Subcortical structures are labelled using an automated, atlas-based, volumetric…»
+intensity_correction(target="bias_field" [E], method=? [?])  # «Intensity inhomogeneity correction is performed by applying smoothly varying, e…»
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(target_surface=? [?], surface_registration="freesurfer_recon" [E])  # «Cortical surface reconstruction and subcortical segmentation are performed usin…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(method="afni_3ddeconvolve" [E], criterion="fd_power" [E], threshold=0.9 [E], remediation="censor" [E], interpolation_method=? [?])  # «Estimates of task-related activation strength are computed at the individual su…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 13  →  addressed 8 · flagged 2 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 2
+#   Not assessed by AESPA: 1  →  never targeted 0 · targeted but unverifiable 1
+
+
+# Reconstructed preprocessing — hermans_2024
+# pipeline: fMRIPrep (version 20.2.0); resolved: fmriprep
+# tools: fMRIPrep (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method="afni_3dtshift" [E], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «BOLD runs were slice-time corrected using `3dTshift` from AFNI 20160207 (https:…»
+coregistration(transform="affine" [E], nonlinear_transform_type=? [?], method="flirt" [E], cost_function="bbr" [E], interpolation=? [?])  # «Co-registration was configured with nine degrees of freedom to account for dist…»
+motion_correction(method="mcflirt" [E], tool=fsl.MCFLIRT [D], reference_scan="BOLD reference" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="yes" [E])  # «Head-motion parameters with respect to the BOLD reference (transformation matri…»
+distortion_correction()  [x]  # «Susceptibility distortion correction (SDC) was omitted.»
+compcor(variant="t, a" [E], n_components=? [?], variance_threshold=50 [E], mask_source="tCompCor components are then calculated from the top 2% variable voxels within the brain mask. For aCompCor, three probabilistic masks (CSF, WM and combined CSF+WM) are generated in anatomical space." [E])  # «Component-based noise correction (CompCor) was performed after high-pass filter…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(method="ants" [E], parameters="using OASIS30ANTs as target template" [E], manual_edits=? [?])  # «The T1w-reference was then skullstripped with a *Nipype* implementation of the…»
+segmentation(method="fsl_fast" [E], tissue_classes="csf, white_matter, gray_matter" [E])  # «Brain tissue segmentation of cerebrospinal fluid (CSF), white-matter (WM) and g…»
+intensity_correction(target="bias_field" [E], method="n4" [E])  # «The T1weighted (T1w) image was corrected for intensity non-uniformity (INU) wit…»
+spatial_normalization(target_space="MNI152NLin2009cAsym" [E], resolution_mm=? [?])  # «The BOLD time-series were resampled into standard space, generating a *preproce…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(filter_type="discrete cosine filter" [E], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to="preprocessed BOLD time-series for CompCor estimation" [E], effective_band_hz=? [?], order=? [?])  # «Principal components are estimated after high-pass filtering the *preprocessed…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · flagged 1 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 2 · not reported 3
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — ladouceur_2023
+# pipeline: fMRIPrep (version not stated); resolved: fmriprep
+# tools: fMRIPrep (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method="afni_3dtshift" [E], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «Functional data was slice time corrected using 3dTshift from AFNI v16.2.07 [11,…»
+motion_correction(method="mcflirt" [E], tool=fsl.MCFLIRT [D], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="field maps" [E])  # «Functional data was slice time corrected using 3dTshift from AFNI v16.2.07 [11,…»
+distortion_correction(source="fieldmap_less" [E], method=? [?], tool="antsRegistration" [E])  # «"Fieldmap-less" distortion correction was performed by coregistering the functi…»
+coregistration(transform="rigid" [E], nonlinear_transform_type=? [?], method="bbregister" [E], cost_function="bbr" [E], interpolation=? [?])  # «This was followed by coregistration to the corresponding T1w using boundary-bas…»
+spatial_normalization(target_space="ICBM 152 Nonlinear Asymmetrical template version 2009c" [E], resolution_mm=? [?])  # «Spatial normalization to the ICBM 152 Nonlinear Asymmetrical template version 2…»
+compcor(variant="a, t" [E], n_components=6 [E], variance_threshold=5 [E], mask_source=? [?])  # «Principal components were estimated for the two CompCor variants: temporal (tCo…»
+nuisance_regression(regressor_list="6 degrees of motion, global signal, white matter and CSF, with temporal, quadratic, and quadratic temporal derivatives" [E], motion_expansion="6 degrees of motion, with temporal, quadratic, and quadratic temporal derivatives" [E], tissue_regressors="whole_brain, white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="quadratic" [E], method="custom" [E], filtering_integrated=False [E])  # «Following functional connectivity (FC) processing guidelines (Ciric et al., 201…»
+temporal_filtering(filter_type="spectral" [E], pass_type="high_pass" [E], relative_to_regression="simultaneous" [E], applied_to=? [?], effective_band_hz="0.008, None" [E], order=? [?])  # «Following functional connectivity (FC) processing guidelines (Ciric et al., 201…»
+scrub(method="custom" [E], criterion="fd_power" [E], threshold=0.3 [E], remediation="interpolate" [E], interpolation_method="spectral" [E])  # «To combine scrubbing and spectral filtering, spectral interpolation based on th…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(method="ants" [E], parameters="using the OASIS template" [E], manual_edits=? [?])  # «Each T1w (T1-weighted) volume was corrected for INU (intensity non-uniformity)…»
+segmentation(method="fsl_fast" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Brain tissue segmentation of cerebrospinal fluid (CSF), white-matter (WM) and g…»
+intensity_correction(target="bias_field" [E], method="n4" [E])  # «Each T1w (T1-weighted) volume was corrected for INU (intensity non-uniformity)…»
+surface_projection(target_surface=? [?], surface_registration="recon-all" [E])  # «Brain surfaces were reconstructed using recon-all from FreeSurfer v6.0.1»
+ica_denoise(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(method="voxel_temporal_zscore" [E])  # «These timeseries were detrended and standardized to a mean of 0 and a standard…»
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 11 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 2
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — li_2024
+# pipeline: Statistical Parametric Mapping (SPM) 12 (version not stated)
+# tools: SPM 12; CONN (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(n_nonsteadystate_discarded=10 [E])  # «The first ten images of each fMRI dataset were discarded to remove any fluctuat…»
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="before" [E], interpolation=? [?], interpolation_order=? [?])  # «Images of each individual subject were corrected for slice timing and realignme…»
+motion_correction(method="realignment" [E], tool=spm.Realign [D], reference_scan="register to mean (two passes: to the first image, then to the mean of the realigned images)" [D], interpolation="estimate: 2nd degree B-spline; reslice: 4th degree B-spline" [D], similarity_metric="least squares" [D], susceptibility_correction=? [?])  # «Images of each individual subject were corrected for slice timing and realignme…»
+spatial_normalization(target_space="Montreal Neurological Institute (MNI) space" [E], resolution_mm=2 [E])  # «The resulting images were normalized to the Montreal Neurological Institute (MN…»
+spatial_smoothing(method=? [?], fwhm_mm=4 [E], space="mni_volume" [E], kernel_type="gaussian" [E], approach=? [?])  # «The resulting images were normalized to the Montreal Neurological Institute (MN…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="before" [E], applied_to=? [?], effective_band_hz=[0.008, 0.09] [E], order=? [?])  # «The images were bandpass filtered to 0.008-0.09 Hz to reduce the influence of n…»
+nuisance_regression(regressor_list="white matter and cerebrospinal fluid (CSF) signals and six motion parameters and their first-order derivatives" [E], motion_expansion="six motion parameters and their first-order derivatives" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear" [E], method=? [?], filtering_integrated=False [E])  # «Possible contamination from white matter and cerebrospinal fluid (CSF) signals…»
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method="spm_segment" [E], tissue_classes="gray_matter" [E])  # «Structural data processing was performed using SPM12, including normalization t…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 6
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — liu_2005
+# pipeline: not stated
+# tools: none recorded
+# data release: not stated
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+motion_correction(method="3D motion correction" [D], tool=brainvoyager.3D motion correction [D], reference_scan="first volume" [M], interpolation="trilinear" [M], similarity_metric=? [?], susceptibility_correction=? [?])  # KB: Goebel, R., Esposito, F. & Formisano, E. (2006). Analysis of functional image a…
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing()  [x]  # «Images were not spatially smoothed.»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 8  →  addressed 0 · performed=no 1 · not reported 7
+#   Not assessed by AESPA: 6  →  never targeted 0 · targeted but unverifiable 6
+
+
+# Reconstructed preprocessing — liu_2013
+# pipeline: FCP analysis scripts (version 1.1-beta); resolved: fcp_scripts
+# tools: AFNI (version not stated); FSL (version not stated)
+# data release: FCP analysis scripts version 1.1-beta
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="image coregistration to correct for head motion" [E], tool=afni.3dvolreg [D], reference_scan="first volume" [M], interpolation="Fourier interpolation" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «The typical pre-processing steps for the analysis of resting state data were ap…»
+spatial_smoothing(method=? [?], fwhm_mm=4 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «The typical pre-processing steps for the analysis of resting state data were ap…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.005, 0.1] [E], order=? [?])  # «The typical pre-processing steps for the analysis of resting state data were ap…»
+nuisance_regression(regressor_list="the time series of ROIs in the white matter and cerebrospinal fluid (CSF), 6 affine motion parameters, as well as the brain-averaged (global) signal" [E], motion_expansion="6param" [E], tissue_regressors="white_matter, ventricles, whole_brain" [E], tissue_definition="ROIs in the white matter and cerebrospinal fluid" [E], tissue_signal_definition="time series of ROIs" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="quadratic" [E], method=? [?], filtering_integrated=? [?])  # «Additionally, the time series of ROIs in the white matter and cerebrospinal flu…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method="other" [E], parameters=? [?], manual_edits=? [?])  # «based on a brain mask created from the 152-brain MNI template»
+segmentation(method=? [?], tissue_classes="white_matter, csf" [E])  # «Additionally, the time series of ROIs in the white matter and cerebrospinal flu…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method="other" [E], cost_function=? [?], interpolation=? [?])  # «Here, as departure from the original FCP scripts, the registration between the…»
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(target_space="MNI" [E], resolution_mm=3 [E])  # «The fMRI data was first co-registered to the high-resolution anatomical (T 1 -w…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(method="voxel_temporal_zscore" [E])  # «Finally, for each voxel, the fMRI signal was temporally normalized by subtracti…»
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · flagged 1 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 6
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — maheu_2011
+# pipeline: SPM99 (version not stated)
+# tools: SPM 99
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction=? [?], interpolation=? [?], interpolation_order=? [?])  # performed: «Preprocessing procedures included corrections for slice timing and motion, core…»
+motion_correction(method="corrections for slice timing and motion" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="trilinear" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Preprocessing procedures included corrections for slice timing and motion, core…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Preprocessing procedures included corrections for slice timing and motion, core…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=? [?])  # «Preprocessing procedures included corrections for slice timing and motion, core…»
+spatial_smoothing(method=? [?], fwhm_mm=11.4 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «These normalized contrast images were then smoothed with an isotropic Gaussian…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(convention="divided by voxel time series mean" [E], value=? [?])  # «Before performing group-level analyses, each contrast image was divided by the…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · flagged 1 · performed=no 0 · not reported 9 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — marek_2022
+# pipeline: ABCD-BIDS pipeline (version not stated); resolved: abcd_bids
+# tools: ANTs (version not stated); FreeSurfer (version not stated); FSL (version not stated)
+# data release: ABCD ABCD 2.0 release; ABCD ABCD collection 3165; HCP 1,200 Subject Data Release; UKB January 2020 UKB release
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method=? [?], parameters=? [?], manual_edits=? [?])  # performed: «This normalization entails brain extraction, denoising, and then bias field cor…»
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «(2) FreeSurfer 57 constructs cortical surfaces from the normalized anatomical d…»
+motion_correction(method="MCFLIRT" [D], tool=fsl.MCFLIRT [D], reference_scan="middle volume" [M], interpolation="single interpolation combining atlas transformation, field distortion correction, and resampling" [E], similarity_metric="normalized correlation" [M], susceptibility_correction="field distortion correction" [E])  # «This atlas transformation, mean field distortion correction, and resampling to…»
+distortion_correction(source="susceptibility_fieldmap" [E], method="reverse_phase_encoding" [E], tool=? [?])  # «(4) The Vol (volume) stage corrects for functional distortions via reverse-phas…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Atlas transformation was computed by registering the mean intensity image from…»
+intensity_correction(target="bias_field" [E], method="n4" [E])  # «This normalization entails brain extraction, denoising, and then bias field cor…»
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(target_surface="32k fs_LR" [E], surface_registration="spherical registration" [E])  # «Once sampled to the surface, time courses were deformed and resampled from the…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="whole brain, ventricular, and white matter signal regressors, as well as their derivatives" [E], motion_expansion=? [?], tissue_regressors="whole_brain, ventricles, white_matter" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear" [E], method=? [?], filtering_integrated=False [E])  # «denoised via a GLM with whole brain, ventricular, and white matter signal regre…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.008, 0.1] [E], order=? [?])  # «Denoised data were then passed through (4) a band-pass filter (0.008 Hz < f < 0…»
+despike(...)  [?]  # nothing reported for this step
+scrub(method=? [?], criterion="fd_power" [E], threshold=0.3 [E], remediation="interpolate" [E], interpolation_method="least squares spectral estimation" [E])  # «Frames with a filtered-FD > 0.3 mm were flagged as motion-contaminated for nuis…»
+intensity_normalization(convention="whole-brain-mode value of 1,000" [E], value=1000 [E])  # «All resting-state runs underwent intensity normalization to a whole-brain-mode…»
+spatial_smoothing(method=? [?], fwhm_mm=2 [E], space="native_surface" [E], kernel_type=? [?], approach=? [?])  # «Finally, the resting-state time courses were smoothed with a 2 mm full-width-ha…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 11 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 2
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — mueller_2021
+# pipeline: Statistical Parametric Mapping 12 (version not stated)
+# tools: SPM (version not stated); ANTs (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="realigned and unwarped" [E], tool=spm.Realign [D], reference_scan="register to mean (two passes: to the first image, then to the mean of the realigned images)" [D], interpolation="estimate: 2nd degree B-spline; reslice: 4th degree B-spline" [D], similarity_metric="least squares" [D], susceptibility_correction="unwarping" [E])  # «Functional data were realigned and unwarped to correct for head motion and the…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method="spm_coreg" [E], cost_function=? [?], interpolation=? [?])  # «Initial preprocessing was performed using the Statistical Parametric Mapping 12…»
+spatial_normalization(target_space="subject-specific anatomical template" [E], resolution_mm=? [?])  # «All scans were then registered to a subject-specific anatomical template create…»
+spatial_smoothing(method=? [?], fwhm_mm=5 [E], space=? [?], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «A 5-mm full-width at half-maximum (FWHM) isotropic Gaussian kernel was subseque…»
+intensity_normalization(convention="global_median_1000" [E], value=1000 [E])  # «Global signal scaling (median = 1,000) was applied to account for fluctuations…»
+nuisance_regression(regressor_list="head motion and five physiological noise components (cerebrospinal fluid + white matter signal)" [E], motion_expansion="volterra" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend="linear" [E], method="custom" [E], filtering_integrated=? [?])  # «Residual BOLD signal from each voxel was extracted after removing the effects o…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="white_matter, csf" [E])  # «Residual BOLD signal from each voxel was extracted after removing the effects o…»
+distortion_correction(source="susceptibility_fieldmap" [E], method="fieldmap" [E], tool=? [?])  # «First, high-resolution anatomical scans were acquired using a T1-weighted magne…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+temporal_filtering(filter_type="maximal overlap discrete wavelet transform" [E], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to="regional time series" [E], effective_band_hz=[0.01, 0.17] [E], order=? [?])  # «These regional time series were then decomposed into several frequency bands us…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 8 · performed=no 0 · not reported 6 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — oconnor_2017
+# pipeline: Configurable Pipeline for the Analysis of Connectomes (C-PAC) (version 0.4.0); resolved: cpac
+# tools: FreeSurfer (version not stated); FSL (version not stated); ANTs (version not stated); AFNI (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="motion correction" [E], tool=afni.3dvolreg [D], reference_scan="first volume" [M], interpolation="Fourier interpolation" [M], similarity_metric=? [?], susceptibility_correction=? [?])  # «Following resampling of the fMRI data to RPI orientation, image preprocessing i…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function="bbr" [E], interpolation=? [?])  # «Following resampling of the fMRI data to RPI orientation, image preprocessing i…»
+nuisance_regression(regressor_list=? [?], motion_expansion=? [?], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition="mean" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="quadratic" [E], method="custom" [E], filtering_integrated=? [?])  # «Following resampling of the fMRI data to RPI orientation, image preprocessing i…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method="afni_3dskullstrip" [E], parameters=? [?], manual_edits=True [E])  # «Further anatomical processing included skull stripping using AFNI's 3dSkullstrip»
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 9
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — poldrack_2015
+# pipeline: pipeline developed at Washington University, St Louis (version not stated); resolved: hcp_minimal
+# tools: FSL (version not stated); FreeSurfer (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="realigned" [E], tool="fsl.FLIRT, fsl.MCFLIRT" [M], reference_scan=? [?], interpolation="combined with other transforms in single resampling step" [E], similarity_metric=? [?], susceptibility_correction="field-map-based distortion correction" [E])  # «Data were realigned to correct for head motion and normalized to a mode of 1,00…»
+intensity_normalization(convention="global_mode_1000" [E], value=1000 [E])  # «Data were realigned to correct for head motion and normalized to a mode of 1,00…»
+coregistration(transform="affine" [E], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # «The transforms for head motion correction and affine registration to atlas spac…»
+distortion_correction(source="susceptibility_fieldmap" [E], method="fieldmap" [E], tool=? [?])  # «A dual-gradient echo-field map sequence was acquired with the same prescription…»
+spatial_normalization(target_space="atlas space" [E], resolution_mm=3 [E])  # «The transforms for head motion correction and affine registration to atlas spac…»
+scrub(method="custom" [E], criterion="fd_power" [E], threshold=0.25 [E], remediation="censor" [E], interpolation_method=? [?])  # «Artefacts were reduced using frame censoring, regression (excluding censored fr…»
+nuisance_regression(performed=? [?], regressor_list="whole brain, white matter and ventricular signals and their derivatives, in addition to 24 movement regressors derived by Volterra expression" [E], motion_expansion="volterra" [E], tissue_regressors="whole_brain, white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method="custom" [E], filtering_integrated=? [?])  # «Nuisance regressors included whole brain, white matter and ventricular signals…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.009, 0.08] [E], order=? [?])  # «Interpolation over censored frames was computed by least-squares spectral estim…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(method="freesurfer_recon_all" [E], parameters=? [?], manual_edits=? [?])  # «First, following volumetric registration, anatomical surfaces were generated fr…»
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="white_matter, csf" [E])  # «First, following volumetric registration, anatomical surfaces were generated fr…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(target_surface="fsLR_32k" [E], surface_registration="freesurfer_recon" [E])  # «Finally, the subject's 164k fs LR surface was downsampled to a 32,492 vertex su…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=? [?], space="native_surface" [E], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «Finally, the time courses were smoothed along the 32k fs LR surface using a Gau…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 10 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 3
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — power_2014
+# pipeline: not stated
+# tools: FreeSurfer (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=? [?], reference="first" [E], relative_to_motion_correction="before" [E], interpolation="sinc" [E], interpolation_order=? [?])  # «slice-time correction, i.e., sinc interpolation to temporally align each slice…»
+motion_correction(method="rigid body realignment" [E], tool=? [?], reference_scan=? [?], interpolation=? [?], similarity_metric=? [?], susceptibility_correction=? [?])  # «For fMRI pre-processing, functional images underwent (i) slice-time correction,…»
+intensity_normalization(convention="global_mode_1000" [E], value=1000 [E])  # «within-run intensity normalization, that is, scaling the intensity across all v…»
+spatial_normalization(target_space="atlas space" [E], resolution_mm=3 [E])  # «Each run was then resampled in atlas space on an isotropic 3 mm grid combining…»
+nuisance_regression(regressor_list=? [?], motion_expansion="volterra" [E], tissue_regressors="ventricles, white_matter, whole_brain" [E], tissue_definition=? [?], tissue_signal_definition="average signal across voxels within a particular spatial mask" [E], physio_regressors=? [?], physio_n_regressors=? [?], detrend="linear" [E], method=? [?], filtering_integrated=False [E])  # «This paper also examines two sets of motion regressors derived by Volterra expa…»
+temporal_filtering(filter_type="butterworth" [E], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.009, 0.08] [E], order=2 [E])  # «frequency filtering of the data using a zero-phase 2 nd order Butterworth filte…»
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «These steps included (i) demeaning and detrending across each run, (ii) regress…»
+scrub(method="custom" [E], criterion=? [?], threshold=? [?], remediation="interpolate" [E], interpolation_method="spectral" [E])  # «If data were censored during demeaning and detrending or multiple regression, t…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="gray_matter, white_matter, csf" [E])  # «Each subject's MP-RAGE underwent segmentation by FreeSurfer (version 5.0).»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Atlas transformation of the functional data was computed for each individual vi…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 8 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 5
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — schwartz_2018
+# pipeline: CONN functional connectivity toolbox (version not stated); resolved: conn
+# tools: CONN (version not stated); SPM (version not stated); FreeSurfer (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction=? [?], interpolation=? [?], interpolation_order=? [?])  # performed: «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+motion_correction(method="CONN functional connectivity toolbox" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="trilinear" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+spatial_normalization(target_space="MNI standard space" [E], resolution_mm=2 [E])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+spatial_smoothing(method=? [?], fwhm_mm=8 [E], space="mni_volume" [E], kernel_type=? [?], approach=? [?])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+nuisance_regression(regressor_list="6 motion parameters, CSF and white matter signal, and high motion volumes" [E], motion_expansion="6param" [E], tissue_regressors="ventricles, white_matter" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+scrub(method=? [?], criterion="bold_pct, fd_power" [E], threshold=3 [E], remediation="censor" [E], interpolation_method=? [?])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.008, 0.09] [E], order=? [?])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="csf, white_matter" [E])  # «CONN functional connectivity toolbox was used to perform standard preprocessing…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · performed=no 0 · not reported 7 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — shen_2013
+# pipeline: not stated
+# tools: SPM 5; BioImage Suite (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="SPM5" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="trilinear (2nd degree B-spline)" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Functional data was motion corrected and slice-time corrected using SPM5.»
+slice_time_correction(method="spm_slice_timing" [E], reference=? [?], relative_to_motion_correction=? [?], interpolation=? [?], interpolation_order=? [?])  # «Functional data was motion corrected and slice-time corrected using SPM5.»
+coregistration(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="the white matter and CSF mean timecourses and to the six motion-related signals estimated by SPM5" [E], motion_expansion="6param" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition="Masks of white matter, gray matter and the cerebrospinal fluid (CSF) were created in the common space." [E], tissue_signal_definition="mean timecourses" [E], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="linear" [E], method=? [?], filtering_integrated=False [E])  # «Time-courses from the gray matter were orthogonalized with respect to the white…»
+temporal_filtering(filter_type="butterworth" [E], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.02, 0.1] [E], order=? [?])  # «The timecourses were filtered using a bandpass Butterworth filter with passing…»
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space=? [?], kernel_type="gaussian" [E], approach=? [?])  # «A Gaussian kernel of FWHM 6mm was applied for spatial smoothing and the linear…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="white_matter, gray_matter, csf" [E])  # «Masks of white matter, gray matter and the cerebrospinal fluid (CSF) were creat…»
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(target_space="common space" [E], resolution_mm=3 [E])  # «The data was then mapped to a common space of size 3mm × 3mm × 3mm using BioIma…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · performed=no 0 · not reported 8 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — silchenko_2023
+# pipeline: FMRIB Software Library (version not stated); resolved: hcp_minimal
+# tools: FSL (version not stated); SPM (version not stated)
+# data release: HCP 1200 subjects ICA-FIX denoised release
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="white_matter, csf, gray_matter" [E])  # «These nuisance signals are computed via extraction of fMRI time series from the…»
+motion_correction(method="FLIRT" [D], tool=fsl.FLIRT [D], reference_scan="single-band reference (SBRef) image" [M], interpolation="spline" [M], similarity_metric=? [?], susceptibility_correction="field map-based distortion correction" [M])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(target_space="MNI152" [E], resolution_mm=? [?])  # «The intensity of the HCP data was normalized and spatially transformed to MNI15…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(method="fix" [E], training_set=? [?], threshold=? [?], aggressive=? [?])  # «Time series are made available and cleaned from movementrelated and physiologic…»
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="tissue-specific nuisance signals from the white matter (WM) and cerebrospinal fluid (CSF)" [E], motion_expansion=? [?], tissue_regressors="white_matter, ventricles" [E], tissue_definition="extraction of fMRI time series from the CSF and WM masks" [E], tissue_signal_definition="principal component analysis" [E], physio_regressors=? [?], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «Here, we concentrated on tissue-specific nuisance signals from the white matter…»
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(method="spm_smooth" [E], fwhm_mm=5 [E], space="mni_volume" [E], kernel_type="gaussian" [E], approach="fixed_kernel" [E])  # «We further increased the signal-to-noise ratio of the fMRI data in spatial para…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 5 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 0 · not reported 8
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — sims_2021
+# pipeline: HCP minimal preprocessing pipeline (version not stated); resolved: hcp_minimal
+# tools: FreeSurfer (version not stated)
+# data release: Human Connectome Project (HCP) 900-subject release; HCP 900-subject release template
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="FLIRT" [D], tool=fsl.FLIRT [D], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="fieldmap-based correction" [M])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+scrub(method="custom" [E], criterion="fd_power" [E], threshold=0.5 [E], remediation="interpolate" [E], interpolation_method="interpolated image from adjacent images" [E])  # «We replaced time points in which a participant moved more than 0.5 mm in one TR…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=[0.009, 0.08] [E], order=? [?])  # «We applied temporal band-pass filtering between 0.009 and 0.08 Hz.»
+nuisance_regression(regressor_list="white matter and CSF signals and motion parameters" [E], motion_expansion="motion parameters" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «We applied regressors to reduce artifactual noise, including white matter and C…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(performed=? [?], method=see("HCP minimal preprocessing pipeline") [C], reference=see("HCP minimal preprocessing pipeline") [C], relative_to_motion_correction=see("HCP minimal preprocessing pipeline") [C], interpolation=see("HCP minimal preprocessing pipeline") [C], interpolation_order=see("HCP minimal preprocessing pipeline") [C])
+brain_extraction(performed=? [?], method=see("HCP minimal preprocessing pipeline") [C], parameters="the MNI template brain mask brought into the subject by inverting an initial FLIRT + FNIRT registration (PreFreeSurfer); the final mask is FreeSurfer wmparc binarized, dilated three times and eroded twice (PostFreeSurfer)" [D], manual_edits=see("HCP minimal preprocessing pipeline") [C])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+segmentation(method=? [?], tissue_classes="white_matter, csf" [E])  # «We applied regressors to reduce artifactual noise, including white matter and C…»
+distortion_correction(applied_by="data_provider" [E], release="Human Connectome Project (HCP) 900-subject release" [E], source="susceptibility_fieldmap" [E], method="reverse_phase_encoding" [E], tool=? [?])  # «Phase encoding direction was right-to-left for half of the scans and left-to-ri…»
+coregistration(performed=? [?], transform=none [D], nonlinear_transform_type=see("HCP minimal preprocessing pipeline") [C], method=see("HCP minimal preprocessing pipeline") [C], cost_function=none [D], interpolation=none [D])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+intensity_correction(performed=? [?], target=none [D], method=see("HCP minimal preprocessing pipeline") [C])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+spatial_normalization(applied_by="data_provider" [E], release="Human Connectome Project (HCP) 900-subject release" [E], target_space="common space" [E], resolution_mm=? [?])  # «The HCP minimal preprocessing pipeline that includes artifact removal, motion c…»
+surface_projection(target_surface="fsaverage" [E], surface_registration="FreeSurfer's anatomical registration" [E])  # «These V1 eccentricity segment ROIs were defined on FreeSurfer's fsaverage brain…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 13  →  addressed 11 · performed=no 0 · not reported 2 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 1  →  never targeted 0 · targeted but unverifiable 1
+
+
+# Reconstructed preprocessing — smith_2013
+# pipeline: FSL, FreeSurfer and Connectome Workbench (version not stated); resolved: hcp_minimal
+# tools: FSL (version not stated); FreeSurfer (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="Realign each timepoint's image to a reference image" [E], tool="fsl.FLIRT, fsl.MCFLIRT" [M], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric=? [?], susceptibility_correction="field map-based correction" [M])  # «• Realign each timepoint's image to a reference image, reducing the effects of…»
+distortion_correction(source=? [?], method=? [?], tool=? [?])  # performed: «Correct the data for MRI spatial distortions.»
+brain_extraction(method=? [?], parameters=? [?], manual_edits=? [?])  # performed: «Remove non-brain parts of the image.»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Estimate the alignment transformations between the rfMRI data and the same subj…»
+surface_projection(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=? [?], space=? [?], kernel_type=? [?], approach=? [?])  # performed: «Optionally, apply spatial smoothing, to improve signal-to-noise ratio, and amel…»
+temporal_filtering(filter_type=? [?], pass_type="high_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «Apply filtering to remove the very slowest temporal drifts in the data.»
+ica_denoise(method="fix" [E], training_set=? [?], threshold=? [?], aggressive=? [?])  # «These components are then automatically classified into artefact vs non-artefac…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+spatial_normalization(target_space=? [?], resolution_mm=2 [E])  # «From each subject 1h of whole-brain rfMRI data is acquired at 3T (in two pairs…»
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 6 · flagged 2 · performed=no 0 · not reported 6 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — smith_2013_rest_in_hcp
+# pipeline: deferred to Glasser et al., 2013
+# tools: FSL (version not stated); FreeSurfer (version not stated)
+# data release: not stated
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction()  [x]  # «Slice-timing correction is a pre-processing step that temporally resamples all…»
+brain_extraction(performed=True [C], method="freesurfer_recon_all" [C], parameters=? [?], manual_edits=? [?])  # Glasser et al., 2013 «Early on, we found that the HCP Phase II T1w…»
+segmentation(performed=True [C], method="freesurfer_recon_all" [C], tissue_classes=? [?])  # Glasser et al., 2013 «Important steps that are performed prior thi…»
+motion_correction(method="registration to the single band reference image" [E], tool="FLIRT" [C], reference_scan="single band reference image" [E], interpolation=? [?], similarity_metric=? [?], susceptibility_correction="fieldmap-based correction using FSL Topup" [M])  # «corrected for head motion by registration to the single band reference image»
+distortion_correction(source="susceptibility_fieldmap, gradient_nonlinearity" [E], method="reverse_phase_encoding, gradient_nonlinearity_correction" [E], tool="topup" [E])  # «Briefly, the functional data are: corrected for spatial distortions caused by g…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Briefly, the functional data are: corrected for spatial distortions caused by g…»
+intensity_correction(performed=True [C], target="bias_field" [C], method=? [?])  # Glasser et al., 2013 «Once the T1w and T2w images are in the same…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=2 [E])  # «All of the preceding transforms are concatenated, together with the structural-…»
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(method="fix" [E], training_set="25 HCP subjects (100 rfMRI runs)" [E], threshold=? [?], aggressive=? [?])  # «The overall approach is referred to as FIX (FMRIB's ICA-based X-noisifier)»
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="24 confound timeseries derived from the motion estimation (the 6 rigid-body parameter timeseries, their backwards-looking temporal derivatives, plus all 12 resulting regressors squared" [E], motion_expansion=? [?], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=? [?])  # «As part of this cleanup, we also used 24 confound timeseries derived from the m…»
+temporal_filtering(performed=? [?], filter_type=? [?], pass_type=? [?], relative_to_regression="before" [E], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «First, apply unaggressive temporal highpass filtering as described above. Next,…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=2 [E], space="native_surface" [E], kernel_type=? [?], approach=? [?])  # «Timeseries are resampled from the original FreeSurfer surface mesh onto a lower…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · performed=no 1 · not reported 6 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — tang_2025
+# pipeline: SPM12 (version not stated); resolved: dparsf
+# tools: SPM 12
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(n_nonsteadystate_discarded=10 [E])  # «removing the first 10 volumes to ensure that the subjects adapt to the scanning…»
+slice_time_correction(method=? [?], reference="specific_slice" [E], relative_to_motion_correction="before" [E], interpolation="sinc" [E], interpolation_order=? [?])  # «slice timing: selecting a standard slice collected at a certain time point and…»
+motion_correction(method="head motion correction" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="4th degree B-spline" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Rs-fMRI data were analyzed using the MATLAB-based SPM12 toolbox, following the…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=3 [E])  # «spatial normalization, aligning individual rs-fMRI images to individual 3D-T1WI…»
+nuisance_regression(regressor_list="24 head motion parameters and white matter and cerebrospinal fluid signals" [E], motion_expansion="friston24" [E], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=False [E])  # «detrending covariates, including 24 head motion parameters and white matter and…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.01, 0.1] [E], order=? [?])  # «bandpass filtering (0.01-0.10 Hz)»
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method=? [?], tissue_classes="white_matter, csf" [E])  # «detrending covariates, including 24 head motion parameters and white matter and…»
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «spatial normalization, aligning individual rs-fMRI images to individual 3D-T1WI…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub()  [x]  # «head motion correction, removing subjects with head motion displacement > 3 mm,…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(method=? [?], fwhm_mm=6 [E], space="mni_volume" [E], kernel_type="gaussian" [E], approach=? [?])  # «spatial smoothing, using a 6 mm FWHM isotropic Gaussian kernel for spatial smoo…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · flagged 1 · performed=no 1 · not reported 5 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — vanderwal_2016
+# pipeline: Configurable Pipeline for Analysis of Connectomes (C-PAC) (version not stated); resolved: cpac
+# tools: ANTs (version not stated)
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="motion realignment" [E], tool=afni.3dvolreg [D], reference_scan="median volume" [M], interpolation="Fourier interpolation" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Standard data preprocessing was performed using the Configurable Pipeline for A…»
+spatial_normalization(target_space="MNI" [E], resolution_mm=? [?])  # «Standard data preprocessing was performed using the Configurable Pipeline for A…»
+nuisance_regression(regressor_list="linear and quadratic trends, motion estimates, and COMP-COR with 5 principal components" [E], motion_expansion="motion estimates" [E], tissue_regressors=? [?], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors="none" [E], physio_n_regressors=? [?], detrend="quadratic" [E], method=? [?], filtering_integrated=False [E])  # «Nuisance signal regression removed linear and quadratic trends, motion estimate…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.008, 0.1] [E], order=? [?])  # «Nuisance signal regression removed linear and quadratic trends, motion estimate…»
+nonsteadystate_removal(n_nonsteadystate_discarded=? [?])  # performed: «Each condition started and ended with 10 seconds of fixation; the first 10 seco…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(...)  [?]  # nothing reported for this step
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(variant=? [?], n_components=5 [E], variance_threshold=? [?], mask_source=? [?])  # «Nuisance signal regression removed linear and quadratic trends, motion estimate…»
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing()  [x]  # «Following Finn et al., data were not spatially smoothed prior to averaging with…»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · performed=no 1 · not reported 9 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — viduarre_2017
+# pipeline: deferred to Glasser et al. 40; resolved: hcp_minimal
+# tools: FSL (version not stated)
+# data release: HCP 900-subject public data release
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(performed=? [?], method=see("Glasser et al. 40") [C], parameters=see("Glasser et al. 40") [C], manual_edits=see("Glasser et al. 40") [C])
+segmentation(...)  [?]  # nothing reported for this step
+motion_correction(method="FLIRT" [D], tool=fsl.FLIRT [D], reference_scan="middle volume (single-band reference)" [M], interpolation="spline" [M], similarity_metric=? [?], susceptibility_correction="field map-based correction" [M])  # KB: Glasser, M.F. et al. (2013). The minimal preprocessing pipelines for the Human…
+distortion_correction(performed=? [?], source=see("Glasser et al. 40") [C], method=see("Glasser et al. 40") [C], tool=see("Glasser et al. 40") [C])
+coregistration(performed=? [?], transform=see("Glasser et al. 40") [C], nonlinear_transform_type=see("Glasser et al. 40") [C], method=see("Glasser et al. 40") [C], cost_function=see("Glasser et al. 40") [C], interpolation=see("Glasser et al. 40") [C])
+intensity_correction(performed=? [?], target=see("Glasser et al. 40") [C], method=see("Glasser et al. 40") [C])
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(method="fix" [E], training_set=? [?], threshold=? [?], aggressive=? [?])  # «After structured artifact removal using ICA followed by FMRIB's ICA-based X-noi…»
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression()  [x]  # «We did not use global signal regression.»
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(method="voxel_temporal_zscore" [E])  # «Such time series (size: number of participants × number of scans × number of ti…»
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 7 · performed=no 0 · not reported 7 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — weber_2024
+# pipeline: C-PAC (version not stated); resolved: cpac
+# tools: FreeSurfer 5.1
+# data release: Autism Brain Imaging Data Exchange (ABIDE) first release; ABIDE first ABIDE release
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+slice_time_correction(method=see("C-PAC") [C], reference=see("C-PAC") [C], relative_to_motion_correction=? [?], interpolation=see("C-PAC") [C], interpolation_order=see("C-PAC") [C])  # performed: «The rs-fMRI data were processed as described previously [49] based on the confi…»
+motion_correction(method=see("C-PAC") [C], tool=afni.3dvolreg [M], reference_scan="middle volume" [M], interpolation="trilinear" [M], similarity_metric="normalized correlation" [M], susceptibility_correction=? [?])  # pipeline default; the pipeline lets the user choose
+brain_extraction(method=? [?], parameters=? [?], manual_edits=? [?])  # performed: «The rs-fMRI data were processed as described previously [49] based on the confi…»
+intensity_normalization(...)  [?]  # nothing reported for this step
+nuisance_regression(regressor_list="head motion, as well as white matter and cerebrospinal fluid signals" [E], motion_expansion=? [?], tissue_regressors="white_matter, ventricles" [E], tissue_definition=? [?], tissue_signal_definition=? [?], physio_regressors=? [?], physio_n_regressors=? [?], detrend=? [?], method=? [?], filtering_integrated=False [E])  # «Data were corrected for head motion, as well as white matter and cerebrospinal…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression="after" [E], applied_to=? [?], effective_band_hz=[0.01, 0.1] [E], order=? [?])  # «Data were corrected for head motion, as well as white matter and cerebrospinal…»
+coregistration(transform="rigid" [E], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # «Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 spac…»
+spatial_normalization(target_space="MNI152" [E], resolution_mm=? [?])  # «Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 spac…»
+surface_projection(target_surface="Conte69" [E], surface_registration="spherical registration" [E])  # «We resampled data to the Conte69 surface template [79] via Workbench [78] with…»
+spatial_smoothing(method=? [?], fwhm_mm=5 [E], space="native_surface" [E], kernel_type="gaussian" [E], approach=? [?])  # «We smoothed timeseries using a 5 mm full-width-athalf-maximum Gaussian kernel a…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+segmentation(method="freesurfer_recon_all" [E], tissue_classes="white_matter" [E])  # «T1w data were preprocessed using FreeSurfer v5.1 [75][76][77] (https://surfer.n…»
+distortion_correction(...)  [?]  # nothing reported for this step
+intensity_correction(target="bias_field" [E], method=? [?])  # «T1w data were preprocessed using FreeSurfer v5.1 [75][76][77] (https://surfer.n…»
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(variant=? [?], n_components=? [?], variance_threshold=? [?], mask_source="white matter and cerebrospinal fluid" [E])  # «Data were corrected for head motion, as well as white matter and cerebrospinal…»
+despike(...)  [?]  # nothing reported for this step
+scrub()  [x]  # «Frame censoring was not performed.»
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 9 · partially reported 1 (incl. Software — unconditional violation for the software without an exact version) · performed=no 1 · not reported 3
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — wheaton_2004
+# pipeline: SPM99 (version not stated)
+# tools: SPM 99
+# data release: not stated
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="SPM99" [E], tool=spm.Realign [D], reference_scan="first volume" [M], interpolation="trilinear" [M], similarity_metric="least squares" [M], susceptibility_correction=? [?])  # «Data were analyzed using SPM99. Following motion correction and slice timing ad…»
+slice_time_correction(method=? [?], reference=? [?], relative_to_motion_correction="after" [E], interpolation=? [?], interpolation_order=? [?])  # «Following motion correction and slice timing adjustment, each subject's EPI dat…»
+spatial_normalization(target_space="SPM MNI template" [E], resolution_mm=? [?])  # «Following motion correction and slice timing adjustment, each subject's EPI dat…»
+spatial_smoothing(method=? [?], fwhm_mm=7 [E], space="mni_volume" [E], kernel_type="gaussian" [E], approach=? [?])  # «Following motion correction and slice timing adjustment, each subject's EPI dat…»
+temporal_filtering(filter_type=? [?], pass_type="band_pass" [E], relative_to_regression=? [?], applied_to=? [?], effective_band_hz=? [?], order=? [?])  # «The fMRI time series were band-pass filtered using a high pass of 1/144 Hz and…»
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(...)  [?]  # nothing reported for this step
+distortion_correction(...)  [?]  # nothing reported for this step
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «For each subject, motioncorrected, slice timing adjusted EPI data that were not…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 5 · performed=no 0 · not reported 9 (incl. Software — unconditional violation)
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — yang_2025
+# pipeline: not stated; resolved: hcp_minimal
+# tools: none recorded
+# data release: HCP-YA Release S900; HCP-D Release 2.0
+# order: template order (the paper does not state one; do not assume it)
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+nonsteadystate_removal(...)  [?]  # nothing reported for this step
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(performed=? [?], method=see("HCP-D and HCP-YA datasets") [C], parameters=see("HCP-D and HCP-YA datasets") [C], manual_edits=see("HCP-D and HCP-YA datasets") [C])
+segmentation(performed=? [?], method=see("HCP-D and HCP-YA datasets") [C], tissue_classes=see("HCP-D and HCP-YA datasets") [C])
+motion_correction(method=see("67") [C], tool="FLIRT" [C], reference_scan="middle volume" [M], interpolation="spline" [M], similarity_metric="normalized correlation" [M], susceptibility_correction="field map-based correction" [M])  # 67 «Next is realignment of the timeseries to cor…»
+distortion_correction(performed=? [?], source=see("HCP-D and HCP-YA datasets") [C], method=see("HCP-D and HCP-YA datasets") [C], tool=see("HCP-D and HCP-YA datasets") [C])
+coregistration(performed=? [?], transform=see("HCP-D and HCP-YA datasets") [C], nonlinear_transform_type=see("HCP-D and HCP-YA datasets") [C], method=see("HCP-D and HCP-YA datasets") [C], cost_function=see("HCP-D and HCP-YA datasets") [C], interpolation=see("HCP-D and HCP-YA datasets") [C])
+intensity_correction(performed=? [?], target=see("HCP-D and HCP-YA datasets") [C], method=see("HCP-D and HCP-YA datasets") [C])
+spatial_normalization(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+scrub(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 8 · performed=no 0 · not reported 6
+#   Not assessed by AESPA: 0
+
+
+# Reconstructed preprocessing — yassa_2010
+# pipeline: AFNI (version 2007_03_06_0841)
+# tools: AFNI (version not stated); SPM (version not stated); ANTs (version not stated)
+# data release: Analysis for Functional NeuroImages (AFNI) release 2007_03_06_0841
+# order: the paper's order for the steps it orders; the rest in template order
+# tags: [E] quote-backed · [D] KB default of the resolved tool, with source · [M] model inference, unconfirmed · [C] from a cited paper · [?] not reported · [x] stated not performed
+
+motion_correction(method="3dvolreg" [D], tool=afni.3dvolreg [D], reference_scan="first volume (sub-brick 0)" [D], interpolation="estimate: heptic (7th order polynomial); Fourier in older releases; reslice: the estimation mode (heptic; Fourier in older releases)" [D], similarity_metric="weighted least squares" [D], susceptibility_correction=? [?])  # KB: Cox, R.W. (1996). AFNI: software for analysis and visualization of functional m…
+scrub(method=? [?], criterion="rotation, translation" [E], threshold=3 [E], remediation="censor" [E], interpolation_method=? [?])  # «Acquisitions in which a significant motion event occurred (more than 3 degrees…»
+spatial_normalization(target_space="Talairach" [E], resolution_mm=1 [E])  # «Structural anatomical data were initially registered to standard stereotaxic sp…»
+nonsteadystate_removal(n_nonsteadystate_discarded=? [?])  # performed: «Acquisitions in which a significant motion event occurred (more than 3 degrees…»
+slice_time_correction(...)  [?]  # nothing reported for this step
+brain_extraction(...)  [?]  # nothing reported for this step
+segmentation(method="manual segmentation according to anatomical atlases" [E], tissue_classes=? [?])  # «Subregions of the medial temporal lobe and the hippocampus (bilateral entorhina…»
+distortion_correction(source="susceptibility_fieldmap" [E], method="higher-order shimming" [E], tool=? [?])  # «We used several procedures to correct for fMRI signal distortions in our high-r…»
+coregistration(transform=? [?], nonlinear_transform_type=? [?], method=? [?], cost_function=? [?], interpolation=? [?])  # performed: «Images were first co-registered to correct for within-and across-scan head moti…»
+intensity_correction(...)  [?]  # nothing reported for this step
+surface_projection(...)  [?]  # nothing reported for this step
+ica_denoise(...)  [?]  # nothing reported for this step
+compcor(...)  [?]  # nothing reported for this step
+nuisance_regression(...)  [?]  # nothing reported for this step
+temporal_filtering(...)  [?]  # nothing reported for this step
+despike(...)  [?]  # nothing reported for this step
+intensity_normalization(...)  [?]  # nothing reported for this step
+spatial_smoothing(...)  [?]  # nothing reported for this step
+temporal_standardization(...)  [?]  # nothing reported for this step
+
+# Mandatory rows: 14
+#   Assessed by AESPA: 14  →  addressed 4 · flagged 4 · performed=no 0 · not reported 6
+#   Not assessed by AESPA: 0
