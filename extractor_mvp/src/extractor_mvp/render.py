@@ -857,9 +857,14 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
             f"{conf['package']} → {conf['program']}   [KB default, {how}: "
             f"{_truncate_quote(str(conf.get('source') or ''))}]"
         )
+    elif tool.get("basis") == "program_named":
+        # 2026-11-09 (night 3): the paper names the program for the step
+        q = f" «{_truncate_quote(str(tool['quote']))}»" if tool.get("quote") else ""
+        tool_words = f"{tool['value']} → {tool['program']}   [named in the paper{q}]"
     elif tool.get("from_citation"):
         hop = tool["from_citation"]
-        tool_words = f"{tool['value']}   [from a cited paper: {hop.get('ref')}]"
+        prog = f" → {tool['program']}" if tool.get("program") else ""
+        tool_words = f"{tool['value']}{prog}   [from a cited paper: {hop.get('ref')}]"
     elif tool.get("model_reason"):
         prog = f" → {tool['program']}" if tool.get("program") else ""
         opts = f"; options: {', '.join(tool['options'])}" if tool.get("options") else ""
@@ -873,6 +878,7 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
         f"    resolved pipeline: {pipe_words}",
         f"    realignment tool: {tool_words}",
         f"    resolution basis: {resolution.get('basis') or ''}",
+        *(f"    {c}" for c in tool.get("conflicts") or []),
     ]
     for name, item in (resolution.get("sub_items") or {}).items():
         prov = item.get("provenance")

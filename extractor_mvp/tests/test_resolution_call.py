@@ -39,7 +39,11 @@ def _answer(tool: str = "spm", pipeline: str = "none", **items: SubItem) -> Reso
 
 
 def _record(*tool_ids: str) -> dict[str, Any]:
-    return {"software_mentions": [{"tool_id": t, "display_name": t.upper()} for t in tool_ids]}
+    return {
+        "software_mentions": [
+            {"tool_id": t, "display_name": t.upper(), "use": "preprocessing"} for t in tool_ids
+        ]
+    }
 
 
 def test_a_kb_tool_the_paper_names_is_confirmed_with_its_kb_program() -> None:
@@ -266,7 +270,12 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
         record = {"software_mentions": list(mentions)}
         return interpret(_answer(tool, pipeline=pipeline), record, TEXT)
 
-    spm = {"tool_id": "spm", "display_name": "SPM", "sentence": "Data were processed in SPM12."}
+    spm = {
+        "tool_id": "spm",
+        "display_name": "SPM",
+        "use": "preprocessing",
+        "sentence": "Data were processed in SPM12.",
+    }
     out = run("spm", "none", spm)
     items = out["sub_items"]
     assert items["reference_scan"]["provenance"] == "INFERRED_DEFAULT"
@@ -279,7 +288,13 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
     assert items["susceptibility_correction"]["provenance"] == "UNKNOWN"  # no KB default
     assert out["tool_defaults"]["applied"] is True
     # a stated version the defaults are not documented for
-    old = {"tool_id": "spm", "display_name": "SPM", "version": "99", "sentence": "SPM99 was used."}
+    old = {
+        "tool_id": "spm",
+        "display_name": "SPM",
+        "version": "99",
+        "use": "preprocessing",
+        "sentence": "SPM99 was used.",
+    }
     out = run("spm", "none", old)
     assert out["tool_defaults"]["applied"] is False and "99" in out["tool_defaults"]["reason"]
     assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
@@ -287,7 +302,12 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
     out = run("spm", "conn", spm, {"tool_id": "conn", "display_name": "CONN"})
     assert out["tool_defaults"]["applied"] is False and "conn" in out["tool_defaults"]["reason"]
     # FSL: no reslice default is sourced, so interpolation is the estimate default alone
-    fsl = {"tool_id": "fsl", "display_name": "FSL", "sentence": "FSL was used."}
+    fsl = {
+        "tool_id": "fsl",
+        "display_name": "FSL",
+        "use": "preprocessing",
+        "sentence": "FSL was used.",
+    }
     assert run("fsl", "none", fsl)["sub_items"]["interpolation"]["value"] == "trilinear"
 
 
@@ -427,9 +447,9 @@ def test_a_hop_resolved_citation_that_states_the_tool_is_extracted_from_it() -> 
     ]
     out = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)
     tool = out["realignment_tool"]
-    assert tool["provenance"] == "EXTRACTED" and tool["value"] == "3dvolreg"
+    assert (tool["provenance"], tool["value"], tool["program"]) == ("EXTRACTED", "afni", "3dvolreg")
     assert tool["from_citation"]["ref"] == "[49]"
-    assert "3dvolreg   [from a cited paper: [49]]" in render.to_report(
+    assert "afni → 3dvolreg   [from a cited paper: [49]]" in render.to_report(
         _prep(_method("missing"), None), resolution=out
     )
 
@@ -520,9 +540,10 @@ def test_a_hop_tools_answer_with_a_resolved_quote_is_extracted_from_the_cited_pa
         {"status": "ok", "ref": "34", "fields": {}, "tools": {"motion_correction.method": [answer]}}
     ]
     tool = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)["realignment_tool"]
-    assert (tool["provenance"], tool["value"], tool["from_citation"]["ref"]) == (
+    assert (tool["provenance"], tool["value"], tool["program"], tool["from_citation"]["ref"]) == (
         "EXTRACTED",
-        "AFNI's 3dvolreg",
+        "afni",
+        "3dvolreg",
         "34",
     )
     for key in ("quote_resolved", "tool_in_quote", "tool_shaped"):

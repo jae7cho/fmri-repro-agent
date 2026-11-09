@@ -155,32 +155,40 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
     args: list[_Arg] = []
     tool = resolution.get("realignment_tool") or {}
     conf = tool.get("kb_confirmation")
-    if conf:
+    conflicts = "; ".join(tool.get("conflicts") or [])
+    tail = f"; {conflicts}" if conflicts else ""
+    if tool.get("basis") == "program_named":
+        q = f"«{clip(tool.get('quote'), 60)}»" if tool.get("quote") else "named in the paper"
+        args.append(_Arg("tool", f"{tool['value']}.{tool['program']}", "E", q + tail))
+    elif tool.get("from_citation"):
+        hop = tool["from_citation"]
+        val = (
+            f"{tool['value']}.{tool['program']}" if tool.get("program") else _literal(tool["value"])
+        )
+        args.append(
+            _Arg(
+                "tool",
+                val,
+                "C",
+                f"{clip(str(hop.get('ref')), 30)} «{clip(hop.get('quote'), 45)}»" + tail,
+            )
+        )
+    elif conf:
         args.append(
             _Arg(
                 "tool",
                 f"{conf['package']}.{conf['program']}",
                 "D",
-                f"KB: {clip(conf.get('source'))}",
-            )
-        )
-    elif tool.get("from_citation"):
-        hop = tool["from_citation"]
-        args.append(
-            _Arg(
-                "tool",
-                _literal(tool["value"]),
-                "C",
-                f"{clip(str(hop.get('ref')), 30)} «{clip(hop.get('quote'), 45)}»",
+                f"KB: {clip(conf.get('source'))}" + tail,
             )
         )
     elif tool.get("model_reason"):
         prog = (
             f"{tool['value']}.{tool['program']}" if tool.get("program") else _literal(tool["value"])
         )
-        args.append(_Arg("tool", prog, "M", clip(str(tool["model_reason"]))))
+        args.append(_Arg("tool", prog, "M", clip(str(tool["model_reason"])) + tail))
     elif tool.get("value"):
-        args.append(_Arg("tool", _literal(tool["value"]), "M", "resolution call"))
+        args.append(_Arg("tool", _literal(tool["value"]), "M", "resolution call" + tail))
     else:
         args.append(_Arg("tool", "?", "?"))
     for name in MOTION_SUB_ITEMS:
