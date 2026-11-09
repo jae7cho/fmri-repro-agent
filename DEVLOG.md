@@ -4557,3 +4557,46 @@ No model calls; no paper text in the repository.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `4d403c9`, then this entry.
+
+## 2026-11-09 (afternoon) — the resolution call; value checks for numbers and tool names; one multiplication glyph; the GROBID ref-target hop
+
+The author's five items, in priority order; all five done.
+
+- `9badfb8` — the code for items 1 to 4.
+  - **Item 1, `resolution_call.py`:** one tool-calling call after the software scan and call R.
+    It replaces `motion_inference.infer_motion_method`, which no longer runs in `extract()`.
+    Provenance is decided by code: INFERRED_DEFAULT when the KB confirms the tool, INFERRED_MODEL
+    otherwise ("inferred by the model, unconfirmed"), EXTRACTED for a stated sub-item whose quote
+    resolves. The paper's phrase stays the EXTRACTED method; only a MISSING or DEFERRED method
+    gets the KB-confirmed program on its arm.
+  - **Item 2, `quote_support.py`:** literal matching for numbers and tool names only (the frozen
+    tool-shape test); number words read as digits. The tool-shape test misses names such as
+    FreeSurfer and topup; those go to the checking pass. `rechecks.checker_supplied` renders
+    `[checker-supplied]`.
+  - **Item 3, `span_resolver.py`:** the multiplication sign, U+2AFB and U+03EB fold to x; /C2,
+    U+00C2 and x fold between digits; ligatures fold.
+  - **Item 4 (built by a subagent, checked here):** `grobid_source.py` and `citation_hop.py`
+    follow `<ref target>` to the `<biblStruct>`, in the paper's or the supplement's TEI.
+  - **Tests:** 13 existing tests restated to the new rules. Mutations killed: 10 of 10 on items 1 to
+    3 (one survivor at first, then killed by a new test) and 11 of 11 on item 4.
+- `971b2b5` — **the metered run at `9badfb8` found two problems.**
+  - The model echoed the KB index prefix ("tool spm"), so no answer matched a KB id.
+    `resolution_call.kb_id` now maps answers through `recognize` / `recognize_tool`.
+  - The stored-record re-check now covers the motion method. `scripts/recheck_records.py` added.
+- `31db9f4` — a re-render shows a record's resolution call in place of its stored lookup clause, and
+  `docs/findings/resolution_and_rechecks_v1.md`.
+- **KB:** fmri-defaults-kb `263e461` (CONN in `kb/pipelines`, SPM Realign at all seven GitHub
+  tags) and its DEVLOG `5df094f`; CI pins `5df094f`.
+- **Results (counts only):**
+  - Unverifiable fields across the 45 stored records: 222 before, 150 after the no-model re-check,
+    140 after 10 checker-supplied values. dimitrova_2002 goes from 6 to 0. agtzidis_2020 has 5 of
+    its 7 quote failures restored.
+  - Items 1 and 4 on seven papers at `971b2b5`: $0.0859, 7 calls. Six realignment tools are
+    KB-confirmed; cattarinussi's is unknown. The superseded run at `9badfb8` cost $0.0855.
+  - **Cattarinussi's hop does not reach hagler_2019.** "[3,][4]" is in the supplement and points at
+    its b2 and b3; Hagler 2019 is its b1.
+- Gate: extractor_mvp 919 passed, ruff / format / mypy clean; root 278 passed.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `9badfb8`, `971b2b5`, `31db9f4`, then this entry; fmri-defaults-kb `263e461`, `5df094f`.
