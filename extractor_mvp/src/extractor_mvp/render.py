@@ -845,6 +845,11 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
     tool = resolution.get("realignment_tool") or {}
     pv = pipe.get("value") or "none"
     pipe_words = f"{pv} (KB)" if pipe.get("kb") else (pv if pv == "none" else f"{pv} (free text)")
+    if pipe.get("provenance") == "via data release":
+        # 2026-11-09: resolved through kb/datasets from the release, not from a pipeline name
+        pipe_words += (
+            f", via data release ({', '.join(pipe.get('dataset_ids') or []) or 'release alias'})"
+        )
     conf = tool.get("kb_confirmation")
     if conf:
         how = "named in the paper" if conf.get("basis") == "package_named" else "pipeline default"
@@ -856,6 +861,7 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
         tool_words = f"{tool['value']}   {_UNCONFIRMED}"
     else:
         tool_words = "unknown"
+    defaults = resolution.get("tool_defaults") or {}
     out = [
         f"    resolved pipeline: {pipe_words}",
         f"    realignment tool: {tool_words}",
@@ -867,10 +873,15 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
             out.append(
                 f"    {name} = {item.get('value')}   [stated]  «{_truncate_quote(item['quote'])}»"
             )
+        elif prov == "INFERRED_DEFAULT":
+            src = _truncate_quote(str(item.get("source") or ""))
+            out.append(f"    {name} = {item.get('value')}   [KB default of the tool: {src}]")
         elif prov == "INFERRED_MODEL":
             out.append(f"    {name} = {item.get('value')}   {_UNCONFIRMED}")
         else:
             out.append(f"    {name}: unknown")
+    if defaults.get("applied") is False:
+        out.append(f"    tool defaults not applied: {defaults.get('reason')}")
     return out
 
 

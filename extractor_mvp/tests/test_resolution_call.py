@@ -55,7 +55,7 @@ def test_a_kb_pipeline_whose_default_is_the_tool_confirms_it() -> None:
     out = interpret(_answer("spm", pipeline="conn"), _record("conn"), TEXT)
     conf = out["realignment_tool"]["kb_confirmation"]
     assert conf["basis"] == "pipeline_default" and conf["pipeline"] == "conn"
-    assert out["resolved_pipeline"] == {"value": "conn", "kb": True}
+    assert out["resolved_pipeline"] == {"value": "conn", "kb": True, "provenance": "pipeline name"}
 
 
 @pytest.mark.parametrize(
@@ -88,7 +88,7 @@ def test_sub_items_take_their_provenance_from_the_text() -> None:
             interpolation=SubItem(status="stated", value="sinc", quote="not in the text at all"),
             similarity_metric=SubItem(status="inferred_from_default", value="least squares"),
         ),
-        _record("spm"),
+        _record(),  # the tool is not named in the paper: no KB defaults, the model's answers stand
         TEXT,
     )
     items = out["sub_items"]
@@ -174,7 +174,8 @@ def test_the_report_keeps_the_papers_phrase_and_says_where_each_answer_came_from
     out = render.to_report(prep, resolution=confirmed)
     assert 'method = "realigned"' in out
     assert "realignment tool: spm → Realign   [KB default, named in the paper:" in out
-    assert "reference_scan = mean volume   [inferred by the model, unconfirmed]" in out
+    # SPM is named and no pipeline wraps it: its KB default replaces the model's guess
+    assert "reference_scan = register to mean" in out and "[KB default of the tool:" in out
     model_only = interpret(_answer("an in-house realigner"), _record(), TEXT)
     assert (
         "realignment tool: an in-house realigner   [inferred by the model, unconfirmed]"
@@ -257,3 +258,62 @@ def test_a_stored_lookup_inference_is_not_rendered_beside_a_resolution() -> None
     record["resolution"] = interpret(_answer("spm"), _record("spm"), TEXT)
     out = render_record(record)
     assert "LookupProgram" not in out and "realignment tool: spm → Realign" in out
+
+
+def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documented_version() -> (
+    None
+):
+    def run(tool: str, pipeline: str, *mentions: dict[str, Any]) -> dict[str, Any]:
+        record = {"software_mentions": list(mentions)}
+        return interpret(_answer(tool, pipeline=pipeline), record, TEXT)
+
+    spm = {"tool_id": "spm", "display_name": "SPM", "sentence": "Data were processed in SPM12."}
+    out = run("spm", "none", spm)
+    items = out["sub_items"]
+    assert items["reference_scan"]["provenance"] == "INFERRED_DEFAULT"
+    assert items["reference_scan"]["value"].startswith("register to mean")
+    assert items["interpolation"]["value"] == (
+        "estimate: 2nd degree B-spline; reslice: 4th degree B-spline"
+    )
+    assert items["similarity_metric"]["value"] == "least squares"
+    assert "spm_defaults.m line 105" in items["reference_scan"]["source"]
+    assert items["susceptibility_correction"]["provenance"] == "UNKNOWN"  # no KB default
+    assert out["tool_defaults"]["applied"] is True
+    # a stated version the defaults are not documented for
+    old = {"tool_id": "spm", "display_name": "SPM", "version": "99", "sentence": "SPM99 was used."}
+    out = run("spm", "none", old)
+    assert out["tool_defaults"]["applied"] is False and "99" in out["tool_defaults"]["reason"]
+    assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
+    # wrapped by a KB pipeline: the pipeline may override, so no tool defaults
+    out = run("spm", "conn", spm, {"tool_id": "conn", "display_name": "CONN"})
+    assert out["tool_defaults"]["applied"] is False and "conn" in out["tool_defaults"]["reason"]
+    # FSL: no reslice default is sourced, so interpolation is the estimate default alone
+    fsl = {"tool_id": "fsl", "display_name": "FSL", "sentence": "FSL was used."}
+    assert run("fsl", "none", fsl)["sub_items"]["interpolation"]["value"] == "trilinear"
+
+
+def test_a_data_release_resolves_the_pipeline_and_its_tool() -> None:
+    record = {
+        "software_mentions": [],
+        "data_release": {"releases": [{"dataset": "ABCD Study", "release": "4.0"}]},
+    }
+    out = interpret(_answer("none", pipeline="none"), record, TEXT)
+    pipe = out["resolved_pipeline"]
+    assert (pipe["value"], pipe["provenance"], pipe["dataset_ids"]) == (
+        "abcd_daic",
+        "via data release",
+        ["abcd_4_0"],
+    )
+    tool = out["realignment_tool"]
+    assert tool["value"] == "afni" and tool["kb_confirmation"]["basis"] == "pipeline_default"
+    assert tool["kb_confirmation"]["program"] == "3dvolreg"
+    # a release-specific alias the model gives as the pipeline
+    out = interpret(_answer("none", pipeline="HCP S1200"), {"software_mentions": []}, TEXT)
+    assert out["resolved_pipeline"]["value"] == "hcp_minimal"
+    assert out["resolved_pipeline"]["provenance"] == "via data release"
+    # an unlisted release resolves to nothing
+    record["data_release"]["releases"][0]["release"] = "2.0"
+    assert (
+        interpret(_answer("none", pipeline="none"), record, TEXT)["resolved_pipeline"]["kb"]
+        is False
+    )

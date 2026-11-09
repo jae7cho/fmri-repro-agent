@@ -211,20 +211,122 @@ def _confirm(
     return None
 
 
+def _resolve_pipeline(
+    pipeline: str | None, pipes: dict[str, str], record: dict[str, Any]
+) -> tuple[str | None, str | None, dict[str, Any]]:
+    """``(KB pipeline id, provenance, detail)``. The model's answer first: a KB pipeline name
+    (provenance "pipeline name") or a release-specific dataset alias ("via data release"); then the
+    paper's own data release (call R's dataset and release) through ``recognize_dataset``."""
+    from fmri_defaults_kb import recognize_dataset, recognize_with_provenance
+
+    pid = kb_id(pipeline, pipes, "pipeline")
+    if pid is not None:
+        found = recognize_with_provenance(pipeline or "")
+        prov = found[1] if found is not None and found[0] == pid else "pipeline name"
+        return pid, prov, {}
+    for rel in (record.get("data_release") or {}).get("releases") or []:
+        dataset = str(rel.get("dataset") or "").strip()
+        if not dataset:
+            continue
+        m = recognize_dataset(dataset, rel.get("release"))
+        if m is not None and m.pipeline_id in pipes:
+            detail = {
+                "dataset_ids": list(m.dataset_ids),
+                "pipeline_version": m.pipeline_version,
+                "source": m.source,
+                "from": "data release",
+            }
+            return m.pipeline_id, m.provenance, detail
+    return None, None, {}
+
+
+def _pipeline_package(pipe_id: str | None) -> str | None:
+    """The one package a KB pipeline documents for realignment at every version (stable), or None."""
+    from fmri_defaults_kb.io import load_pipeline_documents
+
+    doc = load_pipeline_documents().get(pipe_id or "") or {}
+    ranges = (doc.get("realignment_tool") or {}).get("ranges") or []
+    packages = {r.get("package") for r in ranges}
+    if ranges and len(packages) == 1 and all(r.get("stable_across_range") for r in ranges):
+        return str(packages.pop())
+    return None
+
+
+def _stated_versions(
+    tool_id: str, mentions: list[dict[str, Any]], tools: dict[str, str]
+) -> set[str]:
+    """The versions the paper states for ``tool_id``: a software mention's version, or the digits
+    written after the package's name in a mention sentence ("SPM12", "SPM 8")."""
+    out: set[str] = set()
+    name = re.escape(tools.get(tool_id, tool_id))
+    for m in mentions:
+        if m.get("tool_id") != tool_id:
+            continue
+        if m.get("version"):
+            out.add(str(m["version"]).strip().lstrip("vV"))
+        for hit in re.finditer(rf"\b{name}\s?(\d+)\b", str(m.get("sentence") or ""), re.IGNORECASE):
+            out.add(hit.group(1))
+    return out
+
+
+#: Sub-item -> the KB default keys that fill it.
+_DEFAULT_KEYS: dict[str, tuple[str, ...]] = {
+    "reference_scan": ("reference_scan",),
+    "interpolation": ("interpolation_estimate", "interpolation_reslice"),
+    "similarity_metric": ("cost_function",),
+}
+
+
+def _tool_defaults(
+    confirmed: dict[str, Any] | None,
+    pipe_id: str | None,
+    mentions: list[dict[str, Any]],
+    tools: dict[str, str],
+) -> tuple[dict[str, Any] | None, str | None]:
+    """The KB defaults that may fill sub-items, or ``(None, why not)``. Only for a tool the paper
+    names with no KB pipeline wrapping it (a pipeline may override its tool's defaults), and not when
+    the paper states a version the defaults are not documented for."""
+    from fmri_defaults_kb import realignment_defaults
+
+    if confirmed is None:
+        return None, "no KB-confirmed realignment tool"
+    if pipe_id is not None:
+        return None, f"the tool runs inside {pipe_id}, whose own settings the KB does not record"
+    if confirmed.get("basis") != "package_named":
+        return None, "the tool is not named in the paper"
+    defaults = realignment_defaults(confirmed["package"])
+    if not defaults:
+        return None, f"the KB records no defaults for {confirmed['package']}"
+    documented = [str(v) for v in defaults.get("version_tokens") or []]
+    stated = _stated_versions(confirmed["package"], mentions, tools)
+    if documented and stated and not stated & set(documented):
+        return None, (
+            f"the paper states version {', '.join(sorted(stated))}; the defaults are documented for "
+            f"{defaults.get('documented_for')}"
+        )
+    return defaults, None
+
+
 def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> dict[str, Any]:
     """The stored record of one resolution call: the model's answers with code-assigned provenance."""
     pipes, tools = kb_index()
     pipeline = _none(answer.resolved_pipeline)
     tool = _none(answer.realignment_tool)
-    pipe_id, tool_id = kb_id(pipeline, pipes, "pipeline"), kb_id(tool, tools, "tool")
     mentions = record.get("software_mentions") or []
+    pipe_id, pipe_prov, pipe_detail = _resolve_pipeline(pipeline, pipes, record)
+    tool_id = kb_id(tool, tools, "tool")
+    if tool_id is None and pipe_id is not None:
+        # a KB pipeline documents its realignment package: the tool follows from the pipeline
+        tool_id = _pipeline_package(pipe_id)
     confirmed = _confirm(tool_id, pipe_id, mentions)
     out: dict[str, Any] = {
         "status": "ok",
         "resolved_pipeline": {
             "value": pipe_id or pipeline,
             "kb": pipe_id is not None,
+            **({"provenance": pipe_prov} if pipe_id else {}),
             **({"as_answered": pipeline} if pipe_id and pipe_id != pipeline else {}),
+            **pipe_detail,
         },
         "realignment_tool": {
             "value": tool_id or tool,
@@ -238,16 +340,38 @@ def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> di
         "basis": answer.basis,
         "sub_items": {},
     }
+    defaults, why_not = _tool_defaults(confirmed, pipe_id, mentions, tools)
+    if why_not is not None:
+        out["tool_defaults"] = {"applied": False, "reason": why_not}
+    else:
+        assert defaults is not None
+        out["tool_defaults"] = {"applied": True, "documented_for": defaults.get("documented_for")}
     for name in SUB_ITEMS:
         item: SubItem = getattr(answer, name)
         entry: dict[str, Any] = {"status": item.status, "value": item.value}
+        kb_parts = [defaults[k] for k in _DEFAULT_KEYS.get(name, ()) if defaults and k in defaults]
         if item.status == "stated" and item.quote and resolve_quote(item.quote, text).span:
             entry.update(provenance="EXTRACTED", quote=item.quote)
+        elif kb_parts:
+            # 2026-11-09 (the author's item 3): the tool's documented default, with its source
+            keys = [k for k in _DEFAULT_KEYS[name] if defaults and k in defaults]
+            value = (
+                kb_parts[0]["value"]
+                if len(kb_parts) == 1
+                else "; ".join(
+                    f"{k.split('_')[-1]}: {defaults[k]['value']}" for k in keys if defaults
+                )
+            )
+            entry.update(
+                provenance="INFERRED_DEFAULT",
+                value=value,
+                source=" | ".join(str(part["source"]) for part in kb_parts),
+                **({"model_said": item.value} if item.value else {}),
+            )
         elif item.status == "stated":
             # a "stated" sub-item whose quote is not in the text is the model's, not the paper's
             entry.update(provenance="INFERRED_MODEL", quote_unresolved=item.quote)
         elif item.status == "inferred_from_default" and item.value:
-            # the KB documents no sub-item defaults: a default the model names is unconfirmed
             entry["provenance"] = "INFERRED_MODEL"
         else:
             entry.update(provenance="UNKNOWN", value=None)

@@ -175,6 +175,11 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
             args.append(
                 _Arg(name, _literal(item.get("value")), "E", f"«{clip(item.get('quote'))}»")
             )
+        elif prov == "INFERRED_DEFAULT":
+            # 2026-11-09: the tool's documented default from the KB, with its source
+            args.append(
+                _Arg(name, _literal(item.get("value")), "D", f"KB: {clip(item.get('source'))}")
+            )
         elif prov == "INFERRED_MODEL":
             args.append(_Arg(name, _literal(item.get("value")), "M", "resolution call"))
         else:

@@ -138,7 +138,12 @@ def _record() -> dict[str, Any]:
                 "value": "spline",
                 "provenance": "INFERRED_MODEL",
             },
-            "similarity_metric": {"status": "unknown", "value": None, "provenance": "UNKNOWN"},
+            "similarity_metric": {
+                "status": "unknown",
+                "value": "least squares",
+                "provenance": "INFERRED_DEFAULT",
+                "source": "a synthetic KB default source",
+            },
             "susceptibility_correction": {
                 "status": "unknown",
                 "value": None,
@@ -185,7 +190,9 @@ def test_every_tag_appears_where_it_belongs() -> None:
     motion = _line(code, "motion_correction")
     assert 'method="Realign" [D]' in motion and "tool=spm.Realign [D]" in motion
     assert 'reference_scan="first" [E]' in motion
-    assert 'interpolation="spline" [M]' in motion and "similarity_metric=? [?]" in motion
+    assert 'interpolation="spline" [M]' in motion
+    assert 'similarity_metric="least squares" [D]' in motion
+    assert "susceptibility_correction=? [?]" in motion
     smooth = _line(code, "spatial_smoothing")
     assert 'kernel_type="gaussian" [E]' in smooth
     assert 'fwhm_mm="6" [M]' in smooth  # checker-supplied
