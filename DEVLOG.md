@@ -4630,3 +4630,38 @@ Commits here: `9badfb8`, `971b2b5`, `31db9f4`, then this entry; fmri-defaults-kb
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `74dc5ca`, `6946523`, then this entry.
+
+## 2026-11-09 (night) — the KB additions wired into the resolution call; a six-paper dry run
+
+The author's KB list ahead of the 45-paper re-run.
+
+- **KB** (fmri-defaults-kb `5b54ee9`, DEVLOG `0fecffb`):
+  - pipelines `abcd_daic` (3dvolreg), `abcd_bids` (MCFLIRT, checked at every DCAN release) and
+    `dparsf` (SPM Realign); `tools/bioimage_suite`;
+  - `kb/datasets`: HCP S900/S1200 (v3.1 as their manuals state it), HCP-D 2.0, ABCD 3.0/4.0/5.0,
+    NDA collection 3165;
+  - realignment defaults for SPM12 r7771, MCFLIRT and 3dvolreg, each from the program's own source
+    file, help text or docs. Anything without a source is omitted (MCFLIRT's reslice default).
+- `ea6c946` — the resolution call:
+  - **Pipeline:** a data release, or a release alias, resolves the pipeline "via data release".
+  - **Tool:** a KB pipeline's documented package confirms the tool when the model names none.
+  - **Sub-items:** the KB tool defaults fill reference scan, interpolation and similarity metric as
+    INFERRED_DEFAULT with their source. This happens only for a tool the paper names that no KB
+    pipeline wraps, and not when the paper states another version (SPM99 against SPM12).
+  - **CI:** pins `0fecffb`.
+  - **Tests:** 930 passed; 7 mutations killed. The 45 stored records re-render byte for byte.
+- **Dry run** (metered, pinned at `ea6c946`, under `caffeinate -i`, written to the scratchpad
+  only): cattarinussi, marek, sims, yang, achuthan and yassa. 6 calls, $0.0774.
+  - All six realignment tools are KB-confirmed:
+    - four as their pipeline's default: cattarinussi via abcd_daic, sims and yang via
+      hcp_minimal, and marek, which resolves to abcd_bids and names FSL;
+    - two named in the paper: achuthan's SPM (inside CONN) and yassa's AFNI.
+  - **Tool defaults:** applied for yassa only (AFNI 3dvolreg: reference, interpolation, cost). The
+    other five run inside a KB pipeline, so the defaults are not applied, and the model's
+    sub-items stay "unconfirmed".
+  - **The data-release path did not fire:** in all six the model's own pipeline answer resolved
+    first, so that path is so far exercised only by tests.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `ea6c946`, then this entry; fmri-defaults-kb `5b54ee9`, `0fecffb`.
