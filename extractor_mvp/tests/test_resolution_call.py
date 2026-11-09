@@ -16,6 +16,8 @@ from extractor_mvp.resolution_call import (
     build_prompt,
     fill_method_arm,
     interpret,
+    kb_id,
+    kb_index,
     run_resolution,
 )
 from test_motion_inference import _method, _method_pf, _prep
@@ -113,7 +115,7 @@ def test_the_prompt_carries_the_inputs_the_kb_index_and_the_coregistration_rule(
     assert "- SPM | version 12 | processing" in p
     assert "Motion method phrase: realigned" in p
     assert "Data release: SYNTH 2.0" in p
-    assert "pipeline conn: CONN" in p and "tool spm:" in p
+    assert "- conn (pipeline): CONN" in p and "- spm (tool):" in p
     assert (
         "TO CORRECT FOR HEAD MOTION" in PROMPT
         and "is motion correction, not coregistration" in PROMPT
@@ -190,3 +192,30 @@ def test_the_extraction_no_longer_runs_the_lookup_inference() -> None:
 
     src = inspect.getsource(extractor)
     assert "infer_motion_method(" not in src
+
+
+@pytest.mark.parametrize(
+    ("answer", "kind", "expected"),
+    [
+        ("tool spm", "tool", "spm"),  # the index line echoed back (the 2026-11-09 metered run)
+        ("pipeline conn", "pipeline", "conn"),
+        ("spm", "tool", "spm"),
+        ("SPM12", "tool", "spm"),  # a name the KB's tool recogniser knows
+        ("Conn toolbox", "pipeline", "conn"),
+        ("an in-house realigner", "tool", None),
+        (None, "tool", None),
+    ],
+)
+def test_an_answer_is_mapped_to_its_kb_id(
+    answer: str | None, kind: str, expected: str | None
+) -> None:
+    pipes, tools = kb_index()
+    assert kb_id(answer, pipes if kind == "pipeline" else tools, kind) == expected
+
+
+def test_an_echoed_index_prefix_is_still_confirmed() -> None:
+    out = interpret(_answer("tool spm", pipeline="pipeline conn"), _record("conn", "spm"), TEXT)
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_DEFAULT" and tool["value"] == "spm"
+    assert tool["as_answered"] == "tool spm"
+    assert out["resolved_pipeline"]["value"] == "conn" and out["resolved_pipeline"]["kb"] is True

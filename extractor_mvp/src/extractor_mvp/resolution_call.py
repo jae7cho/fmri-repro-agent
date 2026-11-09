@@ -27,6 +27,7 @@ INFERRED_DEFAULT, basis ``derived``).
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -34,8 +35,8 @@ from pydantic import BaseModel, Field
 from extractor_mvp.span_resolver import resolve_quote
 
 PROMPT = """You resolve which preprocessing software and pipeline an fMRI paper used, from what the
-extraction already found. Use the KB index below where an entry fits; otherwise answer in free text;
-answer "none" when nothing supports an answer.
+extraction already found. Use the KB index below where an entry fits, answering with the id alone
+(e.g. "spm"); otherwise answer in free text; answer "none" when nothing supports an answer.
 
 Rules:
 - realignment_tool is the program family that ESTIMATED between-volume head motion. A package the
@@ -101,6 +102,27 @@ def kb_index() -> tuple[dict[str, str], dict[str, str]]:
     return pipes, tools
 
 
+def kb_id(value: str | None, ids: dict[str, str], kind: str) -> str | None:
+    """The KB id an answer names, or None. The model may write the id as the index line wrote it
+    ("tool spm"), the id alone, or a name ("SPM12", "Conn toolbox"): the index prefix is dropped,
+    then the id is matched, then the KB's own recogniser (``recognize`` for a pipeline,
+    ``recognize_tool`` for a tool) is asked. Never fuzzy beyond what those recognisers accept."""
+    from fmri_defaults_kb import recognize, recognize_tool
+
+    if value is None:
+        return None
+    v = re.sub(r"^(?:tool|pipeline)\s*[:\-]?\s*", "", value.strip(), flags=re.IGNORECASE).strip()
+    if v in ids:
+        return v
+    if v.lower() in ids:
+        return v.lower()
+    try:
+        found = recognize(v) if kind == "pipeline" else recognize_tool(v)
+    except Exception:  # an unreadable name is no id
+        found = None
+    return found if found in ids else None
+
+
 def _none(s: str | None) -> str | None:
     t = (s or "").strip()
     return None if not t or t.lower() in ("none", "null", "unknown", "n/a") else t
@@ -124,8 +146,8 @@ def _motion_inputs(prep: Any) -> tuple[str, str, str | None]:
 def build_prompt(record: dict[str, Any], prep: Any) -> str:
     pipes, tools = kb_index()
     index = "\n".join(
-        [f"pipeline {k}: {v}" for k, v in sorted(pipes.items())]
-        + [f"tool {k}: {v}" for k, v in sorted(tools.items())]
+        [f"- {k} (pipeline): {v}" for k, v in sorted(pipes.items())]
+        + [f"- {k} (tool): {v}" for k, v in sorted(tools.items())]
     )
     bp = getattr(prep.base_pipeline, "extraction", None)  # NotApplicable carries no extraction
     base = (
@@ -194,17 +216,20 @@ def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> di
     pipes, tools = kb_index()
     pipeline = _none(answer.resolved_pipeline)
     tool = _none(answer.realignment_tool)
+    pipe_id, tool_id = kb_id(pipeline, pipes, "pipeline"), kb_id(tool, tools, "tool")
     mentions = record.get("software_mentions") or []
-    confirmed = _confirm(tool if tool in tools else None, pipeline, mentions)
+    confirmed = _confirm(tool_id, pipe_id, mentions)
     out: dict[str, Any] = {
         "status": "ok",
         "resolved_pipeline": {
-            "value": pipeline,
-            "kb": pipeline in pipes if pipeline else False,
+            "value": pipe_id or pipeline,
+            "kb": pipe_id is not None,
+            **({"as_answered": pipeline} if pipe_id and pipe_id != pipeline else {}),
         },
         "realignment_tool": {
-            "value": tool,
-            "kb": tool in tools if tool else False,
+            "value": tool_id or tool,
+            "kb": tool_id is not None,
+            **({"as_answered": tool} if tool_id and tool_id != tool else {}),
             "provenance": "INFERRED_DEFAULT"
             if confirmed
             else ("INFERRED_MODEL" if tool else "UNKNOWN"),

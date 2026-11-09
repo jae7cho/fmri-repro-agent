@@ -23,7 +23,7 @@ from extractor_mvp.cobidas import _UNVERIFIABLE_GAP_BASES, _gap_base
 from extractor_mvp.span_resolver import normalize_with_offset_map
 
 #: The diagnostic reasons a re-check can change: the quote-support rejection (item 2) and an
-#: unresolved quote (item 3's glyphs). The motion field has its own post-check and is not re-run.
+#: unresolved quote (item 3's glyphs). The motion field is re-run with its own post-check.
 RECHECK_REASONS: tuple[str, ...] = ("value_unsupported_by_quote", "extraction_quote_unresolved")
 CHECKER_SUPPLIED = "checker-supplied"
 
@@ -113,6 +113,13 @@ def _spec_for(dotted: str) -> dict[str, Any] | None:
                 else None,
                 "use_synonym_table": False,
             }
+    from extractor_mvp.extractor import _MOTION_FIELD_SPEC
+
+    if dotted == _MOTION_FIELD_SPEC[2]:
+        # the motion method: the same _process_field call as extract_motion_method, then its own
+        # post-check (motion_post_check) in recheck_record
+        _a, fid, _d, literal_type, t = _MOTION_FIELD_SPEC
+        return {"field_id": fid, "literal_type": literal_type, "t": t, "use_synonym_table": False}
     for _attr, fid, d, literal_type, t in _FIELD_SPECS:
         if d == dotted:
             return {"field_id": fid, "literal_type": literal_type, "t": t}
@@ -137,6 +144,8 @@ def _checker_kept_the_gap(rec: dict[str, Any], dotted: str, pf: Any, spec: dict[
     ``wrong`` with a value of its own."""
     from extractor_mvp.quote_support import coverage_value_supported, step_value_supported
 
+    if dotted == "motion_correction.method":
+        return False  # its own literal post-check passed (motion_post_check), as for a tool name
     value = pf.extraction.value
     text = pf.extraction.spans[0].text
     check = (
@@ -163,6 +172,7 @@ def recheck_record(record: dict[str, Any], text: str) -> tuple[dict[str, Any], d
     from extractor_mvp.batch import _translate_spans
     from extractor_mvp.extraction_result import FieldExtractionResult
     from extractor_mvp.extractor import _process_field
+    from extractor_mvp.motion_guard import motion_post_check
     from extractor_mvp.quote_support import is_operation_word_only
 
     rec = copy.deepcopy(record)
@@ -180,13 +190,16 @@ def recheck_record(record: dict[str, Any], text: str) -> tuple[dict[str, Any], d
         kind = dotted.partition(".")[0]
         spec = _spec_for(dotted) if base in RECHECK_REASONS else None
         step = steps.get(kind)
-        if spec is None or step is None or dotted == "motion_correction.method":
+        if spec is None or step is None:
             if base in RECHECK_REASONS:
                 summary["skipped"].append(dotted)
             kept.append(d)
             continue
         current = step.get(spec["field_id"]) or {}
-        if _unverifiable_reason(current) is None or d.get("raw_value") is None:
+        # any field the extraction left MISSING for this quote reason, whatever its inference arm (a
+        # stored KB-filled arm is what a fresh extraction would not have written once the quote resolves)
+        missing = (current.get("extraction") or {}).get("status") == "MISSING_FROM_PAPER"
+        if not missing or d.get("raw_value") is None:
             kept.append(d)
             continue
         summary["rechecked"].append(dotted)
@@ -199,6 +212,16 @@ def recheck_record(record: dict[str, Any], text: str) -> tuple[dict[str, Any], d
             spec["field_id"], dotted, fe, spec["literal_type"], spec["t"], slice_text, ctx, **kwargs
         )
         value = getattr(pf.extraction, "value", None)
+        if (
+            pf.extraction.status == "EXTRACTED"
+            and dotted == "motion_correction.method"
+            and motion_post_check(fe.value, fe.verbatim_quote) is not None
+        ):
+            # the motion post-check rejects or routes the value: left as stored (the routing
+            # fallback is the extraction's to apply, not a re-check's)
+            summary["unchanged"].append(dotted)
+            kept.append(d)
+            continue
         if pf.extraction.status == "EXTRACTED" and _checker_kept_the_gap(rec, dotted, pf, spec):
             # a value item 2 leaves to the checking pass, which in this stored run judged the field
             # and either endorsed the gap or supplied its own value (checker_supplied): its judgement

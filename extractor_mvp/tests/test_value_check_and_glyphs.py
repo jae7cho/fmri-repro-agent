@@ -317,3 +317,32 @@ def test_the_sign_folds_beside_a_unit_too(glyph: str) -> None:
         "a 3 mm \u00d7 3 mm in-plane grid", f"with a 3 mm {glyph} 3 mm in-plane grid here"
     )
     assert r.span is not None
+
+
+def test_recheck_runs_the_motion_method_through_its_own_post_check() -> None:
+    text = "Methods: volumes of 3 /C2 3 mm were realigned with SPM12 to the first. End."
+    reason = "extraction_quote_unresolved:quote_not_found"
+
+    def rec_for(value: str) -> dict[str, Any]:
+        return {
+            "methods": {"start_offset": 0, "end_offset": len(text)},
+            "preprocessing": {"steps": [{"kind": "motion_correction", "method": _missing(reason)}]},
+            "diagnostics": [
+                {
+                    "field": "motion_correction.method",
+                    "failure_reason": reason,
+                    "raw_value": value,
+                    "raw_quote": "volumes of 3 \u00d7 3 mm were realigned with SPM12 to the first",
+                }
+            ],
+            "verifier": {
+                "status": "ok",
+                "fields": {"motion_correction.method": {"verdict": "supported", "relied_on": "x"}},
+            },
+        }
+
+    new, summary = recheck_record(rec_for("SPM12"), text)
+    assert summary["now_extracted"] == ["motion_correction.method"]
+    assert new["preprocessing"]["steps"][0]["method"]["extraction"]["value"]["verbatim"] == "SPM12"
+    # a value its quote does not hold: the motion post-check rejects it, the field stays as stored
+    assert recheck_record(rec_for("MCFLIRT"), text)[1]["unchanged"] == ["motion_correction.method"]
