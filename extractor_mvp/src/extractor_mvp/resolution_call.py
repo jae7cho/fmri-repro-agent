@@ -176,38 +176,116 @@ def build_prompt(record: dict[str, Any], prep: Any) -> str:
     )
 
 
+CONFIGURABLE_WORDS = "pipeline default; the pipeline lets the user choose"
+
+
 def _confirm(
     tool: str | None, pipeline: str | None, mentions: list[dict[str, Any]]
 ) -> dict[str, Any] | None:
-    """KB confirmation of the realignment tool (module docstring), or None."""
+    """KB confirmation of a tool the paper names for its preprocessing (no KB pipeline), or None."""
     from fmri_defaults_kb import realignment_program
     from fmri_defaults_kb.errors import KbError
-    from fmri_defaults_kb.io import load_pipeline_documents
 
-    if tool is None:
+    if tool is None or pipeline is not None:
         return None
     try:
         rp = realignment_program(tool)
     except KbError:
         return None
-    named = {m.get("tool_id") for m in mentions}
-    if tool in named:
+    if tool in {m.get("tool_id") for m in mentions}:
         return {
             "program": rp.program,
             "package": tool,
             "basis": "package_named",
             "source": rp.source,
         }
-    doc = load_pipeline_documents().get(pipeline or "")
-    ranges = ((doc or {}).get("realignment_tool") or {}).get("ranges") or []
-    if ranges and all(r.get("package") == tool and r.get("stable_across_range") for r in ranges):
-        return {
-            "program": ranges[0]["program"],
-            "package": tool,
-            "basis": "pipeline_default",
-            "pipeline": pipeline,
-            "source": ranges[0]["source"],
-        }
+    return None
+
+
+def _version_key(v: str) -> tuple[int, ...]:
+    return tuple(int(x) for x in re.findall(r"\d+", v))
+
+
+def pipeline_versions(record: dict[str, Any], pid: str, stated: str | None = None) -> list[str]:
+    """The pipeline versions the paper's realignment could have run at: a stated version the KB lists;
+    for one it does not list, the listed releases on either side of it; else the base pipeline's
+    date-inferred version and its alternatives (only when the base pipeline is this pipeline); else
+    every listed version."""
+    from fmri_defaults_kb import recognize
+    from fmri_defaults_kb.io import load_pipeline_documents
+
+    listed = [str(v["version"]) for v in load_pipeline_documents()[pid]["versions"]]
+    bp = (record.get("preprocessing") or {}).get("base_pipeline") or {}
+    ext = bp.get("extraction") or {}
+    value: dict[str, Any] = ext["value"] if isinstance(ext.get("value"), dict) else {}
+    same = bool(value) and recognize(str(value.get("name") or "")) == pid
+    vf = value.get("version") or {}
+    vext, vinf = vf.get("extraction") or {}, vf.get("inference") or {}
+    if stated is None and same and vext.get("status") == "EXTRACTED":
+        stated = str(vext.get("value"))
+    if stated:
+        for v in listed:
+            if v.lstrip("vV") == stated.strip().lstrip("vV"):
+                return [v]
+        key = _version_key(stated)
+        before = [v for v in listed if _version_key(v) < key]
+        after = [v for v in listed if _version_key(v) > key]
+        around = ([max(before, key=_version_key)] if before else []) + (
+            [min(after, key=_version_key)] if after else []
+        )
+        return around or listed
+    if same and vinf.get("status") == "INFERRED_DEFAULT":
+        inferred = [str(vinf.get("value"))] + [
+            str(a.get("value")) for a in vinf.get("alternative_inferences") or []
+        ]
+        return [v for v in inferred if v in listed] or listed
+    return listed
+
+
+def pipeline_realignment(pid: str, versions: list[str]) -> dict[str, Any] | None:
+    """What the KB records for ``pid`` at ``versions``: the programs, whether any is configurable,
+    the options, and whether the ranges are verified; None when the KB records nothing."""
+    from fmri_defaults_kb import get_realignment_tool
+    from fmri_defaults_kb.errors import KbError
+
+    found = []
+    for v in versions:
+        try:
+            rt = get_realignment_tool(pid, v)
+        except KbError:
+            rt = None
+        if rt is not None:
+            found.append(rt)
+    if not found:
+        return None
+    return {
+        "programs": sorted({(r.program, r.package) for r in found}),
+        "configurable": any(r.configurable for r in found),
+        "options": sorted({o for r in found for o in r.options}),
+        "verified": all(r.stable_across_range for r in found) or len(versions) == 1,
+        "source": found[0].source,
+        "choice_source": next((r.choice_source for r in found if r.configurable), None),
+        "versions": versions,
+    }
+
+
+def _hop_tool(record: dict[str, Any]) -> dict[str, Any] | None:
+    """A realignment tool a citation hop read in a cited paper (motion_correction.method EXTRACTED
+    there with a tool-shaped value): EXTRACTED [C] from that source."""
+    from extractor_mvp.motion_guard import is_tool_shaped_frozen
+
+    for hop in record.get("second_hop") or []:
+        if hop.get("status") != "ok":
+            continue
+        pf = (hop.get("fields") or {}).get("motion_correction.method") or {}
+        ext = pf.get("extraction") or {}
+        if ext.get("status") != "EXTRACTED":
+            continue
+        value = ext.get("value")
+        verbatim = value.get("verbatim") if isinstance(value, dict) else value
+        if verbatim and is_tool_shaped_frozen(str(verbatim)):
+            spans = ext.get("spans") or [{}]
+            return {"value": str(verbatim), "ref": hop.get("ref"), "quote": spans[0].get("text")}
     return None
 
 
@@ -238,18 +316,6 @@ def _resolve_pipeline(
             }
             return m.pipeline_id, m.provenance, detail
     return None, None, {}
-
-
-def _pipeline_package(pipe_id: str | None) -> str | None:
-    """The one package a KB pipeline documents for realignment at every version (stable), or None."""
-    from fmri_defaults_kb.io import load_pipeline_documents
-
-    doc = load_pipeline_documents().get(pipe_id or "") or {}
-    ranges = (doc.get("realignment_tool") or {}).get("ranges") or []
-    packages = {r.get("package") for r in ranges}
-    if ranges and len(packages) == 1 and all(r.get("stable_across_range") for r in ranges):
-        return str(packages.pop())
-    return None
 
 
 def _stated_versions(
@@ -315,10 +381,74 @@ def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> di
     mentions = record.get("software_mentions") or []
     pipe_id, pipe_prov, pipe_detail = _resolve_pipeline(pipeline, pipes, record)
     tool_id = kb_id(tool, tools, "tool")
-    if tool_id is None and pipe_id is not None:
-        # a KB pipeline documents its realignment package: the tool follows from the pipeline
-        tool_id = _pipeline_package(pipe_id)
     confirmed = _confirm(tool_id, pipe_id, mentions)
+    tool_entry: dict[str, Any] = {
+        "value": tool_id or tool,
+        "kb": tool_id is not None,
+        **({"as_answered": tool} if tool_id and tool_id != tool else {}),
+        "provenance": "INFERRED_DEFAULT"
+        if confirmed
+        else ("INFERRED_MODEL" if tool else "UNKNOWN"),
+        **({"kb_confirmation": confirmed} if confirmed else {}),
+    }
+    hop = _hop_tool(record)
+    if hop is not None:
+        # a hop-resolved citation states the tool: the cited paper's words, [C]
+        tool_entry = {
+            "value": hop["value"],
+            "kb": False,
+            "provenance": "EXTRACTED",
+            "from_citation": hop,
+        }
+        confirmed = None
+    elif pipe_id is not None:
+        pr = pipeline_realignment(
+            pipe_id, pipeline_versions(record, pipe_id, pipe_detail.get("pipeline_version"))
+        )
+        if pr is not None:
+            (program, package), n = pr["programs"][0], len(pr["programs"])
+            base = {"kb": True, "pipeline": pipe_id, "versions": pr["versions"]}
+            if n > 1:
+                tool_entry = {
+                    **base,
+                    "value": ", ".join(f"{pk}.{pg}" for pg, pk in pr["programs"]),
+                    "provenance": "INFERRED_MODEL",
+                    "model_reason": "version-dependent: the pipeline's program differs across the versions that apply",
+                }
+            elif pr["configurable"]:
+                # 2026-11-09 (the author's rule): a configurable pipeline's default is never INFERRED_DEFAULT
+                tool_entry = {
+                    **base,
+                    "value": package,
+                    "program": program,
+                    "provenance": "INFERRED_MODEL",
+                    "model_reason": CONFIGURABLE_WORDS,
+                    "options": pr["options"],
+                    "choice_source": pr["choice_source"],
+                }
+            elif not pr["verified"]:
+                tool_entry = {
+                    **base,
+                    "value": package,
+                    "program": program,
+                    "provenance": "INFERRED_MODEL",
+                    "model_reason": "pipeline default, not verified across the versions that apply",
+                }
+            else:
+                confirmed = {
+                    "program": program,
+                    "package": package,
+                    "basis": "pipeline_default",
+                    "pipeline": pipe_id,
+                    "source": pr["source"],
+                }
+                tool_entry = {
+                    **base,
+                    "value": package,
+                    **({"as_answered": tool} if tool and tool != package else {}),
+                    "provenance": "INFERRED_DEFAULT",
+                    "kb_confirmation": confirmed,
+                }
     out: dict[str, Any] = {
         "status": "ok",
         "resolved_pipeline": {
@@ -328,15 +458,7 @@ def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> di
             **({"as_answered": pipeline} if pipe_id and pipe_id != pipeline else {}),
             **pipe_detail,
         },
-        "realignment_tool": {
-            "value": tool_id or tool,
-            "kb": tool_id is not None,
-            **({"as_answered": tool} if tool_id and tool_id != tool else {}),
-            "provenance": "INFERRED_DEFAULT"
-            if confirmed
-            else ("INFERRED_MODEL" if tool else "UNKNOWN"),
-            **({"kb_confirmation": confirmed} if confirmed else {}),
-        },
+        "realignment_tool": tool_entry,
         "basis": answer.basis,
         "sub_items": {},
     }

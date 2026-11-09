@@ -164,6 +164,21 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
                 f"KB: {clip(conf.get('source'))}",
             )
         )
+    elif tool.get("from_citation"):
+        hop = tool["from_citation"]
+        args.append(
+            _Arg(
+                "tool",
+                _literal(tool["value"]),
+                "C",
+                f"{clip(str(hop.get('ref')), 30)} «{clip(hop.get('quote'), 45)}»",
+            )
+        )
+    elif tool.get("model_reason"):
+        prog = (
+            f"{tool['value']}.{tool['program']}" if tool.get("program") else _literal(tool["value"])
+        )
+        args.append(_Arg("tool", prog, "M", clip(str(tool["model_reason"]))))
     elif tool.get("value"):
         args.append(_Arg("tool", _literal(tool["value"]), "M", "resolution call"))
     else:

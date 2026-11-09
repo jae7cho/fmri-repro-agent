@@ -62,7 +62,6 @@ def test_a_kb_pipeline_whose_default_is_the_tool_confirms_it() -> None:
     ("tool", "pipeline", "named"),
     [
         ("spm", "none", ()),  # a KB tool neither named nor any pipeline's default
-        ("fsl", "conn", ()),  # a pipeline whose default is another tool
         ("an in-house realigner", "none", ()),  # free text
     ],
 )
@@ -317,3 +316,150 @@ def test_a_data_release_resolves_the_pipeline_and_its_tool() -> None:
         interpret(_answer("none", pipeline="none"), record, TEXT)["resolved_pipeline"]["kb"]
         is False
     )
+
+
+def test_a_kb_pipeline_governs_a_tool_the_model_names_against_it() -> None:
+    """2026-11-09: CONN documents SPM at every version and offers no choice; a model answer of "fsl"
+    is kept as as_answered and the KB's program stands."""
+    out = interpret(_answer("fsl", pipeline="conn"), _record(), TEXT)
+    tool = out["realignment_tool"]
+    assert (tool["value"], tool["provenance"], tool["as_answered"]) == (
+        "spm",
+        "INFERRED_DEFAULT",
+        "fsl",
+    )
+
+
+def _cpac_record(stated: str | None = None, inferred: tuple[str, ...] = ()) -> dict[str, Any]:
+    version: dict[str, Any] = {
+        "extraction": {"status": "EXTRACTED", "value": stated}
+        if stated
+        else {"status": "MISSING_FROM_PAPER"},
+        "inference": {"status": "NOT_APPLICABLE"}
+        if stated
+        else (
+            {
+                "status": "INFERRED_DEFAULT",
+                "value": inferred[0],
+                "alternative_inferences": [{"value": v} for v in inferred[1:]],
+            }
+            if inferred
+            else {"status": "LEFT_MISSING"}
+        ),
+    }
+    return {
+        "software_mentions": [],
+        "preprocessing": {
+            "base_pipeline": {
+                "extraction": {
+                    "status": "EXTRACTED",
+                    "value": {"name": "C-PAC", "version": version},
+                }
+            }
+        },
+    }
+
+
+def test_a_configurable_pipelines_default_is_the_models_never_the_kbs() -> None:
+    out = interpret(
+        _answer("none", pipeline="C-PAC"), _cpac_record(inferred=("1.8.7", "1.8.6")), TEXT
+    )
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_MODEL"
+    assert tool["model_reason"] == "pipeline default; the pipeline lets the user choose"
+    assert (tool["value"], tool["program"], tool["options"]) == (
+        "afni",
+        "3dvolreg",
+        ["3dvolreg", "mcflirt"],
+    )
+    assert "kb_confirmation" not in tool
+    # the method arm is never filled from it
+    pf = _method_pf(fill_method_arm(_prep(_method("missing"), None), out))
+    assert pf.inference.status == "LEFT_MISSING"
+    rendered = render.to_report(_prep(_method("missing"), None), resolution=out)
+    assert (
+        "afni → 3dvolreg   [pipeline default; the pipeline lets the user choose; options: 3dvolreg, mcflirt]"
+        in rendered
+    )
+
+
+@pytest.mark.parametrize(
+    ("record", "versions"),
+    [
+        (_cpac_record(inferred=("0.3.9.1", "0.3.9")), ["0.3.9.1", "0.3.9"]),
+        (_cpac_record(stated="0.4.0"), ["0.3.9.1", "1.0.0"]),  # never released: the two around it
+        (_cpac_record(stated="1.0.0"), ["1.0.0"]),
+    ],
+)
+def test_a_version_that_offers_no_choice_is_kb_confirmed(
+    record: dict[str, Any], versions: list[str]
+) -> None:
+    out = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_DEFAULT" and tool["versions"] == versions
+    assert tool["kb_confirmation"]["program"] == "3dvolreg"
+
+
+def test_programs_that_differ_across_the_versions_are_the_models() -> None:
+    out = interpret(_answer("none", pipeline="HCP Pipelines"), {"software_mentions": []}, TEXT)
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_MODEL" and tool["model_reason"].startswith(
+        "version-dependent"
+    )
+
+
+def test_a_hop_resolved_citation_that_states_the_tool_is_extracted_from_it() -> None:
+    record = _cpac_record(inferred=("1.8.7",))
+    record["second_hop"] = [
+        {
+            "status": "ok",
+            "ref": "[49]",
+            "fields": {
+                "motion_correction.method": {
+                    "extraction": {
+                        "status": "EXTRACTED",
+                        "value": {"verbatim": "3dvolreg"},
+                        "spans": [{"text": "a synthetic cited sentence"}],
+                    }
+                }
+            },
+        }
+    ]
+    out = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "EXTRACTED" and tool["value"] == "3dvolreg"
+    assert tool["from_citation"]["ref"] == "[49]"
+    assert "3dvolreg   [from a cited paper: [49]]" in render.to_report(
+        _prep(_method("missing"), None), resolution=out
+    )
+
+
+def test_a_default_not_verified_across_the_versions_is_the_models(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import fmri_defaults_kb
+
+    from extractor_mvp import resolution_call
+
+    def fake(pid: str, version: str, **_: Any) -> Any:
+        return SimpleNamespace(
+            program="3dvolreg",
+            package="afni",
+            stable_across_range=False,
+            configurable=False,
+            options=(),
+            source="synthetic",
+            choice_source="synthetic",
+        )
+
+    monkeypatch.setattr(fmri_defaults_kb, "get_realignment_tool", fake)
+    pr = resolution_call.pipeline_realignment("cpac", ["0.3.9", "0.3.9.1"])
+    assert pr is not None and pr["verified"] is False
+    assert (
+        resolution_call.pipeline_realignment("cpac", ["0.3.9.1"])["verified"] is True
+    )  # one version
+    out = interpret(
+        _answer("none", pipeline="C-PAC"), _cpac_record(inferred=("0.3.9.1", "0.3.9")), TEXT
+    )
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_MODEL" and "not verified" in tool["model_reason"]

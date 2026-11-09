@@ -857,6 +857,13 @@ def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
             f"{conf['package']} → {conf['program']}   [KB default, {how}: "
             f"{_truncate_quote(str(conf.get('source') or ''))}]"
         )
+    elif tool.get("from_citation"):
+        hop = tool["from_citation"]
+        tool_words = f"{tool['value']}   [from a cited paper: {hop.get('ref')}]"
+    elif tool.get("model_reason"):
+        prog = f" → {tool['program']}" if tool.get("program") else ""
+        opts = f"; options: {', '.join(tool['options'])}" if tool.get("options") else ""
+        tool_words = f"{tool['value']}{prog}   [{tool['model_reason']}{opts}]"
     elif tool.get("value"):
         tool_words = f"{tool['value']}   {_UNCONFIRMED}"
     else:

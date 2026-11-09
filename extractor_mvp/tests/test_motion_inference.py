@@ -210,8 +210,12 @@ def test_described_only_gets_the_same_inference_as_a_diagnostic_and_the_field_is
     assert _method_pf(prep).model_dump() == before  # F1: the contract holds; nothing on the field
 
 
-def test_a_date_inferred_version_across_an_unstable_range_gives_no_pipeline_basis() -> None:
-    prep = _prep(_method("missing"), "C-PAC", _version("date_inferred", "1.0.0", ("0.3.9.1",)))
+def test_a_date_inferred_version_across_two_programs_gives_no_pipeline_basis() -> None:
+    # Until 2026-11-09 this used C-PAC across its unverified 0.3.x range; that range was verified
+    # tag by tag on 2026-11-09. HCP Pipelines now give the case: FLIRT at v3.4.0, MCFLIRT at v4.1.3.
+    prep = _prep(
+        _method("missing"), "HCP Pipelines", _version("date_inferred", "v4.1.3", ("v3.4.0",))
+    )
     prep, rec = infer_motion_method(prep)
     assert rec.path == "none" and "no recognized pipeline with a usable version" in rec.reason
     assert _method_pf(prep).inference.status == "LEFT_MISSING"

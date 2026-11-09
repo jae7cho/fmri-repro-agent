@@ -294,3 +294,22 @@ def test_an_empty_value_renders_as_none_not_as_a_string() -> None:
     assert _literal(None) == "none"
     assert _literal(SimpleNamespace(verbatim="None")) == "none"
     assert _literal(SimpleNamespace(verbatim="fsl_fast")) == '"fsl_fast"'
+
+
+def test_a_configurable_default_is_m_and_a_cited_tool_is_c() -> None:
+    rec = _record()
+    rec["resolution"]["realignment_tool"] = {
+        "value": "afni",
+        "program": "3dvolreg",
+        "provenance": "INFERRED_MODEL",
+        "model_reason": "pipeline default; the pipeline lets the user choose",
+    }
+    code = render_pseudocode(rec)
+    assert code is not None and "tool=afni.3dvolreg [M]" in _line(code, "motion_correction")
+    rec["resolution"]["realignment_tool"] = {
+        "value": "3dvolreg",
+        "provenance": "EXTRACTED",
+        "from_citation": {"ref": "[49]", "quote": "a synthetic cited sentence"},
+    }
+    code = render_pseudocode(rec)
+    assert code is not None and 'tool="3dvolreg" [C]' in _line(code, "motion_correction")
