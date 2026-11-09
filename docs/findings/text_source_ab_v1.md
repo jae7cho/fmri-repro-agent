@@ -89,8 +89,20 @@ least one does.
 Present in both: yes for 7 rows (braun smoothing, gordon motion, mueller filtering, poldrack
 smoothing, power smoothing, vanderwal motion, weber motion); no for 5 (cole motion, gordon filtering,
 liu_2005 smoothing, filtering and motion). cole's GROBID quote does not resolve on pypdf text.
-gordon's filtering quotes resolve only in the other run's text, in both directions. liu_2005's
-smoothing quote resolves on pypdf only; its filtering and motion quotes resolve in neither text.
+liu_2005's smoothing quote resolves on pypdf only; its filtering and motion quotes resolve in
+neither text.
+
+gordon_2014 filtering, restated (2026-11-08):
+
+| record | its quotes | resolve in its own text | resolve in the other text |
+|---|---|---|---|
+| pypdf run | 4 (unresolved-quote diagnostics) | no (0 of 4) | yes (4 of 4, on GROBID text) |
+| GROBID run | 3 (span text) | yes (3 of 3) | no (0 of 3, on pypdf text) |
+
+The pypdf run's quotes are the sentences as the paper prints them; they resolve on GROBID text, as
+the earlier gates found, and not on pypdf's own text, which is why that record is `unverifiable`.
+The GROBID run's spans are GROBID's text of the same sentences, and pypdf's text does not hold them
+in a form the resolver matches.
 
 ### liu_2005
 
@@ -153,3 +165,66 @@ smoothing quote resolves on pypdf only; its filtering and motion quotes resolve 
 - pypdf control: **$12.1298** metered, 193 calls, 3,232.2 s.
 - GROBID (`grobid_rerun_v1.md`): **$11.1419** metered, 186 calls, 3,227.5 s; the attempts
   interrupted while the machine slept on 2026-11-06 are not in this figure.
+
+## 5. After the plausibility check (`45a1878`)
+
+GROBID's flattened body under 25% of pypdf's text for the same PDF, or under 5,000 characters, now
+falls back to pypdf with `text_source_fallback_reason: grobid_short_output`. Of the 19 corpus PDFs
+only liu_2005 trips it (3,196 against 50,672).
+
+**Why liu_2005's output was short.** The GROBID container log for the request (2026-11-06
+20:37:06Z, HTTP 200 in 1,585 ms, 387,654 bytes uploaded for the 387,424-byte, 9-page PDF) has no
+pdfalto warning or error. The returned TEI holds 15,768 characters in all (header 2,916; body 7,384,
+of which 4,720 in 5 figures; back 5,468, with 32 reference entries), against pypdf's 50,672: most of
+the text layer is absent from the TEI, not filed elsewhere in it. The full image's TEI flattens to
+3,082 characters, so CRF is not the cause.
+
+**liu_2005 re-run** alone through aespa-report with the default text source, from a worktree pinned
+at `45a1878`: the fallback fired (`text_source: pypdf`, reason `grobid_short_output`, 3,196 and
+50,672 characters recorded); `methods_not_found`; 8 calls, $0.7371, 154.6 s. Scorer states:
+smoothing match, filtering no match, motion no match (the pypdf control's liu_2005 record: the same
+three).
+
+**Side by side, re-rendered.** `results/corpus_grobid_v2` = corpus_grobid_v1's 18 other records
+and the re-run liu_2005. Columns as in section 2; liu_2005's motion cell shows match / no match
+only.
+
+| paper | status (pypdf / GROBID) | unverifiable D.3 rows | fields left missing, quote unresolved | `quote_not_found` diagnostics | smoothing state | filtering state | motion method state |
+|---|---|---|---|---|---|---|---|
+| agtzidis_2020 | success / success | 0 / 3 | 0 / 4 | 0 / 6 | agree / agree | agree / agree | label named_tool; unverifiable (disagree) / unverifiable (disagree) |
+| binder_1999 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | disagree / disagree | agree / agree | label described_only; undecided (disagree) / undecided (disagree) |
+| braun_2015 | success / success | 0 / 1 | 0 / 0 | 0 / 0 | agree / disagree | disagree / disagree | label deferred; deferred (agree) / deferred (agree) |
+| chen_2015 | success / success | 0 / 0 | 0 / 0 | 1 / 0 | not separable, not separable / not separable, not separable | not separable, not separable / not separable, not separable | label deferred; described_only (disagree) / described_only (disagree) |
+| ciric_2017 | success / success | 0 / 0 | 1 / 1 | 1 / 1 | not separable, not separable / not separable, not separable | disagree / disagree | label named_tool; named_tool (agree) / named_tool (agree) |
+| cole_2013 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | agree / agree | disagree / disagree | label named_tool; named_tool (agree) / described_only (disagree) |
+| derosa_2025 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | agree / agree | agree / agree | label named_tool; named_tool (agree) / named_tool (agree) |
+| gordon_2014 | success / success | 0 / 0 | 6 / 0 | 7 / 0 | agree / agree | disagree / agree | label named_tool; described_only (disagree) / named_tool (agree) |
+| liu_2005 (held out) (fallback: pypdf, grobid_short_output) | methods_not_found / methods_not_found | 7 / 7 | 11 / 12 | 15 / 16 | agree / agree | disagree / disagree | disagree / disagree |
+| liu_2013 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | agree / agree | agree / agree | label deferred; described_only (disagree) / described_only (disagree) |
+| mueller_2021 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | agree / agree | disagree / agree | label named_tool; described_only (disagree) / described_only (disagree) |
+| oconnor_2017 | success / success | 0 / 1 | 0 / 1 | 0 / 1 | agree / agree | agree / agree | label deferred; described_only (disagree) / described_only (disagree) |
+| poldrack_2015 | success / success | 3 / 0 | 13 / 3 | 16 / 3 | disagree / agree | agree / agree | label deferred; described_only (disagree) / described_only (disagree) |
+| power_2014 | success / success | 3 / 1 | 8 / 3 | 9 / 3 | disagree / agree | not separable, not separable / not separable, not separable | label described_only; described_only (agree) / described_only (agree) |
+| tang_2025 (held out) | success / success | 0 / 0 | 1 / 2 | 0 / 1 | not separable, not separable / not separable, not separable | not separable, not separable / not separable, not separable | label named_tool; described_only (disagree) / described_only (disagree) |
+| vanderwal_2016 | success / success | 1 / 0 | 1 / 0 | 1 / 0 | agree / agree | agree / agree | label deferred; deferred (agree) / described_only (disagree) |
+| viduarre_2017 | success / success | 0 / 0 | 0 / 0 | 0 / 0 | disagree / disagree | disagree / disagree | label deferred; deferred (agree) / deferred (agree) |
+| weber_2024 | success / success | 1 / 1 | 0 / 0 | 0 / 0 | agree / agree | agree / agree | label deferred; described_only (disagree) / deferred (agree) |
+| wheaton_2004 (held out) | success / success | 0 / 0 | 0 / 0 | 0 / 0 | agree / agree | agree / agree | label named_tool; named_tool (agree) / named_tool (agree) |
+
+| | pypdf (corpus_pypdf_v1) | GROBID (corpus_grobid_v2) |
+|---|---|---|
+| unverifiable D.3 rows | 15 | 14 |
+| fields left missing, quote unresolved | 41 | 26 |
+| `quote_not_found` diagnostics | 50 | 31 |
+| smoothing rows: agree / disagree / not separable | 12 / 4 / 6 | 13 / 3 / 6 |
+| filtering rows: agree / disagree / not separable | 9 / 7 / 6 | 11 / 5 / 6 |
+| motion method: agree / disagree | 8 / 11 | 8 / 11 |
+| state agreements, all three scorers | 29 | 32 |
+
+liu_2005 contributes to the GROBID column now (unverifiable D.3 rows 0 -> 7, fields left missing for
+an unresolved quote 0 -> 12, `quote_not_found` 0 -> 16, smoothing disagree -> agree). Against
+section 2's GROBID column: unverifiable 7 -> 14, quote unresolved 14 -> 26, `quote_not_found`
+15 -> 31, state agreements 31 -> 32.
+
+Cost: the re-run 8, $0.7371, 154.6 s (liu_2005's corpus_grobid_v1 record:
+7, $0.3649, 98.7 s). corpus_grobid_v2 metered totals: 187, $11.5141, 3283.4 s.
