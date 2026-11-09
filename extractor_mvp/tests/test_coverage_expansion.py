@@ -346,13 +346,14 @@ def test_performed_is_never_deferred_but_a_parameter_may_be() -> None:
     assert rule in SPATIAL_PROMPT and rule in TEMPORAL_VOLUME_PROMPT
 
 
-def test_a_performed_quote_must_name_its_step() -> None:
-    """Item 2: the boolean's quote must carry a phrase from the step's frozen list; chen's
-    slice-timing ``performed`` quoting the de-spiking sentence is the observed case."""
+def test_a_performed_boolean_is_left_to_the_checking_pass() -> None:
+    """Until 2026-11-09 the boolean's quote had to carry a phrase from the step's frozen list (chen's
+    slice-timing ``performed`` quoting the de-spiking sentence). Since the author's item 2 a boolean
+    is judged by the checking pass only: the value is kept, whatever sentence it quotes."""
     ok = _run(spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["smooth"])))
     assert _field(ok, "spatial_smoothing", "performed").extraction.value is True
     bad = _run(spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["bet"])))
-    _unverifiable(bad, "spatial_smoothing", "spatial_smoothing", "performed")
+    assert _field(bad, "spatial_smoothing", "performed").extraction.value is True  # item 2
     # a stated negative is checked the same way: the sentence must be about the step
     neg = _run(spatial=SpatialExtraction(smoothing_performed=_ex("no", _S["no_smooth"])))
     assert _field(neg, "spatial_smoothing", "performed").extraction.value is False
@@ -413,9 +414,10 @@ def _unverifiable(prep: Preprocessing, row_id: str, kind: str, field: str) -> No
     assert f"- {rc.row.d3_aspect}  (no fields assessed by current extractor)" not in out
 
 
-def test_a_term_whose_alias_is_not_in_the_quote_is_unverifiable() -> None:
+def test_a_categorical_term_not_in_its_quote_is_kept_for_the_checking_pass() -> None:
+    """2026-11-09 (the author's item 2): a categorical, list or boolean value is judged by the checking pass only."""
     prep = _run(spatial=SpatialExtraction(smoothing_kernel_type=_ex("gaussian", _S["bet"])))
-    _unverifiable(prep, "spatial_smoothing", "spatial_smoothing", "kernel_type")
+    assert _field(prep, "spatial_smoothing", "kernel_type").extraction.status == "EXTRACTED"
 
 
 def test_a_number_not_in_the_quote_is_unverifiable_digit_exact() -> None:
@@ -465,7 +467,7 @@ def test_a_term_the_table_does_not_know_stays_extracted_with_the_papers_words() 
     assert _field(prep3, "coregistration", "nonlinear_transform_type").extraction.value == "FLIRT"
 
 
-def test_a_list_field_resolves_every_item_and_every_item_must_be_in_the_quote() -> None:
+def test_a_list_field_resolves_every_item_and_is_left_to_the_checking_pass() -> None:
     prep = _run(
         temporal=TemporalVolumeExtraction(
             nuisance_tissue_regressors=_ex("white matter, CSF", _S["nuis"])
@@ -482,9 +484,8 @@ def test_a_list_field_resolves_every_item_and_every_item_must_be_in_the_quote() 
             nuisance_tissue_regressors=_ex("white matter, global signal", _S["nuis"])
         )
     )
-    _unverifiable(
-        bad, "artifact_structured_noise_removal", "nuisance_regression", "tissue_regressors"
-    )
+    # 2026-11-09 (the author's item 2): a categorical, list or boolean value is judged by the checking pass only
+    assert _field(bad, "nuisance_regression", "tissue_regressors").extraction.status == "EXTRACTED"
 
 
 def test_an_integer_field_takes_the_leading_number_and_refuses_a_fraction() -> None:
@@ -537,7 +538,8 @@ def test_the_header_partition_sums_to_fourteen_on_an_expanded_record() -> None:
             brain_extraction_performed=_ex("yes", _S["bet"]),
             smoothing_kernel_type=_ex("gaussian", _S["bet"]),  # overridden: performed is no
         ),
-        temporal=TemporalVolumeExtraction(stc_interpolation=_ex("sinc", _S["t1"])),  # unverifiable
+        # unverifiable: a number its quote does not hold (item 2 keeps the literal check for numbers)
+        temporal=TemporalVolumeExtraction(stc_interpolation_order=_ex("7", _S["t1"])),
     )
     out = render.to_cobidas_coverage(prep)
     assessed = int(re.search(r"Assessed by AESPA: (\d+)", out).group(1))
@@ -639,9 +641,8 @@ def test_a_listed_field_holds_every_source_the_paper_states() -> None:
             ),
         ),
     )
-    assert (
-        _field(bad, "distortion_correction", "source").inference.reason
-        == "value_unsupported_by_quote"
+    assert (  # item 2 (2026-11-09): a list of terms is judged by the checking pass only
+        _field(bad, "distortion_correction", "source").extraction.status == "EXTRACTED"
     )
 
 
@@ -715,7 +716,8 @@ def test_rows_with_sibling_kinds_name_the_kind_on_each_field() -> None:
             ica_performed=_ex("yes", _S["ica"]),
             compcor_performed=_ex("yes", _S["compcor"]),
             compcor_n_components=_ex("5", _S["compcor"]),
-            despike_performed=_ex("no", "No spatial smoothing was applied."),  # unverifiable
+            # kept since 2026-11-09 (item 2: a boolean is judged by the checking pass only)
+            despike_performed=_ex("no", "No spatial smoothing was applied."),
             scrub_performed=_ex("yes", _S["scrub"]),
         ),
         spatial=SpatialExtraction(smoothing_performed=_ex("yes", _S["smooth"])),
@@ -725,7 +727,10 @@ def test_rows_with_sibling_kinds_name_the_kind_on_each_field() -> None:
         "Artifact and structured noise removal [unvalidated] — reported: ica_denoise.performed = True; "
         "compcor.performed = True; compcor.n_components = 5" in out
     )
-    assert "Volume censoring [unvalidated] — reported: scrub.performed = True" in out
+    assert (
+        "Volume censoring [unvalidated] — reported: despike.performed = False; scrub.performed = True"
+        in out
+    )
     # a one-kind row stays bare
     assert (
         "Spatial smoothing [validated against labels (diagnostic, 14 papers)] — reported: performed = True"
@@ -1261,7 +1266,7 @@ def test_reversing_polarity_supports_the_reverse_phase_encoding_family() -> None
     value-in-quote check rejected it."""
     from fmri_repro.spec.preprocessing import SpecifiedTerm
 
-    from extractor_mvp.quote_support import coverage_value_supported
+    from extractor_mvp.quote_support import _term_supported, coverage_value_supported
 
     quote = (
         "B 0 distortions are corrected using the same reversing polarity method used for the "
@@ -1271,8 +1276,13 @@ def test_reversing_polarity_supports_the_reverse_phase_encoding_family() -> None
         verbatim="reversing polarity", resolved="reverse_phase_encoding", resolution="resolved"
     )
     topup = SpecifiedTerm[str](verbatim="topup", resolved=None, resolution="unrecognized")
-    assert coverage_value_supported("distortion_correction.method", [family], quote) is True
-    assert coverage_value_supported("distortion_correction.method", [topup], quote) is False
+    # 2026-11-09 (item 2): neither value is tool-shaped, so the field goes to the checking pass; the
+    # family's alias support is still what _term_supported says. "topup" is a tool name the frozen
+    # tool-shape test does not catch -- a recorded limit of item 2, not a check that passes.
+    assert coverage_value_supported("distortion_correction.method", [family], quote) is None
+    assert coverage_value_supported("distortion_correction.method", [topup], quote) is None
+    assert _term_supported("distortion_correction.method", family, quote) is True
+    assert _term_supported("distortion_correction.method", topup, quote) is False
 
 
 def test_the_papers_words_resolve_to_the_reverse_phase_encoding_family() -> None:
@@ -1303,12 +1313,12 @@ def test_gradient_nonlinearity_correction_is_a_family_and_other_carries_the_pape
     assert (term.verbatim, term.resolved) == ("in-house unwarping", "other")
 
 
-def test_other_without_the_papers_phrase_or_with_a_phrase_not_in_the_quote_is_rejected() -> None:
+def test_other_without_the_papers_phrase_is_kept_for_the_checking_pass() -> None:
+    """Until 2026-11-09 rejected by the quote check; 2026-11-09 (the author's item 2): a categorical, list or boolean value is judged by the checking pass only."""
     for value in ("other", "other (field-map-free unwarping)"):
         prep = _run(spatial=SpatialExtraction(distortion_method=_ex(value, _S["inhouse"])))
         method = _field(prep, "distortion_correction", "method")
-        assert method.extraction.status == "MISSING_FROM_PAPER"
-        assert method.inference.reason == "value_unsupported_by_quote"
+        assert method.extraction.status == "EXTRACTED"
 
 
 def test_a_parenthesised_phrase_is_one_list_item() -> None:
@@ -1323,12 +1333,14 @@ def test_a_parenthesised_phrase_is_one_list_item() -> None:
 def test_a_bare_other_is_unsupported_even_where_the_quote_says_other() -> None:
     from fmri_repro.spec.preprocessing import SpecifiedTerm
 
-    from extractor_mvp.quote_support import coverage_value_supported
+    from extractor_mvp.quote_support import _term_supported, coverage_value_supported
 
     quote = "Other distortions were removed by in-house unwarping."
     bare = SpecifiedTerm[str](verbatim="other", resolved="other", resolution="resolved")
     phrased = SpecifiedTerm[str](
         verbatim="in-house unwarping", resolved="other", resolution="resolved"
     )
-    assert coverage_value_supported("distortion_correction.method", [bare], quote) is False
-    assert coverage_value_supported("distortion_correction.method", [phrased], quote) is True
+    # 2026-11-09 (item 2): the field is judged by the checking pass; the term test itself is unchanged
+    assert coverage_value_supported("distortion_correction.method", [bare], quote) is None
+    assert _term_supported("distortion_correction.method", bare, quote) is False
+    assert _term_supported("distortion_correction.method", phrased, quote) is True

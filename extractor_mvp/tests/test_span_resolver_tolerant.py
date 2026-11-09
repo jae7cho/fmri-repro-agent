@@ -199,7 +199,9 @@ def test_font_glyph_mangle_recovered_by_tier6_without_naming_the_glyph() -> None
     text = "resampling them into 3 /C2 3 /C2 3m m 3 voxels finally."
     r = resolve_quote("resampling them into 3 \u00d7 3 \u00d7 3 mm3 voxels", text)
     assert r.span is not None and r.recovered is True
-    assert r.repairs == ("\u00d7→/C2", "\u00d7→/C2")
+    assert (
+        r.repairs == ()
+    )  # 2026-11-09 (item 3): /C2 between digits folds to "x" at normalisation; no repair to name
     # and a glyph code never matches MORE than one character: two quote characters for one run fail
     assert (
         resolve_quote("resampling them into 3 \u00d7\u00d7 3 \u00d7 3 mm3 voxels", text).span
@@ -237,10 +239,12 @@ def test_tier6_glyph_code_matches_one_quote_character_named() -> None:
     repair composes with tier 5's whitespace deletion and names both substitutions."""
     r = resolve_quote("3 \u00d7 3 \u00d7 3 mm3 voxel size", _AGTZIDIS)
     assert r.failure_reason is None and r.recovered is True
-    assert r.repairs == ("\u00d7→/C2", "\u00d7→/C2")
+    assert (
+        r.repairs == ()
+    )  # 2026-11-09 (item 3): /C2 between digits folds to "x" at normalisation; no repair to name
     assert r.span is not None
     assert r.span.text == "3 /C2 3 /C2 3m m3 voxel size"
-    assert r.span.repairs == ["\u00d7→/C2", "\u00d7→/C2"]
+    assert r.span.repairs == []
 
 
 def test_tier6_binder_ligature_glyph_matches_fi() -> None:

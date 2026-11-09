@@ -131,11 +131,13 @@ def test_non_literal_method_value_recorded_unresolved() -> None:
             _payload(temporal_standardization_method=_ex("min_max_scaled", _ZSCORE_QUOTE))
         ),
     )
+    # 2026-11-09 (the author's item 2): a categorical value is judged by the checking pass only, so it
+    # is kept, unresolved and as given, with no diagnostic
     ts = _ts_step(prep)
-    assert ts.method.extraction.status == "MISSING_FROM_PAPER"
-    assert ts.method.inference.reason == "value_unsupported_by_quote"
-    d = next(x for x in diags if x.field == "temporal_standardization.method")
-    assert d.failure_reason == "value_unsupported_by_quote" and d.raw_value == "min_max_scaled"
+    assert ts.method.extraction.status == "EXTRACTED"
+    assert ts.method.extraction.value.verbatim == "min_max_scaled"
+    assert ts.method.extraction.value.resolved is None
+    assert not any(x.field == "temporal_standardization.method" for x in diags)
 
 
 def test_intensity_convention_does_not_resolve_zscore() -> None:
@@ -149,7 +151,7 @@ def test_intensity_convention_does_not_resolve_zscore() -> None:
     # value_unsupported_by_quote. The §3b property this test pins -- the token is NOT resolved as a
     # convention -- still holds: no member is produced and the raw value is retained on the
     # diagnostic, not coerced.
-    prep, diags, _ = extract_preprocessing(
+    prep, _diags, _ = extract_preprocessing(
         ParsedPaper(text=TEXT, source="t", parser="manual"),
         "m",
         client=_fake_client(
@@ -157,7 +159,7 @@ def test_intensity_convention_does_not_resolve_zscore() -> None:
         ),
     )
     intensity = next(s for s in prep.steps if s.kind == "intensity_normalization")
-    assert intensity.convention.extraction.status == "MISSING_FROM_PAPER"
-    assert intensity.convention.inference.reason == "value_unsupported_by_quote"
-    d = next(x for x in diags if x.field == "intensity_normalization.convention")
-    assert d.raw_value == "voxel_temporal_zscore"
+    # 2026-11-09 (item 2): kept for the checking pass; the §3b property holds -- it is not resolved
+    assert intensity.convention.extraction.status == "EXTRACTED"
+    assert intensity.convention.extraction.value.verbatim == "voxel_temporal_zscore"
+    assert intensity.convention.extraction.value.resolved is None

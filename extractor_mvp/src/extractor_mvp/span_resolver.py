@@ -41,6 +41,18 @@ from fmri_repro.spec.provenance import Span
 # by an observed PDF artifact, not preemptive coverage.
 _EXPLICIT_NORMALIZATIONS: dict[str, str] = {
     "×": "x",  # × MULTIPLICATION SIGN (observed: liu_2013 "2×2×2mm")
+    # 2026-11-09 (the author's item 3): the multiplication sign's other text-layer forms fold to the
+    # same character on both quote and text -- U+2AFB and U+03EB (the Coptic letter a GROBID text
+    # layer prints for x in some fonts; dimitrova). /C2 and the GROBID form of that glyph code (U+00C2)
+    # fold only BETWEEN DIGITS, in _multiplication_marks, since alone they name other glyphs.
+    "\u2afb": "x",
+    "\u03eb": "x",
+    # Ligatures fold explicitly (NFKD folds them too; written out so the rule is visible).
+    "\ufb00": "ff",
+    "\ufb01": "fi",
+    "\ufb02": "fl",
+    "\ufb03": "ffi",
+    "\ufb04": "ffl",
     "÷": "/",  # ÷ DIVISION SIGN
     "·": "*",  # · MIDDLE DOT
     "–": "-",  # – EN DASH
@@ -134,6 +146,26 @@ def _hyphenation_drop_indices(text: str) -> set[int]:
     return drops
 
 
+#: A multiplication sign between two digits, in any of its text-layer forms (the author's item 3,
+#: 2026-11-09): the sign itself, U+2AFB, U+03EB, the leaked glyph code ``/C2`` (pypdf) and its GROBID
+#: form U+00C2, and a plain ``x``, each with optional whitespace on either side.
+_MULT_BETWEEN_DIGITS = re.compile(r"(?<=\d)(\s*)(\u00d7|\u2afb|\u03eb|\u00c2|/C2|[xX])(\s*)(?=\d)")
+
+
+def _multiplication_marks(text: str) -> tuple[dict[int, str], set[int]]:
+    """For every multiplication sign between digits: its first character maps to ``x``, the rest of
+    a ``/C2`` code and the whitespace around the sign are dropped -- so "2 x-sign 2", "2U+03EB2", "2 /C2 2" and
+    "2x2" all normalise to "2x2" on both quote and text. A sign anywhere else is left alone."""
+    replace: dict[int, str] = {}
+    drop: set[int] = set()
+    for m in _MULT_BETWEEN_DIGITS.finditer(text):
+        drop.update(range(m.start(1), m.end(1)))
+        drop.update(range(m.start(3), m.end(3)))
+        replace[m.start(2)] = "x"
+        drop.update(range(m.start(2) + 1, m.end(2)))
+    return replace, drop
+
+
 def normalize_with_offset_map(text: str, keep_citations: bool = False) -> tuple[str, list[int]]:
     """NFKD-fold + strip combining marks + apply explicit mappings, tracking offsets.
 
@@ -149,7 +181,8 @@ def normalize_with_offset_map(text: str, keep_citations: bool = False) -> tuple[
     dropped too, so tiers 3 to 6 read GROBID text as a reader does, citations inline; only tier 5b
     keeps them (``keep_citations=True``).
     """
-    drop_idx = _measurement_ws_drop_indices(text) | _hyphenation_drop_indices(text)
+    mult_replace, mult_drop = _multiplication_marks(text)
+    drop_idx = _measurement_ws_drop_indices(text) | _hyphenation_drop_indices(text) | mult_drop
     out_chars: list[str] = []
     out_offsets: list[int] = []
     for orig_idx, ch in enumerate(text):
@@ -157,7 +190,10 @@ def normalize_with_offset_map(text: str, keep_citations: bool = False) -> tuple[
             continue
         if not keep_citations and ch in (CITATION_OPEN, CITATION_CLOSE):
             continue
-        if ch in _EXPLICIT_NORMALIZATIONS:
+        if orig_idx in mult_replace:
+            out_chars.append(mult_replace[orig_idx])
+            out_offsets.append(orig_idx)
+        elif ch in _EXPLICIT_NORMALIZATIONS:
             for nc in _EXPLICIT_NORMALIZATIONS[ch]:
                 out_chars.append(nc)
                 out_offsets.append(orig_idx)

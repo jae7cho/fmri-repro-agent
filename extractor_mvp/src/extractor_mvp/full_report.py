@@ -128,12 +128,37 @@ def run_paper(
     # <listBibl>, so a hop on GROBID text reads the reference list from the same PDF's pypdf text
     reference_text = citing_text
     record["hop_reference_list_source"] = "pypdf"
+    # item 4 of 2026-11-09: on GROBID text a deferral's targets are read through the TEI's
+    # <ref target="#bNN"> to its <biblStruct> (the supplement's TEI too: a deferral there cites the
+    # supplement's own list); the pypdf reference list stays the fallback
+    teis: list[tuple[str, bytes]] = []
+    record["hop_tei"] = {}
     if parser == "grobid":
         reference_text = reflow_one_word_lines(load_pdf_text(pdf)[0])[0]
+    from extractor_mvp.grobid_source import GrobidUnavailableError, cached_tei
+
+    supp = record.get("supplement") or {}
+    for label, tei_pdf, prov in (
+        ("paper", str(pdf), _source if parser == "grobid" else {}),
+        ("supplement", supp.get("path") if supp.get("read") else None, supp.get("text_source")),
+    ):
+        source = str((prov or {}).get("text_source") or "")
+        if not tei_pdf or not source.startswith("grobid-"):
+            continue
+        try:  # the TEI the extraction read, from GROBID's cache (no server call)
+            teis.append((label, cached_tei(Path(tei_pdf), source)))
+            record["hop_tei"][label] = source
+        except GrobidUnavailableError as exc:
+            record["hop_tei"][label] = f"unavailable: {exc}"[:300]
     refs: list[str] = []
+    sentences: dict[str, list[str]] = {}
     for d in record.get("deferred_fields") or []:
-        if d.get("target_kind") in HOP_KINDS and d.get("ref_string") not in refs:
-            refs.append(d["ref_string"])
+        if d.get("target_kind") in HOP_KINDS:
+            if d.get("ref_string") not in refs:
+                refs.append(d["ref_string"])
+            sentence = d.get("deferral_sentence")
+            if sentence and sentence not in sentences.setdefault(d["ref_string"], []):
+                sentences[d["ref_string"]].append(sentence)
     hops: list[dict[str, Any]] = []
     hop_errors: list[dict[str, Any]] = []
     for ref in refs:
@@ -147,6 +172,8 @@ def run_paper(
                     model,
                     verifier=record.get("verifier"),
                     meter=meter,
+                    teis=teis,
+                    deferral_sentences=sentences.get(ref, []),
                 )
             )
         except Exception as exc:  # a hop never costs the paper its report
@@ -167,6 +194,9 @@ def run_paper(
         software_mentions=uses,
         citing_software=software,
     )
+    # 2026-11-09 (the author's item 1): the resolution call, after the software scan and call R, with
+    # their answers as inputs; replaces the lookup-based motion inference
+    apply_resolution(record, prep, citing_text, model, client=meter.client(), meter=meter)
     report: str | None
     try:
         report = render_record(record)
@@ -176,6 +206,27 @@ def run_paper(
     wall = time.perf_counter() - t0
     record["run"] = {**run_totals(meter.calls, wall), "calls": meter.calls}
     return FullResult(paper_id, first.status, report, record, meter.calls, round(wall, 1), first)
+
+
+def apply_resolution(
+    record: dict[str, Any], prep: Any, text: str, model: str, *, client: Any, meter: Any = None
+) -> dict[str, Any]:
+    """Run the resolution call on a record and store it (``record["resolution"]``). A KB-confirmed
+    realignment program fills a MISSING or DEFERRED motion method's inference arm, written into the
+    stored dump's motion step only (the other spans keep their stored translations)."""
+    from extractor_mvp.resolution_call import fill_method_arm, run_resolution
+
+    resolution = run_resolution(record, prep, text, model, client=client, meter=meter)
+    record["resolution"] = resolution
+    if resolution.get("status") == "ok":
+        prep = fill_method_arm(prep, resolution)
+        step = next(
+            (s for s in prep.steps if getattr(s, "kind", None) == "motion_correction"), None
+        )
+        for dumped in record["preprocessing"].get("steps", []):
+            if step is not None and dumped.get("kind") == "motion_correction":
+                dumped["method"]["inference"] = step.method.inference.model_dump(mode="json")
+    return resolution
 
 
 def render_record(record: dict[str, Any]) -> str:
@@ -197,9 +248,13 @@ def render_record(record: dict[str, Any]) -> str:
     rec = record.get("motion_inference")
     if isinstance(rec, dict):
         extra["motion_inference"] = SimpleNamespace(**rec)
-    for key in ("second_hop", "data_release", "citing_software", "supplement"):
+    for key in ("second_hop", "data_release", "citing_software", "supplement", "resolution"):
         if key in record:
             extra[key] = record[key]
+    # 2026-11-09 (item 2): checker-supplied values, derived from the stored record (no model call)
+    from extractor_mvp.rechecks import checker_supplied
+
+    extra["checker_supplied"] = checker_supplied(record)
     methods = MethodsSlice(text="", **record["methods"])
     report: str = to_report(prep, source=record["paper_id"], methods_slice=methods, **extra)
     return report

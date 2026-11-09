@@ -830,6 +830,58 @@ def _verdict_for(row: FieldRow, verifier: dict[str, Any] | None) -> dict[str, An
     return found
 
 
+_UNCONFIRMED = "[inferred by the model, unconfirmed]"
+
+
+def _resolution_lines(resolution: dict[str, Any]) -> list[str]:
+    """2026-11-09 (the author's item 1): the resolution call beside the paper's own motion phrase.
+    KB-confirmed answers carry the KB source; model-only answers say so; the paper's phrase above is
+    untouched."""
+    if resolution.get("status") != "ok":
+        return [
+            f"    resolution call: {resolution.get('status')} ({resolution.get('error') or ''})"
+        ]
+    pipe = resolution.get("resolved_pipeline") or {}
+    tool = resolution.get("realignment_tool") or {}
+    pv = pipe.get("value") or "none"
+    pipe_words = f"{pv} (KB)" if pipe.get("kb") else (pv if pv == "none" else f"{pv} (free text)")
+    conf = tool.get("kb_confirmation")
+    if conf:
+        how = "named in the paper" if conf.get("basis") == "package_named" else "pipeline default"
+        tool_words = (
+            f"{conf['package']} → {conf['program']}   [KB default, {how}: "
+            f"{_truncate_quote(str(conf.get('source') or ''))}]"
+        )
+    elif tool.get("value"):
+        tool_words = f"{tool['value']}   {_UNCONFIRMED}"
+    else:
+        tool_words = "unknown"
+    out = [
+        f"    resolved pipeline: {pipe_words}",
+        f"    realignment tool: {tool_words}",
+        f"    resolution basis: {resolution.get('basis') or ''}",
+    ]
+    for name, item in (resolution.get("sub_items") or {}).items():
+        prov = item.get("provenance")
+        if prov == "EXTRACTED":
+            out.append(
+                f"    {name} = {item.get('value')}   [stated]  «{_truncate_quote(item['quote'])}»"
+            )
+        elif prov == "INFERRED_MODEL":
+            out.append(f"    {name} = {item.get('value')}   {_UNCONFIRMED}")
+        else:
+            out.append(f"    {name}: unknown")
+    return out
+
+
+def _checker_supplied_line(param: str, entry: dict[str, Any]) -> str:
+    """2026-11-09 (the author's item 2): an unverifiable field the checking pass judged WRONG and gave a
+    value for, from the extraction's own quote. The value is the checking pass's, said so on the line;
+    the field's provenance arm is unchanged (still unverifiable in the D.3 coverage section)."""
+    quote = f"  «{_truncate_quote(entry['quote'])}»" if entry.get("quote") else ""
+    return f"- {param} = {entry['value']}   [checker-supplied]{quote}"
+
+
 def _with_verdict(main: str, row: FieldRow, verifier: dict[str, Any] | None) -> str:
     """report v2 §3 (2026-10-29): the checking pass beside the field. ``wrong`` demotes the drafted
     value to a flag -- the value stays on the line, never replaced; ``missed`` names what the paper
@@ -1219,6 +1271,8 @@ def to_protocol(
     data_release: dict[str, Any] | None = None,
     citing_software: list[dict[str, Any]] | None = None,
     supplement: dict[str, Any] | None = None,
+    checker_supplied: list[dict[str, Any]] | None = None,
+    resolution: dict[str, Any] | None = None,
 ) -> str:
     """Tool-agnostic Markdown replication protocol over ``flatten()``.
 
@@ -1241,6 +1295,7 @@ def to_protocol(
 
     verifier = drop_same_order_verdict(verifier, preprocessing)
     rows = flatten(preprocessing)
+    supplied = {c["field"]: c for c in checker_supplied or []}
     lines: list[str] = []
     lines.append(f"# Replication Protocol — {source}" if source else "# Replication Protocol")
     lines.append("")
@@ -1356,7 +1411,12 @@ def to_protocol(
                 main = f"{param}: {_supplement_words(supplement)}"
             else:
                 main = _protocol_main(r, param, equals_for_extracted=True)
-            lines.append(_with_verdict(main, r, verifier))
+            if r.path in supplied:
+                lines.append(_checker_supplied_line(param, supplied[r.path]))
+            else:
+                lines.append(_with_verdict(main, r, verifier))
+            if r.path == "motion_correction.method" and resolution is not None:
+                lines.extend(_resolution_lines(resolution))
             lines.extend(f"    {note}" for note in _protocol_note_lines(r))
         lines.append("")
 
@@ -1389,6 +1449,8 @@ def to_report(
     data_release: dict[str, Any] | None = None,
     citing_software: list[dict[str, Any]] | None = None,
     supplement: dict[str, Any] | None = None,
+    checker_supplied: list[dict[str, Any]] | None = None,
+    resolution: dict[str, Any] | None = None,
 ) -> str:
     """THE supported report surface — the only output safe to present as "the report".
 
@@ -1408,6 +1470,8 @@ def to_report(
         data_release=data_release,
         citing_software=citing_software,
         supplement=supplement,
+        checker_supplied=checker_supplied,
+        resolution=resolution,
     )
 
 

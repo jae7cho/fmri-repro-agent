@@ -2094,11 +2094,11 @@ def _resolve_deferrals(
     # Fills deferred-to-pipeline and missing on the arm proper; a described_only phrase gets the
     # same inference as a diagnostic on the processed layer (F1), returned through the sink so the
     # batch can store and render it. Never touches the extraction arm; no model call.
-    from extractor_mvp.motion_inference import infer_motion_method
-
-    preprocessing, motion_record = infer_motion_method(preprocessing)
-    if motion_inference_out is not None:
-        motion_inference_out.append(motion_record)
+    # 2026-11-09 (the author's item 1): the lookup-based motion inference no longer runs here. The
+    # resolution call (resolution_call.py), made by full_report.run_paper after the software scan,
+    # replaces it; ``motion_inference_out`` stays in the signature and is left empty, and records
+    # written before the change keep rendering their stored motion_inference.
+    del motion_inference_out
 
     return preprocessing
 

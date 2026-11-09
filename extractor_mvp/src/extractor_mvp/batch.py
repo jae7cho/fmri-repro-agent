@@ -528,6 +528,17 @@ def process_paper(
     multiple_pipelines = (verifier or {}).get("multiple_pipelines")
     report: str | None = None
     render_error: str | None = None
+    # 2026-11-09 (the author's item 2): the checking pass's value for a field the extraction left
+    # unverifiable, when it relied on the same quote (rechecks.checker_supplied); no model call
+    from extractor_mvp.rechecks import checker_supplied as _checker_supplied
+
+    supplied = _checker_supplied(
+        {
+            "preprocessing": preprocessing.model_dump(mode="json"),
+            "diagnostics": [dataclasses.asdict(d) for d in diagnostics],
+            "verifier": verifier,
+        }
+    )
     try:
         supplement["fields_deferred"] = [
             d.field for d in deferrals if d.target_kind == "supplement"
@@ -540,6 +551,7 @@ def process_paper(
             multiple_pipelines=multiple_pipelines,
             verifier=verifier,
             supplement=supplement,
+            checker_supplied=supplied,
         )
     except _CODE_DEFECTS:
         # Same split, and sharper here: the comment above argues to_report is pure and
@@ -582,6 +594,8 @@ def process_paper(
         # report v2 §3 (2026-10-29): the checking pass, verdicts by field path; the extraction arms
         # above are untouched by it
         "verifier": verifier,
+        # 2026-11-09 (item 2): values the checking pass supplied for unverifiable fields
+        "checker_supplied": supplied,
         # SUCCESS-path capture: raw LLM value + resolved value/alias for each
         # successfully-extracted targeted field (diagnostic-only; see ResolutionRecord).
         "resolutions": [dataclasses.asdict(r) for r in resolutions],

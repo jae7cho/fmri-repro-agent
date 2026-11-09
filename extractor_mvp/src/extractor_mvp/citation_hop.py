@@ -74,6 +74,9 @@ class RefEntry:
     first_author: str | None
     year: str | None
     doi: str | None
+    #: the GROBID ``<biblStruct xml:id>`` the entry was read from (:func:`resolve_targets`); None
+    #: for an entry parsed from the text layer's reference list
+    bibl_id: str | None = None
 
 
 def _norm_name(s: str) -> str:
@@ -191,6 +194,133 @@ def _one(part: str, hits: list[RefEntry]) -> RefMatch:
     if len(hits) > 1:
         return RefMatch(part, "reference_ambiguous")
     return RefMatch(part, "resolved", hits[0])
+
+
+# ---------------------------------------------------------------------------
+# 1b. The entry through GROBID's ref target (the author's list of 2026-11-09, item 4)
+# ---------------------------------------------------------------------------
+
+#: How a hop found its reference entry, recorded on every hop as ``ref_resolution``.
+GROBID_REF_TARGET = "grobid_ref_target"
+MARKER_TEXT = "marker_text"
+
+_TOKEN = re.compile(r"[^\W_]+")
+
+
+def _tokens(s: str) -> list[str]:
+    return [t.casefold() for t in _TOKEN.findall(s)]
+
+
+def _bibl_ref_entry(b: Any, label: str) -> RefEntry:
+    """A :class:`grobid_source.BiblEntry` as the :class:`RefEntry` the on-disk lookup reads, its
+    ``bibl_id`` prefixed by its TEI's label when that is not the paper's ("supplement:b3"). It has
+    no offsets in the citing text (start and end are -1)."""
+    head = ", ".join(b.authors)
+    text = " ".join(
+        x for x in (head, f"({b.year})" if b.year else "", b.title or "", b.doi or "") if x
+    )
+    return RefEntry(
+        start=-1,
+        end=-1,
+        text=text,
+        number=None,
+        first_author=b.authors[0] if b.authors else None,
+        year=b.year,
+        doi=b.doi,
+        bibl_id=b.bibl_id if label == "paper" else f"{label}:{b.bibl_id}",
+    )
+
+
+#: The TEIs a citing paper's text was read from, each with its label ("paper", "supplement"): a
+#: deferral in a supplement cites the supplement's own reference list.
+Teis = Sequence[tuple[str, "bytes | str"]]
+
+
+def grobid_ref_matches(
+    ref_string: str, teis: Teis, sentences: Sequence[str]
+) -> tuple[list[RefMatch] | None, str]:
+    """The targets behind a deferral's ref read from the TEI: the ``<ref type="bibr">`` elements of
+    the deferring sentence whose own text is made of ``ref_string``'s words and numbers ("[3,]" and
+    "[4]" for "[3,][4]"), each followed by its ``target="#bNN"`` to the ``<biblStruct>`` of the
+    same TEI. The sentence is looked for verbatim in every TEI first
+    (:func:`grobid_source.refs_in_sentence`, detail ``<label>:sentence_exact``), then by its words
+    around the refs (:func:`grobid_source.refs_near_sentence`, detail
+    ``<label>:sentence_word_overlap=<share>``). Returns ``(matches, detail)``, or ``(None, why)``
+    when the marker text must be used instead: no sentence given or found in any TEI, no ref of the
+    sentence is the deferral's, or one of those refs has no target or a target outside its TEI's
+    reference list."""
+    from extractor_mvp.grobid_source import bibliography, refs_in_sentence, refs_near_sentence
+
+    if not sentences:
+        return None, "no_deferral_sentence"
+    want = set(_tokens(ref_string))
+
+    def deferrals(text: str) -> bool:
+        own = _tokens(text)
+        return bool(own) and set(own) <= want
+
+    found_sentence = False
+    picked: list[tuple[str, Any]] = []
+    details: list[str] = []
+    for sentence in sentences:
+        hit: tuple[str, list[Any], str] | None = None
+        for label, tei in teis:
+            refs = refs_in_sentence(tei, sentence)
+            if refs is not None:
+                hit = (label, [r for r in refs if deferrals(r.text)], "sentence_exact")
+                break
+        if hit is None:
+            for label, tei in teis:
+                near = refs_near_sentence(tei, sentence, deferrals)
+                if near is not None:
+                    hit = (label, near[0], f"sentence_word_overlap={near[1]}")
+                    break
+        if hit is None:
+            continue
+        found_sentence = True
+        details.append(f"{hit[0]}:{hit[2]}")
+        picked += [(hit[0], r) for r in hit[1]]
+    if not found_sentence:
+        return None, "sentence_not_in_tei"
+    if not picked:
+        return None, "no_ref_in_sentence"
+    if any(r.target is None for _label, r in picked):
+        return None, "ref_without_target"
+    bibls = {label: bibliography(tei) for label, tei in teis}
+    if any(r.target not in bibls[label] for label, r in picked):
+        return None, "target_not_in_bibliography"
+    out: list[RefMatch] = []
+    seen: set[tuple[str, str]] = set()
+    for label, r in picked:
+        if (label, r.target) in seen:
+            continue
+        seen.add((label, r.target))
+        out.append(RefMatch(r.text, "resolved", _bibl_ref_entry(bibls[label][r.target], label)))
+    return out, "; ".join(dict.fromkeys(details))
+
+
+def resolve_targets(
+    ref_string: str,
+    citing_text: str,
+    *,
+    teis: Teis = (),
+    sentences: Sequence[str] = (),
+) -> tuple[list[RefMatch], str, str]:
+    """The targets behind a deferral's ref and how they were found: through GROBID's ref targets
+    (:func:`grobid_ref_matches`) when the paper's TEI is given, else, or when that finds none, by
+    parsing the marker text against ``citing_text``'s reference list (:func:`match_reference`).
+    Returns ``(matches, ref_resolution, detail)``: for the ref targets, where and how the sentence
+    was found; for the marker text, why the targets were not used."""
+    if not teis:
+        why = "text_source_not_grobid"
+    else:
+        try:
+            matches, why = grobid_ref_matches(ref_string, teis, sentences)
+        except Exception as exc:  # a TEI that does not parse leaves the marker text
+            matches, why = None, f"tei_unreadable: {type(exc).__name__}"
+        if matches is not None:
+            return matches, GROBID_REF_TARGET, why
+    return match_reference(ref_string, parse_reference_list(citing_text)), MARKER_TEXT, why
 
 
 # ---------------------------------------------------------------------------
@@ -782,9 +912,14 @@ def run_hop(
     verifier: dict[str, Any] | None = None,
     client: Any | None = None,
     meter: CallMeter | None = None,
+    teis: Teis = (),
+    deferral_sentences: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     """One ``second_hop`` record per cited target behind ``ref_string``. Never raises on a model or
-    PDF failure: the record carries the state."""
+    PDF failure: the record carries the state. With the citing paper's GROBID ``teis`` and the
+    deferring sentences, the targets are read through the TEI's ref targets (:func:`resolve_targets`);
+    each record says which way in ``ref_resolution`` and, in ``ref_resolution_detail``, how the
+    sentence was found or why the marker text was used."""
     from extractor_mvp.methods_finder import find_methods_section
     from extractor_mvp.pdf_loader import load_pdf_text
     from extractor_mvp.verifier import run_verifier
@@ -793,12 +928,17 @@ def run_hop(
     client = client or meter.client()
     scope = hop_scope(preprocessing, ref_string, verifier)
     out: list[dict[str, Any]] = []
-    for m in match_reference(ref_string, parse_reference_list(citing_text)):
+    matches, resolution, detail = resolve_targets(
+        ref_string, citing_text, teis=teis, sentences=deferral_sentences
+    )
+    for m in matches:
         t0 = time.perf_counter()
         n_calls = len(meter.calls)
         rec: dict[str, Any] = {
             "ref": ref_string,
             "part": m.part,
+            "ref_resolution": resolution,
+            "ref_resolution_detail": detail,
             "scope": scope,
             "reference": {"state": m.state},
             "target": None,

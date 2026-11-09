@@ -167,10 +167,38 @@ def phrase_in_quote(phrase: str, quote: str, *, family_term: bool = False) -> bo
     return any(all(eq(p[j], q[i + j]) for j in range(len(p))) for i in range(len(q) - len(p) + 1))
 
 
+#: 2026-11-09 (the author's item 2): number words, cardinal one to twenty and ordinal first to tenth,
+#: read as their digits before a number is matched ("the first four volumes" holds 1 and 4).
+NUMBER_WORDS: dict[str, int] = {
+    **{
+        w: i
+        for i, w in enumerate(
+            "one two three four five six seven eight nine ten eleven twelve thirteen fourteen "
+            "fifteen sixteen seventeen eighteen nineteen twenty".split(),
+            start=1,
+        )
+    },
+    **{
+        w: i
+        for i, w in enumerate(
+            "first second third fourth fifth sixth seventh eighth ninth tenth".split(), start=1
+        )
+    },
+}
+_NUMBER_WORD = re.compile(
+    r"\b(" + "|".join(sorted(NUMBER_WORDS, key=len, reverse=True)) + r")\b", re.IGNORECASE
+)
+
+
+def normalize_number_words(s: str) -> str:
+    """Each number word in ``s`` replaced by its digits (see :data:`NUMBER_WORDS`)."""
+    return _NUMBER_WORD.sub(lambda m: str(NUMBER_WORDS[m.group(1).lower()]), s)
+
+
 def number_in_quote(value: float, quote: str) -> bool:
     """True iff a number in the quote equals the value exactly (ruling 2). Thousands separators are
-    read as part of the number; nothing else is normalised and no tolerance is applied."""
-    for tok in _NUMBER.findall(_THOUSANDS.sub("", quote)):
+    read as part of the number, and number words as their digits (2026-11-09); no tolerance."""
+    for tok in _NUMBER.findall(_THOUSANDS.sub("", normalize_number_words(quote))):
         try:
             if float(tok) == value:
                 return True
@@ -226,8 +254,22 @@ def step_value_supported(dotted: str, value: object, quote: str) -> bool | None:
         resolution = getattr(value, "resolution", "unrecognized")
         if verbatim is None:
             return False
+        if not is_tool_name(str(verbatim)):
+            return None  # 2026-11-09: a categorical value is judged by the checking pass only
         return literal_value_supported(dotted, str(verbatim), resolved, str(resolution), quote)
     return None
+
+
+def is_tool_name(value: str) -> bool:
+    """2026-11-09 (the author's item 2): literal matching is kept for numbers and TOOL NAMES only. A
+    value is a tool name when the frozen tool-shape test says so (motion_guard.is_tool_shaped_frozen:
+    a listed tool token, an initialism of two or more capitals that is not an acquisition acronym,
+    or a letters-then-digits version token). Everything else -- categories, lists of terms,
+    orderings, free descriptions -- is judged by the checking pass only. The test misses tool
+    names with no such shape (FreeSurfer, topup); those go to the checking pass too."""
+    from extractor_mvp.motion_guard import is_tool_shaped_frozen
+
+    return is_tool_shaped_frozen(value)
 
 
 # ---------------------------------------------------------------------------
@@ -286,8 +328,8 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
     supported; ``False`` when the value must be demoted to :data:`VALUE_UNSUPPORTED`.
     """
     if dotted in COVERAGE_BOOL_FIELDS:
-        if dotted.endswith(".performed"):
-            return performed_phrase_supported(dotted.split(".", 1)[0], quote)
+        # 2026-11-09 (the author's item 2): a boolean is judged by the checking pass only; the
+        # performed-phrase test (performed_phrase_supported) no longer demotes it
         return None
     if dotted in COVERAGE_BAND_FIELDS:
         band = value if isinstance(value, (tuple, list)) else ()
@@ -298,12 +340,22 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
             return number_in_quote(float(value), quote)  # type: ignore[arg-type]
         except (TypeError, ValueError):
             return False
+    # 2026-11-09 (the author's item 2): text, list and term fields are matched literally only for
+    # the items that are tool names (is_tool_name); a field with no tool-name item is judged by the
+    # checking pass only (None).
     if dotted in COVERAGE_TEXT_FIELDS:
-        return free_text_supported(str(value), quote) if value is not None else False
+        if value is None:
+            return False
+        return free_text_supported(str(value), quote) if is_tool_name(str(value)) else None
     if dotted in COVERAGE_LIST_FIELDS:
         items = list(value) if isinstance(value, (list, tuple)) else []
-        return bool(items) and all(_term_supported(dotted, it, quote) for it in items)
+        if not items:
+            return False
+        tools = [it for it in items if is_tool_name(str(getattr(it, "verbatim", it) or ""))]
+        return all(_term_supported(dotted, it, quote) for it in tools) if tools else None
     if dotted in COVERAGE_SUPPORT_TABLES:
+        if not is_tool_name(str(getattr(value, "verbatim", value) or "")):
+            return None
         return _term_supported(dotted, value, quote)
     return None
 
