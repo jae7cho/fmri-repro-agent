@@ -228,3 +228,24 @@ section 2's GROBID column: unverifiable 7 -> 14, quote unresolved 14 -> 26, `quo
 
 Cost: the re-run 8, $0.7371, 154.6 s (liu_2005's corpus_grobid_v1 record:
 7, $0.3649, 98.7 s). corpus_grobid_v2 metered totals: 187, $11.5141, 3283.4 s.
+
+## 6. The 18-paper view (liu_2005 left out)
+
+The author's choice of 2026-11-08: the same-code side by side over the 18 papers other than
+liu_2005, the one paper whose GROBID text falls back. On these 18 the GROBID column is the same in
+corpus_grobid_v1 and corpus_grobid_v2. Per-paper rows are those of section 2.
+
+| | pypdf (corpus_pypdf_v1) | GROBID (corpus_grobid_v1 = v2) |
+|---|---|---|
+| unverifiable D.3 rows | 8 | 7 |
+| fields left missing, quote unresolved | 30 | 14 |
+| `quote_not_found` diagnostics | 35 | 15 |
+| smoothing rows: agree / disagree / not separable | 11 / 4 / 6 | 12 / 3 / 6 |
+| filtering rows: agree / disagree / not separable | 9 / 6 / 6 | 11 / 4 / 6 |
+| motion method: agree / disagree | 8 / 10 | 8 / 10 |
+| state agreements, all three scorers | 28 | 31 |
+
+Each column equals section 2's totals less liu_2005's row on that side. Of section 3's 12 differing
+states, 9 are on these 18 papers (7 with evidence present in both texts; cole motion and gordon
+filtering not). Cost over the 18: pypdf 185 calls, $11.4037, 3,091.4 s; GROBID 179 calls,
+$10.7770, 3,128.8 s.
