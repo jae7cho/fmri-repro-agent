@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AESPA labeler</title>
+<!--
+  Labeler for the motion correction and smoothing/filtering workbooks
+  (ground_truth/motion_correction_labels_v1.xlsx, ground_truth/smoothing_filtering_labels_v1.xlsx).
+  One self-contained file: open it from disk in a browser, choose a PDF, label, export
+  <paper_id>.labels.json, then merge with scripts/merge_labels.py. Nothing is sent anywhere; the
+  PDF is read locally. PDF.js is pinned to 3.11.174 on cdnjs with subresource integrity. The
+  worker is loaded as a plain script so PDF.js runs on the main thread, which works from file://.
+  The state vocabularies below are the workbooks' dropdown lists; tests/test_merge_labels.py
+  checks them against scripts/merge_labels.py and the workbooks.
+-->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+        integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+        integrity="sha512-BbrZ76UNZq5BhH7LL7pn9A4TKQpQeNCHOo65/akfelcIBbcVvYWOFQKPXIrykE3qZxYjmDX573oa4Ywsc7rpTw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<style>
+:root {
+  --bg: #f6f6f4; --panel: #ffffff; --ink: #1d1d1b; --muted: #66665f; --line: #d9d9d3;
+  --accent: #2f5d8a; --accent-ink: #ffffff; --warn: #9a3b1b; --page-shadow: rgba(0,0,0,.18);
+  --sel: rgba(47,93,138,.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1b1c1e; --panel: #242528; --ink: #e8e8e4; --muted: #a2a29a; --line: #3a3b3f;
+    --accent: #7fa8d1; --accent-ink: #10161c; --warn: #e39a7c; --page-shadow: rgba(0,0,0,.6);
+    --sel: rgba(127,168,209,.4);
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1b1c1e; --panel: #242528; --ink: #e8e8e4; --muted: #a2a29a; --line: #3a3b3f;
+  --accent: #7fa8d1; --accent-ink: #10161c; --warn: #e39a7c; --page-shadow: rgba(0,0,0,.6);
+  --sel: rgba(127,168,209,.4);
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+       display: flex; flex-direction: column; }
+header { padding: 8px 16px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 15px; margin: 0 12px 0 0; display: inline; }
+details.guide { margin-top: 6px; }
+details.guide summary { cursor: pointer; color: var(--accent); }
+.guide-body { max-height: 40vh; overflow: auto; padding: 4px 4px 8px; columns: 2 420px; column-gap: 28px; }
+.guide-body h3 { font-size: 13px; margin: 10px 0 4px; break-after: avoid; }
+.guide-body dl { margin: 0; }
+.guide-body dt { font-weight: 600; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; }
+.guide-body dd { margin: 0 0 6px 12px; }
+.guide-body ol { margin: 0; padding-left: 20px; }
+.guide-body li { margin-bottom: 6px; break-inside: avoid; }
+main { flex: 1; display: flex; min-height: 0; }
+#left { flex: 1 1 58%; display: flex; flex-direction: column; min-width: 0; border-right: 1px solid var(--line); }
+#pdfbar { display: flex; gap: 8px; align-items: center; padding: 6px 12px; border-bottom: 1px solid var(--line);
+          background: var(--panel); flex-wrap: wrap; }
+#pdfbar .status { color: var(--muted); font-size: 12.5px; }
+#viewer { flex: 1; overflow: auto; padding: 12px; }
+#viewer.drag { outline: 2px dashed var(--accent); outline-offset: -8px; }
+.empty { color: var(--muted); padding: 40px; text-align: center; }
+.page { position: relative; margin: 0 auto 12px; box-shadow: 0 1px 4px var(--page-shadow); background: #fff; }
+.page canvas { display: block; }
+.textLayer { position: absolute; inset: 0; overflow: hidden; line-height: 1; text-align: initial;
+             text-size-adjust: none; forced-color-adjust: none; transform-origin: 0 0; z-index: 2; }
+.textLayer span, .textLayer br { color: transparent; position: absolute; white-space: pre; cursor: text;
+                                 transform-origin: 0% 0%; }
+.textLayer ::selection { background: var(--sel); }
+.textLayer .endOfContent { display: block; position: absolute; inset: 100% 0 0; z-index: -1; cursor: default;
+                           user-select: none; }
+#right { flex: 1 1 42%; overflow: auto; padding: 12px 16px 40px; min-width: 320px; }
+.idrow { display: flex; gap: 8px; align-items: end; margin-bottom: 10px; flex-wrap: wrap; }
+.idrow label { flex: 1; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+.card h2 { font-size: 14px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+.stream { border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; }
+.stream:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+.stream-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12.5px; margin-bottom: 4px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px 10px; }
+label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 2px; }
+label.wide { grid-column: 1 / -1; }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+                          border-radius: 4px; padding: 4px 6px; }
+textarea { resize: vertical; min-height: 54px; }
+textarea.quote { min-height: 70px; font-family: Georgia, serif; }
+button { font: inherit; border: 1px solid var(--line); background: var(--panel); color: var(--ink);
+         border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button.small { font-size: 12px; padding: 2px 8px; }
+button:disabled { opacity: .5; cursor: default; }
+.btnrow { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+#msg { min-height: 1.4em; font-size: 12.5px; color: var(--muted); }
+#msg.err { color: var(--warn); }
+@media (max-width: 860px) {
+  main { flex-direction: column; }
+  #left { border-right: 0; border-bottom: 1px solid var(--line); min-height: 60vh; }
+  #right { min-width: 0; }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>AESPA labeler</h1><span style="color:var(--muted);font-size:12.5px">motion correction · spatial smoothing · temporal filtering</span>
+  <details class="guide">
+    <summary>State definitions and standing rulings</summary>
+    <div class="guide-body">
+      <h3>Standing rulings</h3>
+      <ol>
+        <li><b>Values as stated, no unit conversion.</b> Write the width as the paper gives it (FWHM, sigma or
+          RMS radius, in its own unit) and filter edges in Hz or seconds as written. Converting a unit is an
+          inference, not a label.</li>
+        <li><b>Smoothing of statistical maps is not BOLD smoothing.</b> Smoothing applied to statistical maps or
+          other analysis-stage outputs does not count: label smoothing not_reported and describe it in notes.</li>
+        <li><b>COBIDAS-literal filtering.</b> COBIDAS asks whether high- or low-pass filtering was applied and where
+          in the pipeline, and for drift regressors a specified cut-off. No unit is required, so a stated filter
+          with a non-Hz or non-numeric edge is reported, with the value kept as stated. Frequency selection by
+          wavelet decomposition counts as temporal filtering.</li>
+      </ol>
+      <h3>Motion correction, method state</h3>
+      <dl>
+        <dt>named_tool</dt><dd>A specific tool or method is named for this step (e.g., MCFLIRT, SPM realign, AFNI 3dvolreg).</dd>
+        <dt>described_only</dt><dd>The operation is stated but no tool is named (e.g., "motion correction was performed"). Performance is established; the tool is not.</dd>
+        <dt>deferred</dt><dd>The method is not stated but attributed elsewhere: a citation, or a named pipeline whose motion step the paper does not itself describe. A citation that identifies the method is deferred, not named_tool.</dd>
+        <dt>absent</dt><dd>No statement about motion correction at all.</dd>
+        <dt>stated_not_performed</dt><dd>The paper explicitly says motion correction was not performed.</dd>
+      </dl>
+      <p style="margin:4px 0 0">Motion correction is EPI to EPI (or to a within-run reference); EPI to anatomical is coregistration.
+        The realignment step is distinct from the motion parameters used as regressors. For named_tool, attribution
+        is <i>step</i> when the tool is named as the instrument of the realignment itself, and <i>package</i> when the paper
+        names exactly one realignment-capable package for its preprocessing or analysis as a whole, names no step-level
+        tool, and asserts the motion step (protocol v1.8). A pipeline or wrapper is not a package.</p>
+      <h3>Smoothing and filtering, state</h3>
+      <dl>
+        <dt>reported</dt><dd>The step is stated with its parameters.</dd>
+        <dt>partially_reported</dt><dd>Some of the step is stated, some not.</dd>
+        <dt>not_reported</dt><dd>Nothing about the step.</dd>
+        <dt>stated_not_performed</dt><dd>The paper says the step was not done; a stated negative is a report.</dd>
+        <dt>deferred</dt><dd>Attributed to a citation or a pipeline.</dd>
+      </dl>
+      <p style="margin:4px 0 0">One row per paper × applies_to. applies_to is the paper's own words for what the value applies
+        to (a derived measure, an analysis, a stream); "all" is the ordinary case. Quotes come from the PDF text layer; if a
+        glyph or a page header broke the text, clean the quote and say what changed in notes.</p>
+    </div>
+  </details>
+</header>
+<main>
+  <section id="left">
+    <div id="pdfbar">
+      <input type="file" id="pdffile" accept="application/pdf,.pdf">
+      <button id="zoomout" class="small" title="Zoom out">−</button>
+      <button id="zoomin" class="small" title="Zoom in">+</button>
+      <span class="status" id="pdfstatus">No PDF loaded. Choose a file or drop one here.</span>
+    </div>
+    <div id="viewer"><div class="empty">The PDF renders here with a selectable text layer.</div></div>
+  </section>
+  <section id="right">
+    <div class="idrow">
+      <label>paper_id<input id="paper_id" placeholder="e.g. author_2024" autocomplete="off" spellcheck="false"></label>
+      <button id="export" class="primary">Export labels.json</button>
+      <button id="reset" title="Clear every field">Clear</button>
+    </div>
+    <div id="msg"></div>
+    <div id="cards"></div>
+  </section>
+</main>
+
+<script>
+"use strict";
+// ---- vocabularies: the workbooks' dropdown lists, exactly ------------------------------------
+const MOTION_STATES = ["named_tool", "described_only", "deferred", "absent", "stated_not_performed"];
+const SF_STATES = ["reported", "partially_reported", "not_reported", "stated_not_performed", "deferred"];
+const ATTRIBUTION = ["step", "package"];
+const SCHEMA = "aespa-labels/1";
+
+const CARDS = {
+  motion: { title: "Motion correction (bullet 1, method)", multi: false, fields: [
+    ["state", "select", MOTION_STATES], ["named_tool", "text"], ["attribution", "select", ATTRIBUTION],
+    ["quote", "quote"], ["notes", "area"]] },
+  smoothing: { title: "Spatial smoothing", multi: true, fields: [
+    ["applies_to", "text"], ["state", "select", SF_STATES], ["kernel", "text"], ["width", "text"],
+    ["width_measure", "text"], ["space", "text"], ["quote", "quote"], ["notes", "area"]] },
+  filtering: { title: "Temporal filtering", multi: true, fields: [
+    ["applies_to", "text"], ["state", "select", SF_STATES], ["pass_type", "text"],
+    ["band_or_cutoff_as_stated", "text"], ["filter_type", "text"], ["order", "text"],
+    ["quote", "quote"], ["notes", "area"]] },
+};
+const HINTS = { width: "as stated, e.g. 8", width_measure: "FWHM / sigma / …", space: "volume / surface / …",
+  pass_type: "high / low / band", band_or_cutoff_as_stated: "as written", named_tool: "verbatim, blank if none" };
+
+// ---- PDF -------------------------------------------------------------------------------------
+const viewer = document.getElementById("viewer");
+const pdfstatus = document.getElementById("pdfstatus");
+let pdfDoc = null, scale = 1.3, lastSelection = "", renderToken = 0;
+
+async function loadPdf(buf, name) {
+  if (!window.pdfjsLib) { pdfstatus.textContent = "PDF.js did not load (offline, or the CDN was blocked)."; return; }
+  try {
+    pdfDoc = await pdfjsLib.getDocument({ data: new Uint8Array(buf) }).promise;
+    pdfstatus.textContent = `${name} · ${pdfDoc.numPages} pages`;
+    await renderAll();
+  } catch (e) {
+    pdfstatus.textContent = "Could not open the PDF: " + e.message;
+  }
+}
+
+async function renderAll() {
+  if (!pdfDoc) return;
+  const token = ++renderToken;
+  viewer.textContent = "";
+  for (let n = 1; n <= pdfDoc.numPages; n++) {
+    const page = await pdfDoc.getPage(n);
+    if (token !== renderToken) return;
+    const vp = page.getViewport({ scale });
+    const div = document.createElement("div");
+    div.className = "page"; div.dataset.page = n;
+    div.style.width = vp.width + "px"; div.style.height = vp.height + "px";
+    const canvas = document.createElement("canvas");
+    const ratio = window.devicePixelRatio || 1;
+    canvas.width = Math.floor(vp.width * ratio); canvas.height = Math.floor(vp.height * ratio);
+    canvas.style.width = vp.width + "px"; canvas.style.height = vp.height + "px";
+    const tl = document.createElement("div");
+    tl.className = "textLayer"; tl.style.setProperty("--scale-factor", scale);
+    div.append(canvas, tl); viewer.append(div);
+    await page.render({ canvasContext: canvas.getContext("2d"), viewport: vp,
+                        transform: ratio !== 1 ? [ratio, 0, 0, ratio, 0, 0] : null }).promise;
+    await pdfjsLib.renderTextLayer({ textContentSource: page.streamTextContent(), container: tl,
+                                     viewport: vp, textDivs: [] }).promise;
+  }
+}
+
+document.getElementById("pdffile").addEventListener("change", e => {
+  const f = e.target.files[0]; if (f) f.arrayBuffer().then(b => loadPdf(b, f.name));
+});
+viewer.addEventListener("dragover", e => { e.preventDefault(); viewer.classList.add("drag"); });
+viewer.addEventListener("dragleave", () => viewer.classList.remove("drag"));
+viewer.addEventListener("drop", e => {
+  e.preventDefault(); viewer.classList.remove("drag");
+  const f = e.dataTransfer.files[0]; if (f) f.arrayBuffer().then(b => loadPdf(b, f.name));
+});
+document.getElementById("zoomin").onclick = () => { scale = Math.min(scale + 0.2, 3); renderAll(); };
+document.getElementById("zoomout").onclick = () => { scale = Math.max(scale - 0.2, 0.6); renderAll(); };
+
+// Remember the last selection made inside the PDF, so clicking a button cannot lose it.
+document.addEventListener("selectionchange", () => {
+  const s = window.getSelection();
+  if (!s || s.rangeCount === 0 || s.isCollapsed) return;
+  const node = s.getRangeAt(0).commonAncestorContainer;
+  if (viewer.contains(node.nodeType === 1 ? node : node.parentNode)) lastSelection = s.toString();
+});
+function cleanSelection(t) { return t.replace(/\s+/g, " ").trim(); }
+
+// ---- form ------------------------------------------------------------------------------------
+const cardsEl = document.getElementById("cards");
+const msg = document.getElementById("msg");
+function say(text, err) { msg.textContent = text; msg.className = err ? "err" : ""; }
+
+function fieldEl(name, kind, opts, value) {
+  const lab = document.createElement("label");
+  lab.textContent = name;
+  let el;
+  if (kind === "select") {
+    el = document.createElement("select");
+    el.append(new Option("—", ""));
+    for (const o of opts) el.append(new Option(o, o));
+  } else if (kind === "text") {
+    el = document.createElement("input"); el.type = "text"; el.spellcheck = false;
+    if (HINTS[name]) el.placeholder = HINTS[name];
+  } else {
+    el = document.createElement("textarea");
+    if (kind === "quote") { el.className = "quote"; el.placeholder = "verbatim, from the PDF text layer"; }
+    lab.classList.add("wide");
+  }
+  el.dataset.field = name;
+  el.value = value ?? (name === "applies_to" ? "all" : "");
+  el.addEventListener("input", saveDraft);
+  lab.append(el);
+  return lab;
+}
+
+function streamEl(key, values, index) {
+  const spec = CARDS[key];
+  const box = document.createElement("div");
+  box.className = "stream";
+  if (spec.multi) {
+    const head = document.createElement("div");
+    head.className = "stream-head";
+    head.innerHTML = `<span>row ${index + 1}</span>`;
+    if (index > 0) {
+      const rm = document.createElement("button");
+      rm.className = "small"; rm.textContent = "remove row";
+      rm.onclick = () => { box.remove(); renumber(key); saveDraft(); };
+      head.append(rm);
+    }
+    box.append(head);
+  }
+  const grid = document.createElement("div");
+  grid.className = "grid";
+  for (const [name, kind, opts] of spec.fields) grid.append(fieldEl(name, kind, opts, values?.[name]));
+  box.append(grid);
+  const row = document.createElement("div");
+  row.className = "btnrow";
+  const use = document.createElement("button");
+  use.className = "small"; use.textContent = "use selection as quote";
+  use.onclick = () => {
+    const t = cleanSelection(lastSelection);
+    if (!t) { say("Select text in the PDF first.", true); return; }
+    box.querySelector('[data-field="quote"]').value = t; saveDraft();
+    say(`Quote set on ${key}${spec.multi ? " row " + (index + 1) : ""} (${t.length} characters).`);
+  };
+  row.append(use);
+  box.append(row);
+  return box;
+}
+
+function renumber(key) {
+  document.querySelectorAll(`#card-${key} .stream`).forEach((s, i) => {
+    const sp = s.querySelector(".stream-head span"); if (sp) sp.textContent = `row ${i + 1}`;
+  });
+}
+
+function build(data) {
+  cardsEl.textContent = "";
+  for (const [key, spec] of Object.entries(CARDS)) {
+    const card = document.createElement("div");
+    card.className = "card"; card.id = "card-" + key;
+    const h = document.createElement("h2");
+    h.textContent = spec.title;
+    card.append(h);
+    const rows = spec.multi ? (data?.[key]?.length ? data[key] : [null]) : [data?.[key] ?? null];
+    const holder = document.createElement("div");
+    holder.className = "streams";
+    rows.forEach((v, i) => holder.append(streamEl(key, v, i)));
+    card.append(holder);
+    if (spec.multi) {
+      const add = document.createElement("button");
+      add.className = "small"; add.textContent = "add stream";
+      add.onclick = () => { holder.append(streamEl(key, null, holder.children.length)); saveDraft(); };
+      const r = document.createElement("div"); r.className = "btnrow"; r.append(add);
+      card.append(r);
+    }
+    cardsEl.append(card);
+  }
+}
+
+function readStream(box) {
+  const o = {};
+  box.querySelectorAll("[data-field]").forEach(el => { o[el.dataset.field] = el.value.trim(); });
+  return o;
+}
+
+function collect() {
+  const out = { schema: SCHEMA, paper_id: document.getElementById("paper_id").value.trim(),
+                exported_at: new Date().toISOString() };
+  for (const [key, spec] of Object.entries(CARDS)) {
+    const rows = [...document.querySelectorAll(`#card-${key} .stream`)].map(readStream);
+    out[key] = spec.multi ? rows : rows[0];
+  }
+  return out;
+}
+
+function problems(d) {
+  const p = [];
+  if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(d.paper_id)) p.push("paper_id is empty or has characters other than letters, digits, _ . -");
+  const filled = r => Object.entries(r).some(([k, v]) => v && !(k === "applies_to" && v === "all"));
+  if (filled(d.motion) && !d.motion.state) p.push("motion: fields filled but no state");
+  for (const key of ["smoothing", "filtering"]) {
+    const seen = new Set();
+    d[key].forEach((r, i) => {
+      if (filled(r) && !r.state) p.push(`${key} row ${i + 1}: fields filled but no state`);
+      if (r.state && !r.applies_to) p.push(`${key} row ${i + 1}: applies_to is empty`);
+      if (r.state && seen.has(r.applies_to)) p.push(`${key}: applies_to "${r.applies_to}" appears twice`);
+      if (r.state) seen.add(r.applies_to);
+    });
+  }
+  return p;
+}
+
+document.getElementById("export").onclick = () => {
+  const d = collect();
+  const p = problems(d);
+  if (p.length) { say("Not exported: " + p.join("; "), true); return; }
+  const blob = new Blob([JSON.stringify(d, null, 2) + "\n"], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `${d.paper_id}.labels.json`;
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  say(`Exported ${d.paper_id}.labels.json`);
+};
+document.getElementById("reset").onclick = () => {
+  if (!confirm("Clear every field?")) return;
+  document.getElementById("paper_id").value = ""; build(null); saveDraft(); say("Cleared.");
+};
+document.getElementById("paper_id").addEventListener("input", saveDraft);
+
+// ---- draft: a per-browser convenience only; the exported file is the record ------------------
+const DRAFT_KEY = "aespa-labeler-draft";
+function saveDraft() { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(collect())); } catch (e) {} }
+function loadDraft() { try { return JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) { return null; } }
+const draft = loadDraft();
+if (draft && draft.schema === SCHEMA) {
+  document.getElementById("paper_id").value = draft.paper_id || "";
+  build(draft);
+  if (draft.paper_id) say(`Draft for ${draft.paper_id} restored from this browser.`);
+} else {
+  build(null);
+}
+</script>
+</body>
+</html>
