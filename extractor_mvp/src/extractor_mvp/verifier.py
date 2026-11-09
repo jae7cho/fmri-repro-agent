@@ -32,11 +32,13 @@ from extractor_mvp.cobidas import COBIDAS_D3_ROWS
 from extractor_mvp.coverage_fields import RECORD_SPECS
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.parsed_paper import ParsedPaper
+from extractor_mvp.prompt_rules import CHECKING_RULES
 from extractor_mvp.span_resolver import resolve_quote
 
 VERDICTS: tuple[str, ...] = ("supported", "wrong", "missed")
 
-VERIFIER_PROMPT = """\
+VERIFIER_PROMPT = (
+    """\
 You are checking a DRAFTED report of the preprocessing an fMRI paper describes, against the paper's
 methods text. Another reader drafted it; you check it. Read the methods text first, then go through
 the draft line by line.
@@ -97,7 +99,9 @@ the draft captures everything. This list never changes a field.
 
 Every quoted sentence (relied_on, verbatim_quote) must be copied EXACTLY from the methods text.
 
-Methods text:
+"""
+    + CHECKING_RULES
+    + """Methods text:
 \"\"\"
 {text}
 \"\"\"
@@ -107,6 +111,7 @@ Drafted report (one line per field):
 {draft}
 \"\"\"
 """
+)
 
 
 def _missing_field() -> FieldExtractionResult:

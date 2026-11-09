@@ -387,7 +387,7 @@ def test_a_configurable_pipelines_default_is_the_models_never_the_kbs() -> None:
     ("record", "versions"),
     [
         (_cpac_record(inferred=("0.3.9.1", "0.3.9")), ["0.3.9.1", "0.3.9"]),
-        (_cpac_record(stated="0.4.0"), ["0.3.9.1", "1.0.0"]),  # never released: the two around it
+        (_cpac_record(stated="0.4.0"), ["0.4.0"]),  # never released: placed in its range by the KB
         (_cpac_record(stated="1.0.0"), ["1.0.0"]),
     ],
 )
@@ -452,7 +452,7 @@ def test_a_default_not_verified_across_the_versions_is_the_models(
             choice_source="synthetic",
         )
 
-    monkeypatch.setattr(fmri_defaults_kb, "get_realignment_tool", fake)
+    monkeypatch.setattr(fmri_defaults_kb, "realignment_tool_at", fake)
     pr = resolution_call.pipeline_realignment("cpac", ["0.3.9", "0.3.9.1"])
     assert pr is not None and pr["verified"] is False
     assert (
@@ -463,3 +463,43 @@ def test_a_default_not_verified_across_the_versions_is_the_models(
     )
     tool = out["realignment_tool"]
     assert tool["provenance"] == "INFERRED_MODEL" and "not verified" in tool["model_reason"]
+
+
+@pytest.mark.parametrize("release", ["S900", "S1200"])
+def test_an_hcp_release_resolves_into_the_flirt_range_as_kb_confirmed(release: str) -> None:
+    """2026-11-09: the S900/S1200 manuals state Functional Pipeline v3.1, which the KB places in the
+    FLIRT-based range (no choice): INFERRED_DEFAULT, not version-dependent. The release's version is
+    the provider's, so it outranks a date-inferred version of the base pipeline."""
+    record = {
+        "software_mentions": [],
+        "data_release": {"releases": [{"dataset": "Human Connectome Project", "release": release}]},
+        "preprocessing": {
+            "base_pipeline": {
+                "extraction": {
+                    "status": "EXTRACTED",
+                    "value": {
+                        "name": "HCP minimal preprocessing pipeline",
+                        "version": {
+                            "extraction": {"status": "MISSING_FROM_PAPER"},
+                            "inference": {
+                                "status": "INFERRED_DEFAULT",
+                                "value": "v4.1.3",
+                                "alternative_inferences": [],
+                            },
+                        },
+                    },
+                }
+            }
+        },
+    }
+    out = interpret(_answer("none", pipeline="HCP minimal preprocessing pipeline"), record, TEXT)
+    tool = out["realignment_tool"]
+    assert tool["provenance"] == "INFERRED_DEFAULT" and tool["versions"] == ["v3.1"]
+    assert (tool["kb_confirmation"]["program"], tool["kb_confirmation"]["package"]) == (
+        "FLIRT",
+        "fsl",
+    )
+    # without the release, the date-inferred v4.1.3 is configurable: the model's
+    del record["data_release"]
+    out = interpret(_answer("none", pipeline="HCP minimal preprocessing pipeline"), record, TEXT)
+    assert out["realignment_tool"]["provenance"] == "INFERRED_MODEL"

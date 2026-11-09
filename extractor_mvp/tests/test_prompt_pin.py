@@ -28,9 +28,13 @@ from extractor_mvp.verifier import VERIFIER_PROMPT
 #: sha256 of the two constants actually sent to the model, pinned 2026-10-21 at HEAD ef10931.
 #: UPDATING EITHER VALUE IS A VINTAGE EVENT. See the failure message below.
 _PINNED = {
-    "EXTRACTION_PROMPT": "31a050b291161c31d5b535b2411234df12b484039a436b7a85df6b4081b77535",
+    #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
+    #: deliberate). Superseded value was 31a050b291161c31d5b535b2411234df12b484039a436b7a85df6b4081b77535.
+    "EXTRACTION_PROMPT": "bea152d7189c96cf4d07f20833918f6bafe96d18f1165b4aa30c2a5cd5a71426",
+    #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
+    #: deliberate). Superseded value was 04ba3cb76b55342cee2ed2fd8b62fb515226fdb21511c6803f380d51913c4648.
     "PER_ACQUISITION_EXTRACTION_PROMPT": (
-        "04ba3cb76b55342cee2ed2fd8b62fb515226fdb21511c6803f380d51913c4648"
+        "b9f050d0c1b8b5ebfdb6cbfd34fa4684dfe4a0c653a31d9040a8d876a24290be"
     ),
     #: The motion stanza, pinned 2026-10-21 BEFORE the reachability probe runs. This is what makes
     #: prereg C2 ("committed BEFORE the run") and C21 ("the vocabulary may not be extended after
@@ -157,7 +161,10 @@ _PINNED = {
     #: than 2 on clause 2), so the constant is VERSION 4 VERBATIM again and this pin returns to
     #: b0093774... The chain: b0093774... -> 8df070da... (v6) -> d353fb47... (v7) -> b0093774...
     #: The superseded values stay on their runs' records. NO FURTHER ITERATION before the corpus run.
-    "MOTION_METHOD_PROMPT": ("b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"),
+    #: 2026-11-09: NOT changed by the shared rules of prompt_rules.py. This is the pre-registered
+    #: probe stanza; the probe recorder refuses any other (tests/test_motion_probe_freeze.py), so the
+    #: rules were left out of it rather than break the pre-registration. The author decides otherwise.
+    "MOTION_METHOD_PROMPT": "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837",
     #: The two coverage calls, pinned 2026-10-28 at their first build (DESIGN_coverage_expansion.md,
     #: the author's ruling R8): call T (temporal/volume) and call S (spatial). New constants in a new
     #: module, so the three hashes above do not move -- that is what R8 asks this test to show. The
@@ -190,7 +197,9 @@ _PINNED = {
     #: filter's design, not the band's shape; the six stress papers the checking pass said
     #: filter_type missed all named a pass type. Superseded TEMPORAL_VOLUME_PROMPT value:
     #: c043aa86afb437224aa68011827b746ff1515025252574e8493f401f6b5dd23e.
-    "TEMPORAL_VOLUME_PROMPT": "2ab16fbfeb7b0b744f09a1f58c3b5d8950f4677ded8f43a354ac849220410f90",
+    #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
+    #: deliberate). Superseded value was 2ab16fbfeb7b0b744f09a1f58c3b5d8950f4677ded8f43a354ac849220410f90.
+    "TEMPORAL_VOLUME_PROMPT": "b2159934aadf963558d7ed17af3e326dd31e9ec0accf36c7ec8a1ba02136a0b8",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -219,12 +228,16 @@ _PINNED = {
     #: gradient_nonlinearity_correction, and "other" is written "other (the paper's own words)" and
     #: checked against them. First drawn on case one that evening. Superseded SPATIAL_PROMPT value:
     #: cbb6193c43f61cc31f1c1054769d23a359a15908e2067cd79a6cadece1f51fd6.
-    "SPATIAL_PROMPT": "81875e3baa97e3fe734a7719e035e35d4be3527f04ec957e741be8fbfa938339",
+    #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
+    #: deliberate). Superseded value was 81875e3baa97e3fe734a7719e035e35d4be3527f04ec957e741be8fbfa938339.
+    "SPATIAL_PROMPT": "ecfa8177ac20771d5be34a908d00adf71e89994ac633346578e53a85247e36f0",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:
     #: 42cb343c7b2f4fea94fa47cb0f25146640f5f1101896ba8b67a79c31e2956a70.
-    "VERIFIER_PROMPT": "f078f100496a21e873e20de5c41372aa633877f03154c0c324ba000f6741a557",
+    #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
+    #: deliberate). Superseded value was f078f100496a21e873e20de5c41372aa633877f03154c0c324ba000f6741a557.
+    "VERIFIER_PROMPT": "6db3abb9f963c2196b850bd00c368e50529a400d36f9c38fd38d011a5f05feec",
 }
 
 #: The frozen per-step phrase table behind the ``performed`` support check (item 2, 2026-10-28):
@@ -338,14 +351,14 @@ def test_the_decision_rule_section_is_where_the_taxonomy_lives() -> None:
 
 
 def test_the_three_pre_existing_hashes_did_not_move_with_the_coverage_calls() -> None:
-    """R8 (2026-10-28), as a literal: the values the three constants were pinned at BEFORE the
-    coverage build, so a coverage change that touched a shared constant fails here by name, not
-    only through the table above."""
+    """R8 (2026-10-28), as a literal. The coverage build left these three untouched; they moved once,
+    deliberately, on 2026-11-09 with the shared rules of prompt_rules.py (the author's item 3). The
+    values before that were 31a050b2…b77535 and 04ba3cb7…c4648; the motion stanza did not move."""
     assert _PINNED["EXTRACTION_PROMPT"] == (
-        "31a050b291161c31d5b535b2411234df12b484039a436b7a85df6b4081b77535"
+        "bea152d7189c96cf4d07f20833918f6bafe96d18f1165b4aa30c2a5cd5a71426"
     )
     assert _PINNED["PER_ACQUISITION_EXTRACTION_PROMPT"] == (
-        "04ba3cb76b55342cee2ed2fd8b62fb515226fdb21511c6803f380d51913c4648"
+        "b9f050d0c1b8b5ebfdb6cbfd34fa4684dfe4a0c653a31d9040a8d876a24290be"
     )
     assert _PINNED["MOTION_METHOD_PROMPT"] == (
         "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"

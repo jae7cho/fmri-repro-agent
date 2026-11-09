@@ -251,3 +251,13 @@ def _build_assembled() -> Preprocessing:
 def assembled() -> Preprocessing:
     """_assemble's output with every pf missing -- i.e. every step field untargeted."""
     return _build_assembled()
+
+
+@pytest.fixture(autouse=True)
+def _no_network_lookups(monkeypatch):
+    """2026-11-09: the citation hop's CrossRef DOI lookup and Europe PMC fetch never reach the network
+    in a test; a test that needs them injects a stub (run_hop's ``europepmc``, or ``fetch``)."""
+    from extractor_mvp import citation_hop
+
+    monkeypatch.setattr(citation_hop, "crossref_doi", lambda entry, **_: None)
+    monkeypatch.setattr(citation_hop, "europepmc_fulltext", lambda doi, cache_dir, **_: None)

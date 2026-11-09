@@ -411,3 +411,23 @@ def test_a_ref_in_the_sentence_that_is_not_the_deferrals_is_left_out() -> None:
         "[3,][4]", _PYPDF_REFS, teis=[("paper", _tei(body))], sentences=[sentence]
     )
     assert resolution == GROBID_REF_TARGET and _ids(matches) == ["b3", "b4"]
+
+
+def test_no_local_pdf_falls_back_to_europepmc_by_doi(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """2026-11-09 (the author's item 2): an entry with no PDF on disk is read from Europe PMC's open
+    full text, by its DOI, and the record says so."""
+    monkeypatch.setattr(citation_hop, "hop_scope", _no_scope)
+    monkeypatch.setattr(citation_hop, "crossref_doi", lambda entry, **_: "10.9999/synthetic")
+    seen: list[str] = []
+
+    def epmc(doi: str, cache_dir: Path | None) -> tuple[str, Path, str]:
+        seen.append(doi)
+        return "Methods\nSynthetic text.", tmp_path / "x.europepmc.xml", "0" * 64
+
+    out = run_hop(_PYPDF_REFS, None, "[3,][4]", [tmp_path], "m", client=object(), europepmc=epmc)
+    assert seen and all(
+        r["target"]["state"] == "europepmc_fulltext" for r in out if r.get("target")
+    )
+    assert out[0]["target"]["confirmed_by"] == "europepmc_doi"

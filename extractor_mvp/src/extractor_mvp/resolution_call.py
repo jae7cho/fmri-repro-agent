@@ -202,15 +202,25 @@ def _confirm(
     return None
 
 
-def _version_key(v: str) -> tuple[int, ...]:
-    return tuple(int(x) for x in re.findall(r"\d+", v))
+def _release_version(record: dict[str, Any], pid: str) -> str | None:
+    """The pipeline version a data release the paper uses states for ``pid`` (kb/datasets), if any:
+    the provider applied that version to the release."""
+    from fmri_defaults_kb import recognize_dataset
+
+    for rel in (record.get("data_release") or {}).get("releases") or []:
+        dataset = str(rel.get("dataset") or "").strip()
+        m = recognize_dataset(dataset, rel.get("release")) if dataset else None
+        if m is not None and m.pipeline_id == pid and m.pipeline_version:
+            return m.pipeline_version
+    return None
 
 
 def pipeline_versions(record: dict[str, Any], pid: str, stated: str | None = None) -> list[str]:
-    """The pipeline versions the paper's realignment could have run at: a stated version the KB lists;
-    for one it does not list, the listed releases on either side of it; else the base pipeline's
-    date-inferred version and its alternatives (only when the base pipeline is this pipeline); else
-    every listed version."""
+    """The pipeline versions the paper's realignment could have run at, in order of evidence: the
+    version the paper states for this pipeline; the version a data release it uses states (the
+    provider applied it); the base pipeline's date-inferred version and its alternatives; else every
+    listed version. A stated version the KB does not list is kept as written (the KB places it in
+    its range: ``realignment_tool_at``)."""
     from fmri_defaults_kb import recognize
     from fmri_defaults_kb.io import load_pipeline_documents
 
@@ -221,19 +231,14 @@ def pipeline_versions(record: dict[str, Any], pid: str, stated: str | None = Non
     same = bool(value) and recognize(str(value.get("name") or "")) == pid
     vf = value.get("version") or {}
     vext, vinf = vf.get("extraction") or {}, vf.get("inference") or {}
-    if stated is None and same and vext.get("status") == "EXTRACTED":
+    if same and vext.get("status") == "EXTRACTED":
         stated = str(vext.get("value"))
+    stated = stated or _release_version(record, pid)
     if stated:
         for v in listed:
             if v.lstrip("vV") == stated.strip().lstrip("vV"):
                 return [v]
-        key = _version_key(stated)
-        before = [v for v in listed if _version_key(v) < key]
-        after = [v for v in listed if _version_key(v) > key]
-        around = ([max(before, key=_version_key)] if before else []) + (
-            [min(after, key=_version_key)] if after else []
-        )
-        return around or listed
+        return [stated.strip()]
     if same and vinf.get("status") == "INFERRED_DEFAULT":
         inferred = [str(vinf.get("value"))] + [
             str(a.get("value")) for a in vinf.get("alternative_inferences") or []
@@ -245,13 +250,13 @@ def pipeline_versions(record: dict[str, Any], pid: str, stated: str | None = Non
 def pipeline_realignment(pid: str, versions: list[str]) -> dict[str, Any] | None:
     """What the KB records for ``pid`` at ``versions``: the programs, whether any is configurable,
     the options, and whether the ranges are verified; None when the KB records nothing."""
-    from fmri_defaults_kb import get_realignment_tool
+    from fmri_defaults_kb import realignment_tool_at
     from fmri_defaults_kb.errors import KbError
 
     found = []
     for v in versions:
         try:
-            rt = get_realignment_tool(pid, v)
+            rt = realignment_tool_at(pid, v)
         except KbError:
             rt = None
         if rt is not None:

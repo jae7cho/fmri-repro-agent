@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import dataclasses
 import hashlib
+import itertools
 import re
 import time
 import unicodedata
@@ -373,6 +374,198 @@ def crossref_author_year(doi: str) -> tuple[str, str] | None:
     return out
 
 
+def _norm_title(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", unicodedata.normalize("NFKD", t).lower()).strip()
+
+
+def crossref_doi(entry: Any, *, fetch: Any = None) -> str | None:
+    """The DOI CrossRef records for a bibliography entry that carries none (2026-11-09): one
+    bibliographic query with the entry's reference text; the top hit is accepted only when its first
+    author's family name and its year equal the entry's and its title occurs in the reference text
+    (all normalised). Only the reference text is sent. None on any doubt or failure."""
+    import json
+    import urllib.parse
+    import urllib.request
+
+    ref = str(getattr(entry, "text", "") or "")
+    year = str(getattr(entry, "year", "") or "")
+    author = str(getattr(entry, "first_author", "") or "")
+    if not ref or not year or not author:
+        return None
+
+    def default_fetch(url: str) -> bytes:
+        req = urllib.request.Request(url, headers={"User-Agent": CROSSREF_USER_AGENT})
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            body: bytes = resp.read()
+            return body
+
+    q = urllib.parse.quote(" ".join(ref.split())[:300])
+    try:
+        msg = json.loads(
+            (fetch or default_fetch)(
+                f"https://api.crossref.org/works?query.bibliographic={q}&rows=1"
+            )
+        )["message"]
+        item = (msg.get("items") or [None])[0]
+    except Exception:
+        return None
+    if not item:
+        return None
+    hit_title = _norm_title(" ".join(item.get("title") or []))
+    family = _norm_title(str((item.get("author") or [{}])[0].get("family") or ""))
+    parts = (item.get("issued") or item.get("published") or {}).get("date-parts") or [[None]]
+    if not hit_title or hit_title not in _norm_title(ref):
+        return None
+    if family != _norm_title(author) or str(parts[0][0]) != year:
+        return None
+    doi = item.get("DOI")
+    return str(doi).lower() if doi else None
+
+
+#: The client name Europe PMC sees (2026-11-09): generic, no email, as for CrossRef.
+EUROPEPMC_USER_AGENT = CROSSREF_USER_AGENT
+_EUROPEPMC = "https://www.ebi.ac.uk/europepmc/webservices/rest"
+
+
+def europepmc_cache_name(doi: str) -> str:
+    """The cache file's name for a DOI, beside the citing paper."""
+    return re.sub(r"[^A-Za-z0-9._-]", "_", doi.lower()) + ".europepmc.xml"
+
+
+def jats_text(xml: bytes) -> str:
+    """A JATS article's body as text, one section title per line before its paragraphs, so the
+    methods finder can find a "Methods" heading as in a PDF's text."""
+    import xml.etree.ElementTree as ET
+
+    root = ET.fromstring(xml)
+    body = root.find(".//body")
+    if body is None:
+        return ""
+    lines: list[str] = []
+
+    def walk(el: Any) -> None:
+        for child in el:
+            tag = child.tag.split("}")[-1]
+            if tag == "sec":
+                title = child.find("title")
+                if title is not None:
+                    lines.append(" ".join("".join(title.itertext()).split()))
+                walk(child)
+            elif tag == "p":
+                lines.append(" ".join("".join(child.itertext()).split()))
+
+    walk(body)
+    return "\n".join(x for x in lines if x)
+
+
+def europepmc_fulltext(
+    doi: str, cache_dir: Path | None, *, fetch: Any = None
+) -> tuple[str, Path, str] | None:
+    """The open-access full text of ``doi`` from the Europe PMC REST API as ``(text, cached file,
+    sha256)``; None when Europe PMC has no full text for it or a call fails (2026-11-09, the author's
+    item 2). The JATS XML is cached in ``cache_dir`` (beside the citing paper) and read from there
+    on a later run. Only the DOI is sent."""
+    import json
+    import urllib.parse
+    import urllib.request
+
+    def default_fetch(url: str) -> bytes:
+        req = urllib.request.Request(url, headers={"User-Agent": EUROPEPMC_USER_AGENT})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            body: bytes = resp.read()
+            return body
+
+    fetch = fetch or default_fetch
+    cached = cache_dir / europepmc_cache_name(doi) if cache_dir is not None else None
+    try:
+        if cached is not None and cached.is_file():
+            xml = cached.read_bytes()
+        else:
+            q = urllib.parse.quote(f'DOI:"{doi}"')
+            hits = json.loads(fetch(f"{_EUROPEPMC}/search?query={q}&format=json&resultType=lite"))
+            results = (hits.get("resultList") or {}).get("result") or []
+            pmcid = next((r.get("pmcid") for r in results if r.get("pmcid")), None)
+            if not pmcid:
+                return None
+            xml = fetch(f"{_EUROPEPMC}/{pmcid}/fullTextXML")
+            if cached is None:
+                return None
+            cached.write_bytes(xml)
+        text = jats_text(xml)
+    except Exception:  # a failed lookup leaves the reference not retrievable, never fails the paper
+        return None
+    if not text or cached is None:
+        return None
+    return text, cached, hashlib.sha256(xml).hexdigest()
+
+
+#: 2026-11-09 (the author's item 3): the words that put a sentence on a step, and the cue that it
+#: hands the step to its citation. A sentence needs both, and a bibliography ref, to be followed.
+STEP_WORDS: dict[str, tuple[str, ...]] = {
+    "motion_correction": ("motion", "realign"),
+    "slice_time_correction": ("slice-tim", "slice tim", "slice acquisition"),
+    "distortion_correction": ("distortion", "field map", "fieldmap", "unwarp", "topup"),
+    "spatial_normalization": ("normaliz", "normalis", "template", "mni"),
+    "spatial_smoothing": ("smooth",),
+    "temporal_filtering": ("filter", "band-pass", "bandpass", "high-pass", "low-pass"),
+    "nuisance_regression": ("nuisance", "regress", "confound"),
+    "segmentation": ("segment",),
+    "coregistration": ("coregist", "co-regist", "registered to the"),
+    "brain_extraction": ("skull", "brain extraction"),
+}
+_DEFERRAL_CUE = re.compile(
+    r"preprocess|pipeline|as described|described (?:in|previously|elsewhere)|detail|"
+    r"following|according to|\bsee\b|as in\b",
+    re.IGNORECASE,
+)
+_TEI = "{http://www.tei-c.org/ns/1.0}"
+
+
+def step_citations(teis: Teis, kinds: Sequence[str]) -> list[tuple[str, str, str, str]]:
+    """Every citation a step is handed to, across the paper's and the supplement's TEI (2026-11-09):
+    ``(tei label, kind, marker text, sentence)`` for each bibliography ref in a sentence that names
+    one of ``kinds`` (:data:`STEP_WORDS`) and carries a deferral cue. One entry per (tei, target)."""
+    import xml.etree.ElementTree as ET
+
+    out: list[tuple[str, str, str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for label, tei in teis:
+        try:
+            root = ET.fromstring(tei)
+        except Exception:
+            continue
+        for p in root.iter(_TEI + "p"):
+            parts: list[tuple[str, str | None, str]] = [(p.text or "", None, "")]
+            for ch in p:
+                if ch.tag == _TEI + "ref" and ch.get("type") == "bibr" and ch.get("target"):
+                    parts.append(("".join(ch.itertext()), ch.get("target"), "".join(ch.itertext())))
+                else:
+                    parts.append(("".join(ch.itertext()), None, ""))
+                parts.append((ch.tail or "", None, ""))
+            text = ""
+            refs: list[tuple[int, str, str]] = []
+            for chunk, target, marker in parts:
+                if target:
+                    refs.append((len(text), target, marker))
+                text += chunk
+            bounds = (
+                [0] + [m.end() for m in re.finditer(r"(?<=[.!?])\s+(?=[A-Z])", text)] + [len(text)]
+            )
+            for a, b in itertools.pairwise(bounds):
+                sentence = " ".join(text[a:b].split())
+                low = sentence.lower()
+                if not _DEFERRAL_CUE.search(sentence):
+                    continue
+                for kind in kinds:
+                    if not any(w in low for w in STEP_WORDS.get(kind, ())):
+                        continue
+                    for at, target, marker in refs:
+                        if a <= at < b and (label, target) not in seen and marker.strip():
+                            seen.add((label, target))
+                            out.append((label, kind, marker.strip(), sentence))
+    return out
+
+
 def _stem_matches(stem: str, keys: set[str], year: str) -> bool:
     """``<surname>_<year>`` exactly or followed by ``_``/``-`` and more ("Glasser_2013_HCP_pipelines")."""
     for k in keys:
@@ -536,7 +729,10 @@ _HOP_ROW_STATES = frozenset({"not_reported", "deferred", "unverifiable"})
 
 
 def hop_scope(
-    preprocessing: Any, ref_string: str, verifier: dict[str, Any] | None = None
+    preprocessing: Any,
+    ref_string: str,
+    verifier: dict[str, Any] | None = None,
+    step_fields: Sequence[str] = (),
 ) -> dict[str, Any]:
     """What the hop asks the cited paper, for the deferrals to ``ref_string``.
 
@@ -552,7 +748,7 @@ def hop_scope(
         r.path
         for r in rows
         if r.state == "DEFERRED_TO_CITATION" and ref_string in (r.deferral_refs or [])
-    }
+    } | set(step_fields)  # 2026-11-09: a step's deferred fields, for a citation found step-wide
     asked: dict[str, str] = {d: "field deferred" for d in sorted(deferred_here) if d in _SPECS}
     software = False
     tools: dict[str, dict[str, Any]] = {}
@@ -914,6 +1110,9 @@ def run_hop(
     meter: CallMeter | None = None,
     teis: Teis = (),
     deferral_sentences: Sequence[str] = (),
+    cache_dir: Path | None = None,
+    europepmc: Any = None,
+    step_fields: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     """One ``second_hop`` record per cited target behind ``ref_string``. Never raises on a model or
     PDF failure: the record carries the state. With the citing paper's GROBID ``teis`` and the
@@ -926,7 +1125,7 @@ def run_hop(
 
     meter = meter or CallMeter()
     client = client or meter.client()
-    scope = hop_scope(preprocessing, ref_string, verifier)
+    scope = hop_scope(preprocessing, ref_string, verifier, step_fields)
     out: list[dict[str, Any]] = []
     matches, resolution, detail = resolve_targets(
         ref_string, citing_text, teis=teis, sentences=deferral_sentences
@@ -957,23 +1156,45 @@ def run_hop(
             continue
         rec["reference"].update(dataclasses.asdict(m.entry))
         state, path, confirmed_by = resolve_local_pdf(m.entry, corpus_dirs)
+        epmc = None
         if path is None:
+            # 2026-11-09 (the author's item 2): no PDF on disk -> Europe PMC's open full text by DOI
+            # (the entry's own DOI, else the one CrossRef records for its title and year)
+            doi = m.entry.doi or crossref_doi(m.entry)
+            if doi:
+                rec["reference"]["doi_used"] = doi
+                epmc = (europepmc or europepmc_fulltext)(doi, cache_dir)
+        if path is None and epmc is None:
             rec["status"] = "not_retrievable"
             rec["target"] = {"state": state}
             continue
-        try:
-            full, _parser = load_pdf_text(path)
-        except Exception as exc:  # a bad cited PDF never fails the citing paper
-            rec["status"] = "not_retrievable"
-            rec["target"] = {"state": "fetch_failed", "error": f"{type(exc).__name__}: {exc}"[:300]}
-            continue
-        rec["target"] = {
-            "state": state,
-            "path": str(path),
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-            "doi_confirmed": True,  # resolve_local_pdf confirms by the PDF's DOI (2026-11-05)
-            "confirmed_by": confirmed_by,
-        }
+        if epmc is not None:
+            full, xml_path, sha = epmc
+            rec["target"] = {
+                "state": "europepmc_fulltext",
+                "path": str(xml_path),
+                "sha256": sha,
+                "doi_confirmed": True,  # Europe PMC was queried by the entry's DOI
+                "confirmed_by": "europepmc_doi",
+            }
+        else:
+            assert path is not None
+            try:
+                full, _parser = load_pdf_text(path)
+            except Exception as exc:  # a bad cited PDF never fails the citing paper
+                rec["status"] = "not_retrievable"
+                rec["target"] = {
+                    "state": "fetch_failed",
+                    "error": f"{type(exc).__name__}: {exc}"[:300],
+                }
+                continue
+            rec["target"] = {
+                "state": state,
+                "path": str(path),
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+                "doi_confirmed": True,  # resolve_local_pdf confirms by the PDF's DOI (2026-11-05)
+                "confirmed_by": confirmed_by,
+            }
         methods = find_methods_section(full)
         fmri = find_fmri_sections(methods.text, methods.start_offset)
         text = json_safe(fmri.text)

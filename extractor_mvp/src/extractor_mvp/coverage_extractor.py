@@ -44,6 +44,7 @@ from extractor_mvp.extractor import (
     build_client,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES
 from extractor_mvp.quote_support import free_text_supported, phrase_in_quote, version_in_quote
 from extractor_mvp.span_resolver import resolve_quote
 
@@ -246,6 +247,7 @@ filter_applied_to: what was filtered when it is not the BOLD data itself (e.g. "
   covariates"), the paper's words; missing when the BOLD data were filtered.
 
 """
+    + PREPROCESSING_RULES
     + _OUTPUT_STATUS
 )
 
@@ -345,6 +347,7 @@ smoothing_approach: canonical fixed_kernel, iterate_to_fwhm.
 smoothing_space: canonical native_volume, native_surface, mni_volume, template_surface.
 
 """
+    + PREPROCESSING_RULES
     + _OUTPUT_STATUS
 )
 

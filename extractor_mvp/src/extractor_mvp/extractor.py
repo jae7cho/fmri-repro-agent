@@ -82,6 +82,7 @@ from extractor_mvp.motion_guard import (
     motion_post_check,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES
 from extractor_mvp.quote_support import (
     coverage_value_supported,
     is_operation_word_only,
@@ -135,7 +136,8 @@ class PreprocessingExtraction(BaseModel):
     )  # voxel_temporal_zscore when the BOLD SIGNAL is z-scored (Liu/Cho); missing otherwise
 
 
-EXTRACTION_PROMPT = """\
+EXTRACTION_PROMPT = (
+    """\
 You are extracting preprocessing parameters from an fMRI methods text. For EACH
 field below, decide its status (see "Output status for each field") and fill in
 the corresponding fields.
@@ -354,11 +356,14 @@ CRITICAL: Each field is independent. A paper can have target_space="extracted",
 smoothing_fwhm="deferred", and intensity_normalization="missing" simultaneously.
 Do not apply "deferred" to all fields because one field is deferred.
 
-Text:
+"""
+    + PREPROCESSING_RULES
+    + """Text:
 \"\"\"
 {text}
 \"\"\"
 """
+)
 
 
 @dataclass(frozen=True)

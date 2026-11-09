@@ -161,6 +161,39 @@ def run_paper(
                 sentences[d["ref_string"]].append(sentence)
     hops: list[dict[str, Any]] = []
     hop_errors: list[dict[str, Any]] = []
+    # 2026-11-09 (the author's item 3): every citation a deferred step is handed to, across the
+    # paper and its supplement, not only the one the extraction recorded
+    from extractor_mvp.citation_hop import step_citations
+
+    step_fields: dict[str, list[str]] = {}
+    for d in record.get("deferred_fields") or []:
+        if d.get("target_kind") in HOP_KINDS:
+            step_fields.setdefault(str(d["field"]).split(".", 1)[0], []).append(str(d["field"]))
+    extra = [
+        (marker, sentence, step_fields[kind])
+        for _label, kind, marker, sentence in step_citations(teis, list(step_fields))
+        if marker not in refs
+    ]
+    record["step_citations"] = [{"ref": m, "fields": f} for m, _s, f in extra]
+    for marker, sentence, fields in extra:
+        try:
+            hops.extend(
+                run_hop(
+                    reference_text,
+                    prep,
+                    marker,
+                    corpus_dirs,
+                    model,
+                    verifier=record.get("verifier"),
+                    meter=meter,
+                    teis=teis,
+                    deferral_sentences=[sentence],
+                    cache_dir=pdf.parent,
+                    step_fields=fields,
+                )
+            )
+        except Exception as exc:  # a hop never costs the paper its report
+            hop_errors.append({"ref": marker, "error": f"{type(exc).__name__}: {exc}"[:500]})
     for ref in refs:
         try:
             hops.extend(
@@ -174,6 +207,8 @@ def run_paper(
                     meter=meter,
                     teis=teis,
                     deferral_sentences=sentences.get(ref, []),
+                    # 2026-11-09: a cited paper's Europe PMC full text is cached beside this paper
+                    cache_dir=pdf.parent,
                 )
             )
         except Exception as exc:  # a hop never costs the paper its report
@@ -194,6 +229,10 @@ def run_paper(
         software_mentions=uses,
         citing_software=software,
     )
+    # 2026-11-09 (the author's item 3): fields the data provider applied to a released dataset
+    from extractor_mvp.provider_applied import provider_applied
+
+    record["applied_by"] = provider_applied(record)
     # 2026-11-09 (the author's item 1): the resolution call, after the software scan and call R, with
     # their answers as inputs; replaces the lookup-based motion inference
     apply_resolution(record, prep, citing_text, model, client=meter.client(), meter=meter)

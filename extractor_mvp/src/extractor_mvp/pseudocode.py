@@ -208,6 +208,7 @@ def _step_line(
     supplied: dict[str, dict[str, Any]],
     hops: dict[str, tuple[Any, str, str | None]],
     resolution: dict[str, Any] | None,
+    applied: dict[str, dict[str, str]] | None = None,
 ) -> str:
     kind = step.kind
     mine = [r for r in rows if r.group == kind]
@@ -233,6 +234,12 @@ def _step_line(
             args.extend(extra)
             extra = []
     args.extend(extra)
+    provider = next((v for k, v in (applied or {}).items() if k.split(".", 1)[0] == kind), None)
+    if provider is not None:
+        # 2026-11-09 (item 3): the data provider applied this step to the release
+        q = next((a.comment for a in args if a.tag == "E" and a.comment), None)
+        args.insert(0, _Arg("applied_by", '"data_provider"', "E", q))
+        args.insert(1, _Arg("release", _literal(provider["release"]), "E", None))
     stated = performed is not None and performed.state == EXTRACTED and performed.value is True
     if args and all(a.tag == "?" for a in args) and not stated:
         return f"{kind}(...)  [?]  # nothing reported for this step"
@@ -335,7 +342,11 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
         if label:
             lines.append(f"# --- {label}")
         for i in idx:
-            lines.append(_step_line(prep.steps[i], rows, supplied, hops, resolution))
+            lines.append(
+                _step_line(
+                    prep.steps[i], rows, supplied, hops, resolution, record.get("applied_by")
+                )
+            )
     lines.append("")
     from extractor_mvp.verifier import drop_same_order_verdict
 
