@@ -165,7 +165,11 @@ def test_the_default_text_source_is_grobid(
     monkeypatch.setattr(batch, "load_pdf_text", lambda _p: ("pypdf text", "pypdf"))
     text, parser, prov = batch.load_text(server["pdf"])
     assert parser == "grobid" and text == flatten_tei(GORDON)
-    assert prov == {"text_source": "grobid-0.9.1-crf", "text_source_fallback": None}
+    assert prov == {
+        "text_source": "grobid-0.9.1-crf",
+        "text_source_fallback": None,
+        "text_source_fallback_reason": None,
+    }
     assert server["posts"] == 1
 
 
@@ -178,7 +182,7 @@ def test_the_pypdf_flag_reads_pypdf_and_grobid_is_never_asked(
     assert batch.load_text(server["pdf"]) == (
         "pypdf text",
         "pypdf",
-        {"text_source": "pypdf", "text_source_fallback": None},
+        {"text_source": "pypdf", "text_source_fallback": None, "text_source_fallback_reason": None},
     )
     assert server["posts"] == 0
 
@@ -190,7 +194,11 @@ def test_the_flag_reads_the_tei_body_and_names_version_and_image(
     text, parser, prov = batch.load_text(server["pdf"])
     assert parser == "grobid" and text == flatten_tei(GORDON)
     # the image AESPA expects is CRF (the author's ruling 4 of 2026-11-06); full is an option
-    assert prov == {"text_source": "grobid-0.9.1-crf", "text_source_fallback": None}
+    assert prov == {
+        "text_source": "grobid-0.9.1-crf",
+        "text_source_fallback": None,
+        "text_source_fallback_reason": None,
+    }
     monkeypatch.setenv(gs.GROBID_IMAGE_ENV, "full")
     assert batch.load_text(server["pdf"])[2]["text_source"] == "grobid-0.9.1-full"
 
@@ -218,6 +226,7 @@ def test_an_unreachable_server_falls_back_to_pypdf_and_says_so(
     text, parser, prov = batch.load_text(server["pdf"])
     assert (text, parser, prov["text_source"]) == ("pypdf text", "pypdf", "pypdf")
     assert prov["text_source_fallback"].startswith("grobid unavailable: URLError")
+    assert prov["text_source_fallback_reason"] == "grobid_unavailable"
 
 
 def test_a_reply_that_is_not_tei_falls_back(
@@ -248,6 +257,7 @@ def test_every_record_names_its_text_source(
     assert r.extraction_json["text_source"] == {
         "text_source": "pypdf",
         "text_source_fallback": None,
+        "text_source_fallback_reason": None,
     }
     monkeypatch.delenv(gs.TEXT_SOURCE_ENV, raising=False)  # the default: GROBID, here unreachable
     server["down"] = True
@@ -310,3 +320,105 @@ def test_a_heading_inside_the_reference_list_is_not_text() -> None:
         b"</div></back></text></TEI>"
     )
     assert flatten_tei(tei) == "Prose."
+
+
+# --- the plausibility check (the author's ruling of 2026-11-08, after liu_2005) -------------------
+
+
+def _tei_body(paragraphs: list[str]) -> bytes:
+    """A well-formed TEI whose body is a heading and these paragraphs (synthetic prose)."""
+    ps = "".join(f"<p>{p}</p>" for p in paragraphs)
+    return (
+        '<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader/><text><body><div>'
+        f"<head>Methods</head>{ps}</div></body><back/></text></TEI>"
+    ).encode()
+
+
+_SENT = "Images were acquired on a scanner and preprocessed with a standard pipeline. "
+#: liu_2005's shape: a valid envelope, a 5-line body of about 3,000 characters
+SHORT_TEI = _tei_body([_SENT * 10] * 4)
+#: a normal paper: about 30,000 characters of body
+NORMAL_TEI = _tei_body([_SENT * 40] * 10)
+PYPDF_TEXT = "pypdf text layer. " * 2800  # 50,400 characters
+
+
+def test_a_valid_tei_with_a_five_line_body_falls_back_to_pypdf(
+    server: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "grobid")
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (PYPDF_TEXT, "pypdf"))
+    server["tei"] = SHORT_TEI
+    body = flatten_tei(SHORT_TEI)
+    assert len(body.splitlines()) == 5 and len(body) < batch.GROBID_MIN_CHARS
+    text, parser, prov = batch.load_text(server["pdf"])
+    assert (text, parser, prov["text_source"]) == (PYPDF_TEXT, "pypdf", "pypdf")
+    assert prov["text_source_fallback_reason"] == "grobid_short_output"
+    assert (prov["grobid_chars"], prov["pypdf_chars"]) == (len(body), len(PYPDF_TEXT))
+    assert prov["text_source_fallback"] == (
+        f"grobid_short_output: grobid-0.9.1-crf body {len(body)} characters, "
+        f"pypdf text {len(PYPDF_TEXT)} characters"
+    )
+
+
+def test_a_normal_length_body_does_not_fall_back(
+    server: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "grobid")
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (PYPDF_TEXT, "pypdf"))
+    server["tei"] = NORMAL_TEI
+    text, parser, prov = batch.load_text(server["pdf"])
+    assert parser == "grobid" and text == flatten_tei(NORMAL_TEI)
+    assert prov == {
+        "text_source": "grobid-0.9.1-crf",
+        "text_source_fallback": None,
+        "text_source_fallback_reason": None,
+    }
+
+
+@pytest.mark.parametrize(
+    ("n_grobid", "n_pypdf", "short"),
+    [
+        (3196, 50672, True),  # liu_2005
+        (27507, 53942, False),  # the smallest other corpus body
+        (12499, 50000, True),  # under a quarter, over the floor
+        (12500, 50000, False),  # exactly a quarter
+        (4999, 6000, True),  # under the floor, over a quarter
+        (5000, 6000, False),  # at the floor
+        (3000, 0, False),  # pypdf has nothing: GROBID's text is kept
+        (3000, 3000, False),  # pypdf no longer: nothing to gain
+    ],
+)
+def test_the_bounds(n_grobid: int, n_pypdf: int, short: bool) -> None:
+    assert batch.grobid_output_short(n_grobid, n_pypdf) is short
+
+
+def test_a_short_body_is_kept_when_pypdf_reads_nothing(
+    server: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv(gs.TEXT_SOURCE_ENV, "grobid")
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: ("", "failed"))
+    server["tei"] = SHORT_TEI
+    _, parser, prov = batch.load_text(server["pdf"])
+    assert parser == "grobid" and prov["text_source_fallback"] is None
+
+
+def test_the_record_says_grobid_short_output(
+    server: dict[str, Any], monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    from conftest import FULL_TEXT, _canned_payload, stub_client
+    from extractor_mvp.extractor import extract
+
+    def fake_extract(paper: Any, model: str, **kw: Any) -> Any:
+        return extract(paper, model, client=stub_client(_canned_payload()))
+
+    monkeypatch.setattr(batch, "extract", fake_extract)
+    long_text = FULL_TEXT * 10
+    monkeypatch.setattr(batch, "load_pdf_text", lambda _p: (long_text, "pypdf"))
+    monkeypatch.delenv(gs.TEXT_SOURCE_ENV, raising=False)
+    server["tei"] = SHORT_TEI
+    r = batch.process_paper("p", server["pdf"], "m")
+    assert r.extraction_json is not None
+    ts = r.extraction_json["text_source"]
+    assert ts["text_source"] == "pypdf"
+    assert ts["text_source_fallback_reason"] == "grobid_short_output"
+    assert ts["pypdf_chars"] == len(long_text)

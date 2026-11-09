@@ -209,19 +209,56 @@ def _tally(preprocessing: Any) -> dict[str, int]:
 SUPPLEMENT_MIN_CHARS = 500
 
 
+#: GROBID's flattened body is implausibly short (the author's ruling of 2026-11-08, after liu_2005:
+#: a well-formed TEI whose body was 3,196 characters against pypdf's 50,672, in 5 lines; every other
+#: corpus paper's body was 27,507 or more). Under either bound the paper is read with pypdf.
+GROBID_MIN_SHARE = 0.25  # of the pypdf text's length, same PDF
+GROBID_MIN_CHARS = 5000
+
+
+def grobid_output_short(n_grobid: int, n_pypdf: int) -> bool:
+    """True when GROBID's body is under ``GROBID_MIN_SHARE`` of pypdf's text or under
+    ``GROBID_MIN_CHARS``, and pypdf's text is the longer of the two (falling back to a shorter text,
+    e.g. an image-only PDF that pypdf cannot read either, would only lose text)."""
+    if n_pypdf <= n_grobid:
+        return False
+    return n_grobid < GROBID_MIN_CHARS or n_grobid < GROBID_MIN_SHARE * n_pypdf
+
+
 def load_text(path: Path) -> tuple[str, str, dict[str, Any]]:
     """The text-layer interface (the author's request of 2026-11-06): ``(text, parser, provenance)``.
     GROBID's flattened TEI body by default (since 2026-11-08), falling back to pypdf when the server
-    cannot give it; pypdf when ``AESPA_TEXT_SOURCE=pypdf``. ``provenance`` is recorded on every record:
-    ``text_source`` (``grobid-<version>-<image>`` or ``pypdf``) and, after a fallback, why."""
-    prov: dict[str, Any] = {"text_source": PYPDF, "text_source_fallback": None}
+    cannot give it or its body is implausibly short (:func:`grobid_output_short`); pypdf when
+    ``AESPA_TEXT_SOURCE=pypdf``. ``provenance`` is recorded on every record: ``text_source``
+    (``grobid-<version>-<image>`` or ``pypdf``) and, after a fallback, why
+    (``text_source_fallback``) and the reason's code (``text_source_fallback_reason``:
+    ``grobid_unavailable`` or ``grobid_short_output``, the latter with both lengths)."""
+    prov: dict[str, Any] = {
+        "text_source": PYPDF,
+        "text_source_fallback": None,
+        "text_source_fallback_reason": None,
+    }
     if text_source_requested() == "grobid":
         try:
             got = grobid_text(path)
         except GrobidUnavailableError as exc:
             prov["text_source_fallback"] = f"grobid unavailable: {exc}"
+            prov["text_source_fallback_reason"] = "grobid_unavailable"
         else:
-            return got.text, "grobid", {**prov, "text_source": got.text_source}
+            text, parser = load_pdf_text(path)
+            n_grobid, n_pypdf = len(got.text), len(text)
+            if not grobid_output_short(n_grobid, n_pypdf):
+                return got.text, "grobid", {**prov, "text_source": got.text_source}
+            prov.update(
+                text_source_fallback=(
+                    f"grobid_short_output: {got.text_source} body {n_grobid} characters, "
+                    f"pypdf text {n_pypdf} characters"
+                ),
+                text_source_fallback_reason="grobid_short_output",
+                grobid_chars=n_grobid,
+                pypdf_chars=n_pypdf,
+            )
+            return text, parser, prov
     text, parser = load_pdf_text(path)
     return text, parser, prov
 

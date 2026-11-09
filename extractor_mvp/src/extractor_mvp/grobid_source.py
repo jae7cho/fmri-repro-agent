@@ -8,7 +8,8 @@ GROBID is the default text source (the author's ruling 1 of 2026-11-08, after
 A PDF goes to ``/api/processFulltextDocument`` once; the TEI is cached on disk by the PDF's sha256,
 the GROBID image label and the server version, so the full and CRF images never share an entry. The text is the TEI
 body and back matter flattened (:func:`flatten_tei`). If the server is unreachable, or answers with no TEI, the paper
-is read with pypdf and the record says why (``text_source_fallback``).
+is read with pypdf and the record says why (``text_source_fallback``); so is a well-formed TEI whose
+body is implausibly short against pypdf's text (``batch.grobid_output_short``, 2026-11-08).
 
 The text source is recorded as ``grobid-<version>-<image>`` (e.g. ``grobid-0.9.1-crf``) or
 ``pypdf``. GROBID's API reports its version but not its image, so the image label comes from
