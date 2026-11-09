@@ -66,6 +66,8 @@ def clip(text: str | None, limit: int = COMMENT_MAX) -> str:
 
 
 def _literal(value: Any) -> str:
+    if value is None or (hasattr(value, "verbatim") and value.verbatim in (None, "None")):
+        return "none"  # an empty value (a KB default that is "no method"), never the string "None"
     if isinstance(value, bool):
         return str(value)
     if isinstance(value, (int, float)):

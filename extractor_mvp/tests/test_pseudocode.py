@@ -277,3 +277,13 @@ def test_render_record_appends_the_block_after_every_existing_section() -> None:
     out = render_record(rec)
     assert out.endswith(report_block(rec))
     assert out.index("## COBIDAS D.3 coverage") < out.index("## Reconstructed preprocessing")
+
+
+def test_an_empty_value_renders_as_none_not_as_a_string() -> None:
+    from types import SimpleNamespace
+
+    from extractor_mvp.pseudocode import _literal
+
+    assert _literal(None) == "none"
+    assert _literal(SimpleNamespace(verbatim="None")) == "none"
+    assert _literal(SimpleNamespace(verbatim="fsl_fast")) == '"fsl_fast"'
