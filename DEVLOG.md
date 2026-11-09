@@ -4600,3 +4600,33 @@ The author's five items, in priority order; all five done.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `9badfb8`, `971b2b5`, `31db9f4`, then this entry; fmri-defaults-kb `263e461`, `5df094f`.
+
+## 2026-11-09 (evening) — the reconstructed preprocessing as pseudo-code
+
+- `74dc5ca` — **`pseudocode.py`:** `## Reconstructed preprocessing` in the report and
+  `<paper>.preproc.txt` beside it (aespa-report), from the stored record with no model call.
+  - **Layout:** one line per step in the record's order (the paper's where stated; template order
+    said in the header). Function-call syntax with named arguments.
+  - **Tags:** every argument is tagged [E] quote-backed, [D] KB default with source, [M] model
+    inference unconfirmed (resolution call, checker-supplied), [C] from a cited paper (hop value,
+    prior publication, or `see("<ref>")`), [?] not reported, or [x] stated not performed (the
+    step as one line).
+  - **Comments:** a quote clipped to 80 characters, or the KB source.
+  - **Omissions:** fields the extractor never examined are left out, and a step with nothing
+    reported is one [?] line.
+  - **Header and footer:** the header gives the pipeline and resolved pipeline, tool versions,
+    data release and order; the footer gives the COBIDAS section's mandatory-row lines.
+  - **Streams:** one block per stream when steps carry `applies_to`, which no schema version does
+    yet. Otherwise one block, with a note when the checking pass reports more than one variant.
+- `6946523` — an empty KB value renders as `none`, not as the string "None" (found on sims_2021).
+- **Gate:** 45 stored records (`results/corpus_full_v1_rechecked`) render every existing section byte
+  for byte; 43 gain the block (the two not-fMRI stops none). A one-character change is detected.
+  Tests: 9 on a synthetic record carrying every tag; 9 mutations killed. extractor_mvp 928 passed;
+  root 278 passed.
+- **Seen in the renders, not fixed here:** yassa_2010's "co-registered to correct for head motion"
+  sentence is still extracted as a coregistration with performed = True. Item 1's instruction is in
+  the resolution call only; the extraction prompt that fills the coregistration field is unchanged.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `74dc5ca`, `6946523`, then this entry.
