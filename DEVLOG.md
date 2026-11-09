@@ -4449,3 +4449,31 @@ Commits here: `e157475`, `66cbc59`, then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `4c3b4b4`, `1488ffb`, `9613c6f`, then this entry.
+
+## 2026-11-08 — GROBID the default; the same-code pypdf control
+
+- `cdca5c9` — **the author's ruling 1: GROBID (CRF) is the default text source.** pypdf by
+  `--text-source pypdf` or `AESPA_TEXT_SOURCE=pypdf`; an unreachable server still falls back to
+  pypdf and says so. README gains a "Text source" section.
+  - **Tests:** an autouse fixture pins tests to pypdf so none reaches the local GROBID server; the
+    default's tests delete it and stub the server. 838 passed.
+  - **Checks:** 68/68 reports identical vs `da368f8` (a1, coverage_v4, stress_v1,
+    corpus_grobid_v1); positive control 31/31 changed. 4 mutations shown and killed.
+- `536463d` — **`docs/findings/text_source_ab_v1.md`** (the author's ruling 2).
+  - **Run:** 19 papers, `--text-source pypdf`, worktree pinned at `cdca5c9`, under `caffeinate -i`.
+    19/19 on the first attempt; $12.1298 metered over 193 calls.
+  - **Same code against corpus_grobid_v1** (pypdf / GROBID):
+    - unverifiable D.3 rows: 15 / 7;
+    - quote-unresolved fields: 41 / 14;
+    - `quote_not_found` diagnostics: 50 / 15;
+    - state agreements: 29 / 31 (smoothing 12 / 12, filtering 9 / 11, motion 8 / 8).
+  - **12 differing states:** evidence present in both texts for 7, not for 5 (cole motion, gordon
+    filtering, liu_2005 smoothing, filtering, motion).
+  - **liu_2005:** GROBID's text is 3,196 characters in 5 lines (pypdf 50,672 in 507); evidence lost
+    in GROBID for `spatial_smoothing.performed` only.
+- **Bedrock billing for 2026-11-06** (ruling 4) not checked: the `bedrock-extractor` IAM user is
+  refused `cloudwatch:GetMetricStatistics` and `ce:GetCostAndUsage`.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `cdca5c9`, `536463d`, then this entry.
