@@ -4524,3 +4524,36 @@ Commits here: `45a1878`, `1b69fa8`, then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `e79cd85`, then this entry.
+
+## 2026-11-09 — the labeler page and the label merge script
+
+- `4d403c9` — **`tools/labeler/labeler.html`** and **`scripts/merge_labels.py`**.
+  - **Labeler:** one self-contained file opened from disk. PDF.js 3.11.174 from cdnjs with
+    subresource integrity (hashes checked against cdnjs's published values), worker loaded as a
+    plain script so it runs from `file://`. Selectable text layer; paper_id; motion, smoothing and
+    filtering cards; "use selection as quote" per card; "add stream" on smoothing and filtering,
+    applies_to defaulting to "all"; export validates and downloads `<paper_id>.labels.json`.
+    Collapsible panel: state definitions and the three standing rulings, from the workbook
+    READMEs.
+  - **State vocabularies** are the workbooks' dropdown lists. For motion that is five states:
+    the request named three (named_tool, described_only, deferred); the workbook's list also has
+    absent and stated_not_performed, and both are kept, since a paper with no motion statement
+    could not be labelled without absent.
+  - **Merge:** appends to `Labels`, `Smoothing` and `Filtering`; new rows only. A paper_id that
+    already has a row in a sheet the file would write to is refused as a whole and named; nothing
+    of it is written. adjudication = "author alone, <date>" or "<rater>, <date>". The motion sheet
+    had no adjudication column; one is added on its first append. Motion bullets 2–7 stay blank.
+  - **Checks:** 22 tests on synthetic JSON (root suite 278 passed, coverage 95.21%; extractor_mvp
+    850 passed). Six mutations, each diff shown non-empty first, each killed (refusal, width as
+    number, default adjudication, dry run, repeated applies_to, the HTML's motion list). In the
+    browser pane on a synthetic one-page PDF: text layer aligned with the canvas, selection
+    copied into a quote, an extra stream added, three invalid exports refused, a valid export
+    merged into copies of the real workbooks (2 rows appended), a second merge refused.
+  - **Dependency:** openpyxl added to the root dev group; `uv.lock` and `extractor_mvp/uv.lock`
+    relocked (the latter records the root's dev group, one line).
+
+No model calls; no paper text in the repository.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `4d403c9`, then this entry.
