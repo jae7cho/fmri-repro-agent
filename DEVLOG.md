@@ -4691,3 +4691,41 @@ Commits here: `ea6c946`, then this entry; fmri-defaults-kb `5b54ee9`, `0fecffb`.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `9093f01`, then this entry; fmri-defaults-kb `20b210a`, `cd22005`.
+
+## 2026-11-09 (night, 2) — HCP releases resolve to FLIRT; Europe PMC hop; shared rules; corpus_full_v2; the freeze tag moved
+
+- `1b9265e`
+  - **The resolution call:** a data release's pipeline version, which the provider applied, now
+    outranks the date-inferred version. HCP S900/S1200 (v3.1) resolve into the FLIRT range as
+    INFERRED_DEFAULT.
+  - **The hop:** an entry with no PDF on disk is read from Europe PMC's open full text. The DOI is
+    the entry's own, or the one CrossRef records for its reference text.
+  - **The hop follows every citation of a deferred step** across the paper and its supplement.
+  - **The four rules** are in the extraction and coverage prompts and in the checking pass. The
+    pre-registered motion stanza is unchanged, because its probe recorder refuses any other.
+  - **Provider-applied steps** are marked `applied_by=data_provider`.
+- `5dd74fa`
+  - **The fix:** a hop's tool answer is now EXTRACTED [C].
+  - **How it was found:** the first run at `1b9265e` was stopped after 8 papers ($3.8094 metered,
+    kept in `results/corpus_full_v2_aborted_1b9265e`) because cattarinussi's hop to Hagler 2019 was
+    read only from `fields`.
+- **KB** (fmri-defaults-kb `3e9c6a3`, DEVLOG `2883fcb`)
+  - `realignment_tool_at`, and the hcp_minimal FLIRT range sourced to Glasser 2013 and the v3.1 and
+    v3.4.0 tags.
+  - The note the author asked for ("the v3.1 tag is not public") was not written: HCPpipelines v3.1
+    exists, and was read.
+- `5773e4e` — `docs/findings/corpus_full_v2.md` and `docs/findings/preproc_all_45.txt`.
+  - **The run:** all 45 papers at `5dd74fa`: 38 full reports, 5 `methods_not_found`, 2 not-fMRI
+    stops, $31.3235.
+  - **glasser2016:** its supplement was placed beside it at the author's request, and it was re-run.
+  - **gracia-tabuenca:** re-run after a network outage.
+  - **Unverifiable fields:** 222 → 72.
+  - **Scorer states on the 19:** unchanged.
+  - **cattarinussi → Hagler 2019:** EXTRACTED [C], AFNI's 3dvolreg.
+  - **weber → Hong 2019** via Europe PMC: the cited sentence names no program, so the tool stays the
+    configurable default.
+- **Tag `sfn2026-freeze` moved** from `58d3b64` to this entry's commit, at the author's request.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `1b9265e`, `5dd74fa`, `5773e4e`, then this entry; fmri-defaults-kb `3e9c6a3`, `2883fcb`.
