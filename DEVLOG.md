@@ -4502,3 +4502,25 @@ Commits here: `cdca5c9`, `536463d`, then this entry.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `45a1878`, `1b69fa8`, then this entry.
+
+## 2026-11-08 (night) — the current-code footprint; the 18-paper view; the freeze tag
+
+- `e79cd85` — **`docs/findings/freeze_report.md`** and **`text_source_ab_v1.md` section 6.**
+  - **Census:** 267 stored reports under `results/` re-rendered with the current code, 77
+    identical; 45 distinct papers in scope by DOI (compared in memory, not written); 19 extracted
+    at or after `4c3b4b4`.
+  - **corpus_full_v1:** the 26 papers without a current-code record, aespa-report with the default
+    source, pinned at `50551fc`, under `caffeinate -i`. 26/26 on the first attempt: 20 full
+    reports, 4 `methods_not_found`, 2 not-fMRI stops; all GROBID, no fallback; all 26 reports
+    re-render identically. $17.9334 over 389 calls. Reported as held out (statuses, counts, cost,
+    time). glasser_2013_hcp_pipelines, smith_2013 and hagler_2019 marked pipeline-description
+    papers.
+  - **Footprint:** 45 of 45 papers by DOI with a current-code report; $29.4475 with the 19
+    labelled records.
+  - **18-paper view** (the author's choice: liu_2005 left out), pypdf / GROBID: unverifiable 8 / 7,
+    quote-unresolved 30 / 14, `quote_not_found` 35 / 15, agreements 28 / 31.
+- **Tag `sfn2026-freeze`** (the author's choice): annotated, on this entry's commit, pushed.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `e79cd85`, then this entry.
