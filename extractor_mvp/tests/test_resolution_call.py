@@ -503,3 +503,29 @@ def test_an_hcp_release_resolves_into_the_flirt_range_as_kb_confirmed(release: s
     del record["data_release"]
     out = interpret(_answer("none", pipeline="HCP minimal preprocessing pipeline"), record, TEXT)
     assert out["realignment_tool"]["provenance"] == "INFERRED_MODEL"
+
+
+def test_a_hop_tools_answer_with_a_resolved_quote_is_extracted_from_the_cited_paper() -> None:
+    """2026-11-09: the hop asks a deferred method as the step's tool; its answer lives in
+    hop["tools"], and one whose quote resolved and holds the tool-shaped name is EXTRACTED [C]."""
+    record = _cpac_record(inferred=("1.8.7",))
+    answer = {
+        "tool": "AFNI's 3dvolreg",
+        "verbatim_quote": "a synthetic cited sentence",
+        "quote_resolved": True,
+        "tool_in_quote": True,
+        "tool_shaped": True,
+    }
+    record["second_hop"] = [
+        {"status": "ok", "ref": "34", "fields": {}, "tools": {"motion_correction.method": [answer]}}
+    ]
+    tool = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)["realignment_tool"]
+    assert (tool["provenance"], tool["value"], tool["from_citation"]["ref"]) == (
+        "EXTRACTED",
+        "AFNI's 3dvolreg",
+        "34",
+    )
+    for key in ("quote_resolved", "tool_in_quote", "tool_shaped"):
+        record["second_hop"][0]["tools"]["motion_correction.method"] = [{**answer, key: False}]
+        tool = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)["realignment_tool"]
+        assert tool["provenance"] == "INFERRED_MODEL", key

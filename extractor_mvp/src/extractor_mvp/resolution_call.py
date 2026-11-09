@@ -282,6 +282,15 @@ def _hop_tool(record: dict[str, Any]) -> dict[str, Any] | None:
     for hop in record.get("second_hop") or []:
         if hop.get("status") != "ok":
             continue
+        # the hop asks a deferred method as the step's TOOL (hop["tools"]): an answer whose quote
+        # resolved in the cited paper and holds the tool-shaped name (found on the 2026-11-09 run)
+        for t in (hop.get("tools") or {}).get("motion_correction.method") or []:
+            if t.get("quote_resolved") and t.get("tool_in_quote") and t.get("tool_shaped"):
+                return {
+                    "value": str(t["tool"]),
+                    "ref": hop.get("ref"),
+                    "quote": t.get("verbatim_quote"),
+                }
         pf = (hop.get("fields") or {}).get("motion_correction.method") or {}
         ext = pf.get("extraction") or {}
         if ext.get("status") != "EXTRACTED":
