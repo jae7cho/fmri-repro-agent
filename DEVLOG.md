@@ -4665,3 +4665,29 @@ The author's KB list ahead of the 45-paper re-run.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `ea6c946`, then this entry; fmri-defaults-kb `5b54ee9`, `0fecffb`.
+
+## 2026-11-09 (late) — configurable realignment in the resolution call; three C-PAC lookups
+
+- `9093f01` — **the resolution call reads a pipeline's realignment at the versions that apply.**
+  - **Configurable at those versions:** the default is INFERRED_MODEL ("pipeline default; the
+    pipeline lets the user choose"), never INFERRED_DEFAULT, and never fills the method arm.
+  - **Read in a cited paper by a hop:** EXTRACTED [C].
+  - **Findings:** `docs/findings/realignment_configurable_v1.md`.
+  - **KB** (fmri-defaults-kb `20b210a`): the field for every pipeline, with source lines. It
+    corrects hcp_minimal (v3.4.0 is FLIRT-based, not MCFLIRT) and the ccs script path. CI pins
+    `cd22005`.
+- **Lookups (no model calls):**
+  - NITRC 9275, oconnor ref 64, is served: an HBN-SSI C-PAC config, sha256 7897a6f1…f532af. It
+    has no motion-correction setting.
+  - Hong et al. 2019 is not on disk (doi:10.1038/s41467-019-08944-1).
+  - vanderwal's C-PAC sentence cites only Avants 2008.
+- **What they resolve to:**
+  - oconnor (0.4.0, never released; read at 0.3.9.1 and 1.0.0) and vanderwal (0.3.9.1 by date):
+    3dvolreg, INFERRED_DEFAULT. No C-PAC release before 1.6.2 offers a choice, so vanderwal is not
+    configurable-default as asked.
+  - weber (1.8.7 by date): 3dvolreg, INFERRED_MODEL, configurable default.
+- Tests: 938 passed; root 278.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `9093f01`, then this entry; fmri-defaults-kb `20b210a`, `cd22005`.
