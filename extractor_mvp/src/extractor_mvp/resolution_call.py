@@ -339,21 +339,38 @@ def _tool_defaults(
     pipe_id: str | None,
     mentions: list[dict[str, Any]],
     tools: dict[str, str],
+    pipe_version: str | None = None,
 ) -> tuple[dict[str, Any] | None, str | None]:
-    """The KB defaults that may fill sub-items, or ``(None, why not)``. Only for a tool the paper
-    names with no KB pipeline wrapping it (a pipeline may override its tool's defaults), and not when
-    the paper states a version the defaults are not documented for."""
-    from fmri_defaults_kb import realignment_defaults
+    """The KB defaults that may fill sub-items, or ``(None, why not)``, and not when the paper
+    states a version of the tool the defaults are not documented for.
+
+    - No KB pipeline: the tool's own defaults, for a tool the paper names.
+    - A KB pipeline wrapping the tool (2026-11-10): the pipeline's ``realignment_settings`` -- what
+      its step sets, and the tool's job default for each option it leaves unset -- when the KB
+      records them and the resolved tool is the one the pipeline wraps; otherwise none (a
+      pipeline may override its tool's defaults)."""
+    from fmri_defaults_kb import realignment_defaults, realignment_settings
 
     if confirmed is None:
         return None, "no KB-confirmed realignment tool"
     if pipe_id is not None:
-        return None, f"the tool runs inside {pipe_id}, whose own settings the KB does not record"
-    if confirmed.get("basis") not in ("package_named", "program_named"):
-        return None, "the tool is not named in the paper"
-    defaults = realignment_defaults(confirmed["package"])
-    if not defaults:
-        return None, f"the KB records no defaults for {confirmed['package']}"
+        defaults = realignment_settings(pipe_id, pipe_version)
+        if defaults is None:
+            return (
+                None,
+                f"the tool runs inside {pipe_id}, whose own settings the KB does not record",
+            )
+        if confirmed.get("package") != defaults["wraps"]:
+            return None, (
+                f"the tool ({confirmed.get('package')}) is not the one {pipe_id} wraps "
+                f"({defaults['wraps']}), so {pipe_id}'s settings do not apply"
+            )
+    else:
+        if confirmed.get("basis") not in ("package_named", "program_named"):
+            return None, "the tool is not named in the paper"
+        defaults = realignment_defaults(confirmed["package"])
+        if not defaults:
+            return None, f"the KB records no defaults for {confirmed['package']}"
     documented = [str(v) for v in defaults.get("version_tokens") or []]
     stated = _stated_versions(confirmed["package"], mentions, tools)
     if documented and stated and not stated & set(documented):
@@ -677,21 +694,39 @@ def interpret(answer: ResolutionAnswer, record: dict[str, Any], text: str) -> di
         # 2026-11-09 (night 3): the model's raw answer, so a record can be re-resolved without a call
         "answer": answer.model_dump(),
     }
-    defaults, why_not = _tool_defaults(confirmed, pipe_id, mentions, tools)
+    defaults, why_not = _tool_defaults(
+        confirmed, pipe_id, mentions, tools, pipe_detail.get("pipeline_version")
+    )
     if why_not is not None:
         out["tool_defaults"] = {"applied": False, "reason": why_not}
     else:
         assert defaults is not None
-        out["tool_defaults"] = {"applied": True, "documented_for": defaults.get("documented_for")}
+        out["tool_defaults"] = {
+            "applied": True,
+            "documented_for": defaults.get("documented_for"),
+            # 2026-11-10: the wrapping pipeline's settings, when they are what fills the sub-items
+            **({"pipeline": defaults["pipeline"]} if defaults.get("pipeline") else {}),
+        }
+
+    known: dict[str, Any] = defaults or {}
+
+    def _has(k: str) -> bool:
+        # a setting whose value differs across the pipeline's versions (value None) fills nothing
+        return k in known and known[k].get("value") is not None
+
     for name in SUB_ITEMS:
         item: SubItem = getattr(answer, name)
         entry: dict[str, Any] = {"status": item.status, "value": item.value}
-        kb_parts = [defaults[k] for k in _DEFAULT_KEYS.get(name, ()) if defaults and k in defaults]
+        kb_parts = [known[k] for k in _DEFAULT_KEYS.get(name, ()) if _has(k)]
         if item.status == "stated" and item.quote and resolve_quote(item.quote, text).span:
             entry.update(provenance="EXTRACTED", quote=item.quote)
         elif kb_parts:
-            # 2026-11-09 (the author's item 3): the tool's documented default, with its source
-            keys = [k for k in _DEFAULT_KEYS[name] if defaults and k in defaults]
+            # 2026-11-09 (the author's item 3): the tool's documented default, with its source;
+            # 2026-11-10: or the wrapping pipeline's setting (set_by pipeline / inherited)
+            keys = [k for k in _DEFAULT_KEYS[name] if _has(k)]
+            set_by = sorted({str(p["set_by"]) for p in kb_parts if p.get("set_by")})
+            if set_by:
+                entry["set_by"] = set_by[0] if len(set_by) == 1 else "; ".join(set_by)
             value = (
                 kb_parts[0]["value"]
                 if len(kb_parts) == 1

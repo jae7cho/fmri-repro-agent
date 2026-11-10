@@ -298,9 +298,12 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
     out = run("spm", "none", old)
     assert out["tool_defaults"]["applied"] is False and "99" in out["tool_defaults"]["reason"]
     assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
-    # wrapped by a KB pipeline: the pipeline may override, so no tool defaults
-    out = run("spm", "conn", spm, {"tool_id": "conn", "display_name": "CONN"})
-    assert out["tool_defaults"]["applied"] is False and "conn" in out["tool_defaults"]["reason"]
+    # wrapped by a KB pipeline whose settings the KB does not record: the pipeline may override,
+    # so no tool defaults (2026-11-10: a pipeline that records them is tested below)
+    fsl_named = {"tool_id": "fsl", "display_name": "FSL", "use": "preprocessing"}
+    out = run("fsl", "fmriprep", fsl_named, {"tool_id": "fmriprep", "display_name": "fMRIPrep"})
+    assert out["tool_defaults"]["applied"] is False
+    assert "fmriprep, whose own settings" in out["tool_defaults"]["reason"]
     # FSL: no reslice default is sourced, so interpolation is the estimate default alone
     fsl = {
         "tool_id": "fsl",
@@ -550,3 +553,98 @@ def test_a_hop_tools_answer_with_a_resolved_quote_is_extracted_from_the_cited_pa
         record["second_hop"][0]["tools"]["motion_correction.method"] = [{**answer, key: False}]
         tool = interpret(_answer("none", pipeline="C-PAC"), record, TEXT)["realignment_tool"]
         assert tool["provenance"] == "INFERRED_MODEL", key
+
+
+# --- 2026-11-10: a wrapping pipeline's own realignment settings fill the sub-items -------------
+
+_SPM12 = {
+    "tool_id": "spm",
+    "display_name": "SPM",
+    "use": "preprocessing",
+    "sentence": "Data were preprocessed in SPM12.",
+}
+_CONN = {"tool_id": "conn", "display_name": "CONN", "use": "preprocessing"}
+
+
+def _run(tool: str, pipeline: str, *mentions: dict[str, Any], **items: SubItem) -> dict[str, Any]:
+    return interpret(
+        _answer(tool, pipeline=pipeline, **items), {"software_mentions": list(mentions)}, TEXT
+    )
+
+
+@pytest.mark.parametrize(
+    "mentions",
+    [(_CONN,), (_SPM12, _CONN)],
+    ids=["conn_default_tool", "spm12_named_inside_conn"],
+)
+def test_conns_settings_fill_the_sub_items_set_or_inherited(
+    mentions: tuple[dict[str, Any], ...],
+) -> None:
+    out = _run("spm", "conn", *mentions)
+    assert out["tool_defaults"]["applied"] is True and out["tool_defaults"]["pipeline"] == "conn"
+    items = out["sub_items"]
+    ref = items["reference_scan"]
+    # CONN sets rtm=0 itself: register to first, not SPM Realign's register to mean
+    assert (ref["value"], ref["provenance"], ref["set_by"]) == (
+        "register to first",
+        "INFERRED_DEFAULT",
+        "pipeline",
+    )
+    assert "conn_setup_preproc.m" in ref["source"] and "rtm=0" in ref["source"]
+    interp = items["interpolation"]
+    assert interp["value"] == "estimate: 2nd degree B-spline; reslice: 4th degree B-spline"
+    assert interp["set_by"] == "inherited"
+    # the CONN line that leaves the option unset, and the SPM line the default is read from
+    assert "leaves eoptions.einterp unset" in interp["source"]
+    assert "spm_defaults.m line 101" in interp["source"]
+    assert "spm_defaults.m line 107" in interp["source"]
+    assert items["similarity_metric"]["value"] == "least squares"
+    assert "spm_cfg_realignunwarp.m line 507" in items["similarity_metric"]["source"]
+    assert items["susceptibility_correction"]["provenance"] == "UNKNOWN"  # no setting for it
+
+
+def test_conns_settings_do_not_apply_to_a_tool_conn_does_not_wrap() -> None:
+    fsl = {"tool_id": "fsl", "display_name": "FSL", "use": "preprocessing"}
+    out = _run("fsl", "conn", fsl, _CONN)
+    assert out["tool_defaults"]["applied"] is False
+    assert "is not the one conn wraps (spm)" in out["tool_defaults"]["reason"]
+    assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
+
+
+def test_a_stated_spm_version_the_defaults_are_not_documented_for_stops_the_inherited_fill() -> (
+    None
+):
+    spm8 = {**_SPM12, "version": "8", "sentence": "Data were preprocessed in SPM8."}
+    out = _run("spm", "conn", spm8, _CONN)
+    assert out["tool_defaults"]["applied"] is False and "8" in out["tool_defaults"]["reason"]
+
+
+def test_the_papers_own_quote_still_outranks_the_pipelines_setting() -> None:
+    stated = SubItem(
+        status="stated",
+        value="first volume",
+        quote="Volumes were realigned to the first volume with a synthetic tool.",
+    )
+    out = _run("spm", "conn", _CONN, reference_scan=stated)
+    assert out["sub_items"]["reference_scan"]["provenance"] == "EXTRACTED"
+    assert "set_by" not in out["sub_items"]["reference_scan"]
+
+
+def test_a_setting_that_differs_across_versions_fills_nothing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import fmri_defaults_kb
+
+    real = fmri_defaults_kb.realignment_settings
+
+    def ranged(pipeline_id: str, version: str | None = None) -> dict[str, Any] | None:
+        out = real(pipeline_id, version)
+        assert out is not None
+        out["reference_scan"] = {**out["reference_scan"], "value": None, "range": "synthetic"}
+        return out
+
+    monkeypatch.setattr(fmri_defaults_kb, "realignment_settings", ranged)
+    out = _run("spm", "conn", _CONN)
+    assert out["tool_defaults"]["applied"] is True
+    assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
+    assert out["sub_items"]["interpolation"]["provenance"] == "INFERRED_DEFAULT"
