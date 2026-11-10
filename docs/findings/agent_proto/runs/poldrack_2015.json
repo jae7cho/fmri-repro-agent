@@ -1,0 +1,885 @@
+{
+ "paper_id": "poldrack_2015",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 1.0163,
+ "calls": 48,
+ "turns": 48,
+ "wall_s": 358.5,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 54,
+ "provenance_counts": {
+  "EXTRACTED": 46,
+  "DEFERRED_UNREAD": 1,
+  "NOT_REPORTED": 6,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 18,
+  "deferral_quote_resolved": 1,
+  "n/a": 7,
+  "quote_resolved_recovered": 21,
+  "number_not_in_quote": 1,
+  "quote_not_found": 6
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 30,
+  "read": 4,
+  "references": 1,
+  "outline": 1,
+  "kb_lookup": 3,
+  "submit": 2
+ },
+ "order": "motion_correction, distortion_correction, coregistration, normalization, intensity_normalization, brain_extraction, nui…",
+ "opened": [],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "realigned to correct for head motion",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "Washington University preprocessing pipeline",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "All fMRI data were preprocessed according to a pipeline developed at Washington University, St Louis [45].",
+   "note": "Specific motion correction tool deferred to reference 45 which could not be accessed",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All fMRI data were preprocessed according to a pipeline developed at Washington University, St Louis [45].",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.method": {
+   "step": "distortion_correction",
+   "field": "method",
+   "value": "field-map-based distortion correction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.tool": {
+   "step": "distortion_correction",
+   "field": "tool",
+   "value": "FSL applywarp",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": "applywarp was used for final resampling combining all transforms including distortion correction",
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.field_map_details": {
+   "step": "distortion_correction",
+   "field": "field_map_details",
+   "value": "mean field map generated from 34 available field maps",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Because field maps were not available for all sessions, a mean field map was generated from 34 available field maps (af…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.applied_by": {
+   "step": "distortion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each session was registered to a single session that had previously been registered to the mean T 1 -weighted structura…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.target": {
+   "step": "coregistration",
+   "field": "target",
+   "value": "mean T1-weighted structural image",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each session was registered to a single session that had previously been registered to the mean T 1 -weighted structura…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "via intermediate session",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each session was registered to a single session that had previously been registered to the mean T 1 -weighted structura…",
+   "note": "Sessions registered to an intermediate session, which was registered to the T1",
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each session was registered to a single session that had previously been registered to the mean T 1 -weighted structura…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "atlas space, 3-mm isotropic",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "normalization.registration_type": {
+   "step": "normalization",
+   "field": "registration_type",
+   "value": "affine",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "intensity_normalization.performed": {
+   "step": "intensity_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.method": {
+   "step": "intensity_normalization",
+   "field": "method",
+   "value": "mode normalization to 1,000",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.applied_by": {
+   "step": "intensity_normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "First, following volumetric registration, anatomical surfaces were generated from the subject's MP-RAGE image using Fre…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "brain_extraction.tool": {
+   "step": "brain_extraction",
+   "field": "tool",
+   "value": "FreeSurfer recon-all version 5.0",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "First, following volumetric registration, anatomical surfaces were generated from the subject's MP-RAGE image using Fre…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "First, following volumetric registration, anatomical surfaces were generated from the subject's MP-RAGE image using Fre…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Artefacts were reduced using frame censoring, regression (excluding censored frames) and spectral filtering [45]. Frame…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "scrubbing.method": {
+   "step": "scrubbing",
+   "field": "method",
+   "value": "frame censoring",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Artefacts were reduced using frame censoring, regression (excluding censored frames) and spectral filtering [45].",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "scrubbing.threshold": {
+   "step": "scrubbing",
+   "field": "threshold",
+   "value": "framewise displacement >0.25 mm",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Frames with framewise displacement 40.25 mm were censored, as well as uncensored segments of data lasting fewer than fi…",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "scrubbing.additional_criteria": {
+   "step": "scrubbing",
+   "field": "additional_criteria",
+   "value": "uncensored segments lasting fewer than five contiguous volumes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Frames with framewise displacement 40.25 mm were censored, as well as uncensored segments of data lasting fewer than fi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.frames_retained": {
+   "step": "scrubbing",
+   "field": "frames_retained",
+   "value": "97.1±3.7%",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Frames with framewise displacement 40.25 mm were censored, as well as uncensored segments of data lasting fewer than fi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.interpolation_method": {
+   "step": "scrubbing",
+   "field": "interpolation_method",
+   "value": "least-squares spectral estimation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Interpolation over censored frames was computed by least-squares spectral estimation, so that continous data could be b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.applied_by": {
+   "step": "scrubbing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Artefacts were reduced using frame censoring, regression (excluding censored frames) and spectral filtering [45].",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance regressors included whole brain, white matter and ventricular signals and their derivatives, in addition to 24…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "whole brain signal, white matter signal, ventricular signals, their derivatives, and 24 movement regressors from Volterra expansion",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance regressors included whole brain, white matter and ventricular signals and their derivatives, in addition to 24…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.excluded_censored_frames": {
+   "step": "nuisance_regression",
+   "field": "excluded_censored_frames",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Artefacts were reduced using frame censoring, regression (excluding censored frames) and spectral filtering [45].",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance regressors included whole brain, white matter and ventricular signals and their derivatives, in addition to 24…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance regressors included whole brain, white matter and ventricular signals and their derivatives, in addition to 24…",
+   "note": "Whole brain signal is global signal",
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.applied_by": {
+   "step": "global_signal_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance regressors included whole brain, white matter and ventricular signals and their derivatives, in addition to 24…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Interpolation over censored frames was computed by least-squares spectral estimation, so that continous data could be b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Interpolation over censored frames was computed by least-squares spectral estimation, so that continous data could be b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.009-0.08 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Interpolation over censored frames was computed by least-squares spectral estimation, so that continous data could be b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Interpolation over censored frames was computed by least-squares spectral estimation, so that continous data could be b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "6.0",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "Calculated from sigma=2.55 using FWHM = sigma × 2.355, where 2.55 × 2.355 ≈ 6.0 mm",
+   "check": "n/a"
+  },
+  "spatial_smoothing.sigma": {
+   "step": "spatial_smoothing",
+   "field": "sigma",
+   "value": "2.55",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "surface",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.surface_details": {
+   "step": "spatial_smoothing",
+   "field": "surface_details",
+   "value": "32k fs_LR surface",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, the time courses were smoothed along the 32k fs LR surface using a Gaussian smoothing kernel (s = 2.55).",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "field-map-based, applied separately",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based…",
+   "note": "Susceptibility correction (field-map-based distortion correction) was computed separately and combined with motion corr…",
+   "check": "quote_resolved_recovered"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "preprocessing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "motion correction"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "filtering"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 57915,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 61915,
+    "length": 2000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "realign"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "MCFLIRT"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "paper",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "45]"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "references"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 78574,
+    "length": 400
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Power 2014"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "skull"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "nuisance"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "scrubbing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "framewise displacement"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "atlas MNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "T1-weighted"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "T 1 structural"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Talairach"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "711-2B"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "3-mm isotropic"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "Washington University",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "FSL",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "fsl",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FSL"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FLIRT"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Supplementary Methods"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Volterra"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "ICA AROMA"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FreeSurfer"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "mode of 1,000"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "interpolation"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "derivatives temporal"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 59500,
+    "length": 1000
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, distortion_correction, coregistration, normalization, intensity_normalization, brain_extraction, nui…",
+    "n_fields": 53
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, distortion_correction, coregistration, normalization, intensity_normalization, brain_extraction, nui…",
+    "n_fields": 54
+   }
+  }
+ ]
+}

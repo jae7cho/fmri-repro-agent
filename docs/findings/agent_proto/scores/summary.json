@@ -1,0 +1,256 @@
+{
+ "agent": {
+  "motion_state": {
+   "disagree": 13,
+   "agree": 6
+  },
+  "motion_tool": {
+   "agree": 1,
+   "disagree": 1
+  },
+  "resolved": {
+   "KB-confirmed|agree": 8,
+   "KB-confirmed|label blank": 3,
+   "model-only|label blank": 7,
+   "model-only|disagree": 1
+  },
+  "smoothing_state": {
+   "agree": 12,
+   "disagree": 4,
+   "stream not separable": 6
+  },
+  "filtering_state": {
+   "agree": 11,
+   "stream not separable": 6,
+   "disagree": 5
+  },
+  "values": {
+   "Smoothing.width": {
+    "agree": 9,
+    "not labelled": 6,
+    "record has no value (label sigma)": 1
+   },
+   "Smoothing.kernel": {
+    "agree": 6,
+    "not labelled": 7,
+    "disagree": 2,
+    "record has no value": 1
+   },
+   "Filtering.band": {
+    "not labelled": 7,
+    "record has no value (label in s)": 1,
+    "agree": 7,
+    "record has no value (label in cycles)": 1
+   },
+   "Filtering.pass_type": {
+    "not labelled": 5,
+    "agree": 8,
+    "label not comparable as stated": 2,
+    "record has no value": 1
+   }
+  }
+ },
+ "pipeline": {
+  "motion_state": {
+   "disagree": 11,
+   "agree": 8
+  },
+  "motion_tool": {
+   "agree": 4
+  },
+  "resolved": {
+   "KB-confirmed|agree": 8,
+   "model-only|label blank": 5,
+   "KB-confirmed|label blank": 5,
+   "KB-confirmed|disagree": 1
+  },
+  "smoothing_state": {
+   "agree": 13,
+   "disagree": 3,
+   "stream not separable": 6
+  },
+  "filtering_state": {
+   "agree": 11,
+   "disagree": 5,
+   "stream not separable": 6
+  },
+  "values": {
+   "Smoothing.width": {
+    "agree": 9,
+    "not labelled": 6,
+    "record has no value (label sigma)": 1
+   },
+   "Smoothing.kernel": {
+    "agree": 9,
+    "not labelled": 7
+   },
+   "Filtering.band": {
+    "not labelled": 7,
+    "record has no value (label in s)": 1,
+    "agree": 6,
+    "record has no value (label in cycles)": 1,
+    "record has no value": 1
+   },
+   "Filtering.pass_type": {
+    "not labelled": 5,
+    "agree": 8,
+    "label not comparable as stated": 2,
+    "record has no value": 1
+   }
+  }
+ },
+ "runs": {
+  "agtzidis_2020": {
+   "cost_usd": 0.6615,
+   "calls": 12,
+   "turns": 12,
+   "wall_s": 139.2,
+   "submitted": true,
+   "forced": null
+  },
+  "braun_2015": {
+   "cost_usd": 0.7609,
+   "calls": 29,
+   "turns": 29,
+   "wall_s": 320.9,
+   "submitted": true,
+   "forced": null
+  },
+  "chen_2015": {
+   "cost_usd": 0.6137,
+   "calls": 22,
+   "turns": 22,
+   "wall_s": 450.1,
+   "submitted": true,
+   "forced": null
+  },
+  "ciric_2017": {
+   "cost_usd": 0.6027,
+   "calls": 13,
+   "turns": 13,
+   "wall_s": 231.0,
+   "submitted": true,
+   "forced": null
+  },
+  "cole_2013": {
+   "cost_usd": 0.4131,
+   "calls": 10,
+   "turns": 10,
+   "wall_s": 150.4,
+   "submitted": true,
+   "forced": null
+  },
+  "derosa_2025": {
+   "cost_usd": 0.9885,
+   "calls": 37,
+   "turns": 37,
+   "wall_s": 281.0,
+   "submitted": true,
+   "forced": null
+  },
+  "gordon_2014": {
+   "cost_usd": 0.3068,
+   "calls": 12,
+   "turns": 12,
+   "wall_s": 112.3,
+   "submitted": true,
+   "forced": null
+  },
+  "liu_2005": {
+   "cost_usd": 0.748,
+   "calls": 30,
+   "turns": 30,
+   "wall_s": 210.0,
+   "submitted": true,
+   "forced": null
+  },
+  "liu_2013": {
+   "cost_usd": 0.5823,
+   "calls": 20,
+   "turns": 20,
+   "wall_s": 210.6,
+   "submitted": true,
+   "forced": null
+  },
+  "mueller_2021": {
+   "cost_usd": 0.6904,
+   "calls": 20,
+   "turns": 20,
+   "wall_s": 297.8,
+   "submitted": true,
+   "forced": null
+  },
+  "oconnor_2017": {
+   "cost_usd": 0.8209,
+   "calls": 29,
+   "turns": 29,
+   "wall_s": 268.8,
+   "submitted": true,
+   "forced": null
+  },
+  "poldrack_2015": {
+   "cost_usd": 1.0163,
+   "calls": 48,
+   "turns": 48,
+   "wall_s": 358.5,
+   "submitted": true,
+   "forced": null
+  },
+  "power_2014": {
+   "cost_usd": 0.4445,
+   "calls": 17,
+   "turns": 17,
+   "wall_s": 225.9,
+   "submitted": true,
+   "forced": null
+  },
+  "tang_2025": {
+   "cost_usd": 0.6856,
+   "calls": 18,
+   "turns": 18,
+   "wall_s": 322.4,
+   "submitted": true,
+   "forced": null
+  },
+  "vanderwal_2016": {
+   "cost_usd": 0.7587,
+   "calls": 28,
+   "turns": 28,
+   "wall_s": 217.3,
+   "submitted": true,
+   "forced": null
+  },
+  "viduarre_2017": {
+   "cost_usd": 1.1419,
+   "calls": 47,
+   "turns": 47,
+   "wall_s": 391.4,
+   "submitted": true,
+   "forced": null
+  },
+  "weber_2024": {
+   "cost_usd": 0.69,
+   "calls": 23,
+   "turns": 23,
+   "wall_s": 235.7,
+   "submitted": true,
+   "forced": null
+  },
+  "wheaton_2004": {
+   "cost_usd": 0.3267,
+   "calls": 15,
+   "turns": 15,
+   "wall_s": 138.4,
+   "submitted": true,
+   "forced": null
+  },
+  "binder_1999": {
+   "cost_usd": 0.5715,
+   "calls": 23,
+   "turns": 23,
+   "wall_s": 191.6,
+   "submitted": true,
+   "forced": null
+  }
+ }
+}

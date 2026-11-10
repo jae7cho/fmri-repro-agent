@@ -1,0 +1,835 @@
+{
+ "paper_id": "viduarre_2017",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 1.1419,
+ "calls": 47,
+ "turns": 47,
+ "wall_s": 391.4,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 50,
+ "provenance_counts": {
+  "CITED": 23,
+  "KB_DEFAULT": 1,
+  "EXTRACTED": 18,
+  "NOT_REPORTED": 6,
+  "DEFERRED_UNREAD": 1,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 41,
+  "kb_result_names_value": 1,
+  "n/a": 7,
+  "deferral_quote_resolved": 1
+ },
+ "references_opened": 1,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 6,
+  "references": 2,
+  "open_reference": 2,
+  "search": 19,
+  "outline": 2,
+  "read": 4,
+  "submit": 2
+ },
+ "order": "motion_correction, slice_timing, distortion_correction, coregistration, normalization, brain_extraction, intensity_norm…",
+ "opened": [
+  {
+   "doc": "ref:b39",
+   "depth": 1,
+   "source": "local_pdf:Glasser_2013_HCP_pipelines.pdf:crossref_author_year",
+   "n_references": 63
+  },
+  {
+   "doc": "ref:b17",
+   "depth": 1,
+   "source": "not opened (local_pdf_ambiguous; no DOI from entry or CrossRef)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "6 DOF FLIRT registration",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "fsl FLIRT",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment hcp_minimal --version v3.1 returned: program=FLIRT, package=fsl, from Glasser et al. 2013 and HCP…",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "single-band reference image",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "spline",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Every frame from the raw timeseries is transformed, according to its unique nonlinear transformation, directly to MNI s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "no",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Thus, in the HCP pipelines, no slice timing correction is employed.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.applied_by": {
+   "step": "slice_timing",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Thus, in the HCP pipelines, no slice timing correction is employed.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "As in the PreFreeSurfer pipeline, the first step is correction of gradient-nonlinearity-induced distortion, using the s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.gradient_nonlinearity": {
+   "step": "distortion_correction",
+   "field": "gradient_nonlinearity",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "As in the PreFreeSurfer pipeline, the first step is correction of gradient-nonlinearity-induced distortion, using the s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.susceptibility_correction": {
+   "step": "distortion_correction",
+   "field": "susceptibility_correction",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The FSL toolbox \"topup\" (Andersson et al., 2003) can then be used to estimate the distortion field.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.susceptibility_method": {
+   "step": "distortion_correction",
+   "field": "susceptibility_method",
+   "value": "topup",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The FSL toolbox \"topup\" (Andersson et al., 2003) can then be used to estimate the distortion field.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.applied_by": {
+   "step": "distortion_correction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The single-band reference image is corrected for distortions using spline interpolation and is then registered to the T…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "BBR",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The single-band reference image is corrected for distortions using spline interpolation and is then registered to the T…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.tool": {
+   "step": "coregistration",
+   "field": "tool",
+   "value": "FLIRT and BBRegister",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The single-band reference image is corrected for distortions using spline interpolation and is then registered to the T…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Every frame from the raw timeseries is transformed, according to its unique nonlinear transformation, directly to MNI s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "MNI 2mm",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The outputs of the fMRIVolume pipeline include a NIFTI volume timeseries in MNINonLinear/Results/fMRIName that is in 2m…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.interpolation": {
+   "step": "normalization",
+   "field": "interpolation",
+   "value": "spline",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Every frame from the raw timeseries is transformed, according to its unique nonlinear transformation, directly to MNI s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The data are then masked by the final brain mask from the PostFreeSurfer pipeline",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.performed": {
+   "step": "intensity_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The data are then masked by the final brain mask from the PostFreeSurfer pipeline and normalized to a 4D whole brain me…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.method": {
+   "step": "intensity_normalization",
+   "field": "method",
+   "value": "4D whole brain mean scaled to 10000",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The data are then masked by the final brain mask from the PostFreeSurfer pipeline and normalized to a 4D whole brain me…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.applied_by": {
+   "step": "intensity_normalization",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface to match the subcortical parcel constrained process…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "2",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface to match the subcortical parcel constrained process…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The smoothing is performed using a novel geodesic Gaussian surface smoothing algorithm.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "surface",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "ica_denoising.performed": {
+   "step": "ica_denoising",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After structured artifact removal using ICA followed by FMRIB's ICA-based X-noisefier (FIX) from the FMRIB Software Lib…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoising.method": {
+   "step": "ica_denoising",
+   "field": "method",
+   "value": "ICA-FIX",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After structured artifact removal using ICA followed by FMRIB's ICA-based X-noisefier (FIX) from the FMRIB Software Lib…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoising.tool": {
+   "step": "ica_denoising",
+   "field": "tool",
+   "value": "FSL FIX",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After structured artifact removal using ICA followed by FMRIB's ICA-based X-noisefier (FIX) from the FMRIB Software Lib…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoising.artifacts_removed_percent": {
+   "step": "ica_denoising",
+   "field": "artifacts_removed_percent",
+   "value": ">99%",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "which removed more than 99% of the artifactual ICA components in the dataset",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoising.applied_by": {
+   "step": "ica_denoising",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The preprocessing pipeline followed the technique of Smith et al. (18, 39)",
+   "note": "ICA-FIX denoising is mentioned after spatial preprocessing (Glasser et al.) and described as part of following Smith et…",
+   "check": "deferral_quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We did not use global signal regression.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "group_ica.performed": {
+   "step": "group_ica",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a \"parcellation\" of 50 components that covers both the cortical surfaces and the su…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "group_ica.n_components": {
+   "step": "group_ica",
+   "field": "n_components",
+   "value": "50",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a \"parcellation\" of 50 components that covers both the cortical surfaces and the su…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "group_ica.applied_by": {
+   "step": "group_ica",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a \"parcellation\" of 50 components",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "standardization.performed": {
+   "step": "standardization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Such time series (size: number of participants × number of scans × number of time points × number of ICA components = 8…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "standardization.method": {
+   "step": "standardization",
+   "field": "method",
+   "value": "mean 0, SD 1 per scan, subject, and ICA component",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Such time series (size: number of participants × number of scans × number of time points × number of ICA components = 8…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "standardization.applied_by": {
+   "step": "standardization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Such time series (size: number of participants × number of scans × number of time points × number of ICA components = 8…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not applicable",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "Susceptibility distortion correction was performed separately (using topup) and is not part of the motion correction st…",
+   "check": "n/a"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "dataset",
+    "name": "HCP",
+    "version": "900 subjects",
+    "fields": null
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b39",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "fMRI preprocessing motion correction"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "ref:b39"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 67723,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 71843,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "temporal filtering bandpass"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b17",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "hcp_minimal",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "hcp_minimal",
+    "version": "v3.1",
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "temporal filtering highpass lowpass bandpass"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "ICA FIX artifact"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "slice timing correction"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "gradient nonlinearity distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "topup EPI distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "MNI normalization registration FNIRT"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "topup"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "BBR BBRegister"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "spline interpolation resampling"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "params",
+    "name": "hcp_minimal",
+    "version": "v3.1",
+    "fields": "motion_correction,spatial_smoothing,temporal_filtering"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "params",
+    "name": "hcp_minimal",
+    "version": null,
+    "fields": "motion_correction,spatial_smoothing,temporal_filtering,slice_timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "ICA FIX"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "SI Methods supplementary preprocessing"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 33535,
+    "length": 2000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Smith et al"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "dataset",
+    "name": "HCP S900",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 35535,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "CIFTI grayordinates surface"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "41",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "reference single-band spin echo"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Hz frequency detrend"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "highpass Hz"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "detrend linear"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing, distortion_correction, coregistration, normalization, brain_extraction, intensity_norm…",
+    "n_fields": 44
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing, distortion_correction, coregistration, normalization, brain_extraction, intensity_norm…",
+    "n_fields": 50
+   }
+  }
+ ]
+}

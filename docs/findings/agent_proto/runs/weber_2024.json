@@ -1,0 +1,753 @@
+{
+ "paper_id": "weber_2024",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.69,
+ "calls": 23,
+ "turns": 23,
+ "wall_s": 235.7,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 55,
+ "provenance_counts": {
+  "EXTRACTED": 43,
+  "DEFERRED_UNREAD": 1,
+  "NOT_REPORTED": 7,
+  "CITED": 4
+ },
+ "check_counts": {
+  "quote_resolved": 43,
+  "deferral_quote_resolved": 1,
+  "n/a": 7,
+  "number_not_in_quote": 1,
+  "quote_resolved_recovered": 3
+ },
+ "references_opened": 1,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 9,
+  "references": 3,
+  "open_reference": 1,
+  "outline": 1,
+  "read": 2,
+  "kb_lookup": 3,
+  "submit": 1
+ },
+ "order": "weber_2024",
+ "opened": [
+  {
+   "doc": "ref:b48",
+   "depth": 1,
+   "source": "europepmc (DOI from crossref)",
+   "n_references": 75
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "head motion correction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "C-PAC",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": "Specific realignment program not stated; deferred to C-PAC pipeline; kb_lookup returned KbUnknownToolError for C-PAC re…",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.applied_by": {
+   "step": "slice_timing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.method": {
+   "step": "brain_extraction",
+   "field": "method",
+   "value": "skull stripping",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.performed": {
+   "step": "intensity_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.applied_by": {
+   "step": "intensity_normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The rs-fMRI data were processed as described previously [49] based on the configurable pipeline for the analysis of con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.method": {
+   "step": "nuisance_regression",
+   "field": "method",
+   "value": "CompCor",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.signals_regressed": {
+   "step": "nuisance_regression",
+   "field": "signals_regressed",
+   "value": "head motion, white matter, cerebrospinal fluid",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.compcor_components": {
+   "step": "nuisance_regression",
+   "field": "compcor_components",
+   "value": "top 5 principal components",
+   "provenance": "CITED",
+   "doc": "ref:b48",
+   "quote": "Statistical corrections removed effects of head motion, white matter and cerebrospinal fluid signals using the CompCor …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.trend_removal": {
+   "step": "nuisance_regression",
+   "field": "trend_removal",
+   "value": "linear/quadratic trends",
+   "provenance": "CITED",
+   "doc": "ref:b48",
+   "quote": "Statistical corrections removed effects of head motion, white matter and cerebrospinal fluid signals using the CompCor …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band-pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.01-0.1 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were corrected for head motion, as well as white matter and cerebrospinal fluid signals using CompCor [84], follow…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.between": {
+   "step": "coregistration",
+   "field": "between",
+   "value": "T1w and rs-fMRI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "linear",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.space": {
+   "step": "normalization",
+   "field": "space",
+   "value": "MNI152",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both T1w and rs-fMRI data were linearly co-registered and mapped to MNI152 space.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.transformation_type": {
+   "step": "normalization",
+   "field": "transformation_type",
+   "value": "combined linear and non-linear transformations",
+   "provenance": "CITED",
+   "doc": "ref:b48",
+   "quote": "After band-pass filtering (0.01–0.1 Hz), we co-registered rs-fMRI and T1w data in MNI152 space through combined linear …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_mapping.performed": {
+   "step": "surface_mapping",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Functional imaging data were mapped to corresponding mid-thickness surfaces.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_mapping.surface_type": {
+   "step": "surface_mapping",
+   "field": "surface_type",
+   "value": "mid-thickness surfaces",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Functional imaging data were mapped to corresponding mid-thickness surfaces.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_mapping.template": {
+   "step": "surface_mapping",
+   "field": "template",
+   "value": "Conte69",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We resampled data to the Conte69 surface template [79] via Workbench [78] with 10,242 surface points (vertices) per hem…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_mapping.vertices_per_hemisphere": {
+   "step": "surface_mapping",
+   "field": "vertices_per_hemisphere",
+   "value": "10242",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We resampled data to the Conte69 surface template [79] via Workbench [78] with 10,242 surface points (vertices) per hem…",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "surface_mapping.applied_by": {
+   "step": "surface_mapping",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Functional imaging data were mapped to corresponding mid-thickness surfaces.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We smoothed timeseries using a 5 mm full-width-athalf-maximum Gaussian kernel and computed intrahemispheric functional …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We smoothed timeseries using a 5 mm full-width-athalf-maximum Gaussian kernel and computed intrahemispheric functional …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We smoothed timeseries using a 5 mm full-width-athalf-maximum Gaussian kernel and computed intrahemispheric functional …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "surface",
+   "provenance": "CITED",
+   "doc": "ref:b48",
+   "quote": "We resampled rs-fMRI surface data to Conte69, a template mesh from the Human Connectome Project pipeline (https://githu…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We smoothed timeseries using a 5 mm full-width-athalf-maximum Gaussian kernel and computed intrahemispheric functional …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Due to the ongoing debate about global signal regression (GSR) [85], we did not apply GSR, but conducted additional con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.note": {
+   "step": "global_signal_regression",
+   "field": "note",
+   "value": "Control analyses used GSR",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Due to the ongoing debate about global signal regression (GSR) [85], we did not apply GSR, but conducted additional con…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Frame censoring was not performed.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_exclusion.performed": {
+   "step": "motion_exclusion",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Subjects with a mean framewise displacement (FD) > 0.3 mm in rs-fMRI (two SD from the mean across all subjects) were ex…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_exclusion.threshold": {
+   "step": "motion_exclusion",
+   "field": "threshold",
+   "value": "mean FD > 0.3 mm",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Subjects with a mean framewise displacement (FD) > 0.3 mm in rs-fMRI (two SD from the mean across all subjects) were ex…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_exclusion.n_excluded": {
+   "step": "motion_exclusion",
+   "field": "n_excluded",
+   "value": "9",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Subjects with a mean framewise displacement (FD) > 0.3 mm in rs-fMRI (two SD from the mean across all subjects) were ex…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "site_harmonization.performed": {
+   "step": "site_harmonization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were harmonized for site effects while preserving effects of age and ASD diagnosis using ComBat [86], which minimi…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "site_harmonization.method": {
+   "step": "site_harmonization",
+   "field": "method",
+   "value": "ComBat",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were harmonized for site effects while preserving effects of age and ASD diagnosis using ComBat [86], which minimi…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "site_harmonization.preserved_effects": {
+   "step": "site_harmonization",
+   "field": "preserved_effects",
+   "value": "age and ASD diagnosis",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Data were harmonized for site effects while preserving effects of age and ASD diagnosis using ComBat [86], which minimi…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "C-PAC version"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "49",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b48",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b48",
+    "query": "fMRI processing C-PAC"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b48",
+    "query": "preprocessing motion"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "ref:b48"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b48",
+    "start": 37335,
+    "length": 2500
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "C-PAC",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "cpac",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "AFNI FSL SPM realignment"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "CompCor components"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "MNI152 linear non-linear"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "83",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Preprocessed Connectomes"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "68",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "dataset",
+    "name": "ABIDE",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion susceptibility fieldmap"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b48",
+    "query": "slice-time"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b48",
+    "start": 38000,
+    "length": 500
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "weber_2024",
+    "n_fields": 55
+   }
+  }
+ ]
+}

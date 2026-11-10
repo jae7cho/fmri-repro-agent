@@ -1,0 +1,572 @@
+{
+ "paper_id": "oconnor_2017",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.8209,
+ "calls": 29,
+ "turns": 29,
+ "wall_s": 268.8,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 35,
+ "provenance_counts": {
+  "EXTRACTED": 20,
+  "KB_DEFAULT": 4,
+  "NOT_REPORTED": 10,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved_recovered": 12,
+  "kb_result_names_value": 4,
+  "n/a": 11,
+  "quote_resolved": 4,
+  "quote_not_found": 4
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 6,
+  "search": 9,
+  "references": 2,
+  "read": 2,
+  "open_reference": 1,
+  "submit": 2
+ },
+ "order": "oconnor_2017",
+ "opened": [
+  {
+   "doc": "ref:b0",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from crossref; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "motion correction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "afni 3dvolreg",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='pipeline', name='C-PAC') -> 'cpac'; kb_lookup(kind='realignment', name='cpac', version='0.4.0') -> prog…",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Next, data was processed using a development version of the open-source, Nipype-based Configurable Pipeline for the Ana…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "first volume",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> reference_scan: 'first volume (sub-brick 0)'",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "heptic or Fourier",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> interpolation_estimate: 'heptic (7th order polynomial); Fourier in older …",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "weighted least squares",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> cost_function: 'weighted least squares'",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": "The paper explicitly lists the preprocessing steps; smoothing is not among them",
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": "No traditional temporal filtering mentioned; nuisance regression included 1st and 2nd order polynomial detrending but t…",
+   "check": "quote_resolved_recovered"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Not listed among the preprocessing steps in C-PAC",
+   "check": "n/a"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Further anatomical processing included skull stripping using AFNI's 3dSkullstrip",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.tool": {
+   "step": "brain_extraction",
+   "field": "tool",
+   "value": "afni 3dSkullstrip",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Further anatomical processing included skull stripping using AFNI's 3dSkullstrip",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "boundary-based registration",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Next, data was processed using a development version of the open-source, Nipype-based Configurable Pipeline for the Ana…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A non-rigid registration between MPRAGE images and a 2-mm MNI brain-only template (FSL's MNI152 T1 2mm brain.nii.gz) wa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "normalization.target_template": {
+   "step": "normalization",
+   "field": "target_template",
+   "value": "MNI152 T1 2mm brain (FSL)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A non-rigid registration between MPRAGE images and a 2-mm MNI brain-only template (FSL's MNI152 T1 2mm brain.nii.gz) wa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "ANTs",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A non-rigid registration between MPRAGE images and a 2-mm MNI brain-only template (FSL's MNI152 T1 2mm brain.nii.gz) wa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "normalization.transformation_type": {
+   "step": "normalization",
+   "field": "transformation_type",
+   "value": "non-rigid registration",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A non-rigid registration between MPRAGE images and a 2-mm MNI brain-only template (FSL's MNI152 T1 2mm brain.nii.gz) wa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "normalization.note": {
+   "step": "normalization",
+   "field": "note",
+   "value": "Anatomical normalization explicitly described; functional normalization to standard space not explicitly mentioned but implied by ROI extraction from CC200 atlas",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "The paper describes anatomical normalization but does not explicitly state whether functional images were normalized to…",
+   "check": "n/a"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "1st and 2nd order polynomial, 24-regressor model of motion, mean WM mask signal, mean CSF mask signal",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "nuisance variable regression (1st and 2nd order polynomial, 24regressor model of motion, mean WM mask signal, mean CSF …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Next, data was processed using a development version of the open-source, Nipype-based Configurable Pipeline for the Ana…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "nuisance variable regression (1st and 2nd order polynomial, 24regressor model of motion, mean WM mask signal, mean CSF …",
+   "note": "Global signal not included in the list of nuisance regressors",
+   "check": "quote_resolved_recovered"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "resampling.performed": {
+   "step": "resampling",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "resampling.target_orientation": {
+   "step": "resampling",
+   "field": "target_orientation",
+   "value": "RPI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following resampling of the fMRI data to RPI orientation, image preprocessing in C-PAC consisted of the following steps",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Spatial smoothing was not performed",
+   "check": "n/a"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Spatial smoothing was not performed",
+   "check": "n/a"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Spatial smoothing was not performed",
+   "check": "n/a"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Temporal filtering was not performed",
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Temporal filtering was not performed",
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Temporal filtering was not performed",
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Temporal filtering was not performed",
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "C-PAC",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing FWHM"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "temporal filter frequency"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "cpac",
+    "version": "0.4.0",
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion susceptibility"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "normalization MNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "configuration file"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "64",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "standard space template"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 20000,
+    "length": 500
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "ROI CC200 atlas"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "extracted time series"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "params",
+    "name": "cpac",
+    "version": "0.4.0",
+    "fields": "normalization,smoothing,temporal_filtering,slice_timing"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b0",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 19900,
+    "length": 800
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "3dvolreg",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "3dvolreg",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "oconnor_2017",
+    "n_fields": 28
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "oconnor_2017",
+    "n_fields": 35
+   }
+  }
+ ]
+}

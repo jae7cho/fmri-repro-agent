@@ -1,0 +1,581 @@
+{
+ "paper_id": "mueller_2021",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.6904,
+ "calls": 20,
+ "turns": 20,
+ "wall_s": 297.8,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 44,
+ "provenance_counts": {
+  "EXTRACTED": 34,
+  "KB_DEFAULT": 3,
+  "NOT_REPORTED": 5,
+  "MODEL": 2
+ },
+ "check_counts": {
+  "quote_resolved": 30,
+  "kb_result_names_value": 3,
+  "quote_not_found": 2,
+  "n/a": 7,
+  "number_not_in_quote": 2
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 6,
+  "references": 1,
+  "open_reference": 1,
+  "kb_lookup": 2,
+  "submit": 2
+ },
+ "order": "mueller_2021",
+ "opened": [
+  {
+   "doc": "ref:b44",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from entry; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Functional data were realigned and unwarped to correct for head motion",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "realigned and unwarped",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Functional data were realigned and unwarped to correct for head motion",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "spm Realign & Unwarp",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Initial preprocessing was performed using the Statistical Parametric Mapping 12 software (SPM12, Wellcome Trust Centre …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Initial preprocessing was performed using the Statistical Parametric Mapping 12 software (SPM12, Wellcome Trust Centre …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "first image",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(realignment, spm): Realign & Unwarp default is register to first (rtm=0)",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "4th degree B-spline",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(realignment, spm): reslice interpolation default for Realign & Unwarp",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "least squares",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(realignment, spm): SPM realignment cost function",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "yes, fieldmap-based (gradient echo fieldmap)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "high-resolution anatomical scans were acquired using a T1-weighted magnetization prepared rapid gradient echo (MPRAGE) …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the mean motion-corrected image was coregistered to the high-resolution anatomical image",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.description": {
+   "step": "coregistration",
+   "field": "description",
+   "value": "mean motion-corrected functional image to high-resolution anatomical image",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the mean motion-corrected image was coregistered to the high-resolution anatomical image",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.tool": {
+   "step": "coregistration",
+   "field": "tool",
+   "value": "spm",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "Coregistration performed in SPM12 pipeline, specific SPM coregistration function implied",
+   "check": "n/a"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Initial preprocessing was performed using the Statistical Parametric Mapping 12 software (SPM12, Wellcome Trust Centre …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (AN…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "ANTs",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (AN…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "subject-specific anatomical template",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (AN…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.method": {
+   "step": "normalization",
+   "field": "method",
+   "value": "ANTs multivariate template construction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (AN…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All scans were then registered to a subject-specific anatomical template created using Advanced Normalization Tools (AN…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A 5-mm full-width at half-maximum (FWHM) isotropic Gaussian kernel was subsequently applied to smooth the functional da…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A 5-mm full-width at half-maximum (FWHM) isotropic Gaussian kernel was subsequently applied to smooth the functional da…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian (isotropic)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A 5-mm full-width at half-maximum (FWHM) isotropic Gaussian kernel was subsequently applied to smooth the functional da…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "Smoothing applied to functional data after normalization in volumetric space; no mention of surface-based processing",
+   "check": "n/a"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A 5-mm full-width at half-maximum (FWHM) isotropic Gaussian kernel was subsequently applied to smooth the functional da…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.performed": {
+   "step": "detrending",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "voxelwise time series were linearly detrended",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.type": {
+   "step": "detrending",
+   "field": "type",
+   "value": "linear",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "voxelwise time series were linearly detrended",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.applied_by": {
+   "step": "detrending",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Further preparation for resting-state functional connectivity was implemented using in-house MATLAB scripts. Global sig…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_scaling.performed": {
+   "step": "global_signal_scaling",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Global signal scaling (median = 1,000) was applied to account for fluctuations in signal intensity across space and time",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_scaling.method": {
+   "step": "global_signal_scaling",
+   "field": "method",
+   "value": "median = 1000",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Global signal scaling (median = 1,000) was applied to account for fluctuations in signal intensity across space and time",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "global_signal_scaling.applied_by": {
+   "step": "global_signal_scaling",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Further preparation for resting-state functional connectivity was implemented using in-house MATLAB scripts. Global sig…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Residual BOLD signal from each voxel was extracted after removing the effects of head motion and five physiological noi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "motion (Volterra expansion), cerebrospinal fluid, white matter (5 physiological noise components total)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Residual BOLD signal from each voxel was extracted after removing the effects of head motion and five physiological noi…",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "nuisance_regression.motion_model": {
+   "step": "nuisance_regression",
+   "field": "motion_model",
+   "value": "Volterra expansion of translational/rotational motion parameters",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Motion was modeled using a Volterra expansion of translational/rotational motion parameters, accounting for autoregress…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Further preparation for resting-state functional connectivity was implemented using in-house MATLAB scripts. [...] Resi…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These regional time series were then decomposed into several frequency bands using a maximal overlap discrete wavelet t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Low-frequency fluctuations in wavelets 3-6 (0.01-0.17 Hz) were selected for subsequent connectivity analyses",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.01-0.17 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Low-frequency fluctuations in wavelets 3-6 (0.01-0.17 Hz) were selected for subsequent connectivity analyses",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "maximal overlap discrete wavelet transform",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These regional time series were then decomposed into several frequency bands using a maximal overlap discrete wavelet t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.wavelets_selected": {
+   "step": "temporal_filtering",
+   "field": "wavelets_selected",
+   "value": "wavelets 3-6",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Low-frequency fluctuations in wavelets 3-6 (0.01-0.17 Hz) were selected for subsequent connectivity analyses",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These regional time series were then decomposed into several frequency bands using a maximal overlap discrete wavelet t…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Global signal scaling (median = 1,000) was applied to account for fluctuations in signal intensity across space and time",
+   "note": "Global signal scaling was performed, but not global signal regression",
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "ica_denoise.performed": {
+   "step": "ica_denoise",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Wavelet decomposition does not have a filter order in the traditional sense",
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "interpolation"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "reference first"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Pritschet",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b44",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "spm12",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "spm",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "wavelet transform"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "fieldmap distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "skull brain mask"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "mueller_2021",
+    "n_fields": 43
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "mueller_2021",
+    "n_fields": 44
+   }
+  }
+ ]
+}

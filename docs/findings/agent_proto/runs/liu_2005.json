@@ -1,0 +1,35 @@
+{
+ "paper_id": "liu_2005",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.748,
+ "calls": 30,
+ "turns": 30,
+ "wall_s": 210.0,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 35,
+ "provenance_counts": {
+  "EXTRACTED": 26,
+  "KB_DEFAULT": 1,
+  "NOT_REPORTED": 8
+ },
+ "check_counts": {
+  "quote_not_found": 22,
+  "kb_result_names_value": 1,
+  "n/a": 8,
+  "quote_resolved": 4
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 14,
+  "read": 4,
+  "outline": 1,
+  "kb_lookup": 2,
+  "submit": 2
+ }
+}

@@ -1,0 +1,25 @@
+{
+ "preprocessing": {
+  "steps": [
+   {
+    "kind": "motion_correction",
+    "method": {
+     "extraction": {
+      "status": "EXTRACTED",
+      "value": {
+       "verbatim": "rigid body realignment"
+      }
+     }
+    }
+   }
+  ]
+ },
+ "diagnostics": [],
+ "resolution": {
+  "status": "ok",
+  "realignment_tool": {
+   "value": null,
+   "provenance": "UNKNOWN"
+  }
+ }
+}

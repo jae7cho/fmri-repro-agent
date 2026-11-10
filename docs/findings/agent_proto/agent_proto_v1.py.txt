@@ -1,0 +1,380 @@
+"""Agent prototype v1 (2026-11-09): an agent reconstructs a paper's preprocessing with tools; code
+checks its evidence. An experiment outside the pipeline: it imports the repo's text loader, citation
+lookup, span resolver and the defaults KB, and changes none of them.
+
+The agent records fields as it goes (``record_field``) and finishes with ``submit``. Scored fields
+use the repo's names: motion_correction (performed, method, tool, reference_scan, interpolation,
+similarity_metric, susceptibility_correction), spatial_smoothing (performed, fwhm_mm, kernel_type,
+space), temporal_filtering (performed, pass_type, band_or_cutoff, filter_type, order); every step
+carries applied_by. Five provenances: EXTRACTED, CITED, KB_DEFAULT, MODEL, NOT_REPORTED. Other steps
+are free-form.
+
+Limits: 60 turns; submit is forced on the last turn or once the metered cost reaches $2.50. At turn
+25 the agent is told which scored fields it has not recorded.
+
+Checks (code, after the run):
+- EXTRACTED / CITED: the quote resolves in the named document with ``span_resolver.resolve_quote``
+  (its citation-marker tier lets a quote skip reference markers); a number in the value must be a
+  whole token of the quote.
+- KB_DEFAULT: some kb_lookup result in the run's trace names the value.
+
+    python agent_proto_v1.py --paper X.pdf --paper-id x --out x.json
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+from litellm import completion, completion_cost
+from litellm.exceptions import RateLimitError
+
+import fmri_defaults_kb as kb
+from extractor_mvp.batch import load_supplement, load_text, supplement_marker
+from extractor_mvp.citation_hop import _bibl_ref_entry, europepmc_fulltext, resolve_local_pdf
+from extractor_mvp.grobid_source import bibliography, fetch_tei
+from extractor_mvp.pdf_loader import reflow_one_word_lines
+from extractor_mvp.span_resolver import resolve_quote
+
+MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MAX_TURNS = 60
+FORCE_AT_USD = 2.50
+REMIND_AT_TURN = 25
+LIT = Path("/Users/cwook/Documents/neurorepro/tested_lit")
+CORPUS_DIRS = [LIT, *sorted(p for p in LIT.rglob("*") if p.is_dir())]
+
+SCHEMA: dict[str, list[str]] = {
+    "motion_correction": [
+        "performed", "method", "tool", "reference_scan", "interpolation",
+        "similarity_metric", "susceptibility_correction",
+    ],
+    "spatial_smoothing": ["performed", "fwhm_mm", "kernel_type", "space"],
+    "temporal_filtering": ["performed", "pass_type", "band_or_cutoff", "filter_type", "order"],
+}
+PROVENANCES = ["EXTRACTED", "CITED", "KB_DEFAULT", "MODEL", "NOT_REPORTED"]
+
+SYSTEM = """You reconstruct the fMRI preprocessing a paper actually applied, for reproduction.
+
+Work like a careful neuroimaging researcher with a library:
+- Read the paper's methods (outline, search, read around hits). A supplement is part of the paper.
+- When a dataset release is named (HCP S1200, ABCD 4.0, ...), call kb_lookup(kind="dataset") FIRST
+  and use the pipeline version it gives before opening the pipeline's paper.
+- When the paper defers preprocessing to a citation, a pipeline, or a dataset's own preprocessing,
+  open that reference and read ITS methods; follow a further deferral at most once more.
+- When a pipeline or package is named and a parameter is stated nowhere you can read, use kb_lookup
+  for its documented default. Never give a default from memory as KB_DEFAULT.
+
+Record each field with record_field as soon as you have it (you may overwrite). Provenance:
+- EXTRACTED: stated in the paper itself; doc "paper", quote = the exact sentence, copied verbatim.
+- CITED: stated in a reference you opened; doc = that reference's doc id, quote verbatim.
+- KB_DEFAULT: from a kb_lookup result; note = the lookup.
+- MODEL: your own inference with no text or KB support; note = why. Use sparingly.
+- NOT_REPORTED: you looked and nothing says it.
+
+Scored fields (use these names exactly):
+- motion_correction: performed (yes/no); method = the paper's OWN words for the motion correction
+  step, verbatim (a program or package name such as "MCFLIRT" or "SPM8", or a description such as
+  "realigned to the first volume"); when the paper itself says nothing and defers, give the cited
+  source's words with provenance CITED. tool = the program that did the realignment, as
+  "<package> <program>" when known (e.g. "fsl MCFLIRT", "spm Realign", "afni 3dvolreg"), else the
+  package. reference_scan; interpolation (of the realignment itself, not a later resampling);
+  similarity_metric; susceptibility_correction.
+- spatial_smoothing: performed; fwhm_mm (a number in mm); kernel_type; space (volume/surface/...).
+- temporal_filtering: performed; pass_type (high_pass / low_pass / band_pass); band_or_cutoff (as
+  stated, with units, e.g. "0.009-0.08 Hz", "128 s"); filter_type; order.
+- Every step: applied_by = "authors", or "data_provider:<name>" (e.g. HCP, ABCD), or
+  "pipeline:<name>". Give it with record_field(step, "applied_by", ...).
+Other steps (slice_timing, distortion_correction, brain_extraction, coregistration, normalization,
+nuisance_regression, scrubbing, global_signal_regression, ica_denoise, ...): record what you find,
+field names free-form.
+
+Call several tools in one turn when they are independent. Call submit once, when done."""
+
+
+def _fn(name: str, desc: str, props: dict[str, Any], req: list[str]) -> dict[str, Any]:
+    return {"type": "function", "function": {"name": name, "description": desc,
+            "parameters": {"type": "object", "properties": props, "required": req}}}
+
+
+_S = {"type": "string"}
+TOOLS = [
+    _fn("outline", "Section headings of a doc with offsets.", {"doc": _S}, ["doc"]),
+    _fn("search", "Sentences of a doc containing all words of `query` (case-insensitive); up to 12, with offsets.",
+        {"doc": _S, "query": _S}, ["doc", "query"]),
+    _fn("read", "Up to 4000 characters of a doc from `start`.",
+        {"doc": _S, "start": {"type": "integer"}, "length": {"type": "integer"}}, ["doc", "start"]),
+    _fn("references", "Search the paper's reference list by number, author, year or title word; empty lists the first 40.",
+        {"query": _S}, ["query"]),
+    _fn("open_reference", "Open a cited paper by ref_id (from `references`); returns a doc id, or why it cannot be opened.",
+        {"ref_id": _S}, ["ref_id"]),
+    _fn("kb_lookup", "The defaults KB. kind: 'pipeline' (name -> id), 'dataset' (name + release -> pipeline and version), "
+        "'package' (name -> tool id), 'program' (phrase -> realignment program, package), 'realignment' (pipeline id + "
+        "version, or tool id alone -> the realignment program and its defaults), 'params' (pipeline id + version + "
+        "comma-separated field names).",
+        {"kind": _S, "name": _S, "version": _S, "fields": _S}, ["kind", "name"]),
+    _fn("record_field", "Record (or overwrite) one field.",
+        {"step": _S, "field": _S, "value": _S, "provenance": {"type": "string", "enum": PROVENANCES},
+         "doc": _S, "quote": _S, "note": _S}, ["step", "field", "value", "provenance"]),
+    _fn("submit", "Finish. The recorded fields are the answer.",
+        {"order": {"type": "string", "description": "step order and its source, or 'not stated'"}}, []),
+]
+
+
+class Library:
+    def __init__(self, pdf: Path) -> None:
+        text, _, _ = load_text(pdf)
+        text, _ = reflow_one_word_lines(text)
+        supp_rec, supp = load_supplement(pdf)
+        if supp:
+            text += supplement_marker(Path(supp_rec["path"]).name) + supp
+        self.docs: dict[str, str] = {"paper": text}
+        self.titles: dict[str, str] = {"paper": pdf.name}
+        self.bib = bibliography(fetch_tei(pdf)[0])
+        self.pdf = pdf
+        self.opened: list[dict[str, Any]] = []
+        self.kb_results: list[str] = []
+
+    def _doc(self, d: str) -> str:
+        if d not in self.docs:
+            raise KeyError(f"unknown doc {d!r}; open docs: {list(self.docs)}")
+        return self.docs[d]
+
+    def outline(self, doc: str) -> Any:
+        out, off = [], 0
+        for line in self._doc(doc).split("\n"):
+            s = line.strip()
+            if 0 < len(s) < 90 and not s.endswith("."):
+                out.append({"offset": off, "heading": s})
+            off += len(line) + 1
+        return out[:150]
+
+    def search(self, doc: str, query: str) -> Any:
+        t = self._doc(doc)
+        words = [w.lower() for w in query.split()]
+        hits = []
+        for m in re.finditer(r"[^.\n]*(?:\.(?!\s)[^.\n]*)*[.\n]?", t):
+            s = m.group(0)
+            if s.strip() and all(w in s.lower() for w in words):
+                hits.append({"offset": m.start(), "sentence": s.strip()[:400]})
+                if len(hits) >= 12:
+                    break
+        return hits or "no hits"
+
+    def read(self, doc: str, start: int, length: int = 4000) -> Any:
+        s = max(0, int(start))
+        return self._doc(doc)[s : s + min(int(length or 4000), 4000)]
+
+    def references(self, query: str) -> Any:
+        rows = []
+        for b in self.bib.values():
+            n = re.sub(r"\D", "", b.bibl_id)
+            rows.append({"ref_id": b.bibl_id, "number_if_numbered": int(n) + 1 if n else None,
+                         "authors": ", ".join(b.authors[:3]), "year": b.year, "title": b.title})
+        q = query.strip().lower()
+        return rows[:40] if not q else ([r for r in rows if q in json.dumps(r).lower()][:20] or "no match")
+
+    def open_reference(self, ref_id: str) -> Any:
+        b = self.bib.get(ref_id)
+        if b is None:
+            return f"no reference {ref_id!r}"
+        doc_id = f"ref:{ref_id}"
+        if doc_id not in self.docs:
+            state, path, confirmed = resolve_local_pdf(_bibl_ref_entry(b, "paper"), CORPUS_DIRS)
+            if path is not None:
+                text, _, _ = load_text(path)
+                text, _ = reflow_one_word_lines(text)
+                src = f"local_pdf:{path.name}:{confirmed}"
+            elif b.doi:
+                got = europepmc_fulltext(b.doi, self.pdf.parent)
+                if got is None:
+                    self.opened.append({"ref_id": ref_id, "source": f"not opened ({state}; no Europe PMC text)"})
+                    return f"cannot open: local lookup {state}; Europe PMC has no full text"
+                text, src = got[0], "europepmc"
+            else:
+                self.opened.append({"ref_id": ref_id, "source": f"not opened ({state}; no DOI)"})
+                return f"cannot open: local lookup {state}; no DOI"
+            self.docs[doc_id] = text
+            self.titles[doc_id] = b.title or ref_id
+            self.opened.append({"ref_id": ref_id, "source": src})
+        return {"doc": doc_id, "title": self.titles[doc_id], "chars": len(self.docs[doc_id])}
+
+    def kb_lookup(self, kind: str, name: str, version: str | None = None, fields: str | None = None) -> Any:
+        try:
+            if kind == "pipeline":
+                out: Any = kb.recognize_with_provenance(name)
+            elif kind == "dataset":
+                out = _plain(kb.recognize_dataset(name, version))
+            elif kind == "package":
+                out = kb.recognize_tool(name)
+            elif kind == "program":
+                out = kb.recognize_program(name)
+            elif kind == "realignment":
+                out = (_plain(kb.realignment_tool_at(name, version)) if version else
+                       {"program": _plain(kb.realignment_program(name)), "defaults": kb.realignment_defaults(name)})
+            elif kind == "params":
+                fs = [f.strip() for f in (fields or "").split(",") if f.strip()]
+                out = _plain(kb.get_param_defaults(name, version or "", fs))
+            else:
+                out = f"unknown kind {kind!r}"
+        except Exception as exc:  # the KB's errors are answers
+            out = f"{type(exc).__name__}: {exc}"
+        self.kb_results.append(json.dumps(out, default=str))
+        return out
+
+
+def _plain(o: Any) -> Any:
+    if o is None or isinstance(o, (str, int, float, bool)):
+        return o
+    if isinstance(o, dict):
+        return {k: _plain(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple, set, frozenset)):
+        return [_plain(v) for v in o]
+    if hasattr(o, "model_dump"):
+        return o.model_dump()
+    if hasattr(o, "__dataclass_fields__"):
+        return {k: _plain(getattr(o, k)) for k in o.__dataclass_fields__}
+    return str(o)
+
+
+_NUMS = re.compile(r"\d+(?:\.\d+)?")
+
+
+def check_field(f: dict[str, Any], lib: Library) -> str:
+    prov = f.get("provenance")
+    if prov in ("EXTRACTED", "CITED"):
+        doc = f.get("doc") or ("paper" if prov == "EXTRACTED" else "")
+        q = (f.get("quote") or "").strip()
+        if not q:
+            return "no_quote"
+        if prov == "EXTRACTED" and doc != "paper":
+            return "extracted_from_non_paper_doc"
+        if prov == "CITED" and not doc.startswith("ref:"):
+            return "cited_without_reference_doc"
+        if doc not in lib.docs:
+            return "unknown_doc"
+        res = resolve_quote(q, lib.docs[doc])
+        if res.failure_reason == "quote_not_found":
+            return "quote_not_found"
+        qn = {float(x) for x in _NUMS.findall(q)}
+        if any(float(x) not in qn for x in _NUMS.findall(str(f.get("value") or ""))):
+            return "number_not_in_quote"
+        return "quote_ambiguous" if res.failure_reason == "quote_ambiguous" else (
+            "quote_resolved_recovered" if res.recovered else "quote_resolved")
+    if prov == "KB_DEFAULT":
+        v = str(f.get("value") or "").lower()
+        toks = [t for t in re.findall(r"[a-z0-9]+", v) if len(t) > 1]
+        hit = any(toks and all(t in r.lower() for t in toks) for r in lib.kb_results)
+        return "kb_result_names_value" if hit else "kb_result_does_not_name_value"
+    return "n/a"
+
+
+KEEP_TOOL_RESULTS = 8
+_ELIDED = "[elided: an earlier tool result; call the tool again if you need it]"
+
+
+def compact(msgs: list[dict[str, Any]]) -> None:
+    """Keep the last KEEP_TOOL_RESULTS tool results in full; older ones become a stub (the
+    provider's per-minute token quota throttled whole-history turns, 2026-11-09). Recorded fields
+    live in the agent's own record_field calls, which are kept."""
+    tool_idx = [i for i, m in enumerate(msgs) if m.get("role") == "tool"]
+    for i in tool_idx[:-KEEP_TOOL_RESULTS]:
+        if msgs[i]["content"] != _ELIDED and len(msgs[i]["content"]) > 200:
+            msgs[i]["content"] = _ELIDED
+
+
+def run(pdf: Path, paper_id: str) -> dict[str, Any]:
+    lib = Library(pdf)
+    fields: dict[str, dict[str, Any]] = {}
+    msgs: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": f"Paper {paper_id} is open as doc 'paper' ({len(lib.docs['paper'])} characters). Reconstruct its preprocessing."},
+    ]
+    cost, calls, trace, submitted, forced, order = 0.0, 0, [], False, None, None
+    throttled, error = 0, None
+    t0 = time.time()
+    turn = 0
+    for turn in range(MAX_TURNS):
+        if turn == REMIND_AT_TURN:
+            missing = [f"{s}.{k}" for s, ks in SCHEMA.items() for k in [*ks, "applied_by"] if f"{s}.{k}" not in fields]
+            msgs.append({"role": "user", "content": f"Coverage so far: {len(fields)} fields recorded. Scored fields not yet recorded: {', '.join(missing) or 'none'}."})
+        last = turn == MAX_TURNS - 1
+        if last or cost >= FORCE_AT_USD:
+            forced = forced or ("turn_cap" if last else "cost_cap")
+            choice: Any = {"type": "function", "function": {"name": "submit"}}
+        else:
+            choice = "auto"
+        compact(msgs)
+        resp = None
+        for wait in (0, 15, 30, 60, 90, 120, 180, 240, 300, 300, 300):  # about 27 minutes in all
+            time.sleep(wait)
+            try:
+                resp = completion(model=MODEL, messages=msgs, tools=TOOLS, tool_choice=choice,
+                                  temperature=0.0, max_tokens=8000)
+                break
+            except RateLimitError:
+                throttled += 1
+                print(f"  {paper_id} throttled", flush=True)
+        if resp is None:
+            error = "rate_limited"
+            break
+        calls += 1
+        try:
+            cost += float(completion_cost(completion_response=resp))
+        except Exception:
+            pass
+        m = resp.choices[0].message
+        msgs.append(m.model_dump(exclude_none=True))
+        tcs = m.tool_calls or []
+        if not tcs:
+            msgs.append({"role": "user", "content": "Use the tools; call submit when done."})
+            continue
+        for c in tcs:
+            try:
+                args = json.loads(c.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            name = c.function.name
+            trace.append({"turn": turn, "tool": name, "args": args})
+            if name == "submit":
+                submitted, order = True, args.get("order")
+                out: Any = "submitted"
+            elif name == "record_field":
+                key = f"{args.get('step')}.{args.get('field')}"
+                fields[key] = {k: args.get(k) for k in ("step", "field", "value", "provenance", "doc", "quote", "note")}
+                out = f"recorded {key}"
+            else:
+                try:
+                    out = getattr(lib, name)(**args)
+                except Exception as exc:
+                    out = f"error: {type(exc).__name__}: {exc}"
+            msgs.append({"role": "tool", "tool_call_id": c.id, "content": json.dumps(out, default=str)[:12000]})
+        print(f"  {paper_id} turn {turn}: {[c.function.name for c in tcs]} ${cost:.4f}", flush=True)
+        if submitted:
+            break
+    for f in fields.values():
+        f["check"] = check_field(f, lib)
+    return {
+        "paper_id": paper_id, "model": MODEL, "cost_usd": round(cost, 4), "calls": calls,
+        "turns": turn + 1, "wall_s": round(time.time() - t0, 1), "submitted": submitted,
+        "throttled": throttled, "error": error,
+        "forced": forced, "order": order, "opened": lib.opened, "fields": fields, "trace": trace,
+        "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    }
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--paper", type=Path, required=True)
+    ap.add_argument("--paper-id", required=True)
+    ap.add_argument("--out", type=Path, required=True)
+    a = ap.parse_args()
+    res = run(a.paper, a.paper_id)
+    a.out.write_text(json.dumps(res, indent=2, default=str))
+    print(f"DONE {a.paper_id} ${res['cost_usd']} turns={res['turns']} submitted={res['submitted']} forced={res['forced']}", flush=True)
+    sys.exit(0)

@@ -1,0 +1,27 @@
+{
+ "preprocessing": {
+  "steps": [
+   {
+    "kind": "motion_correction",
+    "method": {
+     "extraction": {
+      "status": "EXTRACTED",
+      "value": {
+       "verbatim": "ICA-AROMA"
+      }
+     }
+    }
+   }
+  ]
+ },
+ "diagnostics": [],
+ "resolution": {
+  "status": "ok",
+  "realignment_tool": {
+   "value": null,
+   "program": null,
+   "provenance": "INFERRED_MODEL",
+   "kb": true
+  }
+ }
+}

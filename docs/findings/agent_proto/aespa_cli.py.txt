@@ -1,0 +1,165 @@
+"""The v2 agent's tools as one command, for a headless Claude Code run (2026-11-10).
+
+Bedrock's daily token quota stopped the v2 batch; the author ran the same agent through Claude Code
+on their own plan instead. The tools are v2's (``agent_proto_v2.Library``: the methods text, outline,
+search, read, references and open_reference of any open doc, the KB lookup) and the checks are v2's
+(``check_field``), unchanged. State lives in a per-paper folder, so each call is a fresh process:
+opened references (text, title, depth, reference list), every KB result, the trace, the fields.
+
+    aespa_cli.py --paper X.pdf --state DIR <command> [args]
+
+Commands: excerpt | outline DOC | search DOC QUERY... | read DOC START [LENGTH] |
+references [--doc DOC] [QUERY...] | open_reference REF_ID [--doc DOC] |
+kb_lookup KIND NAME [--version V] [--fields F] | submit  (JSON on stdin: {"order", "fields"})
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+import agent_proto_v2 as A
+from extractor_mvp.grobid_source import BiblEntry
+
+
+def _load(state: Path, paper: Path) -> A.Library:
+    lib = A.Library(paper)
+    f = state / "opened_docs.json"
+    if f.is_file():
+        for doc_id, d in json.loads(f.read_text()).items():
+            lib.docs[doc_id] = d["text"]
+            lib.titles[doc_id] = d["title"]
+            lib.depth[doc_id] = d["depth"]
+            lib.bibs[doc_id] = {b["bibl_id"]: BiblEntry(b["bibl_id"], b["title"], tuple(b["authors"]), b["year"], b["doi"])
+                                for b in d["bib"]}
+    if (state / "opened_log.json").is_file():
+        lib.opened = json.loads((state / "opened_log.json").read_text())
+    if (state / "kb_results.json").is_file():
+        lib.kb_results = json.loads((state / "kb_results.json").read_text())
+    return lib
+
+
+def _save(state: Path, lib: A.Library) -> None:
+    docs = {
+        d: {"text": lib.docs[d], "title": lib.titles.get(d), "depth": lib.depth.get(d, 1),
+            "bib": [{"bibl_id": b.bibl_id, "title": b.title, "authors": list(b.authors), "year": b.year, "doi": b.doi}
+                    for b in (lib.bibs.get(d) or {}).values()]}
+        for d in lib.docs if d != "paper"
+    }
+    (state / "opened_docs.json").write_text(json.dumps(docs))
+    (state / "opened_log.json").write_text(json.dumps(lib.opened))
+    (state / "kb_results.json").write_text(json.dumps(lib.kb_results))
+
+
+def _trace(state: Path, cmd: str, args: dict[str, Any]) -> None:
+    with (state / "trace.jsonl").open("a") as fh:
+        fh.write(json.dumps({"tool": cmd, "args": args}) + "\n")
+
+
+def _submit(state: Path, payload: dict[str, Any]) -> str:
+    """v2's submit: fields merge into the record; a submit missing scored fields is answered once."""
+    ff = state / "fields.json"
+    fields: dict[str, Any] = json.loads(ff.read_text()) if ff.is_file() else {}
+    for f in payload.get("fields") or []:
+        if isinstance(f, dict):
+            fields[f"{f.get('step')}.{f.get('field')}"] = {
+                k: f.get(k) for k in ("step", "field", "value", "provenance", "doc", "quote", "note")}
+    ff.write_text(json.dumps(fields, indent=1))
+    if payload.get("order"):
+        (state / "order.txt").write_text(str(payload["order"]))
+    missing = [f"{s}.{k}" for s, ks in A.SCHEMA.items() for k in ks if f"{s}.{k}" not in fields]
+    asked = state / "asked_missing.json"
+    if missing and not asked.is_file():
+        asked.write_text(json.dumps(missing))
+        return ("Not final: these scored fields are missing (give each, NOT_REPORTED if nothing says it): "
+                f"{', '.join(missing)}. Submit again; fields you already gave are kept.")
+    (state / "submitted").write_text("1")
+    return "submitted"
+
+
+def main(argv: list[str]) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--paper", type=Path, required=True)
+    ap.add_argument("--state", type=Path, required=True)
+    ap.add_argument("cmd")
+    ap.add_argument("rest", nargs=argparse.REMAINDER)
+    a = ap.parse_args(argv)
+    a.state.mkdir(parents=True, exist_ok=True)
+    if (a.state / "submitted").is_file():
+        print("already submitted; nothing more to do")
+        return 0
+    if a.cmd == "submit":
+        # the JSON as one argument (a multi-line heredoc is refused by Claude Code's permission
+        # check, 2026-11-10 pilot); stdin when no argument is given
+        # 2026-11-10: a JSON argument was refused too, so the session writes <state>/submit.json
+        # (the one file its Write permission covers) and runs `submit` with no argument
+        sub_file = a.state / "submit.json"
+        raw = " ".join(a.rest) if a.rest else (sub_file.read_text() if sub_file.is_file() else sys.stdin.read())
+        if sub_file.is_file():
+            # kept as submit_<n>.json; removed so a resubmit is a fresh Write (Claude Code will not
+            # overwrite a file the session has not Read, and Read is denied)
+            n = len(list(a.state.glob("submit_*.json")))
+            sub_file.rename(a.state / f"submit_{n}.json")
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            print(f"error: the submit JSON did not parse: {exc}")
+            return 1
+        _trace(a.state, "submit", {"order": payload.get("order"), "n_fields": len(payload.get("fields") or [])})
+        print(_submit(a.state, payload))
+        return 0
+    lib = _load(a.state, a.paper)
+    r = a.rest
+    sub = argparse.ArgumentParser(prog=a.cmd)
+    try:
+        if a.cmd == "excerpt":
+            args: dict[str, Any] = {}
+            out: Any = (f"Methods text ({lib.methods_found_via}; {lib.excerpt_chars} characters"
+                        f"{', first ' + str(A.EXCERPT_MAX) + ' shown' if lib.excerpt_chars > A.EXCERPT_MAX else ''}). "
+                        f"The whole paper is doc 'paper' ({len(lib.docs['paper'])} characters).\n\n" + lib.excerpt)
+        elif a.cmd == "outline":
+            args = {"doc": r[0]}
+            out = lib.outline(**args)
+        elif a.cmd == "search":
+            args = {"doc": r[0], "query": " ".join(r[1:])}
+            out = lib.search(**args)
+        elif a.cmd == "read":
+            args = {"doc": r[0], "start": int(r[1]), "length": int(r[2]) if len(r) > 2 else 4000}
+            out = lib.read(**args)
+        elif a.cmd == "references":
+            sub.add_argument("--doc", default="paper")
+            sub.add_argument("query", nargs="*")
+            s = sub.parse_args(r)
+            args = {"query": " ".join(s.query), "doc": s.doc}
+            out = lib.references(**args)
+        elif a.cmd == "open_reference":
+            sub.add_argument("ref_id")
+            sub.add_argument("--doc", default="paper")
+            s = sub.parse_args(r)
+            args = {"ref_id": s.ref_id, "doc": s.doc}
+            out = lib.open_reference(**args)
+        elif a.cmd == "kb_lookup":
+            sub.add_argument("kind")
+            sub.add_argument("name", nargs="+")
+            sub.add_argument("--version")
+            sub.add_argument("--fields")
+            s = sub.parse_args(r)
+            args = {"kind": s.kind, "name": " ".join(s.name), "version": s.version, "fields": s.fields}
+            out = lib.kb_lookup(**args)
+        else:
+            print(f"error: unknown command {a.cmd!r}")
+            return 1
+    except (IndexError, ValueError, KeyError, SystemExit) as exc:
+        print(f"error: {type(exc).__name__}: {exc}")
+        return 1
+    _trace(a.state, a.cmd, args)
+    _save(a.state, lib)
+    print(out if isinstance(out, str) else json.dumps(out, indent=1, default=str)[:12000])
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

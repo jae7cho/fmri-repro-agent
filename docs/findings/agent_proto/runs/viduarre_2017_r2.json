@@ -1,0 +1,703 @@
+{
+ "paper_id": "viduarre_2017",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 1.0873,
+ "calls": 39,
+ "turns": 39,
+ "wall_s": 359.3,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 43,
+ "provenance_counts": {
+  "CITED": 19,
+  "KB_DEFAULT": 1,
+  "EXTRACTED": 16,
+  "MODEL": 1,
+  "NOT_REPORTED": 6
+ },
+ "check_counts": {
+  "quote_resolved": 27,
+  "kb_result_names_value": 1,
+  "quote_resolved_recovered": 1,
+  "quote_not_found": 7,
+  "n/a": 7
+ },
+ "references_opened": 1,
+ "references_not_opened": 2,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 13,
+  "kb_lookup": 3,
+  "references": 1,
+  "open_reference": 3,
+  "outline": 1,
+  "read": 5,
+  "submit": 2
+ },
+ "order": "motion_correction, distortion_correction, brain_extraction, coregistration, normalization, spatial_smoothing, ica_denoi…",
+ "opened": [
+  {
+   "doc": "ref:b39",
+   "depth": 1,
+   "source": "local_pdf:Glasser_2013_HCP_pipelines.pdf:crossref_author_year",
+   "n_references": 63
+  },
+  {
+   "doc": "ref:b17",
+   "depth": 1,
+   "source": "not opened (local_pdf_ambiguous; no DOI from entry or CrossRef)"
+  },
+  {
+   "doc": "ref:b38",
+   "depth": 1,
+   "source": "not opened (local_pdf_ambiguous; no DOI from entry or CrossRef)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "6 DOF FLIRT registration",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "fsl FLIRT",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='hcp_minimal', version='v3.1'): pipeline uses FSL FLIRT for motion correction",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "single-band reference image",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Next is realignment of the timeseries to correct for subject motion, which is accomplished with a 6 DOF FLIRT registrat…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "spline",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Every frame from the raw timeseries is transformed, according to its unique nonlinear transformation, directly to MNI s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The preprocessing pipeline followed the technique of Smith et al. (18, 39)",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "EPI fMRI images contain significant distortion in the phase encoding direction. This distortion can be corrected with e…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.method": {
+   "step": "distortion_correction",
+   "field": "method",
+   "value": "FSL topup with spin echo EPI pairs",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Reversing the phase encoding direction reverses the direction of the B 0 field inhomogeneity effect on the images. The …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "distortion_correction.applied_by": {
+   "step": "distortion_correction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "After this 'acpc alignment' step, a robust initial brain extraction is performed using an initial linear (FLIRT) and no…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "brain_extraction.method": {
+   "step": "brain_extraction",
+   "field": "method",
+   "value": "atlas-based with FLIRT and FNIRT",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "After this 'acpc alignment' step, a robust initial brain extraction is performed using an initial linear (FLIRT) and no…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The single-band reference image is corrected for distortions using spline interpolation and is then registered to the T…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "EPI to T1w using BBR",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The single-band reference image is corrected for distortions using spline interpolation and is then registered to the T…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "After bias field correction of the T1w and T2w images, the T1w image is registered to MNI space with a FLIRT 12 DOF aff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "MNI",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "After bias field correction of the T1w and T2w images, the T1w image is registered to MNI space with a FLIRT 12 DOF aff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.method": {
+   "step": "normalization",
+   "field": "method",
+   "value": "FLIRT affine + FNIRT nonlinear",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "After bias field correction of the T1w and T2w images, the T1w image is registered to MNI space with a FLIRT 12 DOF aff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface to match the subcortical parcel constrained process…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "2",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface to match the subcortical parcel constrained process…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The smoothing is performed using a novel geodesic Gaussian surface smoothing algorithm.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "surface",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The fMRI timeseries are slightly smoothed (2mm FWHM) on the surface",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Spatial preprocessing was applied using the procedure described by Glasser et al. 40.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.performed": {
+   "step": "ica_denoise",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After structured artifact removal using ICA followed by FMRIB's ICA-based X-noisefier (FIX) from the FMRIB Software Lib…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.method": {
+   "step": "ica_denoise",
+   "field": "method",
+   "value": "ICA-FIX",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After structured artifact removal using ICA followed by FMRIB's ICA-based X-noisefier (FIX) from the FMRIB Software Lib…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.artifact_removal_rate": {
+   "step": "ica_denoise",
+   "field": "artifact_removal_rate",
+   "value": "more than 99%",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "which removed more than 99% of the artifactual ICA components in the dataset",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.applied_by": {
+   "step": "ica_denoise",
+   "field": "applied_by",
+   "value": "data_provider:HCP",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "HCP S900 release typically includes FIX-cleaned data as part of standard preprocessing outputs",
+   "check": "n/a"
+  },
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "no",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "Thus, in the HCP pipelines, no slice timing correction is employed.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We did not use global signal regression.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "group_ica.performed": {
+   "step": "group_ica",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a 'parcellation' of 50 components that covers both the cortical surfaces and the su…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "group_ica.n_components": {
+   "step": "group_ica",
+   "field": "n_components",
+   "value": "50",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a 'parcellation' of 50 components that covers both the cortical surfaces and the su…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "group_ica.applied_by": {
+   "step": "group_ica",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we used group spatial ICA to obtain a 'parcellation' of 50 components",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "standardization.performed": {
+   "step": "standardization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Such time series (size: number of participants × number of scans × number of time points × number of ICA components = 8…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "standardization.method": {
+   "step": "standardization",
+   "field": "method",
+   "value": "mean 0, SD 1",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "were finally standardized so that, for each scan, subject, and ICA component, the data have a mean of 0 and SD of 1.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "standardization.applied_by": {
+   "step": "standardization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "were finally standardized so that, for each scan, subject, and ICA component, the data have a mean of 0 and SD of 1.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b39",
+   "quote": "The FSL toolbox 'topup' (Andersson et al., 2003) can then be used to estimate the distortion field.",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "preprocessing spatial temporal smoothing filtering motion"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "dataset",
+    "name": "HCP",
+    "version": "900",
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "hcp_minimal",
+    "version": "v3.1",
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "params",
+    "name": "hcp_minimal",
+    "version": "v3.1",
+    "fields": "motion_correction,spatial_smoothing,temporal_filtering,slice_timing,distortion_correction,brain_extraction,coregistrati…"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b39",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "motion correction realignment"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "smoothing FWHM spatial"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "temporal filtering highpass"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "ref:b39"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 67723,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 71843,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "filter bandpass"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "bandpass highpass lowpass filter"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "regression nuisance"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b17",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b38",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "brain extraction mask BET"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "FreeSurfer skull strip"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "MNI normalization nonlinear"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 55992,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 39696,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b39",
+    "start": 43696,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "FNIRT nonlinear"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b39",
+    "query": "ICA FIX artifact"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, distortion_correction, brain_extraction, coregistration, normalization, spatial_smoothing, ica_denoi…",
+    "n_fields": 37
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, distortion_correction, brain_extraction, coregistration, normalization, spatial_smoothing, ica_denoi…",
+    "n_fields": 43
+   }
+  }
+ ]
+}

@@ -1,0 +1,34 @@
+{
+ "paper_id": "wheaton_2004",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.3267,
+ "calls": 15,
+ "turns": 15,
+ "wall_s": 138.4,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 37,
+ "provenance_counts": {
+  "EXTRACTED": 20,
+  "KB_DEFAULT": 2,
+  "NOT_REPORTED": 14,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 17,
+  "kb_result_names_value": 2,
+  "n/a": 15,
+  "quote_resolved_recovered": 3
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 2,
+  "search": 9,
+  "submit": 1
+ }
+}

@@ -1,0 +1,739 @@
+{
+ "paper_id": "derosa_2025",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.9885,
+ "calls": 37,
+ "turns": 37,
+ "wall_s": 281.0,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 44,
+ "provenance_counts": {
+  "CITED": 6,
+  "EXTRACTED": 30,
+  "NOT_REPORTED": 7,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 36,
+  "n/a": 8
+ },
+ "references_opened": 1,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 16,
+  "read": 6,
+  "outline": 1,
+  "references": 3,
+  "open_reference": 1,
+  "kb_lookup": 5,
+  "submit": 1
+ },
+ "order": "derosa_2025",
+ "opened": [
+  {
+   "doc": "ref:b35",
+   "depth": 1,
+   "source": "europepmc (DOI from crossref)",
+   "n_references": 63
+  }
+ ],
+ "fields": {
+  "volume_discard.performed": {
+   "step": "volume_discard",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "The first 10 EPI volumes of each run were discarded to allow the MRI scanner to reach steady-state stability.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "volume_discard.n_volumes": {
+   "step": "volume_discard",
+   "field": "n_volumes",
+   "value": "10",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "The first 10 EPI volumes of each run were discarded to allow the MRI scanner to reach steady-state stability.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "volume_discard.applied_by": {
+   "step": "volume_discard",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "The first 10 EPI volumes of each run were discarded to allow the MRI scanner to reach steady-state stability.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "ICA-AROMA",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "ICA-AROMA version 0.3 beta",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "brain_extraction.tool": {
+   "step": "brain_extraction",
+   "field": "tool",
+   "value": "fsl BET",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "linear Boundary-Based Registration",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.tool": {
+   "step": "coregistration",
+   "field": "tool",
+   "value": "fsl FLIRT version 6.0",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Registration of EPI images into subject-and standard-spaces was executed using FLIRT (version 6.0).",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.source": {
+   "step": "coregistration",
+   "field": "source",
+   "value": "EPI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.target": {
+   "step": "coregistration",
+   "field": "target",
+   "value": "subject MPRAGE",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Registration of EPI images into subject-and standard-spaces was executed using FLIRT (version 6.0).",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "normalization.method": {
+   "step": "normalization",
+   "field": "method",
+   "value": "12 degrees of freedom linear transformation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "fsl FLIRT version 6.0",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Registration of EPI images into subject-and standard-spaces was executed using FLIRT (version 6.0).",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "normalization.target_template": {
+   "step": "normalization",
+   "field": "target_template",
+   "value": "MNI-152",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual subject EPI images were registered to that subject's MPRAGE structural image via linear Boundary-Based Regis…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Registration of EPI images into subject-and standard-spaces was executed using FLIRT (version 6.0).",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The resulting EPI images were smoothed using an 8 mm full-width half-maximum Gaussian smoothing kernel.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "8",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The resulting EPI images were smoothed using an 8 mm full-width half-maximum Gaussian smoothing kernel.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The resulting EPI images were smoothed using an 8 mm full-width half-maximum Gaussian smoothing kernel.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "MODEL",
+   "doc": "",
+   "quote": "",
+   "note": "Smoothing was applied after registration to MNI-152 template, indicating volume-based smoothing",
+   "check": "n/a"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The resulting EPI images were smoothed using an 8 mm full-width half-maximum Gaussian smoothing kernel.",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "high_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "100 s",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "",
+   "quote": "",
+   "note": "",
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard fMRI preprocessing procedures were carried out using the FSL suite (version 5.0.10) (http://fsl.fmrib.ox.ac.uk…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "ica_denoise.performed": {
+   "step": "ica_denoise",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "Preprocessing included motion correction via ICA-AROMA (version 0.3 beta)51, an independent component analysis method f…",
+   "note": "ICA-AROMA uses ICA to identify and remove motion-related artifacts",
+   "check": "quote_resolved"
+  },
+  "ica_denoise.method": {
+   "step": "ica_denoise",
+   "field": "method",
+   "value": "ICA-AROMA version 0.3 beta",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "Preprocessing included motion correction via ICA-AROMA (version 0.3 beta)51, an independent component analysis method f…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "ica_denoise.applied_by": {
+   "step": "ica_denoise",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "CITED",
+   "doc": "ref:b35",
+   "quote": "Preprocessing included motion correction via ICA-AROMA (version 0.3 beta)51, an independent component analysis method f…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "nuisance_regression_fc.performed": {
+   "step": "nuisance_regression_fc",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We employed Generalized FC, a method developed by ￹Elliott et al. (2019)￻, which generated FC maps for the four WM cont…",
+   "note": "For functional connectivity analysis only",
+   "check": "quote_resolved"
+  },
+  "nuisance_regression_fc.regressors": {
+   "step": "nuisance_regression_fc",
+   "field": "regressors",
+   "value": "motion and physiological regressors, effects of rest",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We employed Generalized FC, a method developed by ￹Elliott et al. (2019)￻, which generated FC maps for the four WM cont…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "nuisance_regression_fc.method": {
+   "step": "nuisance_regression_fc",
+   "field": "method",
+   "value": "Generalized FC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We employed Generalized FC, a method developed by ￹Elliott et al. (2019)￻, which generated FC maps for the four WM cont…",
+   "note": "",
+   "check": "quote_resolved"
+  },
+  "nuisance_regression_fc.applied_by": {
+   "step": "nuisance_regression_fc",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We employed Generalized FC, a method developed by ￹Elliott et al. (2019)￻, which generated FC maps for the four WM cont…",
+   "note": "",
+   "check": "quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "preprocessing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "registration"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "ICA-AROMA"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Supplemental Materials"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 18400,
+    "length": 2000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "denoising"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 26400,
+    "length": 400
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 73713,
+    "length": 150
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Kim",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b35",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b35",
+    "query": "preprocessing"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "ref:b35",
+    "start": 55200,
+    "length": 1500
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "resting"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "ICA-AROMA",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "FSL",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "fsl",
+    "version": "5.0.10",
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b35",
+    "query": "MCFLIRT"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "ICA-AROMA",
+    "doc": "ref:b35"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FEAT"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b35",
+    "query": "distortion correction"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "ref:b35",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "motion correction",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "ICA-AROMA",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "nuisance"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 25700,
+    "length": 500
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Elliott",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "volumes discarded"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 15269,
+    "length": 800
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "derosa_2025",
+    "n_fields": 44
+   }
+  }
+ ]
+}

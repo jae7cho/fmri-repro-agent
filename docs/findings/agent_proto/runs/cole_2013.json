@@ -1,0 +1,499 @@
+{
+ "paper_id": "cole_2013",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.4131,
+ "calls": 10,
+ "turns": 10,
+ "wall_s": 150.4,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 41,
+ "provenance_counts": {
+  "EXTRACTED": 30,
+  "KB_DEFAULT": 4,
+  "NOT_REPORTED": 7
+ },
+ "check_counts": {
+  "quote_resolved": 27,
+  "kb_result_names_value": 4,
+  "n/a": 7,
+  "quote_resolved_recovered": 3
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 2,
+  "search": 2,
+  "submit": 2
+ },
+ "order": "slice_timing, motion_correction, normalization, brain_extraction, spatial_smoothing, temporal_filtering, nuisance_regre…",
+ "opened": [],
+ "fields": {
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we performed slice timing correction, motion correction, normalization to a Talairach template, removal of nuisance tim…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.method": {
+   "step": "slice_timing",
+   "field": "method",
+   "value": "slice timing correction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we performed slice timing correction",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.tool": {
+   "step": "slice_timing",
+   "field": "tool",
+   "value": "afni",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.applied_by": {
+   "step": "slice_timing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we performed slice timing correction, motion correction, normalization to a Talairach template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "motion correction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we performed slice timing correction, motion correction",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "afni 3dvolreg",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment afni",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "first volume (sub-brick 0)",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment afni: 3dvolreg default",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "heptic (7th order polynomial); Fourier in older releases",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment afni: 3dvolreg default (version not specified, so both possible defaults given)",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "weighted least squares",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment afni: 3dvolreg cost function",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we performed slice timing correction, motion correction, normalization to a Talairach template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.template": {
+   "step": "normalization",
+   "field": "template",
+   "value": "Talairach template",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "normalization to a Talairach template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "afni",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "restriction of data to a gray matter mask (dilated by one voxel)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.method": {
+   "step": "brain_extraction",
+   "field": "method",
+   "value": "restriction of data to a gray matter mask (dilated by one voxel)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "restriction of data to a gray matter mask (dilated by one voxel)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.segmentation_tool": {
+   "step": "brain_extraction",
+   "field": "segmentation_tool",
+   "value": "Freesurfer",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Freesurfer was used to identify ventricle, white matter, and gray matter anatomical structures for each participant",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI and Freesurfer",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing within the gray matter mask (6 mm full width at half maximum)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "6",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing within the gray matter mask (6 mm full width at half maximum)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume (within the gray matter mask)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing within the gray matter mask",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.tool": {
+   "step": "spatial_smoothing",
+   "field": "tool",
+   "value": "afni",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "a low-pass temporal filter was not applied (given the likely presence of task signals at higher frequencies than the re…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.reason": {
+   "step": "temporal_filtering",
+   "field": "reason",
+   "value": "given the likely presence of task signals at higher frequencies than the relatively slow resting-state fluctuations",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "a low-pass temporal filter was not applied (given the likely presence of task signals at higher frequencies than the re…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removal of nuisance time series (motion, ventricle, and white matter signals, along with their derivatives) using linea…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.signals": {
+   "step": "nuisance_regression",
+   "field": "signals",
+   "value": "motion, ventricle, and white matter signals, along with their derivatives",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removal of nuisance time series (motion, ventricle, and white matter signals, along with their derivatives)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.method": {
+   "step": "nuisance_regression",
+   "field": "method",
+   "value": "linear regression",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removal of nuisance time series (motion, ventricle, and white matter signals, along with their derivatives) using linea…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "whole brain signal was not included as a nuisance covariate (given current controversy over this procedure)",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.reason": {
+   "step": "global_signal_regression",
+   "field": "reason",
+   "value": "given current controversy over this procedure",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "whole brain signal was not included as a nuisance covariate (given current controversy over this procedure)",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.applied_by": {
+   "step": "global_signal_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Preprocessing was performed using AFNI",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion susceptibility"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "field map fieldmap"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "slice_timing, motion_correction, normalization, brain_extraction, spatial_smoothing, temporal_filtering, nuisance_regre…",
+    "n_fields": 37
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "slice_timing, motion_correction, normalization, brain_extraction, spatial_smoothing, temporal_filtering, nuisance_regre…",
+    "n_fields": 41
+   }
+  }
+ ]
+}

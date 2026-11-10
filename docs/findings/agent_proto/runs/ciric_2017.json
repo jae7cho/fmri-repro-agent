@@ -1,0 +1,672 @@
+{
+ "paper_id": "ciric_2017",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.6027,
+ "calls": 13,
+ "turns": 13,
+ "wall_s": 231.0,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 56,
+ "provenance_counts": {
+  "EXTRACTED": 53,
+  "KB_DEFAULT": 3
+ },
+ "check_counts": {
+  "quote_resolved": 52,
+  "kb_result_names_value": 3,
+  "number_not_in_quote": 1
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 3,
+  "search": 3,
+  "submit": 2,
+  "read": 1
+ },
+ "order": "ciric_2017",
+ "opened": [],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "MCFLIRT",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "fsl MCFLIRT",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "middle volume",
+   "provenance": "KB_DEFAULT",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": "kb_lookup realignment fsl -> reference_scan: middle volume (MCFLIRT default)",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "trilinear",
+   "provenance": "KB_DEFAULT",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": "kb_lookup realignment fsl -> interpolation_estimate: trilinear (MCFLIRT default for optimization)",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "normalised correlation",
+   "provenance": "KB_DEFAULT",
+   "doc": "paper",
+   "quote": "realignment of all volumes to a selected reference volume using MCFLIRT",
+   "note": "kb_lookup realignment fsl -> cost_function: normalised correlation (normcorr) (MCFLIRT default)",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine (Ciric et al., In Preparation), which was configured to…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "correction for distortions induced by magnetic field inhomogeneities using FSL's FUGUE utility",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.method": {
+   "step": "distortion_correction",
+   "field": "method",
+   "value": "FSL's FUGUE utility",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "correction for distortions induced by magnetic field inhomogeneities using FSL's FUGUE utility",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "distortion_correction.applied_by": {
+   "step": "distortion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine (Ciric et al., In Preparation)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "initial_volume_removal.performed": {
+   "step": "initial_volume_removal",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removal of the 4 initial volumes of each acquisition",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "initial_volume_removal.number_of_volumes": {
+   "step": "initial_volume_removal",
+   "field": "number_of_volumes",
+   "value": "4",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removal of the 4 initial volumes of each acquisition",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "initial_volume_removal.applied_by": {
+   "step": "initial_volume_removal",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We did not apply slice timing correction during preprocessing, as recent data suggest that the interpolation that occur…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.applied_by": {
+   "step": "slice_timing_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We did not apply slice timing correction during preprocessing",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "co-registration of functional data to the high-resolution structural image using boundary-based registration",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "boundary-based registration",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "co-registration of functional data to the high-resolution structural image using boundary-based registration",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each structural image was diffeomorphically registered to the study-specific PNC template using the top-performing SyN …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.method": {
+   "step": "normalization",
+   "field": "method",
+   "value": "SyN deformation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each structural image was diffeomorphically registered to the study-specific PNC template using the top-performing SyN …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "ANTs",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each subject's high-resolution structural image was processed using the ANTs Cortical Thickness Pipeline",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "study-specific PNC template",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each structural image was diffeomorphically registered to the study-specific PNC template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each subject's high-resolution structural image was processed using the ANTs Cortical Thickness Pipeline",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.performed": {
+   "step": "detrending",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "demeaning and removal of any linear or quadratic trends",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.method": {
+   "step": "detrending",
+   "field": "method",
+   "value": "linear and quadratic",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "demeaning and removal of any linear or quadratic trends",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "detrending.applied_by": {
+   "step": "detrending",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.01 and 0.08 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "Butterworth",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "1",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering using a first-order Butterworth filter with a passband between 0.01 and 0.08 Hz",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "partial",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The input to ICA-AROMA is a voxelwise time series that has been smoothed at 6mm FWHM using a Gaussian kernel",
+   "note": "Only applied for models 13 and 14 (ICA-AROMA); not applied for models 1-12",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "6",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The input to ICA-AROMA is a voxelwise time series that has been smoothed at 6mm FWHM using a Gaussian kernel",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The input to ICA-AROMA is a voxelwise time series that has been smoothed at 6mm FWHM using a Gaussian kernel",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The input to ICA-AROMA is a voxelwise time series that has been smoothed at 6mm FWHM using a Gaussian kernel",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We selected 14 de-noising models, labelled 1-14 below, for evaluation",
+   "note": "14 different confound regression models were tested; this is the main focus of the paper",
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.models_tested": {
+   "step": "nuisance_regression",
+   "field": "models_tested",
+   "value": "14",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We selected 14 de-noising models, labelled 1-14 below, for evaluation",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "partial",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Model 3. (9P) Combined the 6 motion estimates and 2 physiological time series with global signal regression",
+   "note": "Applied in models 3, 5, 6, 7, 8, and 14; not applied in models 1, 2, 4, 9, 10, 11, 12, 13",
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.applied_by": {
+   "step": "global_signal_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "partial",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Model 8. (36P+scrub) Included 36 regressors as well as motion scrubbing",
+   "note": "Only applied in model 8",
+   "check": "quote_resolved"
+  },
+  "scrubbing.threshold": {
+   "step": "scrubbing",
+   "field": "threshold",
+   "value": "FD > 0.2mm",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "If framewise displacement (FD) at any point in time exceeded 0.2mm, then that time point was flagged for scrubbing",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.method": {
+   "step": "scrubbing",
+   "field": "method",
+   "value": "iterative scrubbing",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Scrubbing of BOLD data was performed iteratively",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.applied_by": {
+   "step": "scrubbing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "despiking.performed": {
+   "step": "despiking",
+   "field": "performed",
+   "value": "partial",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Model 6. (36P+despike) Included 36 regressors as well as despiking",
+   "note": "Applied in models 6 and 11",
+   "check": "quote_resolved"
+  },
+  "despiking.tool": {
+   "step": "despiking",
+   "field": "tool",
+   "value": "AFNI 3dDespike",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Despiking was implemented in AFNI using the 3dDespike utility",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "despiking.applied_by": {
+   "step": "despiking",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.performed": {
+   "step": "ica_denoise",
+   "field": "performed",
+   "value": "partial",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Model 13. (ICA-AROMA) Used a recently developed ICA-based procedure for removal of motion-related variance from BOLD da…",
+   "note": "ICA-AROMA applied only in models 13 and 14",
+   "check": "quote_resolved"
+  },
+  "ica_denoise.method": {
+   "step": "ica_denoise",
+   "field": "method",
+   "value": "ICA-AROMA",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "ICA-AROMA (automatic removal of motion artifact) is a recently-introduced, widely-used method for de-noising using sing…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "ica_denoise.applied_by": {
+   "step": "ica_denoise",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Task-free functional images were processed using the XCP Engine",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Study-specific tissue priors were used to guide brain extraction and segmentation of the subject's structural image",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.tool": {
+   "step": "brain_extraction",
+   "field": "tool",
+   "value": "ANTs",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each subject's high-resolution structural image was processed using the ANTs Cortical Thickness Pipeline",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.applied_by": {
+   "step": "brain_extraction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "each subject's high-resolution structural image was processed using the ANTs Cortical Thickness Pipeline",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Common elements of preprocessing included (1) correction for distortions induced by magnetic field inhomogeneities usin…",
+   "note": "Distortion correction was performed as a separate step before motion correction, not integrated into it",
+   "check": "quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "MCFLIRT",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "kind",
+    "name": "realignment name fsl",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "fsl",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing spatial FWHM"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "ciric_2017",
+    "n_fields": 55
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 14000,
+    "length": 500
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FUGUE distortion"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "ciric_2017",
+    "n_fields": 56
+   }
+  }
+ ]
+}

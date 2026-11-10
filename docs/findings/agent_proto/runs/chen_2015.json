@@ -1,0 +1,704 @@
+{
+ "paper_id": "chen_2015",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.6137,
+ "calls": 22,
+ "turns": 22,
+ "wall_s": 450.1,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 51,
+ "provenance_counts": {
+  "EXTRACTED": 42,
+  "CITED": 1,
+  "DEFERRED_UNREAD": 4,
+  "NOT_REPORTED": 3,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 39,
+  "quote_not_found": 1,
+  "cited_without_reference_doc": 1,
+  "deferral_quote_resolved": 4,
+  "n/a": 4,
+  "number_not_in_quote": 2
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 9,
+  "kb_lookup": 2,
+  "references": 4,
+  "open_reference": 1,
+  "outline": 1,
+  "read": 1,
+  "submit": 1
+ },
+ "order": "discard_volumes, despiking, slice_timing_correction, motion_correction, intensity_normalization, coregistration, nuisan…",
+ "opened": [
+  {
+   "doc": "ref:b50",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from entry; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "general.pipeline": {
+   "step": "general",
+   "field": "pipeline",
+   "value": "CCS (Connectome Computation System)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The Connectome Computation System (CCS: https://github.com/zuoxinian/CCS) was developed to provide a multimodal image a…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "general.applied_by": {
+   "step": "general",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The CCS anatomical pipeline first removed noise from individual MR T1 images... The subsequent CCS functional pipeline …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "general.integrated_packages": {
+   "step": "general",
+   "field": "integrated_packages",
+   "value": "AFNI, FreeSurfer, FSL",
+   "provenance": "CITED",
+   "doc": "paper",
+   "quote": "integrating three main MRI data processing packages [48][49][50]",
+   "note": "Ref 48 is AFNI (Cox 2012), ref 49 is FreeSurfer (Fischl et al 1999), ref 50 is FSL (Jenkinson et al 2012)",
+   "check": "cited_without_reference_doc"
+  },
+  "discard_volumes.performed": {
+   "step": "discard_volumes",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "discard_volumes.number_discarded": {
+   "step": "discard_volumes",
+   "field": "number_discarded",
+   "value": "5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "despiking.performed": {
+   "step": "despiking",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds), removed and interpolated tempora…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "despiking.method": {
+   "step": "despiking",
+   "field": "method",
+   "value": "removed and interpolated temporal spikes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removed and interpolated temporal spikes (see instructions in [56,57] regarding in-scanner head motion)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "corrected acquisition timing among image slices",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.method": {
+   "step": "slice_timing_correction",
+   "field": "method",
+   "value": "corrected acquisition timing among image slices",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The subsequent CCS functional pipeline discarded the first 5 EPI volumes (10 seconds), removed and interpolated tempora…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "corrected acquisition timing among image slices and head motion among image volumes",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "corrected head motion among image volumes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "corrected acquisition timing among image slices and head motion among image volumes",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "CCS",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The primary CCS pipeline consists of both anatomical and functional processing, which are documented in the CCS paper i…",
+   "note": "Specific motion correction tool deferred to CCS paper (ref 51, Xu et al 2015), which could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not specified",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The primary CCS pipeline consists of both anatomical and functional processing, which are documented in the CCS paper i…",
+   "note": "Deferred to CCS paper (ref 51), which could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not specified",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The primary CCS pipeline consists of both anatomical and functional processing, which are documented in the CCS paper i…",
+   "note": "Deferred to CCS paper (ref 51), which could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not specified",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "The primary CCS pipeline consists of both anatomical and functional processing, which are documented in the CCS paper i…",
+   "note": "Deferred to CCS paper (ref 51), which could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "intensity_normalization.performed": {
+   "step": "intensity_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "normalized the 4D global mean intensity to 10,000",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.target_value": {
+   "step": "intensity_normalization",
+   "field": "target_value",
+   "value": "10000",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "normalized the 4D global mean intensity to 10,000",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "White surfaces were then employed by a boundary-based registration (BBR) algorithm to match spatial correspondences bet…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "boundary-based registration (BBR)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "White surfaces were then employed by a boundary-based registration (BBR) algorithm to match spatial correspondences bet…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we regressed out the estimated Friston's 24-parameter motion curves [37] and nuisance signals measured as WM and CSF me…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.motion_parameters": {
+   "step": "nuisance_regression",
+   "field": "motion_parameters",
+   "value": "Friston's 24-parameter model",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we regressed out the estimated Friston's 24-parameter motion curves [37]",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.tissue_signals": {
+   "step": "nuisance_regression",
+   "field": "tissue_signals",
+   "value": "WM and CSF mean time series",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "nuisance signals measured as WM and CSF mean time series [59]",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.detrending": {
+   "step": "nuisance_regression",
+   "field": "detrending",
+   "value": "linear and quadratic trends",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Linear and quadratic trends were also regressed out from the rfMRI data by multiple linear regressions",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "no",
+   "provenance": "MODEL",
+   "doc": "paper",
+   "quote": "",
+   "note": "Not mentioned in nuisance regression; only WM, CSF, motion, and trends were regressed",
+   "check": "n/a"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the skull was then stripped and manually edited for a better brain extraction",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "brain_extraction.modality": {
+   "step": "brain_extraction",
+   "field": "modality",
+   "value": "anatomical (T1)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Using this image, the skull was then stripped and manually edited for a better brain extraction",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "brain_extraction.manual_editing": {
+   "step": "brain_extraction",
+   "field": "manual_editing",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the skull was then stripped and manually edited for a better brain extraction",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.performed": {
+   "step": "segmentation",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the 3D extracted brain volume was segmented into different tissues such as cerebrospinal fluid (CSF), WM, GM and furthe…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.tissues": {
+   "step": "segmentation",
+   "field": "tissues",
+   "value": "CSF, WM, GM",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "segmented into different tissues such as cerebrospinal fluid (CSF), WM, GM and further parcellation of the GM tissue",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_reconstruction.performed": {
+   "step": "surface_reconstruction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "individual pial (GM/CSF boundary) and white (GM/WM boundary) surfaces were reconstructed",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "individual pial (GM/CSF boundary) and white (GM/WM boundary) surfaces were reconstructed and spatially normalized to ma…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.type": {
+   "step": "normalization",
+   "field": "type",
+   "value": "surface-based",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "surfaces were reconstructed and spatially normalized to match a group-level standard template surface in the Montreal N…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "MNI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatially normalized to match a group-level standard template surface in the Montreal Neurological Institute (MNI) space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.method": {
+   "step": "normalization",
+   "field": "method",
+   "value": "sphere registration",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatially normalized to match a group-level standard template surface in the Montreal Neurological Institute (MNI) spac…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_projection.performed": {
+   "step": "surface_projection",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the data were projected onto the fsaverage surface grid (average inter-vertex distance = 1 mm) and down-sampled to the …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "surface_projection.target_surface": {
+   "step": "surface_projection",
+   "field": "target_surface",
+   "value": "fsaverage, then downsampled to fsaverage5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the data were projected onto the fsaverage surface grid (average inter-vertex distance = 1 mm) and down-sampled to the …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "This surface-based ReHo was derived from the non-smoothed but temporally band-pass filtered (the passing frequency band…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporally band-pass filtered (the passing frequency band O) rfMRI data",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.01-0.1 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "ALFF measures the strength or intensity of the low-frequency O = [0.01,0.1] (Hz) oscillations",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not specified",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not specified",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_to": {
+   "step": "temporal_filtering",
+   "field": "applied_to",
+   "value": "selective (ReHo, SFC, graph metrics but not ALFF/fALFF)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "This surface-based ReHo was derived from the non-smoothed but temporally band-pass filtered (the passing frequency band…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both ALFF and fALFF were derived from spatially smoothed rfMRI data (6 mm full-width at half-maximum isotropic Gaussian…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "6",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatially smoothed rfMRI data (6 mm full-width at half-maximum isotropic Gaussian kernel)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "6 mm full-width at half-maximum isotropic Gaussian kernel",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "surface",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both ALFF and fALFF were derived from spatially smoothed rfMRI data (6 mm full-width at half-maximum isotropic Gaussian…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_to": {
+   "step": "spatial_smoothing",
+   "field": "applied_to",
+   "value": "selective (ALFF/fALFF only, not ReHo or graph metrics)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Both ALFF and fALFF were derived from spatially smoothed rfMRI data (6 mm full-width at half-maximum isotropic Gaussian…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "anatomical_denoising.performed": {
+   "step": "anatomical_denoising",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The CCS anatomical pipeline first removed noise from individual MR T1 images by adopting a spatially adaptive non-local…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "anatomical_denoising.method": {
+   "step": "anatomical_denoising",
+   "field": "method",
+   "value": "spatially adaptive non-local means filter",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "removed noise from individual MR T1 images by adopting a spatially adaptive non-local means filter [52,53]",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "anatomical_averaging.performed": {
+   "step": "anatomical_averaging",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we aligned and averaged the ten de-noised T1 images to produce a robust, high-resolution anatomical image with high con…",
+   "note": "Longitudinal study with 10 scans per subject",
+   "check": "quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "motion correction realignment"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "CCS",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "ccs",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "AFNI FSL SPM"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "48",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "50",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b50",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "3dvolreg mcflirt"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "volumes interpolat"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "56",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 40781,
+    "length": 1200
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "susceptibility distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "skull strip brain extraction"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "MNI normalized normalization"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "MNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "discard_volumes, despiking, slice_timing_correction, motion_correction, intensity_normalization, coregistration, nuisan…",
+    "n_fields": 51
+   }
+  }
+ ]
+}

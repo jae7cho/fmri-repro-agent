@@ -1,0 +1,27 @@
+{
+ "preprocessing": {
+  "steps": [
+   {
+    "kind": "motion_correction",
+    "method": {
+     "extraction": {
+      "status": "EXTRACTED",
+      "value": {
+       "verbatim": "realigning the functional data to the mean image of each session"
+      }
+     }
+    }
+   }
+  ]
+ },
+ "diagnostics": [],
+ "resolution": {
+  "status": "ok",
+  "realignment_tool": {
+   "value": "spm",
+   "program": "Realign",
+   "provenance": "INFERRED_DEFAULT",
+   "kb": true
+  }
+ }
+}

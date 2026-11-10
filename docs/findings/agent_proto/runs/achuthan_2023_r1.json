@@ -1,0 +1,536 @@
+{
+ "paper_id": "achuthan_2023",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.5933,
+ "calls": 22,
+ "turns": 22,
+ "wall_s": 196.2,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 34,
+ "provenance_counts": {
+  "EXTRACTED": 26,
+  "MODEL": 1,
+  "NOT_REPORTED": 7
+ },
+ "check_counts": {
+  "quote_resolved": 26,
+  "n/a": 8
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 6,
+  "references": 3,
+  "search": 6,
+  "open_reference": 1,
+  "outline": 1,
+  "read": 1,
+  "submit": 1
+ },
+ "order": "motion_correction, slice_timing_correction, normalization, segmentation, spatial_smoothing, temporal_filtering, nuisanc…",
+ "opened": [
+  {
+   "doc": "ref:b66",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from entry; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All participants' functional images were realigned and unwarped and head motion outliers were identified.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "realigned and unwarped",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All participants' functional images were realigned and unwarped and head motion outliers were identified.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "spm Realign & Unwarp",
+   "provenance": "MODEL",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": "Conn uses SPM12 for realignment; 'realigned and unwarped' is SPM's terminology for its Realign & Unwarp function which …",
+   "check": "n/a"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All participants' functional images were realigned and unwarped and head motion outliers were identified.",
+   "note": "The 'unwarped' component indicates susceptibility distortion correction was performed as part of the realignment process",
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The functional and structural images were normalized onto a standard MNI (Montreal Neurological Institute) space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.template": {
+   "step": "normalization",
+   "field": "template",
+   "value": "MNI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The functional and structural images were normalized onto a standard MNI (Montreal Neurological Institute) space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.performed": {
+   "step": "segmentation",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the structural images were then segmented into gray matter, white matter, and cerebrospinal fluid (CSF; Ashburner and F…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.tissues": {
+   "step": "segmentation",
+   "field": "tissues",
+   "value": "gray matter, white matter, cerebrospinal fluid",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the structural images were then segmented into gray matter, white matter, and cerebrospinal fluid (CSF; Ashburner and F…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.applied_by": {
+   "step": "segmentation",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The spatially normalized images were subjected to smoothing using a spatial convolution Gaussian kernel of 5 mm full wi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The spatially normalized images were subjected to smoothing using a spatial convolution Gaussian kernel of 5 mm full wi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The spatially normalized images were subjected to smoothing using a spatial convolution Gaussian kernel of 5 mm full wi…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The study used Conn toolbox's default preprocessing pipeline for volume-based analyses.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A band pass filter of 0.008-0.09 Hz was applied to the smoothed data.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A band pass filter of 0.008-0.09 Hz was applied to the smoothed data.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.008-0.09 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "A band pass filter of 0.008-0.09 Hz was applied to the smoothed data.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Denoising was achieved using a procedure called aCompcor (anatomical componentbased noise correction procedure).",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.method": {
+   "step": "nuisance_regression",
+   "field": "method",
+   "value": "aCompCor",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Denoising was achieved using a procedure called aCompcor (anatomical componentbased noise correction procedure).",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "white matter and CSF parameters from outlier scans, six head motion parameters and their first order derivatives",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The aCompcor corrects for physiological noise by regressing the white matter and CSF (Behzadi et al., 2007) parameters …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The aCompcor corrects for physiological noise by regressing the white matter and CSF (Behzadi et al., 2007) parameters …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.method": {
+   "step": "scrubbing",
+   "field": "method",
+   "value": "outlier scans identification",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All participants' functional images were realigned and unwarped and head motion outliers were identified.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.applied_by": {
+   "step": "scrubbing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The image processing was done in Conn Connectivity toolbox (Whitfield-Gabrieli and Nieto-Castanon, 2012) and Statistica…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "CONN",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Whitfield-Gabrieli",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "conn",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "SPM",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "spm",
+    "version": "12",
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "realign and unwarp",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "program",
+    "name": "realignment",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "unwarp distortion susceptibility"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing slice-timing"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b66",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "first volume mean reference"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "scrubbing outlier framewise"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Ashburner",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Ashburner Friston 2005"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 31722,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing_correction, normalization, segmentation, spatial_smoothing, temporal_filtering, nuisanc…",
+    "n_fields": 34
+   }
+  }
+ ]
+}

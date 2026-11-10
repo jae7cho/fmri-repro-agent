@@ -1,0 +1,27 @@
+{
+ "preprocessing": {
+  "steps": [
+   {
+    "kind": "motion_correction",
+    "method": {
+     "extraction": {
+      "status": "EXTRACTED",
+      "value": {
+       "verbatim": "realigning to the first image of each scanning run"
+      }
+     }
+    }
+   }
+  ]
+ },
+ "diagnostics": [],
+ "resolution": {
+  "status": "ok",
+  "realignment_tool": {
+   "value": "spm",
+   "program": "Realign",
+   "provenance": "INFERRED_DEFAULT",
+   "kb": true
+  }
+ }
+}

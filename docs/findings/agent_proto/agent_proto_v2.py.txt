@@ -1,0 +1,509 @@
+"""Agent prototype v2 (2026-11-09): an agent reconstructs a paper's preprocessing with tools; code
+checks its evidence. An experiment outside the pipeline: it imports the repo's text loader, methods
+finder, citation lookup, span resolver and the defaults KB, and changes none of them.
+
+v2 against v1 (v1 spent 42 calls on one paper, 34 of its 85 tool calls keyword searches):
+- the first message carries the text the pipeline's extraction reads (``find_methods_section`` cut
+  at the reference list, plus the supplement's MRI section, as ``batch.process_paper`` builds it),
+  capped at EXCERPT_MAX characters; tools are for what that text does not settle;
+- every field is given in the one ``submit`` call (v1: one ``record_field`` call per field); a
+  submit missing scored fields is answered once with their names, and the next submit is final.
+- references / open_reference take a doc: an opened paper's own reference list (its GROBID TEI, or
+  the JATS ref-list of Europe PMC full text) can be searched and opened, up to MAX_HOP_DEPTH
+  citations from the paper; a reference with no DOI gets the one CrossRef records for it, as the
+  pipeline's hop does (crossref_doi).
+Kept from v1: the tools, the provenances, the checks, 60 turns, a forced submit at $2.50, the last
+KEEP_TOOL_RESULTS tool results in full.
+
+Scored fields use the repo's names: motion_correction (performed, method, tool, reference_scan,
+interpolation, similarity_metric, susceptibility_correction), spatial_smoothing (performed, fwhm_mm,
+kernel_type, space), temporal_filtering (performed, pass_type, band_or_cutoff, filter_type, order);
+every step carries applied_by. Six provenances: EXTRACTED, CITED, DEFERRED_UNREAD (the paper defers
+and the source could not be read; the quote is the paper's deferral sentence), KB_DEFAULT, MODEL,
+NOT_REPORTED. The prompt also tells the agent to look up a named pipeline's realignment in the KB.
+Other steps are free-form.
+
+Checks (code, after the run):
+- EXTRACTED / CITED: the quote resolves in the named document with ``span_resolver.resolve_quote``
+  (its citation-marker tier lets a quote skip reference markers); a number in the value must be a
+  whole token of the quote.
+- KB_DEFAULT: some kb_lookup result in the run's trace names the value.
+
+    python agent_proto_v2.py --paper X.pdf --paper-id x --out x.json
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import re
+import sys
+import time
+from pathlib import Path
+from typing import Any
+
+from litellm import completion, completion_cost
+from litellm.exceptions import APIConnectionError, RateLimitError
+
+import fmri_defaults_kb as kb
+from extractor_mvp.batch import load_supplement, load_text, supplement_marker
+from extractor_mvp.citation_hop import (
+    _bibl_ref_entry,
+    crossref_doi,
+    europepmc_fulltext,
+    resolve_local_pdf,
+)
+from extractor_mvp.grobid_source import BiblEntry, bibliography, fetch_tei
+from extractor_mvp.methods_finder import find_methods_section, find_supplement_mri_section
+from extractor_mvp.pdf_loader import reflow_one_word_lines
+from extractor_mvp.software_scan import _body_end
+from extractor_mvp.span_resolver import resolve_quote
+
+MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+MAX_TURNS = 60
+FORCE_AT_USD = 2.50
+EXCERPT_MAX = 40000
+LIT = Path("/Users/cwook/Documents/neurorepro/tested_lit")
+CORPUS_DIRS = [LIT, *sorted(p for p in LIT.rglob("*") if p.is_dir())]
+
+SCHEMA: dict[str, list[str]] = {
+    "motion_correction": [
+        "performed", "method", "tool", "reference_scan", "interpolation",
+        "similarity_metric", "susceptibility_correction",
+    ],
+    "spatial_smoothing": ["performed", "fwhm_mm", "kernel_type", "space"],
+    "temporal_filtering": ["performed", "pass_type", "band_or_cutoff", "filter_type", "order"],
+}
+PROVENANCES = ["EXTRACTED", "CITED", "DEFERRED_UNREAD", "KB_DEFAULT", "MODEL", "NOT_REPORTED"]
+
+SYSTEM = """You reconstruct the fMRI preprocessing a paper actually applied, for reproduction.
+
+The paper's methods text (and its supplement's MRI section, if any) is in the first message. Read
+it first. Use tools only for what it does not settle; most papers need a few tool calls, and a
+paper whose methods state everything needs none.
+
+Work like a careful neuroimaging researcher with a library:
+- If something seems to be described outside the methods text (e.g. "see Supplementary Methods"),
+  search or read doc "paper", which is the whole paper and its supplement.
+- When the paper names a pipeline or software suite for its preprocessing (fMRIPrep, C-PAC, CCS,
+  DPARSF, the HCP pipelines, CONN, ...), call kb_lookup(kind="pipeline", name=<its name>) and then
+  kb_lookup(kind="realignment", name=<pipeline id>, version=<the stated version, if any>). Unless the
+  paper names the realignment program itself, the KB's answer is the tool, as KB_DEFAULT.
+- When a package is named for the preprocessing (SPM12, FSL, AFNI) and the realignment program is
+  not, kb_lookup(kind="package") then kb_lookup(kind="realignment", name=<tool id>) gives its program.
+- When a dataset release is named (HCP S1200, ABCD 4.0, ...), call kb_lookup(kind="dataset") FIRST
+  and use the pipeline version it gives before opening the pipeline's paper.
+- When the paper defers preprocessing to a citation, a pipeline, or a dataset's own preprocessing,
+  open that reference and read ITS methods; follow a further deferral at most once more.
+- When a pipeline or package is named and a parameter is stated nowhere you can read, use kb_lookup
+  for its documented default. Never give a default from memory as KB_DEFAULT.
+
+Give every field in the one submit call. Provenance:
+- EXTRACTED: stated in the paper itself; doc "paper", quote = the exact sentence, copied verbatim.
+- CITED: stated in a reference you opened; doc = that reference's doc id, quote verbatim.
+- DEFERRED_UNREAD: the paper hands this to a citation, pipeline or dataset you could not open or
+  that does not state it; value = what it is deferred to (e.g. "ref 47"), doc "paper", quote = the
+  paper's deferral sentence verbatim, note = why it is unread. Use this, not NOT_REPORTED, whenever
+  the paper defers.
+- KB_DEFAULT: from a kb_lookup result; note = the lookup.
+- MODEL: your own inference with no text or KB support; note = why. Use sparingly.
+- NOT_REPORTED: you looked and nothing says it.
+
+Scored fields (use these names exactly):
+- motion_correction: performed (yes/no); method = the paper's OWN words for the motion correction
+  step, verbatim (a program or package name such as "MCFLIRT" or "SPM8", or a description such as
+  "realigned to the first volume"); when the paper itself says nothing and defers, give the cited
+  source's words with provenance CITED. tool = the program that did the realignment, as
+  "<package> <program>" when known (e.g. "fsl MCFLIRT", "spm Realign", "afni 3dvolreg"), else the
+  package. reference_scan; interpolation (of the realignment itself, not a later resampling);
+  similarity_metric; susceptibility_correction.
+- spatial_smoothing: performed; fwhm_mm (a number in mm); kernel_type; space (volume/surface/...).
+- temporal_filtering: performed; pass_type (high_pass / low_pass / band_pass); band_or_cutoff (as
+  stated, with units, e.g. "0.009-0.08 Hz", "128 s"); filter_type; order.
+- Every performed step: applied_by = "authors", or "data_provider:<name>" (e.g. HCP, ABCD), or
+  "pipeline:<name>", given as a field named applied_by.
+Other steps (slice_timing, distortion_correction, brain_extraction, coregistration, normalization,
+nuisance_regression, scrubbing, global_signal_regression, ica_denoise, ...): give what you find,
+field names free-form.
+
+Call several tools in one turn when they are independent. Call submit once, with every field."""
+
+
+def _fn(name: str, desc: str, props: dict[str, Any], req: list[str]) -> dict[str, Any]:
+    return {"type": "function", "function": {"name": name, "description": desc,
+            "parameters": {"type": "object", "properties": props, "required": req}}}
+
+
+_S = {"type": "string"}
+TOOLS = [
+    _fn("outline", "Section headings of a doc with offsets.", {"doc": _S}, ["doc"]),
+    _fn("search", "Sentences of a doc containing all words of `query` (case-insensitive); up to 12, with offsets.",
+        {"doc": _S, "query": _S}, ["doc", "query"]),
+    _fn("read", "Up to 4000 characters of a doc from `start`.",
+        {"doc": _S, "start": {"type": "integer"}, "length": {"type": "integer"}}, ["doc", "start"]),
+    _fn("references", "Search the reference list of an open doc (default 'paper'; or a cited paper's doc id, to follow "
+        "its own deferral) by number, author, year or title word; empty lists the first 40.",
+        {"query": _S, "doc": _S}, ["query"]),
+    _fn("open_reference", "Open a reference of an open doc (default 'paper') by ref_id from `references` on that doc; "
+        "returns a doc id, or why it cannot be opened. At most 2 citations away from the paper.",
+        {"ref_id": _S, "doc": _S}, ["ref_id"]),
+    _fn("kb_lookup", "The defaults KB. kind: 'pipeline' (name -> id), 'dataset' (name + release -> pipeline and version), "
+        "'package' (name -> tool id), 'program' (phrase -> realignment program, package), 'realignment' (pipeline id + "
+        "version, or tool id alone -> the realignment program and its defaults), 'params' (pipeline id + version + "
+        "comma-separated field names).",
+        {"kind": _S, "name": _S, "version": _S, "fields": _S}, ["kind", "name"]),
+    _fn("submit", "Finish: every field, scored and free-form, in one call.",
+        {"order": {"type": "string", "description": "step order and its source, or 'not stated'"},
+         "fields": {"type": "array", "items": {"type": "object", "properties": {
+             "step": _S, "field": _S, "value": _S,
+             "provenance": {"type": "string", "enum": PROVENANCES},
+             "doc": _S, "quote": _S, "note": _S},
+             "required": ["step", "field", "value", "provenance"]}}},
+        ["fields"]),
+]
+
+
+MAX_HOP_DEPTH = 2  # the paper -> a cited paper -> a paper that one cites
+
+
+def jats_bibliography(xml: bytes) -> dict[str, BiblEntry]:
+    """A JATS article's <ref-list> as BiblEntry rows (ref id, first surnames, year, title, DOI)."""
+    import xml.etree.ElementTree as ET
+
+    out: dict[str, BiblEntry] = {}
+    try:
+        root = ET.fromstring(xml)
+    except ET.ParseError:
+        return out
+    for i, ref in enumerate(root.iter("ref")):
+        rid = ref.get("id") or f"r{i}"
+
+        def txt(path: str) -> str | None:
+            el = ref.find(path)
+            return " ".join("".join(el.itertext()).split()) if el is not None else None
+
+        surnames = tuple(" ".join("".join(s.itertext()).split()) for s in ref.iter("surname"))
+        doi = next((" ".join("".join(p.itertext()).split()) for p in ref.iter("pub-id")
+                    if p.get("pub-id-type") == "doi"), None)
+        out[rid] = BiblEntry(rid, txt(".//article-title"), surnames, txt(".//year"), doi)
+    return out
+
+
+class Library:
+    def __init__(self, pdf: Path) -> None:
+        text, parser, _ = load_text(pdf)
+        text, _ = reflow_one_word_lines(text)
+        supp_rec, supp = load_supplement(pdf)
+        # the excerpt, as batch.process_paper builds the extraction text
+        methods = find_methods_section(text, text_source=parser)
+        body_end = _body_end(text)
+        excerpt = methods.text
+        if methods.start_offset + len(methods.text) > body_end:
+            excerpt = methods.text[: max(0, body_end - methods.start_offset)]
+        marker = supplement_marker(Path(supp_rec["path"]).name)
+        if supp:
+            supp_body = supp[: _body_end(supp)]
+            excerpt += marker + find_supplement_mri_section(supp_body).text
+        self.methods_found_via = methods.found_via
+        self.excerpt_chars = len(excerpt)
+        self.excerpt = excerpt[:EXCERPT_MAX]
+        if supp:
+            text += marker + supp
+        self.docs: dict[str, str] = {"paper": text}
+        self.titles: dict[str, str] = {"paper": pdf.name}
+        self.bibs: dict[str, dict[str, Any]] = {"paper": bibliography(fetch_tei(pdf)[0])}
+        self.depth: dict[str, int] = {"paper": 0}
+        self.pdf = pdf
+        self.opened: list[dict[str, Any]] = []
+        self.kb_results: list[str] = []
+
+    def _doc(self, d: str) -> str:
+        if d not in self.docs:
+            raise KeyError(f"unknown doc {d!r}; open docs: {list(self.docs)}")
+        return self.docs[d]
+
+    def outline(self, doc: str) -> Any:
+        out, off = [], 0
+        for line in self._doc(doc).split("\n"):
+            s = line.strip()
+            if 0 < len(s) < 90 and not s.endswith("."):
+                out.append({"offset": off, "heading": s})
+            off += len(line) + 1
+        return out[:150]
+
+    def search(self, doc: str, query: str) -> Any:
+        t = self._doc(doc)
+        words = [w.lower() for w in query.split()]
+        hits = []
+        for m in re.finditer(r"[^.\n]*(?:\.(?!\s)[^.\n]*)*[.\n]?", t):
+            s = m.group(0)
+            if s.strip() and all(w in s.lower() for w in words):
+                hits.append({"offset": m.start(), "sentence": s.strip()[:400]})
+                if len(hits) >= 12:
+                    break
+        return hits or "no hits"
+
+    def read(self, doc: str, start: int, length: int = 4000) -> Any:
+        s = max(0, int(start))
+        return self._doc(doc)[s : s + min(int(length or 4000), 4000)]
+
+    def _bib(self, doc: str) -> dict[str, Any]:
+        self._doc(doc)
+        return self.bibs.get(doc) or {}
+
+    def references(self, query: str, doc: str = "paper") -> Any:
+        """The reference list of any open doc (the paper's, or a cited paper's own)."""
+        bib = self._bib(doc)
+        if not bib:
+            return f"no reference list read for {doc!r}"
+        rows = []
+        for b in bib.values():
+            n = re.sub(r"\D", "", b.bibl_id)
+            rows.append({"ref_id": b.bibl_id, "number_if_numbered": int(n) + 1 if n and b.bibl_id.startswith("b") else None,
+                         "authors": ", ".join(b.authors[:3]), "year": b.year, "title": b.title})
+        words = query.lower().split()
+        if not words:
+            return rows[:40]
+        hits = [r for r in rows if all(w in json.dumps(r).lower() for w in words)]  # every word, any order
+        return hits[:20] or "no match"
+
+    def open_reference(self, ref_id: str, doc: str = "paper") -> Any:
+        """Open a reference of any open doc, up to MAX_HOP_DEPTH citations from the paper."""
+        b = self._bib(doc).get(ref_id)
+        if b is None:
+            return f"no reference {ref_id!r} in {doc!r}"
+        depth = self.depth[doc] + 1
+        if depth > MAX_HOP_DEPTH:
+            return f"cannot open: {doc!r} is already {self.depth[doc]} citations from the paper (limit {MAX_HOP_DEPTH})"
+        doc_id = f"ref:{ref_id}" if doc == "paper" else f"{doc}/{ref_id}"
+        if doc_id not in self.docs:
+            state, path, confirmed = resolve_local_pdf(_bibl_ref_entry(b, "paper"), CORPUS_DIRS)
+            if path is not None:
+                text, _, _ = load_text(path)
+                text, _ = reflow_one_word_lines(text)
+                src = f"local_pdf:{path.name}:{confirmed}"
+                try:
+                    bib = bibliography(fetch_tei(path)[0])
+                except Exception:
+                    bib = {}
+            else:
+                # as the pipeline's hop: the entry's own DOI, else the one CrossRef records for it
+                doi, doi_src = b.doi, "entry"
+                if not doi:
+                    try:
+                        doi, doi_src = crossref_doi(_bibl_ref_entry(b, "paper")), "crossref"
+                    except Exception:
+                        doi = None
+                if not doi:
+                    self.opened.append({"doc": doc_id, "depth": depth, "source": f"not opened ({state}; no DOI from entry or CrossRef)"})
+                    return f"cannot open: local lookup {state}; no DOI in the entry or from CrossRef"
+                got = europepmc_fulltext(doi, self.pdf.parent)
+                if got is None:
+                    self.opened.append({"doc": doc_id, "depth": depth, "source": f"not opened ({state}; DOI from {doi_src}; no Europe PMC text)"})
+                    return f"cannot open: local lookup {state}; Europe PMC has no full text for its DOI"
+                text, src = got[0], f"europepmc (DOI from {doi_src})"
+                bib = jats_bibliography(got[1].read_bytes())
+            self.docs[doc_id] = text
+            self.bibs[doc_id] = bib
+            self.depth[doc_id] = depth
+            self.titles[doc_id] = b.title or ref_id
+            self.opened.append({"doc": doc_id, "depth": depth, "source": src, "n_references": len(bib)})
+        return {"doc": doc_id, "title": self.titles[doc_id], "chars": len(self.docs[doc_id]),
+                "references": len(self.bibs.get(doc_id) or {})}
+
+    def kb_lookup(self, kind: str, name: str, version: str | None = None, fields: str | None = None) -> Any:
+        try:
+            if kind == "pipeline":
+                out: Any = kb.recognize_with_provenance(name)
+            elif kind == "dataset":
+                out = _plain(kb.recognize_dataset(name, version))
+            elif kind == "package":
+                out = kb.recognize_tool(name)
+            elif kind == "program":
+                out = kb.recognize_program(name)
+            elif kind == "realignment":
+                out = (_plain(kb.realignment_tool_at(name, version)) if version else
+                       {"program": _plain(kb.realignment_program(name)), "defaults": kb.realignment_defaults(name)})
+            elif kind == "params":
+                fs = [f.strip() for f in (fields or "").split(",") if f.strip()]
+                out = _plain(kb.get_param_defaults(name, version or "", fs))
+            else:
+                out = f"unknown kind {kind!r}"
+        except Exception as exc:  # the KB's errors are answers
+            out = f"{type(exc).__name__}: {exc}"
+        self.kb_results.append(json.dumps(out, default=str))
+        return out
+
+
+def _plain(o: Any) -> Any:
+    if o is None or isinstance(o, (str, int, float, bool)):
+        return o
+    if isinstance(o, dict):
+        return {k: _plain(v) for k, v in o.items()}
+    if isinstance(o, (list, tuple, set, frozenset)):
+        return [_plain(v) for v in o]
+    if hasattr(o, "model_dump"):
+        return o.model_dump()
+    if hasattr(o, "__dataclass_fields__"):
+        return {k: _plain(getattr(o, k)) for k in o.__dataclass_fields__}
+    return str(o)
+
+
+_NUMS = re.compile(r"\d+(?:\.\d+)?")
+
+
+def check_field(f: dict[str, Any], lib: Library) -> str:
+    prov = f.get("provenance")
+    if prov in ("EXTRACTED", "CITED", "DEFERRED_UNREAD"):
+        doc = f.get("doc") or ("paper" if prov in ("EXTRACTED", "DEFERRED_UNREAD") else "")
+        q = (f.get("quote") or "").strip()
+        if not q:
+            return "no_quote"
+        if prov == "DEFERRED_UNREAD":
+            if doc != "paper":
+                return "deferral_not_in_paper_doc"
+            res = resolve_quote(q, lib.docs["paper"])
+            return "quote_not_found" if res.failure_reason == "quote_not_found" else "deferral_quote_resolved"
+        if prov == "EXTRACTED" and doc != "paper":
+            return "extracted_from_non_paper_doc"
+        if prov == "CITED" and not doc.startswith("ref:"):
+            return "cited_without_reference_doc"
+        if doc not in lib.docs:
+            return "unknown_doc"
+        res = resolve_quote(q, lib.docs[doc])
+        if res.failure_reason == "quote_not_found":
+            return "quote_not_found"
+        qn = {float(x) for x in _NUMS.findall(q)}
+        if any(float(x) not in qn for x in _NUMS.findall(str(f.get("value") or ""))):
+            return "number_not_in_quote"
+        return "quote_ambiguous" if res.failure_reason == "quote_ambiguous" else (
+            "quote_resolved_recovered" if res.recovered else "quote_resolved")
+    if prov == "KB_DEFAULT":
+        v = str(f.get("value") or "").lower()
+        toks = [t for t in re.findall(r"[a-z0-9]+", v) if len(t) > 1]
+        hit = any(toks and all(t in r.lower() for t in toks) for r in lib.kb_results)
+        return "kb_result_names_value" if hit else "kb_result_does_not_name_value"
+    return "n/a"
+
+
+KEEP_TOOL_RESULTS = 8
+_ELIDED = "[elided: an earlier tool result; call the tool again if you need it]"
+
+
+def compact(msgs: list[dict[str, Any]]) -> None:
+    """Keep the last KEEP_TOOL_RESULTS tool results in full; older ones become a stub (the
+    provider's per-minute token quota throttled whole-history turns, 2026-11-09). The first message
+    (the methods text) and the agent's own calls are kept."""
+    tool_idx = [i for i, m in enumerate(msgs) if m.get("role") == "tool"]
+    for i in tool_idx[:-KEEP_TOOL_RESULTS]:
+        if msgs[i]["content"] != _ELIDED and len(msgs[i]["content"]) > 200:
+            msgs[i]["content"] = _ELIDED
+
+
+def run(pdf: Path, paper_id: str) -> dict[str, Any]:
+    lib = Library(pdf)
+    fields: dict[str, dict[str, Any]] = {}
+    msgs: list[dict[str, Any]] = [
+        {"role": "system", "content": SYSTEM},
+        {"role": "user", "content": (
+            f"Paper {paper_id}. The whole paper is open as doc 'paper' ({len(lib.docs['paper'])} characters). "
+            f"Its methods text ({lib.methods_found_via}; {lib.excerpt_chars} characters"
+            f"{', first ' + str(EXCERPT_MAX) + ' shown' if lib.excerpt_chars > EXCERPT_MAX else ''}) follows. "
+            "Reconstruct its preprocessing.\n\n<methods>\n" + lib.excerpt + "\n</methods>")},
+    ]
+    cost, calls, trace, submitted, forced, order = 0.0, 0, [], False, None, None
+    throttled, error, asked_missing, disconnected = 0, None, None, 0
+    t0 = time.time()
+    turn = 0
+    for turn in range(MAX_TURNS):
+        last = turn == MAX_TURNS - 1
+        if last or cost >= FORCE_AT_USD:
+            forced = forced or ("turn_cap" if last else "cost_cap")
+            choice: Any = {"type": "function", "function": {"name": "submit"}}
+        else:
+            choice = "auto"
+        compact(msgs)
+        resp = None
+        for wait in (0, 15, 30, 60, 90, 120, 180, 240, 300, 300, 300):  # about 27 minutes in all
+            time.sleep(wait)
+            try:
+                resp = completion(model=MODEL, messages=msgs, tools=TOOLS, tool_choice=choice,
+                                  temperature=0.0, max_tokens=8000)
+                break
+            except RateLimitError:
+                throttled += 1
+                print(f"  {paper_id} throttled", flush=True)
+            except APIConnectionError:
+                # 2026-11-10: a network outage ended the batch (DNS failures); wait it out the same way
+                disconnected += 1
+                print(f"  {paper_id} connection error", flush=True)
+        if resp is None:
+            error = "rate_limited_or_disconnected"
+            break
+        calls += 1
+        try:
+            cost += float(completion_cost(completion_response=resp))
+        except Exception:
+            pass
+        m = resp.choices[0].message
+        msgs.append(m.model_dump(exclude_none=True))
+        tcs = m.tool_calls or []
+        if not tcs:
+            msgs.append({"role": "user", "content": "Use the tools; call submit when done."})
+            continue
+        for c in tcs:
+            try:
+                args = json.loads(c.function.arguments or "{}")
+            except json.JSONDecodeError:
+                args = {}
+            name = c.function.name
+            trace.append({"turn": turn, "tool": name,
+                          "args": {k: v for k, v in args.items() if k != "fields"},
+                          **({"n_fields": len(args.get("fields") or [])} if name == "submit" else {})})
+            if name == "submit":
+                for f in args.get("fields") or []:
+                    if isinstance(f, dict):
+                        key = f"{f.get('step')}.{f.get('field')}"
+                        fields[key] = {k: f.get(k) for k in ("step", "field", "value", "provenance", "doc", "quote", "note")}
+                order = args.get("order") or order
+                missing = [f"{s}.{k}" for s, ks in SCHEMA.items() for k in ks if f"{s}.{k}" not in fields]
+                if missing and asked_missing is None and not forced:
+                    asked_missing = missing
+                    out: Any = ("Not final: these scored fields are missing (give each, NOT_REPORTED if "
+                                f"nothing says it): {', '.join(missing)}. Call submit again; fields you "
+                                "already gave are kept.")
+                else:
+                    submitted = True
+                    out = "submitted"
+            else:
+                try:
+                    out = getattr(lib, name)(**args)
+                except Exception as exc:
+                    out = f"error: {type(exc).__name__}: {exc}"
+            msgs.append({"role": "tool", "tool_call_id": c.id, "content": json.dumps(out, default=str)[:12000]})
+        print(f"  {paper_id} turn {turn}: {[c.function.name for c in tcs]} ${cost:.4f}", flush=True)
+        if submitted:
+            break
+    for f in fields.values():
+        f["check"] = check_field(f, lib)
+    return {
+        "paper_id": paper_id, "model": MODEL, "cost_usd": round(cost, 4), "calls": calls,
+        "turns": turn + 1, "wall_s": round(time.time() - t0, 1), "submitted": submitted,
+        "throttled": throttled, "disconnected": disconnected, "error": error, "asked_missing": asked_missing,
+        "methods_found_via": lib.methods_found_via, "excerpt_chars": lib.excerpt_chars,
+        "forced": forced, "order": order, "opened": lib.opened, "fields": fields, "trace": trace,
+        "script_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    }
+
+
+if __name__ == "__main__":
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--paper", type=Path, required=True)
+    ap.add_argument("--paper-id", required=True)
+    ap.add_argument("--out", type=Path, required=True)
+    a = ap.parse_args()
+    res = run(a.paper, a.paper_id)
+    a.out.write_text(json.dumps(res, indent=2, default=str))
+    print(f"DONE {a.paper_id} ${res['cost_usd']} turns={res['turns']} submitted={res['submitted']} forced={res['forced']}", flush=True)
+    sys.exit(0)

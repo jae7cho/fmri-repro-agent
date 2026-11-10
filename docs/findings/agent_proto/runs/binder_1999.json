@@ -1,0 +1,467 @@
+{
+ "paper_id": "binder_1999",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.5715,
+ "calls": 23,
+ "turns": 23,
+ "wall_s": 191.6,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 30,
+ "provenance_counts": {
+  "EXTRACTED": 12,
+  "KB_DEFAULT": 4,
+  "NOT_REPORTED": 14
+ },
+ "check_counts": {
+  "quote_resolved": 7,
+  "kb_result_names_value": 4,
+  "n/a": 14,
+  "quote_resolved_recovered": 5
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 12,
+  "references": 1,
+  "kb_lookup": 2,
+  "submit": 2
+ },
+ "order": "motion_correction, normalization, spatial_smoothing",
+ "opened": [],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All EPI images were spatially coregistered using an iterative procedure that minimizes variance in voxel intensity diff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "spatially coregistered using an iterative procedure that minimizes variance in voxel intensity differences between images",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All EPI images were spatially coregistered using an iterative procedure that minimizes variance in voxel intensity diff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "afni 3dvolreg",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='package', name='afni') -> 'afni'; kb_lookup(kind='realignment', name='afni') -> program='3dvolreg'. The…",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "first volume",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> reference_scan default: 'first volume (sub-brick 0)'",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "heptic or Fourier",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> interpolation_estimate default: 'heptic (7th order polynomial); Fourier i…",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "weighted least squares",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup(kind='realignment', name='afni') -> cost_function: 'weighted least squares'. This is consistent with the pape…",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "All EPI images were spatially coregistered using an iterative procedure that minimizes variance in voxel intensity diff…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual anatomical (SPGR) scans and SPMs were then projected into the standard stereotaxic space of Talairach and To…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "Talairach",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual anatomical (SPGR) scans and SPMs were then projected into the standard stereotaxic space of Talairach and To…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.software": {
+   "step": "normalization",
+   "field": "software",
+   "value": "MCW-AFNI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual anatomical (SPGR) scans and SPMs were then projected into the standard stereotaxic space of Talairach and To…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Individual anatomical (SPGR) scans and SPMs were then projected into the standard stereotaxic space of Talairach and To…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compensate for normal variation in anatomy across subjects (Toga et al., 1993), the unthresholded, stereotaxically r…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "4 mm root-mean-square radius",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compensate for normal variation in anatomy across subjects (Toga et al., 1993), the unthresholded, stereotaxically r…",
+   "note": "The paper specifies root-mean-square radius of 4 mm. If RMS radius = σ, then FWHM ≈ 9.4 mm (4 × 2.355), but reporting a…",
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compensate for normal variation in anatomy across subjects (Toga et al., 1993), the unthresholded, stereotaxically r…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume (after stereotaxic normalization)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compensate for normal variation in anatomy across subjects (Toga et al., 1993), the unthresholded, stereotaxically r…",
+   "note": "The smoothing was applied to 'stereotaxically resampled 3-D SPMs', indicating it was done in volume space after normali…",
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compensate for normal variation in anatomy across subjects (Toga et al., 1993), the unthresholded, stereotaxically r…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "coregistration_functional_to_anatomical.performed": {
+   "step": "coregistration_functional_to_anatomical",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "The paper mentions that anatomical scans and SPMs were projected to Talairach space, but does not explicitly describe c…",
+   "check": "n/a"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "ica_denoise.performed": {
+   "step": "ica_denoise",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "motion correction realignment"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "temporal filtering"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "brain extraction mask"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "nuisance regression"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "detrend baseline drift"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "coregistration registration"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "spatially"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Gaussian smoothed"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Talairach stereotaxic"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, normalization, spatial_smoothing",
+    "n_fields": 26
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, normalization, spatial_smoothing",
+    "n_fields": 30
+   }
+  }
+ ]
+}

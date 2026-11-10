@@ -1,0 +1,27 @@
+{
+ "preprocessing": {
+  "steps": [
+   {
+    "kind": "motion_correction",
+    "method": {
+     "extraction": {
+      "status": "EXTRACTED",
+      "value": {
+       "verbatim": "spatially coregistered using an iterative procedure that minimizes variance in voxel intensity differences between images"
+      }
+     }
+    }
+   }
+  ]
+ },
+ "diagnostics": [],
+ "resolution": {
+  "status": "ok",
+  "realignment_tool": {
+   "value": "afni",
+   "program": "3dvolreg",
+   "provenance": "INFERRED_DEFAULT",
+   "kb": true
+  }
+ }
+}

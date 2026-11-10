@@ -1,0 +1,154 @@
+"""Run the v2 agent through headless Claude Code (the author's plan), one paper per session.
+
+Per paper: a fresh empty working folder; a one-line wrapper ``<state>/aespa`` around aespa_cli.py
+(the only command the session may run); ``claude -p`` with Sonnet 4.5 (the pipeline's model), v2's
+instructions as the system prompt, every file and web tool denied, no MCP servers, no settings
+sources (so no permission rule can widen the allow-list). Afterwards the record is assembled in v2's
+output shape and checked with v2's ``check_field``. Held-out papers print counts only.
+
+    python run_local.py --jobs jobs.tsv --out runs_local [--only tag,tag] [--parallel 2]
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+HERE = Path(__file__).resolve().parent
+PROTO = HERE.parent / "agent_proto"
+WT = HERE.parent / "wt_3fa32b6"
+VENV_PY = Path("/Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp/.venv/bin/python")
+PYTHONPATH = f"{WT}/extractor_mvp/src:{WT}/src:{PROTO}:{HERE}"
+MODEL = "claude-sonnet-4-5-20250929"
+HELD_OUT = {"liu_2005", "tang_2025", "wheaton_2004"}
+WALL_LIMIT_S = 45 * 60
+#: Write and Edit are not denied (a deny would override the one allowed path); the allow-list's
+#: Edit rule covers only <state>/submit.json, and any other write is refused (tested 2026-11-10).
+DENIED = ("Read,MultiEdit,NotebookEdit,Grep,Glob,LS,WebFetch,WebSearch,Task,Agent,"
+          "TodoWrite,Skill,ToolSearch")
+
+sys.path[:0] = [f"{WT}/extractor_mvp/src", f"{WT}/src", str(PROTO), str(HERE)]
+import agent_proto_v2 as A  # noqa: E402
+import aespa_cli  # noqa: E402
+
+
+def system_prompt(wrapper: Path) -> str:
+    base = A.SYSTEM.replace(
+        "The paper's methods text (and its supplement's MRI section, if any) is in the first message. Read\n"
+        "it first.",
+        f"Run `{wrapper} excerpt` first: it prints the paper's methods text (and its supplement's MRI\n"
+        "section, if any). Read it first.")
+    tools = f"""
+Your only tool is the shell command {wrapper} (no other command, file or web access is allowed):
+  {wrapper} excerpt
+  {wrapper} outline DOC
+  {wrapper} search DOC WORD [WORD...]        sentences containing all the words
+  {wrapper} read DOC START [LENGTH<=4000]
+  {wrapper} references [--doc DOC] [QUERY...]   the reference list of an open doc (default paper)
+  {wrapper} open_reference REF_ID [--doc DOC]    open a reference of an open doc; prints its doc id
+  {wrapper} kb_lookup KIND NAME [--version V] [--fields F]
+      KIND: pipeline (name -> id), dataset (name + --version release -> pipeline and version),
+      package (name -> tool id), program (phrase -> realignment program, package),
+      realignment (pipeline id + --version, or tool id alone -> program and defaults),
+      params (pipeline id + --version + --fields comma-separated)
+To submit: use the Write tool to write the JSON to {wrapper.parent / 'submit.json'} (the only file
+you may write), then run `{wrapper} submit`. The JSON:
+  {{"order": "...", "fields": [{{"step": "...", "field": "...", "value": "...", "provenance": "...",
+    "doc": "...", "quote": "...", "note": "..."}}, ...]}}
+Any other command, a heredoc, or a write elsewhere is refused.
+DOC is "paper" or a doc id that open_reference printed. Provenance is one of
+{", ".join(A.PROVENANCES)}. Submit is final once it says "submitted".
+"""
+    return base + "\n" + tools
+
+
+def run_one(tag: str, pid: str, pdf: str, out: Path) -> dict:
+    state = out / tag
+    if state.exists():
+        shutil.rmtree(state)
+    state.mkdir(parents=True)
+    work = state / "work"
+    work.mkdir()
+    wrapper = state / "aespa"
+    wrapper.write_text(
+        "#!/bin/zsh\n"
+        f"exec env PYTHONPATH='{PYTHONPATH}' '{VENV_PY}' '{HERE / 'aespa_cli.py'}' "
+        f"--paper '{pdf}' --state '{state}' \"$@\"\n")
+    wrapper.chmod(0o755)
+    cmd = ["claude", "-p", f"Paper {pid}. Reconstruct its preprocessing.",
+           "--model", MODEL, "--system-prompt", system_prompt(wrapper),
+           "--allowedTools", f"Bash({wrapper}:*)", f"Edit(/{state}/submit.json)",
+           "--disallowedTools", DENIED,
+           "--strict-mcp-config", "--setting-sources", "", "--output-format", "json"]
+    t0 = time.time()
+    error = None
+    try:
+        p = subprocess.run(cmd, cwd=work, capture_output=True, text=True, timeout=WALL_LIMIT_S,
+                           stdin=subprocess.DEVNULL)
+        (state / "claude_stdout.json").write_text(p.stdout)
+        (state / "claude_stderr.txt").write_text(p.stderr)
+        res = json.loads(p.stdout) if p.stdout.strip().startswith("{") else {}
+        if p.returncode != 0 or res.get("is_error"):
+            error = f"claude exit {p.returncode}; is_error={res.get('is_error')}; subtype={res.get('subtype')}"
+    except subprocess.TimeoutExpired:
+        res, error = {}, f"wall limit {WALL_LIMIT_S}s"
+    lib = aespa_cli._load(state, Path(pdf))
+    ff = state / "fields.json"
+    fields = json.loads(ff.read_text()) if ff.is_file() else {}
+    for f in fields.values():
+        f["check"] = A.check_field(f, lib)
+    trace = [json.loads(x) for x in (state / "trace.jsonl").read_text().splitlines()] if (state / "trace.jsonl").is_file() else []
+    run = {
+        "paper_id": pid, "model": f"claude-code:{MODEL}", "runner": "claude -p (author's plan)",
+        "cost_usd": round(float(res.get("total_cost_usd") or 0), 4),  # API-equivalent, as Claude Code reports it
+        "calls": res.get("num_turns"), "turns": res.get("num_turns"),
+        "wall_s": round(time.time() - t0, 1), "submitted": (state / "submitted").is_file(),
+        "forced": None, "throttled": 0, "error": error,
+        "asked_missing": json.loads((state / "asked_missing.json").read_text()) if (state / "asked_missing.json").is_file() else None,
+        "methods_found_via": lib.methods_found_via, "excerpt_chars": lib.excerpt_chars,
+        "order": (state / "order.txt").read_text() if (state / "order.txt").is_file() else None,
+        "opened": lib.opened, "fields": fields, "trace": trace,
+        "script_sha256": hashlib.sha256((HERE / "aespa_cli.py").read_bytes() + (PROTO / "agent_proto_v2.py").read_bytes()
+                                        + Path(__file__).read_bytes()).hexdigest(),
+    }
+    (out / f"{tag}.json").write_text(json.dumps(run, indent=2, default=str))
+    line = (f"DONE {tag} turns={run['turns']} equiv_cost=${run['cost_usd']} wall={run['wall_s']}s "
+            f"submitted={run['submitted']} fields={len(fields)} error={error}")
+    print(line, flush=True)
+    return run
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--jobs", type=Path, required=True)
+    ap.add_argument("--out", type=Path, required=True)
+    ap.add_argument("--only", default="")
+    ap.add_argument("--parallel", type=int, default=2)
+    a = ap.parse_args()
+    a.out.mkdir(parents=True, exist_ok=True)
+    only = {x for x in a.only.split(",") if x}
+    jobs = []
+    for line in a.jobs.read_text().splitlines():
+        pid, tag, pdf = line.split()
+        if only and tag not in only:
+            continue
+        if (a.out / f"{tag}.json").is_file():
+            print(f"SKIPPED {tag}: result already on disk", flush=True)
+            continue
+        jobs.append((tag, pid, pdf))
+    with ThreadPoolExecutor(max_workers=a.parallel) as ex:
+        list(ex.map(lambda j: run_one(j[0], j[1], j[2], a.out), jobs))
+    print("ALL_DONE", flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

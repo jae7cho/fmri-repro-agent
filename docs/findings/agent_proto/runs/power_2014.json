@@ -1,0 +1,600 @@
+{
+ "paper_id": "power_2014",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.4445,
+ "calls": 17,
+ "turns": 17,
+ "wall_s": 225.9,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 45,
+ "provenance_counts": {
+  "EXTRACTED": 41,
+  "NOT_REPORTED": 4
+ },
+ "check_counts": {
+  "quote_resolved": 29,
+  "n/a": 4,
+  "quote_not_found": 4,
+  "number_not_in_quote": 1,
+  "quote_resolved_recovered": 7
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "search": 9,
+  "references": 1,
+  "open_reference": 1,
+  "outline": 1,
+  "read": 1,
+  "submit": 1
+ },
+ "order": "slice_timing, motion_correction, intensity_normalization, atlas_transformation, demeaning_detrending, nuisance_regressi…",
+ "opened": [
+  {
+   "doc": "ref:b26",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from crossref; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "functional images underwent (i) slice-time correction, i.e., sinc interpolation to temporally align each slice to the s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.method": {
+   "step": "slice_timing",
+   "field": "method",
+   "value": "sinc interpolation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "slice-time correction, i.e., sinc interpolation to temporally align each slice to the start of each volume",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.reference_slice": {
+   "step": "slice_timing",
+   "field": "reference_slice",
+   "value": "start of volume",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "sinc interpolation to temporally align each slice to the start of each volume",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.acquisition_order": {
+   "step": "slice_timing",
+   "field": "acquisition_order",
+   "value": "interleaved beginning with second slice",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the slice-timing correction in our initial report was incorrect because we were unaware that on our Siemens MAGNETOM Tr…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing.applied_by": {
+   "step": "slice_timing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "For fMRI pre-processing, functional images underwent (i) slice-time correction",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "functional images underwent (i) slice-time correction, i.e., sinc interpolation to temporally align each slice to the s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "rigid body realignment",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "rigid body realignment to correct for head movement within and across runs",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "not stated",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not stated",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "combined with atlas transformation in single interpolation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each run was then resampled in atlas space on an isotropic 3 mm grid combining realignment and atlas transformation in …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not stated",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "For fMRI pre-processing, functional images underwent (i) slice-time correction, i.e., sinc interpolation to temporally …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.performed": {
+   "step": "intensity_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "functional images underwent (i) slice-time correction, i.e., sinc interpolation to temporally align each slice to the s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.method": {
+   "step": "intensity_normalization",
+   "field": "method",
+   "value": "within-run scaling to mode value of 1000",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "within-run intensity normalization, that is, scaling the intensity across all voxels and all magnetization steady-state…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "intensity_normalization.applied_by": {
+   "step": "intensity_normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "For fMRI pre-processing, functional images underwent (i) slice-time correction, i.e., sinc interpolation to temporally …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "atlas_transformation.performed": {
+   "step": "atlas_transformation",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Atlas transformation of the functional data was computed for each individual via the T2-weighted and MP-RAGE scans. Eac…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "atlas_transformation.method": {
+   "step": "atlas_transformation",
+   "field": "method",
+   "value": "via T2-weighted and MP-RAGE scans",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Atlas transformation of the functional data was computed for each individual via the T2-weighted and MP-RAGE scans",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "atlas_transformation.target_space": {
+   "step": "atlas_transformation",
+   "field": "target_space",
+   "value": "atlas space, 3mm isotropic",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each run was then resampled in atlas space on an isotropic 3 mm grid",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "atlas_transformation.interpolation": {
+   "step": "atlas_transformation",
+   "field": "interpolation",
+   "value": "single interpolation combining realignment and atlas transformation",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each run was then resampled in atlas space on an isotropic 3 mm grid combining realignment and atlas transformation in …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "atlas_transformation.applied_by": {
+   "step": "atlas_transformation",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Atlas transformation of the functional data was computed for each individual via the T2-weighted and MP-RAGE scans",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "demeaning_detrending.performed": {
+   "step": "demeaning_detrending",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These steps included (i) demeaning and detrending across each run",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "demeaning_detrending.applied_by": {
+   "step": "demeaning_detrending",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After fMRI pre-processing, further steps were taken to prepare these data for functional connectivity analysis (Figure …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These steps included (i) demeaning and detrending across each run, (ii) regression of nuisance variables across all run…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "various combinations including motion estimates (6 params), their derivatives, squares, Volterra expansions (12, 24, or 36 motion-related regressors), and tissue-based signals (CSF, WM, GS) with derivatives",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Motion estimates (R = [X Y Z pitch yaw roll]) were the detrended realignment estimates from fMRI pre-processing. Their …",
+   "note": null,
+   "check": "number_not_in_quote"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After fMRI pre-processing, further steps were taken to prepare these data for functional connectivity analysis (Figure …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These steps included (i) demeaning and detrending across each run, (ii) regression of nuisance variables across all run…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "frequency filtering of the data using a zero-phase 2nd order Butterworth filter with a pass-band of 0.009 to 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.009 to 0.08 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "frequency filtering of the data using a zero-phase 2nd order Butterworth filter with a pass-band of 0.009 to 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "Butterworth",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "frequency filtering of the data using a zero-phase 2nd order Butterworth filter with a pass-band of 0.009 to 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "2nd order (but also stated as first-order elsewhere)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "frequency filtering of the data using a zero-phase 2nd order Butterworth filter with a pass-band of 0.009 to 0.08 Hz",
+   "note": "Discrepancy: Another section states 'Frequency filtering was performed using a first-order Butterworth FIR filter with …",
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.zero_phase": {
+   "step": "temporal_filtering",
+   "field": "zero_phase",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "frequency filtering of the data using a zero-phase 2nd order Butterworth filter with a pass-band of 0.009 to 0.08 Hz",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.implementation": {
+   "step": "temporal_filtering",
+   "field": "implementation",
+   "value": "forward and reverse directions",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Frequency filtering was performed using a first-order Butterworth FIR filter with passband 0.009 to 0.08 Hz in the forw…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After fMRI pre-processing, further steps were taken to prepare these data for functional connectivity analysis (Figure …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "These steps included (i) demeaning and detrending across each run, (ii) regression of nuisance variables across all run…",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "6",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial blurring using a Gaussian filter with 6 mm FWHM",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial blurring using a Gaussian filter with 6 mm FWHM",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume (atlas space)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each run was then resampled in atlas space on an isotropic 3 mm grid combining realignment and atlas transformation in …",
+   "note": "Smoothing was applied after atlas transformation to volume data",
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After fMRI pre-processing, further steps were taken to prepare these data for functional connectivity analysis (Figure …",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "segmentation.performed": {
+   "step": "segmentation",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each subject's MP-RAGE underwent segmentation by FreeSurfer (version 5.0)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.tool": {
+   "step": "segmentation",
+   "field": "tool",
+   "value": "FreeSurfer version 5.0",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Each subject's MP-RAGE underwent segmentation by FreeSurfer (version 5.0)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "segmentation.purpose": {
+   "step": "segmentation",
+   "field": "purpose",
+   "value": "to create tissue masks for nuisance regression",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Segments corresponding to the lateral ventricles, the white matter, the gray matter, and all within-brain voxels were e…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "yes (in Part III only)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "In Part III, this procedure was performed to yield QC measures, then temporal masks were formed using the QC measures, …",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "interpolation.performed": {
+   "step": "interpolation",
+   "field": "performed",
+   "value": "yes (in Part III only)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "In Part III, potentially compromised data were replaced after the multiple regression but prior to frequency filtering.…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "interpolation.method": {
+   "step": "interpolation",
+   "field": "method",
+   "value": "least-squares spectral analysis (Lomb-Scargle periodogram)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "To compute the frequency content of uncensored data, we applied a least squares spectral analysis adapted for non-unifo…",
+   "note": null,
+   "check": "quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "SPM"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FSL"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "AFNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "fidl"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Shulman",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b26",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "software preprocessing"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 96319,
+    "length": 2000
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "atlas Talairach MNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "interpolation sinc trilinear"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion fieldmap susceptibility"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "reference first volume mean"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "slice_timing, motion_correction, intensity_normalization, atlas_transformation, demeaning_detrending, nuisance_regressi…",
+    "n_fields": 45
+   }
+  }
+ ]
+}

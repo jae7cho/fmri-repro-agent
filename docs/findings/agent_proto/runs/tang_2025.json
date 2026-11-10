@@ -1,0 +1,39 @@
+{
+ "paper_id": "tang_2025",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.6856,
+ "calls": 18,
+ "turns": 18,
+ "wall_s": 322.4,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 50,
+ "provenance_counts": {
+  "EXTRACTED": 34,
+  "KB_DEFAULT": 4,
+  "NOT_REPORTED": 10,
+  "MODEL": 2
+ },
+ "check_counts": {
+  "quote_resolved": 30,
+  "kb_result_names_value": 3,
+  "kb_result_does_not_name_value": 1,
+  "n/a": 12,
+  "quote_resolved_recovered": 1,
+  "quote_ambiguous": 2,
+  "quote_not_found": 1
+ },
+ "references_opened": 0,
+ "references_not_opened": 3,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 3,
+  "references": 1,
+  "open_reference": 3,
+  "search": 4,
+  "submit": 2
+ }
+}

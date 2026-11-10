@@ -1,0 +1,624 @@
+{
+ "paper_id": "liu_2013",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.5823,
+ "calls": 20,
+ "turns": 20,
+ "wall_s": 210.6,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 44,
+ "provenance_counts": {
+  "EXTRACTED": 33,
+  "DEFERRED_UNREAD": 1,
+  "NOT_REPORTED": 8,
+  "MODEL": 2
+ },
+ "check_counts": {
+  "quote_resolved": 22,
+  "deferral_quote_resolved": 1,
+  "quote_resolved_recovered": 8,
+  "n/a": 10,
+  "quote_not_found": 3
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 5,
+  "search": 6,
+  "references": 2,
+  "open_reference": 1,
+  "outline": 1,
+  "read": 1,
+  "submit": 1
+ },
+ "order": "motion_correction, spatial_smoothing, temporal_filtering, linear_quadratic_detrending, nuisance_regression, global_sign…",
+ "opened": [
+  {
+   "doc": "ref:b5",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from entry; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "image coregistration to correct for head motion",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "image coregistration to correct for head motion",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "image coregistration to correct for head motion",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "FCP analysis scripts version 1.1-beta",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": "Paper defers motion correction to FCP scripts which use AFNI and FSL; the specific realignment program is not stated an…",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing with a Gaussian kernel (FWHM = 4 mm)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "4",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing with a Gaussian kernel (FWHM = 4 mm)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "spatial smoothing with a Gaussian kernel (FWHM = 4 mm)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "MODEL",
+   "doc": "paper",
+   "quote": "",
+   "note": "Smoothing performed after normalization to MNI space; MNI is volumetric space",
+   "check": "n/a"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering with a band-pass filter (0.005-0.1 Hz)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering with a band-pass filter (0.005-0.1 Hz)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.005-0.1 Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "temporal filtering with a band-pass filter (0.005-0.1 Hz)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "linear_quadratic_detrending.performed": {
+   "step": "linear_quadratic_detrending",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the removal of linear and quadratic temporal trends",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "linear_quadratic_detrending.applied_by": {
+   "step": "linear_quadratic_detrending",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the time series of ROIs in the white matter and cerebrospinal fluid (CSF), 6 affine motion parameters, as well as the b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "white matter, CSF, 6 motion parameters, global signal",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the time series of ROIs in the white matter and cerebrospinal fluid (CSF), 6 affine motion parameters, as well as the b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the time series of ROIs in the white matter and cerebrospinal fluid (CSF), 6 affine motion parameters, as well as the b…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.note": {
+   "step": "global_signal_regression",
+   "field": "note",
+   "value": "Analysis also performed without GSR",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Given that global signal regression (GSR) may introduce artificial anti-correlation between regions (Fox et al., 2009; …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "global_signal_regression.applied_by": {
+   "step": "global_signal_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The fMRI data was first co-registered to the high-resolution anatomical (T 1 -weighted) images acquired from the same s…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.tool": {
+   "step": "coregistration",
+   "field": "tool",
+   "value": "afni align_epi_anat.py",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the registration between the functional and anatomical images was implemented using the 'align_epi_anat.py' program (Sa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "coregistration.note": {
+   "step": "coregistration",
+   "field": "note",
+   "value": "Modified from FCP scripts; align_epi_anat.py provided better registration in superior-inferior direction",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Here, as departure from the original FCP scripts, the registration between the functional and anatomical images was imp…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "the registration between the functional and anatomical images was implemented using the 'align_epi_anat.py' program (Sa…",
+   "note": null,
+   "check": "quote_not_found"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "then normalized to the 152-brain Montreal Neurological Institute (MNI) normalized space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "MNI152",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "then normalized to the 152-brain Montreal Neurological Institute (MNI) normalized space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "FCP analysis scripts (version 1.1-beta, available at http://www.nitrc.org/frs/shownotes.php?release_id=938) (Biswal et …",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "resampling.performed": {
+   "step": "resampling",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The pre-processed fMRI data were then resampled at the 3 × 3 × 3 mm 3 resolution of the MNI normalized brain space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "resampling.resolution": {
+   "step": "resampling",
+   "field": "resolution",
+   "value": "3 × 3 × 3 mm³",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The pre-processed fMRI data were then resampled at the 3 × 3 × 3 mm 3 resolution of the MNI normalized brain space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "resampling.applied_by": {
+   "step": "resampling",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The pre-processed fMRI data were then resampled at the 3 × 3 × 3 mm 3 resolution of the MNI normalized brain space",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_normalization.performed": {
+   "step": "temporal_normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, for each voxel, the fMRI signal was temporally normalized by subtracting its mean and then dividing by its tem…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_normalization.method": {
+   "step": "temporal_normalization",
+   "field": "method",
+   "value": "z-score (mean subtraction and division by SD)",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, for each voxel, the fMRI signal was temporally normalized by subtracting its mean and then dividing by its tem…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_normalization.applied_by": {
+   "step": "temporal_normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, for each voxel, the fMRI signal was temporally normalized by subtracting its mean and then dividing by its tem…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": "paper",
+   "quote": "",
+   "note": null,
+   "check": "n/a"
+  },
+  "brain_extraction.performed": {
+   "step": "brain_extraction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "MODEL",
+   "doc": "paper",
+   "quote": "",
+   "note": "A brain mask from the MNI 152-brain template was used, as stated in the methods: 'based on a brain mask created from th…",
+   "check": "n/a"
+  },
+  "brain_extraction.method": {
+   "step": "brain_extraction",
+   "field": "method",
+   "value": "brain mask from MNI 152-brain template",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "After reformatting fMRI brain volumes into a set of m-dimensional vectors {t 1 , t 2 , . . . , t n } (where m = the num…",
+   "note": null,
+   "check": "quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "1000 Functional Connectomes",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "motion realignment"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "AFNI",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "afni",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "FCP",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "Biswal",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b5",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "FSL",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "fsl",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "MCFLIRT"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "3dvolreg"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "skull brain mask"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 38421,
+    "length": 4000
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, spatial_smoothing, temporal_filtering, linear_quadratic_detrending, nuisance_regression, global_sign…",
+    "n_fields": 44
+   }
+  }
+ ]
+}

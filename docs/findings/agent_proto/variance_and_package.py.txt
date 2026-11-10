@@ -1,0 +1,129 @@
+"""Variance glimpse (a paper run twice) and packaging of agent prototype v1 outputs into the repo.
+
+Variance, per pair: the resolved tool (package program, by the same KB mapping score_agent uses),
+the motion method state (score_motion's state map), the smoothing and filtering states
+(score_agent.step_view), and how many scored fields differ in provenance or value. Yes/no and
+counts only.
+
+Packaging: every run's JSON, quotes clipped to 120 characters; for liu_2005, tang_2025 and
+wheaton_2004 only counts (no field, value, quote, offset or query). Synthetic records for those
+three are not copied.
+"""
+
+from __future__ import annotations
+
+import json
+import shutil
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).parent))
+import score_agent as sa  # noqa: E402
+
+HELD_OUT = sa.HELD_OUT
+CLIP = 120
+
+
+def scored_fields(run: dict[str, Any]) -> dict[str, tuple[str, str]]:
+    out = {}
+    for step, names in {"motion_correction": ["performed", "method", "tool", "reference_scan", "interpolation",
+                                              "similarity_metric", "susceptibility_correction"],
+                        "spatial_smoothing": ["performed", "fwhm_mm", "kernel_type", "space"],
+                        "temporal_filtering": ["performed", "pass_type", "band_or_cutoff", "filter_type", "order"]}.items():
+        for n in [*names, "applied_by"]:
+            f = (run.get("fields") or {}).get(f"{step}.{n}")
+            out[f"{step}.{n}"] = (f.get("provenance"), " ".join(str(f.get("value") or "").lower().split())) if f else ("", "")
+    return out
+
+
+def summary_of(run: dict[str, Any]) -> dict[str, Any]:
+    rt = sa.resolution(run)["realignment_tool"]
+    rec = sa.motion_record(run)
+    sm_state = sa.sm.record_method(rec).state
+    return {
+        "tool": f"{rt.get('value')} {rt.get('program')}", "tool_provenance": rt.get("provenance"),
+        "method_state": sm_state,
+        "smoothing_state": sa.step_view(run, "spatial_smoothing").state,
+        "filtering_state": sa.step_view(run, "temporal_filtering").state,
+    }
+
+
+def variance(runs_dir: Path) -> list[dict[str, Any]]:
+    pairs = [("achuthan_2023", "achuthan_2023_r1", "achuthan_2023_r2"),
+             ("viduarre_2017", "viduarre_2017", "viduarre_2017_r2"),
+             ("gordon_2014", "gordon_2014", "gordon_2014_r2")]
+    rows = []
+    for pid, a, b in pairs:
+        fa, fb = runs_dir / f"{a}.json", runs_dir / f"{b}.json"
+        if not (fa.is_file() and fb.is_file()):
+            rows.append({"paper": pid, "missing": True})
+            continue
+        ra, rb = json.loads(fa.read_text()), json.loads(fb.read_text())
+        sa_, sb = summary_of(ra), summary_of(rb)
+        xa, xb = scored_fields(ra), scored_fields(rb)
+        rows.append({
+            "paper": pid,
+            "same_tool": sa_["tool"] == sb["tool"],
+            "same_tool_provenance": sa_["tool_provenance"] == sb["tool_provenance"],
+            "same_method_state": sa_["method_state"] == sb["method_state"],
+            "same_smoothing_state": sa_["smoothing_state"] == sb["smoothing_state"],
+            "same_filtering_state": sa_["filtering_state"] == sb["filtering_state"],
+            "scored_fields": len(xa),
+            "provenance_differs": sum(xa[k][0] != xb[k][0] for k in xa),
+            "value_differs": sum(xa[k][1] != xb[k][1] for k in xa),
+            "fields_recorded": [len(ra.get("fields") or {}), len(rb.get("fields") or {})],
+            "cost_usd": [ra["cost_usd"], rb["cost_usd"]], "turns": [ra["turns"], rb["turns"]],
+            "submitted": [ra["submitted"] and not ra["forced"], rb["submitted"] and not rb["forced"]],
+        })
+    return rows
+
+
+def _clip(s: Any) -> Any:
+    if not isinstance(s, str) or len(s) <= CLIP:
+        return s
+    return s[: CLIP - 1] + "…"
+
+
+def package(runs_dir: Path, scores_dir: Path, dest: Path, proto_dir: Path) -> None:
+    (dest / "runs").mkdir(parents=True, exist_ok=True)
+    (dest / "scores").mkdir(parents=True, exist_ok=True)
+    for f in sorted(runs_dir.glob("*.json")):
+        run = json.loads(f.read_text())
+        pid = run["paper_id"]
+        meta = {k: run.get(k) for k in ("paper_id", "model", "cost_usd", "calls", "turns", "wall_s", "submitted",
+                                        "forced", "throttled", "error", "script_sha256")}
+        fields = run.get("fields") or {}
+        meta["n_fields"] = len(fields)
+        meta["provenance_counts"] = dict(Counter(v.get("provenance") for v in fields.values()))
+        meta["check_counts"] = dict(Counter(v.get("check") for v in fields.values()))
+        meta["references_opened"] = sum(1 for o in run.get("opened") or [] if not str(o.get("source")).startswith("not opened"))
+        meta["references_not_opened"] = sum(1 for o in run.get("opened") or [] if str(o.get("source")).startswith("not opened"))
+        meta["tool_calls"] = dict(Counter(t["tool"] for t in run.get("trace") or []))
+        if pid not in HELD_OUT:
+            meta["order"] = _clip(run.get("order"))
+            meta["opened"] = run.get("opened")
+            meta["fields"] = {k: {**v, "quote": _clip(v.get("quote")), "note": _clip(v.get("note"))} for k, v in fields.items()}
+            meta["trace"] = [{**t, "args": {k: _clip(x) for k, x in t["args"].items()}} for t in run.get("trace") or []]
+        (dest / "runs" / f.name).write_text(json.dumps(meta, indent=1, ensure_ascii=False) + "\n")
+    for f in sorted(scores_dir.glob("*.md")) + sorted(scores_dir.glob("*.json")):
+        shutil.copy(f, dest / "scores" / f.name)
+    (dest / "scores" / "agent_records").mkdir(exist_ok=True)
+    for f in sorted((scores_dir / "agent_records" / "papers").glob("*.json")):
+        if f.stem not in HELD_OUT:
+            shutil.copy(f, dest / "scores" / "agent_records" / f.name)
+    for name in ("agent_proto_v1.py", "agent_proto_v2.py", "score_agent.py", "variance_and_package.py"):
+        shutil.copy(proto_dir / name, dest / name)
+    shutil.copy(runs_dir / "run_all.sh", dest / "run_all.sh")
+    shutil.copy(runs_dir / "jobs.tsv", dest / "jobs.tsv")
+
+
+if __name__ == "__main__":
+    runs_dir, scores_dir, dest = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+    v = variance(runs_dir)
+    (scores_dir / "variance.json").write_text(json.dumps(v, indent=1) + "\n")
+    print(json.dumps(v, indent=1))
+    if dest.name != "-":
+        package(runs_dir, scores_dir, dest, Path(__file__).parent)
+        print("packaged into", dest)

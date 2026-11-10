@@ -1,0 +1,83 @@
+[
+ {
+  "paper": "achuthan_2023",
+  "same_tool": true,
+  "same_tool_provenance": true,
+  "same_method_state": true,
+  "same_smoothing_state": true,
+  "same_filtering_state": true,
+  "scored_fields": 19,
+  "provenance_differs": 4,
+  "value_differs": 4,
+  "fields_recorded": [
+   34,
+   39
+  ],
+  "cost_usd": [
+   0.5933,
+   0.7416
+  ],
+  "turns": [
+   22,
+   23
+  ],
+  "submitted": [
+   true,
+   true
+  ]
+ },
+ {
+  "paper": "viduarre_2017",
+  "same_tool": true,
+  "same_tool_provenance": true,
+  "same_method_state": true,
+  "same_smoothing_state": true,
+  "same_filtering_state": true,
+  "scored_fields": 19,
+  "provenance_differs": 1,
+  "value_differs": 1,
+  "fields_recorded": [
+   50,
+   43
+  ],
+  "cost_usd": [
+   1.1419,
+   1.0873
+  ],
+  "turns": [
+   47,
+   39
+  ],
+  "submitted": [
+   true,
+   true
+  ]
+ },
+ {
+  "paper": "gordon_2014",
+  "same_tool": true,
+  "same_tool_provenance": true,
+  "same_method_state": true,
+  "same_smoothing_state": true,
+  "same_filtering_state": true,
+  "scored_fields": 19,
+  "provenance_differs": 0,
+  "value_differs": 4,
+  "fields_recorded": [
+   32,
+   29
+  ],
+  "cost_usd": [
+   0.3068,
+   0.3299
+  ],
+  "turns": [
+   12,
+   9
+  ],
+  "submitted": [
+   true,
+   true
+  ]
+ }
+]

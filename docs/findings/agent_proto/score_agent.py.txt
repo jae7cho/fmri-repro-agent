@@ -1,0 +1,256 @@
+"""Score agent prototype v1 runs with the repo's three scorers, side by side with corpus_full_v2.
+
+The agent's fields are mapped to what each scorer reads (rules below), then the scorers' own label
+loading and comparison code runs unchanged:
+- score_motion: a synthetic record whose motion_correction.method extraction is EXTRACTED (the
+  agent's EXTRACTED method whose quote resolved; verbatim = its value), MISSING with a quote
+  diagnostic (EXTRACTED, quote failed -> "unverifiable"), DEFERRED_TO_CITATION (CITED) or
+  MISSING_FROM_PAPER (anything else).
+- score_motion_resolved: resolution.realignment_tool from the agent's motion_correction.tool,
+  package and program by the KB (recognize_program, else recognize_tool + realignment_program).
+  Provenance: EXTRACTED/CITED with a resolved quote naming the program -> EXTRACTED; naming only the
+  package -> INFERRED_DEFAULT (the package's KB program); KB_DEFAULT whose value a kb_lookup result
+  named -> INFERRED_DEFAULT; anything else -> INFERRED_MODEL; no tool -> UNKNOWN.
+- score_smoothing_filtering: per step, the precedence of cobidas.row_state / kind_state on the
+  agent's fields: performed "no" (EXTRACTED, resolved) and nothing else -> performed_no; any
+  EXTRACTED resolved field -> reported; any CITED -> deferred; any EXTRACTED unresolved ->
+  unverifiable; else not_reported. Values: EXTRACTED resolved fields only (fwhm_mm, kernel_type,
+  pass_type; band_or_cutoff in Hz as nominal_band_hz numbers, any other unit left out).
+
+Held-out papers (liu_2005, tang_2025, wheaton_2004) appear as states and agree/disagree only.
+
+    python score_agent.py --runs <runs_v1> --pipeline results/corpus_full_v2 --out <dir>
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from collections import Counter
+from pathlib import Path
+from typing import Any
+
+EXTRACTOR = Path("/Users/cwook/Documents/neurorepro/fmri-repro-agent/extractor_mvp")
+sys.path.insert(0, str(EXTRACTOR / "scripts"))
+
+import fmri_defaults_kb as kb  # noqa: E402
+import score_motion as sm  # noqa: E402
+import score_motion_resolved as smr  # noqa: E402
+import score_smoothing_filtering as ssf  # noqa: E402
+from extractor_mvp.span_resolver import quote_supports_value  # noqa: E402
+
+HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+RESOLVED = {"quote_resolved", "quote_resolved_recovered", "quote_ambiguous"}
+_NUM = re.compile(r"\d+(?:\.\d+)?")
+
+
+def _f(run: dict[str, Any], step: str, field: str) -> dict[str, Any] | None:
+    return (run.get("fields") or {}).get(f"{step}.{field}")
+
+
+def _ok(f: dict[str, Any] | None) -> bool:
+    return bool(f) and f.get("check") in RESOLVED
+
+
+def motion_record(run: dict[str, Any]) -> dict[str, Any]:
+    f = _f(run, "motion_correction", "method")
+    diags: list[dict[str, Any]] = []
+    prov = (f or {}).get("provenance")
+    if prov == "EXTRACTED" and _ok(f):
+        ext = {"status": "EXTRACTED", "value": {"verbatim": str(f["value"])}}
+    elif prov == "EXTRACTED":
+        ext = {"status": "MISSING_FROM_PAPER"}
+        diags.append({"field": "motion_correction.method", "failure_reason": f"agent {f.get('check')} (quote)"})
+    elif prov in ("CITED", "DEFERRED_UNREAD"):
+        ext = {"status": "DEFERRED_TO_CITATION"}
+    else:
+        ext = {"status": "MISSING_FROM_PAPER"}
+    return {"preprocessing": {"steps": [{"kind": "motion_correction", "method": {"extraction": ext}}]},
+            "diagnostics": diags, "resolution": resolution(run)}
+
+
+def _package_program(value: str) -> tuple[str | None, str | None]:
+    hit = kb.recognize_program(value)
+    if hit:
+        return hit[1], hit[0]
+    for tok in [value, *value.split()]:
+        pkg = kb.recognize_tool(tok)
+        if pkg:
+            prog = kb.realignment_program(pkg)
+            return pkg, (prog.program if prog else None)
+    return None, None
+
+
+def resolution(run: dict[str, Any]) -> dict[str, Any]:
+    t = _f(run, "motion_correction", "tool")
+    if not t or t.get("provenance") in ("NOT_REPORTED", "DEFERRED_UNREAD") or not str(t.get("value") or "").strip():
+        return {"status": "ok", "realignment_tool": {"value": None, "provenance": "UNKNOWN"}}
+    value = str(t["value"])
+    pkg, prog = _package_program(value)
+    prov = t.get("provenance")
+    if prov in ("EXTRACTED", "CITED") and _ok(t):
+        q = str(t.get("quote") or "")
+        # a package is named when a token of the quote is that package to the KB (recognize_tool
+        # strips a version token: "SPM12" -> spm), as the pipeline's package tier reads it
+        named_pkgs = {kb.recognize_tool(t) for t in re.findall(r"[A-Za-z][A-Za-z0-9\-]*", q)}
+        if prog and quote_supports_value(prog, q):
+            p = "EXTRACTED"
+        elif pkg and pkg in named_pkgs:
+            p = "INFERRED_DEFAULT"
+        else:
+            p = "INFERRED_MODEL"
+    elif prov == "KB_DEFAULT" and t.get("check") == "kb_result_names_value":
+        p = "INFERRED_DEFAULT"
+    else:
+        p = "INFERRED_MODEL"
+    return {"status": "ok", "realignment_tool": {"value": pkg, "program": prog, "provenance": p, "kb": True}}
+
+
+_PASS = {"high": "high_pass", "low": "low_pass", "band": "band_pass"}
+
+
+def step_view(run: dict[str, Any], step: str) -> ssf.StepView:
+    fs = {k.split(".", 1)[1]: v for k, v in (run.get("fields") or {}).items() if k.startswith(step + ".")}
+    fs.pop("applied_by", None)
+    perf = fs.get("performed")
+    ext_ok = [k for k, v in fs.items() if v.get("provenance") == "EXTRACTED" and _ok(v)]
+    neg = perf is not None and _ok(perf) and perf.get("provenance") == "EXTRACTED" and str(perf.get("value")).strip().lower() in ("no", "false")
+    if neg and ext_ok == ["performed"]:
+        state = "performed_no"
+    elif ext_ok:
+        state = "reported"
+    elif any(v.get("provenance") in ("CITED", "DEFERRED_UNREAD") for v in fs.values()):
+        state = "deferred"
+    elif any(v.get("provenance") == "EXTRACTED" for v in fs.values()):
+        state = "unverifiable"
+    else:
+        state = "not_reported"
+    values: dict[str, Any] = {}
+    for k in ext_ok:
+        v = str(fs[k].get("value") or "").strip()
+        if k == "fwhm_mm":
+            m = _NUM.search(v)
+            if m:
+                values["fwhm_mm"] = float(m.group(0))
+        elif k == "kernel_type":
+            values["kernel_type"] = v.lower()
+        elif k == "pass_type":
+            key = next((x for x in _PASS if v.lower().startswith(x)), None)
+            if key:
+                values["pass_type"] = _PASS[key]
+        elif k == "band_or_cutoff" and "hz" in v.lower():
+            values["nominal_band_hz"] = [float(x) for x in _NUM.findall(v)]
+    asked = frozenset({"spatial_smoothing": ["fwhm_mm", "kernel_type", "space"],
+                       "temporal_filtering": ["pass_type", "nominal_band_hz", "filter_type", "order"]}[step])
+    return ssf.StepView(ssf.RECORD_TO_LABEL_STATE[state], values, asked)
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--runs", type=Path, required=True)
+    ap.add_argument("--pipeline", type=Path, required=True)
+    ap.add_argument("--out", type=Path, required=True)
+    a = ap.parse_args()
+    a.out.mkdir(parents=True, exist_ok=True)
+    m_labels = sm.load_labels()
+    ids = [lab.paper_id for lab in m_labels]
+    runs = {p: json.loads((a.runs / f"{p}.json").read_text()) for p in ids if (a.runs / f"{p}.json").is_file()}
+
+    # synthetic records for the two motion scorers
+    recdir = a.out / "agent_records" / "papers"
+    recdir.mkdir(parents=True, exist_ok=True)
+    for p, r in runs.items():
+        (recdir / f"{p}.json").write_text(json.dumps(motion_record(r), indent=1))
+    agent_m = sm.score(m_labels, sm.load_records(recdir.parent))
+    pipe_m = sm.score(m_labels, sm.load_records(a.pipeline))
+    (a.out / "score_motion_agent.md").write_text(sm.render(agent_m, ["agent_records"]))
+    (a.out / "score_motion_pipeline.md").write_text(sm.render(pipe_m, [str(a.pipeline)]))
+
+    r_labels = smr.load_labels()
+    agent_r = smr.score(r_labels, {p: json.loads(f.read_text()) for p in ids for f in [recdir / f"{p}.json"] if f.is_file()})
+    pipe_r = smr.score(r_labels, {f.stem: json.loads(f.read_text()) for f in (a.pipeline / "papers").glob("*.json")})
+    (a.out / "score_motion_resolved_agent.md").write_text(smr.render(agent_r, "agent_records"))
+    (a.out / "score_motion_resolved_pipeline.md").write_text(smr.render(pipe_r, str(a.pipeline)))
+
+    s_labels = ssf.load_labels()
+    agent_s = ssf.score(s_labels, {p: {k: step_view(r, k) for k in ("spatial_smoothing", "temporal_filtering")} for p, r in runs.items()})
+    pipe_s = ssf.score(s_labels, ssf.load_records(a.pipeline))
+    (a.out / "score_smoothing_filtering_agent.md").write_text(ssf.render(agent_s, "agent_records"))
+    (a.out / "score_smoothing_filtering_pipeline.md").write_text(ssf.render(pipe_s, str(a.pipeline)))
+
+    # the side-by-side, per paper
+    def mrow(res: list[Any], p: str) -> tuple[str, str, str]:
+        s = next(x for x in res if x.label.paper_id == p)
+        if s.record is None:
+            return "no record", "", ""
+        return s.record.state, ("agree" if s.state_agrees else "disagree"), sm._value_shown(p, s.value)
+
+    def rrow(res: list[dict[str, str]], p: str) -> tuple[str, str]:
+        r = next(x for x in res if x["paper"] == p)
+        return r["outcome"], r["group"]
+
+    def srow(res: list[Any], p: str, sheet: str) -> str:
+        rows = [x for x in res if x.row.paper_id == p and x.row.sheet == sheet]
+        out = []
+        for x in rows:
+            if x.outcome != "scored":
+                out.append(x.outcome)
+            else:
+                out.append(f"{x.record_state} ({'agree' if x.state_agrees else 'disagree'})")
+        return "; ".join(out)
+
+    lines = ["| paper | label | agent method | state | tool | pipeline method | state | tool | "
+             "agent resolved | pipeline resolved | smoothing agent | smoothing pipeline | "
+             "filtering agent | filtering pipeline | cost $ | turns | submitted |",
+             "|" + "---|" * 17]
+    rows_json = []
+    for lab in sorted(m_labels, key=lambda x: x.paper_id):
+        p = lab.paper_id
+        r = runs.get(p)
+        am, pm = mrow(agent_m, p), mrow(pipe_m, p)
+        ar, pr = rrow(agent_r, p), rrow(pipe_r, p)
+        row = {
+            "paper": p, "label": lab.state,
+            "agent_method": am[0], "agent_state": am[1], "agent_tool": am[2],
+            "pipe_method": pm[0], "pipe_state": pm[1], "pipe_tool": pm[2],
+            "agent_resolved": f"{ar[0]} {('(' + ar[1] + ')') if ar[1] else ''}".strip(),
+            "pipe_resolved": f"{pr[0]} {('(' + pr[1] + ')') if pr[1] else ''}".strip(),
+            "sm_agent": srow(agent_s, p, "Smoothing"), "sm_pipe": srow(pipe_s, p, "Smoothing"),
+            "tf_agent": srow(agent_s, p, "Filtering"), "tf_pipe": srow(pipe_s, p, "Filtering"),
+            "cost": r["cost_usd"] if r else None, "turns": r["turns"] if r else None,
+            "submitted": ("yes" if r["submitted"] and not r["forced"] else
+                          f"forced ({r['forced']})" if r and r["forced"] else "no") if r else "no run",
+        }
+        rows_json.append(row)
+        lines.append("| " + " | ".join(str(row[k]) for k in row) + " |")
+    (a.out / "side_by_side.md").write_text("\n".join(lines) + "\n")
+    (a.out / "side_by_side.json").write_text(json.dumps(rows_json, indent=1))
+
+    def tally(res_m: list[Any], res_r: list[dict[str, str]], res_s: list[Any]) -> dict[str, Any]:
+        cm = Counter("agree" if s.state_agrees else "disagree" for s in res_m if s.record is not None)
+        cv = Counter(s.value for s in res_m if s.value)
+        cr = Counter((x["group"], x["outcome"]) for x in res_r)
+        cs = {sh: Counter(("agree" if x.state_agrees else "disagree") if x.outcome == "scored" else x.outcome
+                          for x in res_s if x.row.sheet == sh) for sh in ("Smoothing", "Filtering")}
+        vals: dict[str, Counter[str]] = {}
+        for x in res_s:
+            if x.outcome == "scored":
+                for k, v in x.values.items():
+                    vals.setdefault(f"{x.row.sheet}.{k}", Counter())[v] += 1
+        return {"motion_state": dict(cm), "motion_tool": dict(cv),
+                "resolved": {f"{g or '-'}|{o}": n for (g, o), n in cr.items()},
+                "smoothing_state": dict(cs["Smoothing"]), "filtering_state": dict(cs["Filtering"]),
+                "values": {k: dict(v) for k, v in vals.items()}}
+
+    summary = {"agent": tally(agent_m, agent_r, agent_s), "pipeline": tally(pipe_m, pipe_r, pipe_s),
+               "runs": {p: {k: r[k] for k in ("cost_usd", "calls", "turns", "wall_s", "submitted", "forced")}
+                        for p, r in runs.items()}}
+    (a.out / "summary.json").write_text(json.dumps(summary, indent=1))
+    print(json.dumps({k: summary[k] for k in ("agent", "pipeline")}, indent=1))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

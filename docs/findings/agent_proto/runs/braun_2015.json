@@ -1,0 +1,399 @@
+{
+ "paper_id": "braun_2015",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.7609,
+ "calls": 29,
+ "turns": 29,
+ "wall_s": 320.9,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 17,
+ "provenance_counts": {
+  "DEFERRED_UNREAD": 17
+ },
+ "check_counts": {
+  "deferral_quote_resolved": 17
+ },
+ "references_opened": 0,
+ "references_not_opened": 2,
+ "tool_calls": {
+  "excerpt": 1,
+  "references": 8,
+  "search": 9,
+  "read": 3,
+  "outline": 1,
+  "open_reference": 2,
+  "submit": 2
+ },
+ "order": "braun_2015",
+ "opened": [
+  {
+   "doc": "ref:b47",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from crossref; no Europe PMC text)"
+  },
+  {
+   "doc": "ref:b34",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; no DOI from entry or CrossRef)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "unknown",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "unknown",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "unknown",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "preprocessing_general.deferred_to": {
+   "step": "preprocessing_general",
+   "field": "deferred_to",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "All preprocessing details are deferred to these references which are not accessible in the provided document",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "refs. 47 and 48",
+   "provenance": "DEFERRED_UNREAD",
+   "doc": "paper",
+   "quote": "Data were preprocessed according to standard protocols as previously described in refs. 47 and 48.",
+   "note": "References 47 and 48 are not included in the main paper document provided and could not be opened",
+   "check": "deferral_quote_resolved"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "47 48",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "refs. 47 and 48"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "preprocessed"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 29800,
+    "length": 400
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "47."
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Supporting Information"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Plichta"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 33000,
+    "length": 1380
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "SI Text"
+   }
+  },
+  {
+   "tool": "read",
+   "args": {
+    "doc": "paper",
+    "start": 34000,
+    "length": 380
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b47",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "SPM FSL AFNI motion smoothing normalization"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b34",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "multicenter study"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "standard protocols"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "braun_2015",
+    "n_fields": 5
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "braun_2015",
+    "n_fields": 16
+   }
+  }
+ ]
+}

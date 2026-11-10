@@ -1,0 +1,506 @@
+{
+ "paper_id": "vanderwal_2016",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.7587,
+ "calls": 28,
+ "turns": 28,
+ "wall_s": 217.3,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 30,
+ "provenance_counts": {
+  "EXTRACTED": 16,
+  "NOT_REPORTED": 14
+ },
+ "check_counts": {
+  "quote_resolved": 16,
+  "n/a": 14
+ },
+ "references_opened": 0,
+ "references_not_opened": 1,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 2,
+  "search": 15,
+  "outline": 1,
+  "references": 1,
+  "open_reference": 1,
+  "submit": 2
+ },
+ "order": "motion_correction, slice_timing, normalization, spatial_smoothing, temporal_filtering, nuisance_regression, global_sign…",
+ "opened": [
+  {
+   "doc": "ref:b2",
+   "depth": 1,
+   "source": "not opened (no_local_pdf; DOI from crossref; no Europe PMC text)"
+  }
+ ],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "motion realignment",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "unknown",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "Paper states motion realignment was performed via C-PAC but does not specify which underlying tool C-PAC used",
+   "check": "n/a"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "slice_timing.performed": {
+   "step": "slice_timing",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.target_space": {
+   "step": "normalization",
+   "field": "target_space",
+   "value": "MNI",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.tool": {
+   "step": "normalization",
+   "field": "tool",
+   "value": "Advanced Normalization Tools",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Following Finn et al., data were not spatially smoothed prior to averaging within our cluster-based regions of interest…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "band_pass",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "0.008-0.1Hz",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.applied_by": {
+   "step": "temporal_filtering",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "linear and quadratic trends, motion estimates, COMP-COR with 5 principal components",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.compcor_components": {
+   "step": "nuisance_regression",
+   "field": "compcor_components",
+   "value": "5",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Nuisance signal regression removed linear and quadratic trends, motion estimates, and COMP-COR with 5 principal compone…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "pipeline:C-PAC",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Standard data preprocessing was performed using the Configurable Pipeline for Analysis of Connectomes (C-PAC) including…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "global_signal_regression.performed": {
+   "step": "global_signal_regression",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "scrubbing.performed": {
+   "step": "scrubbing",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "distortion_correction.performed": {
+   "step": "distortion_correction",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "No spatial smoothing was performed",
+   "check": "n/a"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "No spatial smoothing was performed",
+   "check": "n/a"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "not applicable",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": "No spatial smoothing was performed",
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "pipeline",
+    "name": "C-PAC",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "cpac",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "C-PAC motion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "AFNI"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "FSL"
+   }
+  },
+  {
+   "tool": "outline",
+   "args": {
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "references",
+   "args": {
+    "query": "",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "smoothing spatial"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "slice timing"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "distortion"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "Finn et al"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "version preprocessing pipeline"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "registration coregistration"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "realignment"
+   }
+  },
+  {
+   "tool": "open_reference",
+   "args": {
+    "ref_id": "b2",
+    "doc": "paper"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "skull brain extraction mask"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "COMP-COR CompCor"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "COMP-COR"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "global signal"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "scrubbing censoring"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing, normalization, spatial_smoothing, temporal_filtering, nuisance_regression, global_sign…",
+    "n_fields": 27
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": null,
+    "n_fields": 3
+   }
+  }
+ ]
+}

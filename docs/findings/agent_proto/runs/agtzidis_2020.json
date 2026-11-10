@@ -1,0 +1,387 @@
+{
+ "paper_id": "agtzidis_2020",
+ "model": "claude-code:claude-sonnet-4-5-20250929",
+ "cost_usd": 0.6615,
+ "calls": 12,
+ "turns": 12,
+ "wall_s": 139.2,
+ "submitted": true,
+ "forced": null,
+ "throttled": 0,
+ "error": null,
+ "script_sha256": "223e74ebd519f5ee4467ea4dc5c57279c176b16b67aa1dd2c840e6db47a76d76",
+ "n_fields": 29,
+ "provenance_counts": {
+  "EXTRACTED": 20,
+  "KB_DEFAULT": 2,
+  "NOT_REPORTED": 6,
+  "MODEL": 1
+ },
+ "check_counts": {
+  "quote_resolved": 19,
+  "kb_result_names_value": 2,
+  "n/a": 7,
+  "quote_resolved_recovered": 1
+ },
+ "references_opened": 0,
+ "references_not_opened": 0,
+ "tool_calls": {
+  "excerpt": 1,
+  "kb_lookup": 2,
+  "submit": 2,
+  "search": 3
+ },
+ "order": "motion_correction, slice_timing_correction, coregistration, normalization, spatial_smoothing, temporal_filtering, nuisa…",
+ "opened": [],
+ "fields": {
+  "motion_correction.performed": {
+   "step": "motion_correction",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The process comprised realigning the functional data to the mean image of each session",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.method": {
+   "step": "motion_correction",
+   "field": "method",
+   "value": "realigning the functional data to the mean image of each session",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The process comprised realigning the functional data to the mean image of each session (without slice timing correction)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.tool": {
+   "step": "motion_correction",
+   "field": "tool",
+   "value": "spm Realign",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "The fMRI data analysis was performed with SPM12 using Matlab 9.2.",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.reference_scan": {
+   "step": "motion_correction",
+   "field": "reference_scan",
+   "value": "mean image of each session",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "realigning the functional data to the mean image of each session",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "motion_correction.interpolation": {
+   "step": "motion_correction",
+   "field": "interpolation",
+   "value": "2nd degree B-spline",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment spm: defaults.realign.estimate.interp = 2",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.similarity_metric": {
+   "step": "motion_correction",
+   "field": "similarity_metric",
+   "value": "least squares",
+   "provenance": "KB_DEFAULT",
+   "doc": null,
+   "quote": null,
+   "note": "kb_lookup realignment spm: cost_function least squares",
+   "check": "kb_result_names_value"
+  },
+  "motion_correction.susceptibility_correction": {
+   "step": "motion_correction",
+   "field": "susceptibility_correction",
+   "value": "not mentioned",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "motion_correction.applied_by": {
+   "step": "motion_correction",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We initially followed a standard preprocessing pipeline for each recording",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "slice_timing_correction.performed": {
+   "step": "slice_timing_correction",
+   "field": "performed",
+   "value": "no",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "realigning the functional data to the mean image of each session (without slice timing correction)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.performed": {
+   "step": "coregistration",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "coregistering them to the anatomical T1 scan",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.method": {
+   "step": "coregistration",
+   "field": "method",
+   "value": "coregistering functional to anatomical T1 scan",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "coregistering them to the anatomical T1 scan",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "coregistration.applied_by": {
+   "step": "coregistration",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We initially followed a standard preprocessing pipeline for each recording",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.performed": {
+   "step": "normalization",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "normalizing them to the MNI template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.template": {
+   "step": "normalization",
+   "field": "template",
+   "value": "MNI template",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "normalizing them to the MNI template",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "normalization.resampling": {
+   "step": "normalization",
+   "field": "resampling",
+   "value": "3 × 3 × 3 mm³ voxels",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "resampling them into 3 × 3 × 3 mm³ voxels",
+   "note": null,
+   "check": "quote_resolved_recovered"
+  },
+  "normalization.applied_by": {
+   "step": "normalization",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "We initially followed a standard preprocessing pipeline for each recording",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.performed": {
+   "step": "spatial_smoothing",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we applied smoothing with a Gaussian kernel of 8 mm at full width half maximum (FWHM)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.fwhm_mm": {
+   "step": "spatial_smoothing",
+   "field": "fwhm_mm",
+   "value": "8",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we applied smoothing with a Gaussian kernel of 8 mm at full width half maximum (FWHM)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.kernel_type": {
+   "step": "spatial_smoothing",
+   "field": "kernel_type",
+   "value": "Gaussian",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we applied smoothing with a Gaussian kernel of 8 mm at full width half maximum (FWHM)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "spatial_smoothing.space": {
+   "step": "spatial_smoothing",
+   "field": "space",
+   "value": "volume",
+   "provenance": "MODEL",
+   "doc": null,
+   "quote": null,
+   "note": "Inferred from voxel-based analysis and volumetric normalization to MNI template",
+   "check": "n/a"
+  },
+  "spatial_smoothing.applied_by": {
+   "step": "spatial_smoothing",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "Finally, we applied smoothing with a Gaussian kernel of 8 mm at full width half maximum (FWHM)",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.performed": {
+   "step": "nuisance_regression",
+   "field": "performed",
+   "value": "yes",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we also used the six head movement components that were returned from the realignment step during preprocessing as nuis…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.regressors": {
+   "step": "nuisance_regression",
+   "field": "regressors",
+   "value": "six head movement components from realignment",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we also used the six head movement components that were returned from the realignment step during preprocessing as nuis…",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "nuisance_regression.applied_by": {
+   "step": "nuisance_regression",
+   "field": "applied_by",
+   "value": "authors",
+   "provenance": "EXTRACTED",
+   "doc": "paper",
+   "quote": "we also used the six head movement components",
+   "note": null,
+   "check": "quote_resolved"
+  },
+  "temporal_filtering.performed": {
+   "step": "temporal_filtering",
+   "field": "performed",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.pass_type": {
+   "step": "temporal_filtering",
+   "field": "pass_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.band_or_cutoff": {
+   "step": "temporal_filtering",
+   "field": "band_or_cutoff",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.filter_type": {
+   "step": "temporal_filtering",
+   "field": "filter_type",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  },
+  "temporal_filtering.order": {
+   "step": "temporal_filtering",
+   "field": "order",
+   "value": "not reported",
+   "provenance": "NOT_REPORTED",
+   "doc": null,
+   "quote": null,
+   "note": null,
+   "check": "n/a"
+  }
+ },
+ "trace": [
+  {
+   "tool": "excerpt",
+   "args": {}
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "package",
+    "name": "SPM12",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "kb_lookup",
+   "args": {
+    "kind": "realignment",
+    "name": "spm",
+    "version": null,
+    "fields": null
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing_correction, coregistration, normalization, spatial_smoothing, nuisance_regression",
+    "n_fields": 24
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "temporal filter"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "high-pass"
+   }
+  },
+  {
+   "tool": "search",
+   "args": {
+    "doc": "paper",
+    "query": "preprocessing filter"
+   }
+  },
+  {
+   "tool": "submit",
+   "args": {
+    "order": "motion_correction, slice_timing_correction, coregistration, normalization, spatial_smoothing, temporal_filtering, nuisa…",
+    "n_fields": 29
+   }
+  }
+ ]
+}
