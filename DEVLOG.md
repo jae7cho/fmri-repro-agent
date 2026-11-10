@@ -4761,3 +4761,34 @@ Commits here: `1b9265e`, `5dd74fa`, `5773e4e`, then this entry; fmri-defaults-kb
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `7d96e0b`, `c776c36`, then this entry; fmri-defaults-kb `ef27524`, `8ea0350`.
+
+## 2026-11-10 — agent prototype on the 19 labelled papers, scored against corpus_full_v2
+
+- `1e48066` — `docs/findings/agent_proto_v1.md` and `docs/findings/agent_proto/`. An experiment
+  outside the pipeline; no repo code changed.
+  - **The agent:** v2 tools (the methods text up front; outline, search and read; reference lists
+    of the paper and of an opened reference, 2 citations deep; the defaults KB), one submit, six
+    provenances (EXTRACTED, CITED, DEFERRED_UNREAD, KB_DEFAULT, MODEL, NOT_REPORTED), quotes
+    checked with `span_resolver`.
+  - **The runner:** Sonnet 4.5 (the pipeline's model) through headless Claude Code on the author's
+    plan. The only command is the paper's wrapper; the only writable file is its `submit.json`.
+  - **The 19, agent / pipeline:**
+    - motion 6 / 8 agree;
+    - resolved tool, KB-confirmed agree 8 / 8;
+    - smoothing 12 / 13 agree;
+    - filtering 11 / 11 agree.
+  - **Calls and cost:** 453 turns, USD 12.82 API-equivalent, against 208 calls, USD 11.33 metered.
+  - **All 23 runs submitted.** 11 refusals (`cat`, `ls`) in 8 runs.
+  - **Variance:** three papers run twice give the same tool and the same three states.
+  - **The scripts are archived verbatim as `.py.txt`.** The ruff hooks would rewrite a `.py`, and
+    the doc cites the hashes of what ran.
+- **Bedrock before it:** USD 24.28 metered over 8 batches, all stopped or crashed.
+  - Throttled to about 1 call a minute after a 23-run burst; one refusal read "Too many tokens per
+    day".
+  - The account's listed Sonnet 4.5 quotas are 50 requests and 5,000,000 tokens per minute; the
+    quota that throttled is not determined.
+  - A DNS outage ended the last batch.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `1e48066`, then this entry. The tag `sfn2026-freeze` is not moved.
