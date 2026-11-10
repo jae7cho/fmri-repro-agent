@@ -4792,3 +4792,44 @@ Commits here: `7d96e0b`, `c776c36`, then this entry; fmri-defaults-kb `ef27524`,
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `1e48066`, then this entry. The tag `sfn2026-freeze` is not moved.
+
+## 2026-11-10 (2) — CONN's realignment settings fill the motion sub-items; the freeze tag moved
+
+- **KB** (fmri-defaults-kb `e2364e6`, DEVLOG `baf06f4`): `realignment_settings`.
+  - **CONN:** conn_setup_preproc.m was read at all 7 listed tags. The realign&unwarp step sets
+    eoptions.rtm=0 (register to first) and, from v22.06.27, uwroptions.mask=1. It leaves einterp,
+    quality, sep, fwhm and uwroptions.rinterp to SPM.
+  - **SPM:** `unwarp_defaults` records the Realign & Unwarp job's defaults at r7771.
+- `0214e79` — the resolution call:
+  - **When the settings apply:** a KB pipeline wraps the resolved tool and the KB records its
+    `realignment_settings`.
+  - **What they fill:** the sub-items, as INFERRED_DEFAULT with `set_by` (pipeline or inherited).
+    An inherited setting's source is the CONN line plus spm_defaults.m.
+  - **When they don't:** a tool the pipeline does not wrap, a stated tool version outside the
+    documented one, or a setting whose value differs across versions.
+  - **Tests and gates:** extractor_mvp 973 passed (coverage 90.03%); root 287 (95.21%). Two
+    mutations caught: the wraps check, and the range filter.
+  - **CI** pins KB `baf06f4`.
+- **Re-resolved from stored answers, no model call**
+  (`results/corpus_full_v2_conn_settings`). Text was read from the cached GROBID TEI under each
+  record's own text source; the GROBID server was down.
+
+  | paper | sub-item | before | after |
+  |---|---|---|---|
+  | achuthan_2023 | reference_scan | first volume (INFERRED_MODEL) | register to first (INFERRED_DEFAULT, set by CONN) |
+  | | interpolation | 4th degree B-spline (INFERRED_MODEL) | estimate: 2nd degree B-spline; reslice: 4th degree B-spline (INFERRED_DEFAULT, inherited) |
+  | | similarity_metric | least squares (INFERRED_MODEL) | least squares (INFERRED_DEFAULT, inherited) |
+  | | susceptibility_correction | unwarping (EXTRACTED) | unchanged |
+  | schwartz_2018 | reference_scan | first volume (INFERRED_MODEL) | register to first (INFERRED_DEFAULT, set by CONN) |
+  | | interpolation | trilinear (INFERRED_MODEL) | estimate: 2nd degree B-spline; reslice: 4th degree B-spline (INFERRED_DEFAULT, inherited) |
+  | | similarity_metric | least squares (INFERRED_MODEL) | least squares (INFERRED_DEFAULT, inherited) |
+  | | susceptibility_correction | unknown | unchanged |
+  | li_2024 | all four | SPM Realign defaults (register to mean) | unchanged: no pipeline resolved; realignment in SPM12, CONN used after it |
+
+  The control, derosa_2025 (FSL named inside CONN), is unchanged. Its reason now reads "the tool
+  (fsl) is not the one conn wraps (spm)".
+- **Tag `sfn2026-freeze` moved** from `3fa32b6` to this entry's commit, at the author's request.
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `0214e79`, then this entry; fmri-defaults-kb `e2364e6`, `baf06f4`.
