@@ -210,3 +210,14 @@ Fields that stay "all" (EXTRACTED), by step:
 | compcor | — | performed, variant, n_components, mask_source |
 | despike | — | performed, method |
 | scrub | — | performed, method, criterion, threshold, remediation, interpolation_method |
+
+## Addendum (2026-11-11, later): yang_2025 re-run
+
+Re-run at the author's instruction, from the same worktree pinned at `4786707`, into
+`extractor_mvp/results/applies_to_v1_yang_rerun`. The failed attempt is kept in `applies_to_v1`.
+
+| paper | status | calls | retries | parse errors | cost | time (s) | fields with a part | step-order parts |
+|---|---|---|---|---|---|---|---|---|
+| yang_2025 | success | 8 | 0 | 0 | $0.5723 | 119.7 | 0 | 0 |
+
+Header line: none. Stage 2 total with the re-run: $7.9206 over 126 calls; 9 of 9 papers have a report.
