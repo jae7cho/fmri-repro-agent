@@ -5059,3 +5059,29 @@ Both commits are by the author's instruction, after 17:00, with no override.
   rewrite was made (`CORPUS_AND_QUOTATION.md` gives why).
 
 Commits here: `81dbb77`, `18dce1d`, then this entry.
+
+## 2026-11-11 (8) — DESIGN_applies_to Stage 2: the variant papers re-run
+
+- `7733759` — `docs/findings/applies_to_stage2.md` (numbers and quoted lines only).
+- **Run:** nine papers with `aespa-report` defaults, from a worktree pinned at `4786707`
+  (imports confirmed from it), KB `12a82e3`, GROBID 0.9.1-crf, under `caffeinate -i`, into
+  `results/applies_to_v1`.
+  - $7.3483 metered over 118 calls, 1836 s.
+  - 8 reports. yang_2025 is `extraction_failed`: all three attempts gave `base_pipeline_ref`
+    as extracted with no quote. It succeeded in `corpus_full_v2` and was not re-run.
+- **Scored vs the coverage_v4 baseline:** chen_2015 (both sheets), ciric_2017 (smoothing) and
+  power_2014 (filtering) are still collapsed. tang_2025 now has a record: 3 label variants
+  matched correct, 1 missed, 1 spurious.
+- **Observed, not fixed here:**
+  - chen_2015 returned no field with a part.
+  - ciric_2017 gave one variant per model (14 models) where C2 asks for one compared-models
+    entry.
+  - power_2014's three nuisance fields carry the C2 phrase as a value, not null, so the code
+    read them as ordinary variants and marked them unverified.
+  - 30 of the 38 diagnostics on parts are `applies_to_unverified`.
+- The security-scan session's four further staged files are not in these commits (they await
+  the author's own word).
+
+`sfn2026-freeze` stays at `e437668`; post-freeze.
+
+Commits here: `7733759`, then this entry.
