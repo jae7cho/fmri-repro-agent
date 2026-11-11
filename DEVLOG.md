@@ -5086,3 +5086,17 @@ Commits here: `81dbb77`, `18dce1d`, then this entry.
 `sfn2026-freeze` stays at `e437668`; post-freeze.
 
 Commits here: `7733759`, then this entry.
+
+## 2026-11-11 (9) — the security session's four follow-ups; yang_2025 re-run
+
+- `2496d88` — the security-scan session's four staged files, by the author's direct instruction.
+  - `CORPUS_AND_QUOTATION.md`: the merge_labels.py path is corrected, and its merge-path paragraph
+    is moved to the past tense.
+  - The deriver comments and the redaction test no longer state a count of `_HELD_OUT` copies.
+  - Root 316 passed, extractor_mvp 1044.
+- `b7e28cc` — yang_2025 re-run at the author's instruction, from the worktree pinned at `4786707`.
+  - Into `results/applies_to_v1_yang_rerun`: success, 8 calls, $0.5723, 119.7 s, no field with a
+    part.
+  - Stage 2 total: $7.9206; 9 of 9 papers reported.
+
+Commits here: `2496d88`, `b7e28cc`, then this entry.
