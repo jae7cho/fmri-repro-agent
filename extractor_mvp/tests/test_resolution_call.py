@@ -300,10 +300,10 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
     assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
     # wrapped by a KB pipeline whose settings the KB does not record: the pipeline may override,
     # so no tool defaults (2026-11-10: a pipeline that records them is tested below)
-    fsl_named = {"tool_id": "fsl", "display_name": "FSL", "use": "preprocessing"}
-    out = run("fsl", "fmriprep", fsl_named, {"tool_id": "fmriprep", "display_name": "fMRIPrep"})
+    # (2026-11-11: fMRIPrep's settings are now recorded; DPARSF's are not)
+    out = run("spm", "dparsf", spm, {"tool_id": "spm", "display_name": "DPARSF"})
     assert out["tool_defaults"]["applied"] is False
-    assert "fmriprep, whose own settings" in out["tool_defaults"]["reason"]
+    assert "dparsf, whose own settings" in out["tool_defaults"]["reason"]
     # FSL: no reslice default is sourced, so interpolation is the estimate default alone
     fsl = {
         "tool_id": "fsl",
@@ -311,7 +311,10 @@ def test_kb_defaults_fill_sub_items_only_for_a_named_unwrapped_tool_of_a_documen
         "use": "preprocessing",
         "sentence": "FSL was used.",
     }
-    assert run("fsl", "none", fsl)["sub_items"]["interpolation"]["value"] == "trilinear"
+    # FSL: the reslice default is sourced since 2026-11-11 (FSL mcflirt 2111.0)
+    assert run("fsl", "none", fsl)["sub_items"]["interpolation"]["value"] == (
+        "estimate: trilinear; reslice: trilinear"
+    )
 
 
 def test_a_data_release_resolves_the_pipeline_and_its_tool() -> None:
@@ -648,3 +651,19 @@ def test_a_setting_that_differs_across_versions_fills_nothing(
     assert out["tool_defaults"]["applied"] is True
     assert out["sub_items"]["reference_scan"]["provenance"] == "UNKNOWN"
     assert out["sub_items"]["interpolation"]["provenance"] == "INFERRED_DEFAULT"
+
+
+def test_fmriprep_wraps_fsl_and_its_settings_fill_what_holds_across_versions() -> None:
+    fsl = {"tool_id": "fsl", "display_name": "FSL", "use": "preprocessing"}
+    out = _run("fsl", "fmriprep", fsl, {"tool_id": "fmriprep", "display_name": "fMRIPrep"})
+    assert (
+        out["tool_defaults"]["applied"] is True and out["tool_defaults"]["pipeline"] == "fmriprep"
+    )
+    items = out["sub_items"]
+    # the reference differs across fMRIPrep versions and no version is known: not filled
+    assert items["reference_scan"]["provenance"] == "UNKNOWN"
+    assert items["similarity_metric"]["value"].startswith("normalised correlation")
+    assert items["similarity_metric"]["set_by"] == "inherited"
+    assert items["interpolation"]["value"].startswith(
+        "estimate: trilinear; reslice: not from MCFLIRT"
+    )

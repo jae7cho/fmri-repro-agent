@@ -115,12 +115,13 @@ def test_score_by_paper_and_provenance_group() -> None:
         "p_agree": ("agree", "KB-confirmed"),
         "p_dis": ("disagree", "KB-confirmed"),
         "p_blank": ("label blank", "KB-confirmed"),
-        "p_none": ("disagree", "model-only"),
+        "p_none": ("disagree", "unknown"),  # 2026-11-11: UNKNOWN is its own group
         "p_model": ("agree", "model-only"),
         "p_missing": ("no record", ""),
     }
     text = smr.render(smr.score(labels, records), "synthetic")
-    assert "| KB-confirmed | 1 | 1 | 1 |" in text and "| model-only | 1 | 1 | 0 |" in text
+    assert "| KB-confirmed | 1 | 1 | 1 |" in text and "| model-only | 1 | 0 | 0 |" in text
+    assert "| unknown | 0 | 1 | 0 |" in text
     assert "Not scored: no record 1." in text
 
 
@@ -131,3 +132,29 @@ def test_held_out_papers_show_the_outcome_not_the_tools() -> None:
     text = smr.render(rows, "synthetic")
     assert "| liu_2005 | agree | KB-confirmed | (held out) | (held out) |" in text
     assert "spm Realign" not in text.split("| paper |", 1)[1].split("| group |", 1)[0]
+
+
+@pytest.mark.parametrize(
+    ("label", "rec", "outcome", "group"),
+    [
+        # "unknown": agrees only when the record resolves no tool
+        ("unknown", (None, None, "UNKNOWN"), "agree", "unknown"),
+        ("unknown", ("afni", "3dvolreg", "INFERRED_DEFAULT"), "disagree", "KB-confirmed"),
+        # a package alone (the program is unstated): agrees only with that package and no program
+        ("afni", ("afni", None, "INFERRED_MODEL"), "agree", "model-only"),
+        ("afni", ("afni", "3dvolreg", "INFERRED_DEFAULT"), "disagree", "KB-confirmed"),
+        ("afni", ("spm", None, "INFERRED_MODEL"), "disagree", "model-only"),
+        ("afni", (None, None, "UNKNOWN"), "disagree", "unknown"),
+        # package and program
+        (
+            "4dfp cross_realign3d_4dfp",
+            ("4dfp", "cross_realign3d_4dfp", "INFERRED_DEFAULT"),
+            "agree",
+            "KB-confirmed",
+        ),
+        ("fsl FLIRT", ("fsl", None, "INFERRED_MODEL"), "disagree", "model-only"),
+    ],
+)
+def test_the_label_forms(label: str, rec: tuple[Any, Any, str], outcome: str, group: str) -> None:
+    rows = smr.score({"p": label}, {"p": _rec(*rec)})
+    assert (rows[0]["outcome"], rows[0]["group"]) == (outcome, group)

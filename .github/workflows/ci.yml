@@ -17,7 +17,7 @@ env:
   # Pin the fmri-defaults-kb sibling checkout for reproducible CI (its editable
   # path contents aren't captured by uv.lock). Bump this SHA when this repo needs
   # newer KB contents.
-  KB_REF: baf06f46407e7dcfc1ac46196f0cf34cb53cea32
+  KB_REF: 84d417b8bb24ccc8dd97efbd323abd911266a827
 
 jobs:
   lint-and-test:

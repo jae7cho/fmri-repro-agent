@@ -188,7 +188,8 @@ def test_every_tag_appears_where_it_belongs() -> None:
     code = render_pseudocode(_record())
     assert code is not None
     motion = _line(code, "motion_correction")
-    assert 'method="Realign" [D]' in motion and "tool=spm.Realign [D]" in motion
+    # 2026-11-11: the KB program carries how the KB verified it (spm's entry: its manual)
+    assert 'method="Realign" [D: manual]' in motion and "tool=spm.Realign [D: manual]" in motion
     assert 'reference_scan="first" [E]' in motion
     assert 'interpolation="spline" [M]' in motion
     assert 'similarity_metric="least squares" [D]' in motion
@@ -214,7 +215,7 @@ def test_every_argument_is_tagged_and_comments_are_clipped() -> None:
         inner = call[call.index("(") + 1 : call.rindex(")")]
         if inner and inner != "...":
             for arg in re.split(r",\s(?=\w+=)", inner):
-                assert re.search(r"\[(E|D|M|C|\?|x)\]$", arg.strip()), arg
+                assert re.search(r"\[(E|D|M|C|\?|x)(: [a-z_ /]+)?\]$", arg.strip()), arg
         assert len(comment) <= COMMENT_MAX + 40  # a prefix ("KB: ", a ref) plus a clipped quote
     assert clip("x" * 200) == "x" * (COMMENT_MAX - 1) + "…"
 
@@ -313,3 +314,42 @@ def test_a_configurable_default_is_m_and_a_cited_tool_is_c() -> None:
     }
     code = render_pseudocode(rec)
     assert code is not None and 'tool="3dvolreg" [C]' in _line(code, "motion_correction")
+
+
+def test_the_kb_program_says_how_the_kb_verified_it() -> None:
+    rec = _record()
+    conf = rec["resolution"]["realignment_tool"]["kb_confirmation"]
+    # a pipeline's program: that pipeline's ranges (CONN's script at every tag)
+    conf.update(package="spm", program="Realign", basis="pipeline_default", pipeline="conn")
+    code = render_pseudocode(rec)
+    assert code is not None and "tool=spm.Realign [D: script_at_tag]" in _line(
+        code, "motion_correction"
+    )
+    # a paper-anchored pipeline
+    conf.update(package="afni", program="3dvolreg", pipeline="abcd_daic")
+    code = render_pseudocode(rec)
+    assert code is not None and "tool=afni.3dvolreg [D: paper]" in _line(code, "motion_correction")
+    # a version the data release gives picks its range
+    conf.update(package="fsl", program="FLIRT", pipeline="hcp_minimal")
+    rec["resolution"]["resolved_pipeline"] = {
+        "value": "hcp_minimal",
+        "kb": True,
+        "pipeline_version": "v3.1",
+    }
+    code = render_pseudocode(rec)
+    assert code is not None and "tool=fsl.FLIRT [D: script_at_tag]" in _line(
+        code, "motion_correction"
+    )
+
+
+def test_a_model_or_unconfirmed_tool_carries_no_verification() -> None:
+    rec = _record()
+    rec["resolution"]["realignment_tool"] = {
+        "value": "afni",
+        "provenance": "INFERRED_MODEL",
+        "model_reason": "a synthetic reason",
+    }
+    code = render_pseudocode(rec)
+    assert code is not None
+    motion = _line(code, "motion_correction")
+    assert 'tool="afni" [M]' in motion and "[M:" not in motion

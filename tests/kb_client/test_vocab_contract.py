@@ -267,7 +267,12 @@ def test_kb_controlled_vocab_subset_of_spec() -> None:
 #   - version_kind: how to interpret the version id (tag/commit/paper_anchored);
 #     additive, non-load-bearing, never mapped onto a spec field.
 _NON_VOCAB_ENUM_PATHS: frozenset[str] = frozenset(
-    {"$defs/version_record/properties/version_kind/enum"}
+    {
+        "$defs/version_record/properties/version_kind/enum",
+        # 2026-11-11: how a realignment range's program attribution is verified (script_at_tag |
+        # manual | paper | unverified) -- self-documentation, not a preprocessing value
+        "properties/realignment_tool/properties/ranges/items/properties/verification/enum",
+    }
 )
 
 

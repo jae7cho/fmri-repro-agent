@@ -41,19 +41,44 @@ def load_labels(path: Path = LABELS) -> dict[str, str | None]:
     return out
 
 
-def record_tool(record: dict[str, Any]) -> tuple[str | None, str]:
-    """``(package program, provenance)`` of a record's resolution; (None, state) when it has none."""
+def record_parts(record: dict[str, Any]) -> tuple[str | None, str | None, str]:
+    """``(package, program, provenance)`` of a record's resolution; the provenance is "no
+    resolution" when the record has none."""
     res = record.get("resolution")
     if not isinstance(res, dict) or res.get("status") != "ok":
-        return None, "no resolution"
+        return None, None, "no resolution"
     t = res.get("realignment_tool") or {}
     conf = t.get("kb_confirmation") or {}
     package = t.get("value") if t.get("kb", True) else None
     program = t.get("program") or conf.get("program")
-    prov = str(t.get("provenance") or "UNKNOWN")
+    return (package or None), (program or None), str(t.get("provenance") or "UNKNOWN")
+
+
+def record_tool(record: dict[str, Any]) -> tuple[str | None, str]:
+    """``(package program, provenance)`` of a record's resolution; (None, state) when it has none."""
+    package, program, prov = record_parts(record)
     if not package or not program:
         return None, prov
     return f"{package} {program}", prov
+
+
+def group_of(prov: str) -> str:
+    if prov in KB_CONFIRMED:
+        return "KB-confirmed"
+    return "unknown" if prov == "UNKNOWN" else "model-only"
+
+
+def compare(label: str, package: str | None, program: str | None) -> str:
+    """agree / disagree for a set label (the label forms in the module docstring)."""
+    words = _norm(label).split()
+    if words == ["unknown"]:
+        return "agree" if not package else "disagree"
+    if len(words) == 1:
+        same = bool(package) and _norm(package or "") == words[0]
+        return "agree" if same and not program else "disagree"
+    if not package or not program:
+        return "disagree"  # the label names a tool; the record resolves none
+    return "agree" if _norm(f"{package} {program}") == _norm(label) else "disagree"
 
 
 def _norm(s: str) -> str:
@@ -77,16 +102,15 @@ def score(
                 }
             )
             continue
-        tool, prov = record_tool(rec)
-        group = "KB-confirmed" if prov in KB_CONFIRMED else "model-only"
+        package, program, prov = record_parts(rec)
+        tool = " ".join(x for x in (package, program) if x) or None
+        group = group_of(prov)
         if prov == "no resolution":
             outcome, group = "no resolution", ""
         elif label is None:
             outcome = "label blank"
-        elif tool is None:
-            outcome = "disagree"  # the label names a tool; the record resolves none
         else:
-            outcome = "agree" if _norm(tool) == _norm(label) else "disagree"
+            outcome = compare(label, package, program)
         rows.append(
             {
                 "paper": pid,
@@ -118,7 +142,7 @@ def render(rows: list[dict[str, str]], results_dir: str) -> str:
         )
     c = Counter((r["group"], r["outcome"]) for r in rows)
     lines += ["", "| group | agree | disagree | label blank |", "|---|---|---|---|"]
-    for g in ("KB-confirmed", "model-only"):
+    for g in ("KB-confirmed", "model-only", "unknown"):
         lines.append(
             f"| {g} | {c[(g, 'agree')]} | {c[(g, 'disagree')]} | {c[(g, 'label blank')]} |"
         )

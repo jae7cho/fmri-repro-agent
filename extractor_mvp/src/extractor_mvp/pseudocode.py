@@ -36,7 +36,7 @@ from extractor_mvp.render import (
 
 TAGS: dict[str, str] = {
     "E": "quote-backed",
-    "D": "KB default of the resolved tool, with source",
+    "D": "KB default of the resolved tool, with source; for the program, [D: how the KB verified it]",
     "M": "model inference, unconfirmed",
     "C": "from a cited paper",
     "?": "not reported",
@@ -108,11 +108,54 @@ def _hop_values(record: dict[str, Any]) -> dict[str, tuple[Any, str, str | None]
 
 
 class _Arg:
-    def __init__(self, name: str, value: str, tag: str, comment: str | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        value: str,
+        tag: str,
+        comment: str | None = None,
+        detail: str | None = None,
+    ) -> None:
         self.name, self.value, self.tag, self.comment = name, value, tag, comment
+        self.detail = detail  # 2026-11-11: printed inside the bracket, e.g. [D: script_at_tag]
 
     def text(self) -> str:
-        return f"{self.name}={self.value} [{self.tag}]"
+        inner = f"{self.tag}: {self.detail}" if self.detail else self.tag
+        return f"{self.name}={self.value} [{inner}]"
+
+
+def _kb_verification(resolution: dict[str, Any] | None) -> str | None:
+    """How the KB verified the realignment program the resolution confirmed (2026-11-11), read
+    from the KB at render time: the pipeline range's ``verification`` when a pipeline gave the
+    program (every range naming that program when the version is not known, joined when they
+    differ), else the package's own entry. None when nothing is confirmed or the KB has no entry."""
+    from fmri_defaults_kb import realignment_program, realignment_tool_at
+    from fmri_defaults_kb.errors import KbError
+    from fmri_defaults_kb.io import load_pipeline_documents
+
+    tool = (resolution or {}).get("realignment_tool") or {}
+    conf = tool.get("kb_confirmation") or None
+    if not conf:
+        return None
+    try:
+        pid = conf.get("pipeline")
+        if pid:
+            version = ((resolution or {}).get("resolved_pipeline") or {}).get("pipeline_version")
+            if version:
+                found = realignment_tool_at(pid, str(version))
+                return found.verification if found is not None else None
+            doc = load_pipeline_documents().get(pid) or {}
+            kinds = sorted(
+                {
+                    str(r.get("verification") or "unverified")
+                    for r in (doc.get("realignment_tool") or {}).get("ranges") or []
+                    if r.get("program") == conf.get("program")
+                }
+            )
+            return " / ".join(kinds) or None
+        return realignment_program(str(conf["package"])).verification
+    except (KbError, KeyError):
+        return None
 
 
 def _row_arg(
@@ -180,6 +223,7 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
                 f"{conf['package']}.{conf['program']}",
                 "D",
                 f"KB: {clip(conf.get('source'))}" + tail,
+                detail=_kb_verification(resolution),
             )
         )
     elif tool.get("model_reason"):
@@ -236,6 +280,13 @@ def _step_line(
         if name in covered:
             continue  # the resolution call's answer replaces the field
         arg = _row_arg(r, name, supplied, hops)
+        if (
+            arg is not None
+            and arg.tag == "D"
+            and r.path == "motion_correction.method"
+            and getattr(r.basis, "source_field_ids", None) == ["resolution_call"]
+        ):
+            arg.detail = _kb_verification(resolution)  # the same KB program as the tool's [D]
         if arg is not None:
             args.append(arg)
         if r.path == "motion_correction.method":
