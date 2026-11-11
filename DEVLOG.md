@@ -4921,3 +4921,29 @@ Commits here: `c75331f`, then this entry.
 uncommitted.
 
 Commits here: `7a43a75`, then this entry.
+
+## 2026-11-11 (4) — the pipeline-defaults block's date and header
+
+- **KB** (fmri-defaults-kb `7649464`, DEVLOG `12a82e3`): step-option claims, tested at every
+  claimed release (the author's item 2).
+- `a0ede47` — the date (the author's item 1).
+  - **Order:** a stored paper_date; CrossRef's issued date for the paper's own DOI (page-1 DOIs,
+    title match >= 0.90); the printed accepted date, then the printed received date; the PDF's
+    creation date.
+  - **Privacy:** generic client name, no email. The cache keeps {matched, issued} per sha256 of
+    the DOI, so no DOI is stored or printed.
+  - **Header:** "<pipeline>: not stated by the paper; pipeline defaults at candidate releases,
+    out by <date> (<which date>)".
+  - **Examples:** oconnor_2017 the printed accepted date (2016-12-05; the PDF said 2017-03-16);
+    hermans_2024 the CrossRef issued date (2024-10-01); vanderwal_2016 the CrossRef issued date
+    (2016-11-02).
+  - **Tests and gates:** extractor_mvp 988 passed (coverage 89.99%); root 295 (95.21%). Two
+    mutations caught (the title gate, accepted before received).
+  - **CI** pins KB `12a82e3`.
+- **Another session's staged files** were not touched and not committed: 20 files, including
+  .gitignore, ground_truth/ label CSVs, corpus_paths.py and test_heldout_quote_redaction.py.
+
+`sfn2026-freeze` stays at `e437668`; post-freeze. `docs/design/DESIGN_applies_to.md` stays staged
+until Stage 1 lands.
+
+Commits here: `a0ede47`, then this entry.
