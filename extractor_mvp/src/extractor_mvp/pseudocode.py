@@ -384,24 +384,17 @@ RELEASE_STEPS: tuple[str, ...] = (
     "scrubbing",
 )
 _PER_STEP = 4  # options and fixed values shown per step; the rest are in the KB
+#: 2026-11-11 (the author's wording): the block's header when the paper does not state its release
+NOT_STATED = "not stated by the paper; pipeline defaults at candidate releases"
 
 
 def _paper_date(record: dict[str, Any]) -> tuple[Any, str] | None:
-    """The date the release defaults are read at, and what it is: a stored ``paper_date``, else
-    the PDF's creation date (the proxy the extraction's version inference uses)."""
-    from datetime import date
-    from pathlib import Path
+    """The date the candidate releases are read at, and what it is (``paper_dates``: a stored
+    date, CrossRef's issued date, the printed accepted or received date, the PDF's creation
+    date, in that order)."""
+    from extractor_mvp.paper_dates import paper_date
 
-    if record.get("paper_date"):
-        return date.fromisoformat(str(record["paper_date"])[:10]), "the paper's date"
-    path = record.get("path")
-    if path and Path(path).is_file():
-        from extractor_mvp.pdf_loader import pdf_creation_date
-
-        found = pdf_creation_date(Path(path))
-        if found is not None:
-            return found, "the PDF's creation date"
-    return None
+    return paper_date(record)
 
 
 def _stated_release(record: dict[str, Any], pipeline_id: str) -> str | None:
@@ -445,21 +438,21 @@ def _release_defaults(record: dict[str, Any]) -> list[str]:
         else:
             when = _paper_date(record)
             if when is None:
-                return [
-                    "",
-                    f"# --- {label} defaults: no release (the paper states none and no date is known)",
-                ]
+                return ["", f"# --- {label}: {NOT_STATED}: none (no date is known for the paper)"]
             out = options_at_date(pipeline_id, when[0])
             if not out["candidates"]:
-                return ["", f"# --- {label} defaults: no release out by {when[0].isoformat()}"]
+                return [
+                    "",
+                    f"# --- {label}: {NOT_STATED}: none out by {when[0].isoformat()} ({when[1]})",
+                ]
             cands = [(c["version"], c["step_defaults"]) for c in out["candidates"]]
             listed = ", ".join(
                 f"{c['version']} ({c['released']}{', latest' if c['latest'] else ''})"
                 for c in out["candidates"]
             )
             head = (
-                f"# --- if the paper left it to {label}'s defaults: releases out by "
-                f"{when[0].isoformat()} ({when[1]}): {listed} [D: KB option inventory]"
+                f"# --- {label}: {NOT_STATED}, out by {when[0].isoformat()} "
+                f"({when[1]}): {listed} [D: KB option inventory]"
             )
     except KbError:
         return []

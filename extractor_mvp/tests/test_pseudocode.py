@@ -379,7 +379,10 @@ def test_a_cpac_paper_gets_the_releases_out_by_its_date_with_the_gui_beside_an_e
     code = render_pseudocode(rec)
     assert code is not None
     block = _block(code)
-    assert "releases out by 2017-03-16 (the paper's date): 1.0.1 (2016-12-09, latest)" in block[0]
+    assert block[0].startswith(
+        "# --- C-PAC: not stated by the paper; pipeline defaults at candidate releases, "
+        "out by 2017-03-16 (the paper's stored date): 1.0.1 (2016-12-09, latest)"
+    )
     assert "[D: KB option inventory]" in block[0]
     smoothing = next(ln for ln in block if ln.startswith("#   smoothing:"))
     assert "fwhm=[6] (GUI: 4)" in smoothing
@@ -402,10 +405,11 @@ def test_a_release_the_paper_states_is_used_instead_of_the_date() -> None:
 def test_no_block_for_other_pipelines_and_a_plain_line_without_a_date() -> None:
     rec = _record()
     code = render_pseudocode(rec)
-    assert code is not None and "if the paper left it to" not in code
+    assert code is not None and "pipeline defaults at candidate releases" not in code
     rec["resolution"]["resolved_pipeline"] = {"value": "fmriprep", "kb": True}
     code = render_pseudocode(rec)
     assert code is not None
     assert (
-        "# --- fMRIPrep defaults: no release (the paper states none and no date is known)" in code
-    )
+        "# --- fMRIPrep: not stated by the paper; pipeline defaults at candidate releases: "
+        "none (no date is known for the paper)"
+    ) in code
