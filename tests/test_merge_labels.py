@@ -108,6 +108,9 @@ def _workbooks(tmp: Path) -> tuple[Path, Path]:
         w.append(["existing_2000", "all", "not_reported"] + [None] * (len(head) - 4) + ["x"])
     sp = tmp / "sf.xlsx"
     s.save(sp)
+    # 2026-11-11: the remaining-rows workbook and its progress file, copies of the real (empty) ones
+    shutil.copy(ml.ROWS_XLSX, tmp / "rows.xlsx")
+    shutil.copy(ml.PROGRESS_CSV, tmp / "progress.csv")
     return mp, sp
 
 
@@ -126,8 +129,22 @@ def _rows(path: Path, sheet: str) -> list[dict]:
 
 def _run(tmp: Path, *extra: str) -> tuple[int, Path, Path]:
     mp, sp = tmp / "motion.xlsx", tmp / "sf.xlsx"
+    if not (tmp / "rows.xlsx").exists():
+        shutil.copy(ml.ROWS_XLSX, tmp / "rows.xlsx")
+        shutil.copy(ml.PROGRESS_CSV, tmp / "progress.csv")
     code = ml.main(
-        [str(tmp / "in"), "--motion-workbook", str(mp), "--sf-workbook", str(sp), *extra]
+        [
+            str(tmp / "in"),
+            "--motion-workbook",
+            str(mp),
+            "--sf-workbook",
+            str(sp),
+            "--rows-workbook",
+            str(tmp / "rows.xlsx"),
+            "--progress",
+            str(tmp / "progress.csv"),
+            *extra,
+        ]
     )
     return code, mp, sp
 
@@ -352,3 +369,218 @@ def test_append_to_copies_of_the_real_workbooks_keeps_every_existing_cell(tmp_pa
     assert sorted(set(after_s) - set(before_s))[0][0] in ("Smoothing", "Filtering")
     assert sum(r["paper_id"] == "synthetic_2099" for r in _rows(mp, "Labels")) == 1
     assert sum(r["paper_id"] == "synthetic_2099" for r in _rows(sp, "Smoothing")) == 2
+
+
+# --- the remaining COBIDAS rows (2026-11-11) ----------------------------------------------------
+
+ROW_KINDS = (
+    "slice_time_correction",
+    "nuisance_regression",
+    "compcor",
+    "ica_denoise",
+    "scrub",
+    "despike",
+    "nonsteadystate_removal",
+    "coregistration",
+    "distortion_correction",
+    "brain_extraction",
+    "segmentation",
+    "intensity_correction",
+)
+
+
+def _row(**kw: str) -> dict:
+    return {
+        "applies_to": "all",
+        "state": "reported",
+        "quote": "Synthetic sentence.",
+        "notes": "",
+        **kw,
+    }
+
+
+ROWS_DOC = {
+    "schema": "aespa-labels/1",
+    "paper_id": "rows_2099",
+    "exported_at": "2099-01-01T00:00:00.000Z",
+    "scrub": [
+        _row(
+            applies_to="task runs",
+            method="",
+            criterion="FD",
+            threshold="0.5 mm",
+            remediation="",
+            interpolation_method="",
+        ),
+        _row(
+            applies_to="rest runs",
+            state="stated_not_performed",
+            method="",
+            criterion="",
+            threshold="",
+            remediation="",
+            interpolation_method="",
+        ),
+    ],
+    "compcor": [_row(variant="aCompCor", n_components="5", variance_threshold="", mask_source="")],
+    "despike": [_row(state="", method="", threshold="", quote="")],  # an empty card, skipped
+}
+
+
+def _source_order() -> dict[str, tuple[str, ...]]:
+    """Each step's *_FIELD_META keys in source order, read when this module is collected: a test
+    elsewhere monkeypatches an entry out and back in, which keeps the keys but moves that one to
+    the end of the dict for every later test."""
+    from fmri_repro.spec import preprocessing as spec
+
+    return {k: tuple(getattr(spec, f"{k.upper()}_FIELD_META")) for k in ROW_KINDS}
+
+
+_FIELD_META_ORDER = _source_order()
+
+
+def test_the_row_sheets_are_the_schemas_steps_without_performed() -> None:
+    assert tuple(ml.ROW_STEP_FIELDS) == ROW_KINDS
+    for kind, fields in ml.ROW_STEP_FIELDS.items():
+        meta = _FIELD_META_ORDER[kind]
+        assert meta[0] == "performed"
+        assert fields == tuple(k for k in meta if k != "performed"), kind
+        assert ml.ROW_SHEETS[kind] == ("applies_to", "state", *fields, "quote", "notes")
+    assert ml.ROW_STATES == ml.SF_STATES
+
+
+def test_the_rows_workbook_matches_the_merge_script() -> None:
+    wb = openpyxl.load_workbook(ml.ROWS_XLSX)
+    assert wb.sheetnames == ["README", *ROW_KINDS]
+    for kind in ROW_KINDS:
+        assert [c.value for c in wb[kind][1]] == ["paper_id", *ml.ROW_SHEETS[kind], "adjudication"]
+        assert _dv_lists(ml.ROWS_XLSX, kind)["C2"] == ml.ROW_STATES
+        assert wb[kind].max_row == 1  # created empty: no label exists yet
+    readme = " ".join(str(c.value) for row in wb["README"].iter_rows() for c in row if c.value)
+    for text in (*ml.ROW_STATES, *ml.ROW_RULINGS):
+        assert text in readme
+
+
+def test_the_labeler_cards_and_rulings_match_the_merge_script() -> None:
+    html = (REPO / "tools" / "labeler" / "labeler.html").read_text()
+    m = re.search(r"const ROW_STATES = \[([^\]]*)\];", html)
+    assert m and tuple(re.findall(r'"([^"]+)"', m.group(1))) == ml.ROW_STATES
+    cards = dict(re.findall(r"^  (\w+): \{ title: .*?step: \[(.*?)\] \},$", html, re.M))
+    assert tuple(cards) == ROW_KINDS
+    for kind, step in cards.items():
+        assert tuple(re.findall(r'"(\w+)"', step)) == ml.ROW_STEP_FIELDS[kind], kind
+    rulings = re.search(r'<ol id="row-rulings">(.*?)</ol>', html, re.S)
+    assert rulings
+    items = [" ".join(i.split()) for i in re.findall(r"<li>(.*?)</li>", rulings.group(1), re.S)]
+    assert items == list(ml.ROW_RULINGS)
+
+
+def test_the_walk_list_is_the_19_corpus_papers_and_progress_starts_with_them() -> None:
+    import csv
+
+    walk = [r["paper_id"] for r in csv.DictReader(ml.WALK_CSV.open())]
+    sf_ids = {r["paper_id"] for r in _rows(ml.SF_XLSX, "Smoothing") if r["paper_id"]}
+    assert len(walk) == 19 and walk == sorted(sf_ids)
+    progress = ml.read_progress(ml.PROGRESS_CSV)
+    assert [r["paper_id"] for r in progress] == walk
+    assert list(progress[0]) == list(ml.PROGRESS_HEAD)
+
+
+def test_appends_row_sheets_and_updates_progress(tmp_path, capsys) -> None:
+    _workbooks(tmp_path)
+    m_before, s_before = (
+        (tmp_path / "motion.xlsx").read_bytes(),
+        (tmp_path / "sf.xlsx").read_bytes(),
+    )
+    _export(tmp_path / "in", ROWS_DOC)
+    code, _, _ = _run(tmp_path, "--date", "2099-01-02")
+    assert code == 0
+    rows = tmp_path / "rows.xlsx"
+    scrub = _rows(rows, "scrub")
+    assert [(r["applies_to"], r["state"], r["threshold"]) for r in scrub] == [
+        ("task runs", "reported", "0.5 mm"),  # as stated: the unit stays, nothing is converted
+        ("rest runs", "stated_not_performed", None),
+    ]
+    assert {r["adjudication"] for r in scrub} == {"author alone, 2099-01-02"}
+    assert _rows(rows, "compcor")[0]["n_components"] == "5"  # text, never coerced
+    assert _rows(rows, "despike") == []
+    # the motion and smoothing/filtering workbooks are not rewritten
+    assert (tmp_path / "motion.xlsx").read_bytes() == m_before
+    assert (tmp_path / "sf.xlsx").read_bytes() == s_before
+    progress = {r["paper_id"]: r for r in ml.read_progress(tmp_path / "progress.csv")}
+    assert progress["rows_2099"]["scrub"] == "2" and progress["rows_2099"]["compcor"] == "1"
+    assert progress["rows_2099"]["despike"] == ""
+    assert progress["rows_2099"]["last_merged"] == "author alone, 2099-01-02"
+    assert len(progress) == 20  # the 19 on the walk list, untouched, and this one appended
+    assert all(
+        not any(v for k, v in r.items() if k != "paper_id")
+        for p, r in progress.items()
+        if p != "rows_2099"
+    )
+    assert "compcor 1, scrub 2" in capsys.readouterr().out
+
+
+def test_a_paper_on_the_walk_list_gets_its_own_progress_row_filled(tmp_path) -> None:
+    _workbooks(tmp_path)
+    _export(tmp_path / "in", {**ROWS_DOC, "paper_id": "chen_2015"})
+    assert _run(tmp_path)[0] == 0
+    progress = ml.read_progress(tmp_path / "progress.csv")
+    assert len(progress) == 19
+    assert next(r for r in progress if r["paper_id"] == "chen_2015")["scrub"] == "2"
+
+
+def test_an_existing_row_paper_is_refused_and_progress_is_not_touched(tmp_path, capsys) -> None:
+    _workbooks(tmp_path)
+    _export(tmp_path / "in", ROWS_DOC)
+    assert _run(tmp_path)[0] == 0
+    before = (tmp_path / "progress.csv").read_text()
+    rows_before = (tmp_path / "rows.xlsx").read_bytes()
+    assert _run(tmp_path)[0] == 1
+    assert "refused rows_2099: a row for this paper_id already exists in compcor, scrub" in (
+        capsys.readouterr().out
+    )
+    assert (tmp_path / "progress.csv").read_text() == before
+    assert (tmp_path / "rows.xlsx").read_bytes() == rows_before
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        (lambda d: d["scrub"][0].update(state="named_tool"), "not in the workbook vocabulary"),
+        (lambda d: d["compcor"][0].update(performed="yes"), "unknown fields"),
+        (lambda d: d["scrub"][1].update(applies_to="task runs"), "appears twice"),
+        (lambda d: d["compcor"][0].update(state=""), "filled but has no state"),
+    ],
+)
+def test_invalid_row_cards_are_refused(tmp_path, capsys, change, reason) -> None:
+    import copy as _copy
+
+    _workbooks(tmp_path)
+    doc = _copy.deepcopy(ROWS_DOC)
+    change(doc)
+    _export(tmp_path / "in", doc)
+    assert _run(tmp_path)[0] == 1
+    assert reason in capsys.readouterr().out
+    assert all(_rows(tmp_path / "rows.xlsx", k) == [] for k in ROW_KINDS)
+
+
+def test_a_dry_run_writes_neither_the_rows_workbook_nor_progress(tmp_path) -> None:
+    _workbooks(tmp_path)
+    before = (tmp_path / "progress.csv").read_text(), (tmp_path / "rows.xlsx").read_bytes()
+    _export(tmp_path / "in", ROWS_DOC)
+    assert _run(tmp_path, "--dry-run")[0] == 0
+    assert (
+        (tmp_path / "progress.csv").read_text(),
+        (tmp_path / "rows.xlsx").read_bytes(),
+    ) == before
+
+
+def test_a_motion_and_smoothing_export_leaves_the_rows_workbook_alone(tmp_path) -> None:
+    _workbooks(tmp_path)
+    before = (tmp_path / "progress.csv").read_text(), (tmp_path / "rows.xlsx").read_bytes()
+    _export(tmp_path / "in", SYNTHETIC)
+    assert _run(tmp_path)[0] == 0
+    assert (
+        (tmp_path / "progress.csv").read_text(),
+        (tmp_path / "rows.xlsx").read_bytes(),
+    ) == before

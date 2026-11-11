@@ -1,9 +1,15 @@
 #!/usr/bin/env python3
-"""Append labels exported by tools/labeler/labeler.html to the two label workbooks.
+"""Append labels exported by tools/labeler/labeler.html to the label workbooks.
 
 Reads every ``*.labels.json`` in a folder and appends one row per labelled card to
-``ground_truth/motion_correction_labels_v1.xlsx`` (sheet ``Labels``) and
-``ground_truth/smoothing_filtering_labels_v1.xlsx`` (sheets ``Smoothing`` and ``Filtering``).
+``ground_truth/motion_correction_labels_v1.xlsx`` (sheet ``Labels``),
+``ground_truth/smoothing_filtering_labels_v1.xlsx`` (sheets ``Smoothing`` and ``Filtering``) and,
+from 2026-11-11, ``ground_truth/preproc_rows_labels_v1.xlsx`` (one sheet per remaining COBIDAS card
+and sub-card, :data:`ROW_SHEETS`). A workbook is saved only when a row was appended to it.
+
+After a merge that wrote rows to the preproc-rows workbook, ``ground_truth/preproc_rows_progress_v1.csv``
+is updated: per paper, the number of rows merged into each of those sheets and the adjudication
+string of the last merge. The papers to walk are ``ground_truth/preproc_rows_walk_v1.csv`` (ids only).
 
 New rows only. A paper whose paper_id already has a row in any sheet the file would write to is
 refused as a whole, and the refusal is printed; nothing of that paper is written anywhere. A file
@@ -37,12 +43,79 @@ from typing import Any
 REPO = Path(__file__).resolve().parents[1]
 MOTION_XLSX = REPO / "ground_truth" / "motion_correction_labels_v1.xlsx"
 SF_XLSX = REPO / "ground_truth" / "smoothing_filtering_labels_v1.xlsx"
+ROWS_XLSX = REPO / "ground_truth" / "preproc_rows_labels_v1.xlsx"
+WALK_CSV = REPO / "ground_truth" / "preproc_rows_walk_v1.csv"
+PROGRESS_CSV = REPO / "ground_truth" / "preproc_rows_progress_v1.csv"
 
 SCHEMA = "aespa-labels/1"
 #: The workbooks' dropdown lists, exactly (Labels!B, Smoothing!C, Filtering!C, Labels!R).
 MOTION_STATES = ("named_tool", "described_only", "deferred", "absent", "stated_not_performed")
 SF_STATES = ("reported", "partially_reported", "not_reported", "stated_not_performed", "deferred")
 ATTRIBUTION = ("step", "package")
+
+#: The remaining COBIDAS rows (2026-11-11). Same vocabulary as smoothing and filtering.
+ROW_STATES = SF_STATES
+
+#: sheet (= the step kind, = the labeler card key) -> the step's fields, named exactly as in the
+#: schema's ``<KIND>_FIELD_META`` (src/fmri_repro/spec/preprocessing.py) in its order, without
+#: ``performed``: the state carries it (stated_not_performed vs the rest). Every field is labelled
+#: as the paper states it: no unit conversion, no enum coercion. tests/test_merge_labels.py holds
+#: these to the schema, the labeler and the workbook. Sub-cards are their own sheets.
+ROW_STEP_FIELDS: dict[str, tuple[str, ...]] = {
+    "slice_time_correction": (
+        "method",
+        "interpolation_order",
+        "reference",
+        "relative_to_motion_correction",
+        "interpolation",
+    ),
+    "nuisance_regression": (
+        "regressor_list",
+        "tissue_definition",
+        "tissue_signal_definition",
+        "motion_expansion",
+        "tissue_regressors",
+        "physio_regressors",
+        "physio_n_regressors",
+        "detrend",
+        "method",
+        "filtering_integrated",
+    ),
+    "compcor": ("variant", "n_components", "variance_threshold", "mask_source"),
+    "ica_denoise": ("method", "training_set", "threshold", "aggressive"),
+    "scrub": ("method", "criterion", "threshold", "remediation", "interpolation_method"),
+    "despike": ("method", "threshold"),
+    "nonsteadystate_removal": ("n_nonsteadystate_discarded",),
+    "coregistration": (
+        "nonlinear_transform_type",
+        "transform",
+        "method",
+        "cost_function",
+        "interpolation",
+    ),
+    "distortion_correction": ("source", "method", "tool"),
+    "brain_extraction": ("parameters", "method", "manual_edits"),
+    "segmentation": ("method", "tissue_classes"),
+    "intensity_correction": ("target", "method"),
+}
+#: sheet -> every labeler field of a row, in workbook column order (after paper_id)
+ROW_SHEETS: dict[str, tuple[str, ...]] = {
+    sheet: ("applies_to", "state", *fields, "quote", "notes")
+    for sheet, fields in ROW_STEP_FIELDS.items()
+}
+
+#: The standing rulings for these rows, as the labeler's help panel and the workbook's README state
+#: them (the author's list of 2026-11-11).
+ROW_RULINGS: tuple[str, ...] = (
+    "A confound that is computed or made available (framewise displacement, DVARS, motion "
+    "parameters, CompCor components) is not applied unless the paper says it was regressed out.",
+    '"Annotated as outliers" is not censoring unless the frames were removed or interpolated.',
+    "A step the data provider applied to a released dataset is labelled as applied; name the "
+    "release in notes.",
+    '"Co-registered to correct for head motion" is motion correction, not coregistration.',
+    "Dummy volumes discarded by the scanner and dummy volumes discarded in preprocessing both count "
+    "for T1 stabilization (nonsteadystate_removal); say which in notes.",
+)
 
 MOTION_FIELDS = ("state", "named_tool", "attribution", "quote", "notes")
 SMOOTHING_FIELDS = (
@@ -84,6 +157,7 @@ class Paper:
     motion: dict[str, str] | None
     smoothing: list[dict[str, str]]
     filtering: list[dict[str, str]]
+    rows: dict[str, list[dict[str, str]]] = field(default_factory=dict)
 
     def sheets(self) -> list[str]:
         return [
@@ -92,6 +166,7 @@ class Paper:
                 ("Labels", [self.motion] if self.motion else []),
                 ("Smoothing", self.smoothing),
                 ("Filtering", self.filtering),
+                *self.rows.items(),
             )
             if rows
         ]
@@ -103,7 +178,12 @@ class Outcome:
     appended: list[str] = field(default_factory=list)
     refused: list[str] = field(default_factory=list)
     rows: dict[str, int] = field(
-        default_factory=lambda: {"Labels": 0, "Smoothing": 0, "Filtering": 0}
+        default_factory=lambda: {
+            "Labels": 0,
+            "Smoothing": 0,
+            "Filtering": 0,
+            **dict.fromkeys(ROW_SHEETS, 0),
+        }
     )
     empty_cards: int = 0
 
@@ -163,7 +243,8 @@ def parse(path: Path, outcome: Outcome) -> Paper:
         outcome.empty_cards += 1
 
     streams: dict[str, list[dict[str, str]]] = {}
-    for key, fields in (("smoothing", SMOOTHING_FIELDS), ("filtering", FILTERING_FIELDS)):
+    cards = (("smoothing", SMOOTHING_FIELDS), ("filtering", FILTERING_FIELDS), *ROW_SHEETS.items())
+    for key, fields in cards:
         raw = d.get(key) or []
         if not isinstance(raw, list):
             raise InvalidExportError(f"{key} is not a list")
@@ -175,7 +256,7 @@ def parse(path: Path, outcome: Outcome) -> Paper:
                     raise InvalidExportError(f"{key} row {i} is filled but has no state")
                 outcome.empty_cards += 1
                 continue
-            if row["state"] not in SF_STATES:
+            if row["state"] not in (SF_STATES if key in ("smoothing", "filtering") else ROW_STATES):
                 raise InvalidExportError(
                     f"{key} row {i} state {row['state']!r} is not in the workbook vocabulary"
                 )
@@ -187,7 +268,12 @@ def parse(path: Path, outcome: Outcome) -> Paper:
             kept.append(row)
         streams[key] = kept
     return Paper(
-        path, pid, motion if motion["state"] else None, streams["smoothing"], streams["filtering"]
+        path,
+        pid,
+        motion if motion["state"] else None,
+        streams["smoothing"],
+        streams["filtering"],
+        {k: streams[k] for k in ROW_SHEETS if streams[k]},
     )
 
 
@@ -246,6 +332,49 @@ def save_atomically(wb: Any, path: Path) -> None:
             os.unlink(tmp)
 
 
+PROGRESS_HEAD = ("paper_id", *ROW_SHEETS, "last_merged")
+
+
+def read_progress(path: Path) -> list[dict[str, str]]:
+    import csv
+
+    with path.open(newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    return rows
+
+
+def update_progress(path: Path, written: dict[str, dict[str, int]], adjudication: str) -> None:
+    """Per paper merged into the preproc-rows workbook: the rows it added to each sheet (added to
+    any count already there) and ``last_merged``. A paper not on the walk list gets a row of its
+    own at the end. Written atomically; the header is :data:`PROGRESS_HEAD`."""
+    import csv
+
+    rows = read_progress(path) if path.exists() else []
+    by_id = {r["paper_id"]: r for r in rows}
+    for pid, counts in written.items():
+        row = by_id.get(pid)
+        if row is None:
+            row = dict.fromkeys(PROGRESS_HEAD, "")
+            row["paper_id"] = pid
+            rows.append(row)
+            by_id[pid] = row
+        for sheet, n in counts.items():
+            row[sheet] = str(int(row.get(sheet) or 0) + n)
+        row["last_merged"] = adjudication
+    fd, tmp = tempfile.mkstemp(prefix=path.stem + ".", suffix=".csv", dir=path.parent)
+    os.close(fd)
+    try:
+        with open(tmp, "w", newline="", encoding="utf-8") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(PROGRESS_HEAD), lineterminator="\n")
+            w.writeheader()
+            for r in rows:
+                w.writerow({k: r.get(k, "") for k in PROGRESS_HEAD})
+        os.replace(tmp, path)
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
+
+
 def merge(
     folder: Path,
     adjudication: str,
@@ -253,13 +382,18 @@ def merge(
     sf_xlsx: Path = SF_XLSX,
     dry_run: bool = False,
     say: Any = print,
+    rows_xlsx: Path = ROWS_XLSX,
+    progress_csv: Path = PROGRESS_CSV,
 ) -> Outcome:
     import openpyxl
 
     out = Outcome()
     mwb, swb = openpyxl.load_workbook(motion_xlsx), openpyxl.load_workbook(sf_xlsx)
+    rwb = openpyxl.load_workbook(rows_xlsx)
     sheets = {"Labels": mwb["Labels"], "Smoothing": swb["Smoothing"], "Filtering": swb["Filtering"]}
+    sheets.update({name: rwb[name] for name in ROW_SHEETS})
     taken = {name: existing_ids(ws) for name, ws in sheets.items()}
+    written: dict[str, dict[str, int]] = {}
 
     for path in sorted(folder.glob("*.labels.json")):
         out.files += 1
@@ -288,7 +422,11 @@ def merge(
                 sheets["Labels"], {"paper_id": paper.paper_id, **row, "adjudication": adjudication}
             )
             out.rows["Labels"] += 1
-        for name, rows in (("Smoothing", paper.smoothing), ("Filtering", paper.filtering)):
+        for name, rows in (
+            ("Smoothing", paper.smoothing),
+            ("Filtering", paper.filtering),
+            *paper.rows.items(),
+        ):
             for r in rows:
                 values = {k: _cell_value(k, v) for k, v in r.items()}
                 append_row(
@@ -298,6 +436,8 @@ def merge(
                 out.rows[name] += 1
         for s in paper.sheets():
             taken[s].add(paper.paper_id)
+        if paper.rows:
+            written[paper.paper_id] = {k: len(v) for k, v in paper.rows.items()}
         out.appended.append(paper.paper_id)
 
     if not dry_run:
@@ -305,6 +445,9 @@ def merge(
             save_atomically(mwb, motion_xlsx)
         if out.rows["Smoothing"] or out.rows["Filtering"]:
             save_atomically(swb, sf_xlsx)
+        if written:
+            save_atomically(rwb, rows_xlsx)
+            update_progress(progress_csv, written, adjudication)
     return out
 
 
@@ -315,6 +458,8 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--date", default=dt.date.today().isoformat(), help="adjudication date")
     ap.add_argument("--motion-workbook", type=Path, default=MOTION_XLSX)
     ap.add_argument("--sf-workbook", type=Path, default=SF_XLSX)
+    ap.add_argument("--rows-workbook", type=Path, default=ROWS_XLSX)
+    ap.add_argument("--progress", type=Path, default=PROGRESS_CSV)
     ap.add_argument("--dry-run", action="store_true", help="report counts, write nothing")
     args = ap.parse_args(argv)
     if not args.folder.is_dir():
@@ -327,13 +472,22 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     rater = (args.rater or "").strip() or "author alone"
     out = merge(
-        args.folder, f"{rater}, {args.date}", args.motion_workbook, args.sf_workbook, args.dry_run
+        args.folder,
+        f"{rater}, {args.date}",
+        args.motion_workbook,
+        args.sf_workbook,
+        args.dry_run,
+        rows_xlsx=args.rows_workbook,
+        progress_csv=args.progress,
     )
     verb = "would append" if args.dry_run else "appended"
+    row_counts = ", ".join(f"{s} {out.rows[s]}" for s in ROW_SHEETS if out.rows[s])
     print(
         f"{out.files} files read; {len(out.appended)} papers {verb}, {len(out.refused)} refused; "
         f"rows {verb}: Labels {out.rows['Labels']}, Smoothing {out.rows['Smoothing']}, "
-        f"Filtering {out.rows['Filtering']}; empty cards skipped: {out.empty_cards}"
+        f"Filtering {out.rows['Filtering']}"
+        + (f", {row_counts}" if row_counts else "")
+        + f"; empty cards skipped: {out.empty_cards}"
     )
     return 1 if out.refused else 0
 

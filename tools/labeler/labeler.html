@@ -5,14 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AESPA labeler</title>
 <!--
-  Labeler for the motion correction and smoothing/filtering workbooks
-  (ground_truth/motion_correction_labels_v1.xlsx, ground_truth/smoothing_filtering_labels_v1.xlsx).
+  Labeler for the motion correction, smoothing/filtering and remaining-rows workbooks
+  (ground_truth/motion_correction_labels_v1.xlsx, ground_truth/smoothing_filtering_labels_v1.xlsx,
+  ground_truth/preproc_rows_labels_v1.xlsx; the last from 2026-11-11). The papers to walk are
+  ground_truth/preproc_rows_walk_v1.csv; ground_truth/preproc_rows_progress_v1.csv shows what is merged.
   One self-contained file: open it from disk in a browser, choose a PDF, label, export
   <paper_id>.labels.json, then merge with scripts/merge_labels.py. Nothing is sent anywhere; the
   PDF is read locally. PDF.js is pinned to 3.11.174 on cdnjs with subresource integrity. The
   worker is loaded as a plain script so PDF.js runs on the main thread, which works from file://.
   The state vocabularies below are the workbooks' dropdown lists; tests/test_merge_labels.py
-  checks them against scripts/merge_labels.py and the workbooks.
+  checks them, every card's fields (the schema's *_FIELD_META names) and the rulings against
+  scripts/merge_labels.py and the workbooks.
 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
         integrity="sha512-q+4liFwdPC/bNdhUpZx6aXDx/h77yEQtn4I1slHydcbZK34nLaR3cAeYSJshoxIOq3mjEf7xJE8YWIUHMn+oCQ=="
@@ -75,6 +78,8 @@ main { flex: 1; display: flex; min-height: 0; }
 .idrow label { flex: 1; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
 .card h2 { font-size: 14px; margin: 0 0 8px; display: flex; justify-content: space-between; align-items: center; }
+.subcard { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 8px; }
+.subcard h3 { font-size: 13px; margin: 0 0 6px; }
 .stream { border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; }
 .stream:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
 .stream-head { display: flex; justify-content: space-between; align-items: center; color: var(--muted); font-size: 12.5px; margin-bottom: 4px; }
@@ -102,7 +107,7 @@ button:disabled { opacity: .5; cursor: default; }
 </head>
 <body>
 <header>
-  <h1>AESPA labeler</h1><span style="color:var(--muted);font-size:12.5px">motion correction · spatial smoothing · temporal filtering</span>
+  <h1>AESPA labeler</h1><span style="color:var(--muted);font-size:12.5px">motion correction · spatial smoothing · temporal filtering · the remaining COBIDAS rows</span>
   <details class="guide">
     <summary>State definitions and standing rulings</summary>
     <div class="guide-body">
@@ -142,6 +147,18 @@ button:disabled { opacity: .5; cursor: default; }
       <p style="margin:4px 0 0">One row per paper × applies_to. applies_to is the paper's own words for what the value applies
         to (a derived measure, an analysis, a stream); "all" is the ordinary case. Quotes come from the PDF text layer; if a
         glyph or a page header broke the text, clean the quote and say what changed in notes.</p>
+      <h3>The remaining COBIDAS rows</h3>
+      <p style="margin:0 0 4px">Same five states as smoothing and filtering. Each field is named as in the schema and is
+        written as the paper states it, in its own unit: no unit conversion, no mapping to a controlled value. The state
+        carries "performed" (stated_not_performed, or one of the others). Sub-cards (CompCor and ICA denoising under
+        nuisance regression; scrubbing and despiking under volume censoring) are labelled on their own.</p>
+      <ol id="row-rulings">
+        <li>A confound that is computed or made available (framewise displacement, DVARS, motion parameters, CompCor components) is not applied unless the paper says it was regressed out.</li>
+        <li>"Annotated as outliers" is not censoring unless the frames were removed or interpolated.</li>
+        <li>A step the data provider applied to a released dataset is labelled as applied; name the release in notes.</li>
+        <li>"Co-registered to correct for head motion" is motion correction, not coregistration.</li>
+        <li>Dummy volumes discarded by the scanner and dummy volumes discarded in preprocessing both count for T1 stabilization (nonsteadystate_removal); say which in notes.</li>
+      </ol>
     </div>
   </details>
 </header>
@@ -172,6 +189,7 @@ button:disabled { opacity: .5; cursor: default; }
 const MOTION_STATES = ["named_tool", "described_only", "deferred", "absent", "stated_not_performed"];
 const SF_STATES = ["reported", "partially_reported", "not_reported", "stated_not_performed", "deferred"];
 const ATTRIBUTION = ["step", "package"];
+const ROW_STATES = ["reported", "partially_reported", "not_reported", "stated_not_performed", "deferred"];
 const SCHEMA = "aespa-labels/1";
 
 const CARDS = {
@@ -186,6 +204,29 @@ const CARDS = {
     ["band_or_cutoff_as_stated", "text"], ["filter_type", "text"], ["order", "text"],
     ["quote", "quote"], ["notes", "area"]] },
 };
+// The remaining COBIDAS rows (2026-11-11). step: the schema's *_FIELD_META names, in order, without
+// "performed" (the state carries it). group: the card a sub-card sits in.
+const GROUPS = { nuisance: "Nuisance regression (with CompCor and ICA denoising)",
+                 censoring: "Volume censoring (scrubbing and despiking)" };
+const ROW_CARDS = {
+  slice_time_correction: { title: "Slice time correction", group: null, step: ["method", "interpolation_order", "reference", "relative_to_motion_correction", "interpolation"] },
+  nuisance_regression: { title: "Nuisance regression", group: "nuisance", step: ["regressor_list", "tissue_definition", "tissue_signal_definition", "motion_expansion", "tissue_regressors", "physio_regressors", "physio_n_regressors", "detrend", "method", "filtering_integrated"] },
+  compcor: { title: "CompCor", group: "nuisance", step: ["variant", "n_components", "variance_threshold", "mask_source"] },
+  ica_denoise: { title: "ICA denoising", group: "nuisance", step: ["method", "training_set", "threshold", "aggressive"] },
+  scrub: { title: "Scrubbing (volume censoring)", group: "censoring", step: ["method", "criterion", "threshold", "remediation", "interpolation_method"] },
+  despike: { title: "Despiking", group: "censoring", step: ["method", "threshold"] },
+  nonsteadystate_removal: { title: "T1 stabilization (non-steady-state volumes)", group: null, step: ["n_nonsteadystate_discarded"] },
+  coregistration: { title: "Coregistration (function to structure)", group: null, step: ["nonlinear_transform_type", "transform", "method", "cost_function", "interpolation"] },
+  distortion_correction: { title: "Distortion correction", group: null, step: ["source", "method", "tool"] },
+  brain_extraction: { title: "Brain extraction", group: null, step: ["parameters", "method", "manual_edits"] },
+  segmentation: { title: "Segmentation", group: null, step: ["method", "tissue_classes"] },
+  intensity_correction: { title: "Intensity correction", group: null, step: ["target", "method"] },
+};
+for (const [key, rc] of Object.entries(ROW_CARDS)) {
+  CARDS[key] = { title: rc.title, multi: true, group: rc.group, fields: [
+    ["applies_to", "text"], ["state", "select", ROW_STATES], ...rc.step.map(f => [f, "text", null, "as stated"]),
+    ["quote", "quote"], ["notes", "area"]] };
+}
 const HINTS = { width: "as stated, e.g. 8", width_measure: "FWHM / sigma / …", space: "volume / surface / …",
   pass_type: "high / low / band", band_or_cutoff_as_stated: "as written", named_tool: "verbatim, blank if none" };
 
@@ -256,7 +297,7 @@ const cardsEl = document.getElementById("cards");
 const msg = document.getElementById("msg");
 function say(text, err) { msg.textContent = text; msg.className = err ? "err" : ""; }
 
-function fieldEl(name, kind, opts, value) {
+function fieldEl(name, kind, opts, value, hint) {
   const lab = document.createElement("label");
   lab.textContent = name;
   let el;
@@ -266,7 +307,7 @@ function fieldEl(name, kind, opts, value) {
     for (const o of opts) el.append(new Option(o, o));
   } else if (kind === "text") {
     el = document.createElement("input"); el.type = "text"; el.spellcheck = false;
-    if (HINTS[name]) el.placeholder = HINTS[name];
+    if (hint || HINTS[name]) el.placeholder = hint || HINTS[name];
   } else {
     el = document.createElement("textarea");
     if (kind === "quote") { el.className = "quote"; el.placeholder = "verbatim, from the PDF text layer"; }
@@ -297,7 +338,7 @@ function streamEl(key, values, index) {
   }
   const grid = document.createElement("div");
   grid.className = "grid";
-  for (const [name, kind, opts] of spec.fields) grid.append(fieldEl(name, kind, opts, values?.[name]));
+  for (const [name, kind, opts, hint] of spec.fields) grid.append(fieldEl(name, kind, opts, values?.[name], hint));
   box.append(grid);
   const row = document.createElement("div");
   row.className = "btnrow";
@@ -322,12 +363,26 @@ function renumber(key) {
 
 function build(data) {
   cardsEl.textContent = "";
+  const groupEls = {};
   for (const [key, spec] of Object.entries(CARDS)) {
     const card = document.createElement("div");
-    card.className = "card"; card.id = "card-" + key;
-    const h = document.createElement("h2");
-    h.textContent = spec.title;
-    card.append(h);
+    card.id = "card-" + key;
+    if (spec.group) {
+      // a sub-card sits inside its group's card, each with its own state and rows
+      if (!groupEls[spec.group]) {
+        const g = document.createElement("div");
+        g.className = "card"; g.id = "group-" + spec.group;
+        const gh = document.createElement("h2"); gh.textContent = GROUPS[spec.group];
+        g.append(gh); cardsEl.append(g); groupEls[spec.group] = g;
+      }
+      card.className = "subcard";
+      const h = document.createElement("h3"); h.textContent = spec.title; card.append(h);
+    } else {
+      card.className = "card";
+      const h = document.createElement("h2");
+      h.textContent = spec.title;
+      card.append(h);
+    }
     const rows = spec.multi ? (data?.[key]?.length ? data[key] : [null]) : [data?.[key] ?? null];
     const holder = document.createElement("div");
     holder.className = "streams";
@@ -340,7 +395,7 @@ function build(data) {
       const r = document.createElement("div"); r.className = "btnrow"; r.append(add);
       card.append(r);
     }
-    cardsEl.append(card);
+    (spec.group ? groupEls[spec.group] : cardsEl).append(card);
   }
 }
 
@@ -365,7 +420,7 @@ function problems(d) {
   if (!/^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(d.paper_id)) p.push("paper_id is empty or has characters other than letters, digits, _ . -");
   const filled = r => Object.entries(r).some(([k, v]) => v && !(k === "applies_to" && v === "all"));
   if (filled(d.motion) && !d.motion.state) p.push("motion: fields filled but no state");
-  for (const key of ["smoothing", "filtering"]) {
+  for (const key of Object.keys(CARDS).filter(k => CARDS[k].multi)) {
     const seen = new Set();
     d[key].forEach((r, i) => {
       if (filled(r) && !r.state) p.push(`${key} row ${i + 1}: fields filled but no state`);
