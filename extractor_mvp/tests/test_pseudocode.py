@@ -353,3 +353,59 @@ def test_a_model_or_unconfirmed_tool_carries_no_verification() -> None:
     assert code is not None
     motion = _line(code, "motion_correction")
     assert 'tool="afni" [M]' in motion and "[M:" not in motion
+
+
+# --- 2026-11-11: what the pipeline's releases would have run (the KB's option inventories) -------
+
+
+def _block(code: str) -> list[str]:
+    i = next(
+        i for i, ln in enumerate(code.splitlines()) if ln.startswith("# --- ") and "defaults" in ln
+    )
+    out = []
+    for ln in code.splitlines()[i:]:
+        if not ln.strip():
+            break
+        out.append(ln)
+    return out
+
+
+def test_a_cpac_paper_gets_the_releases_out_by_its_date_with_the_gui_beside_an_example_config() -> (
+    None
+):
+    rec = _record()
+    rec["resolution"]["resolved_pipeline"] = {"value": "cpac", "kb": True}
+    rec["paper_date"] = "2017-03-16"
+    code = render_pseudocode(rec)
+    assert code is not None
+    block = _block(code)
+    assert "releases out by 2017-03-16 (the paper's date): 1.0.1 (2016-12-09, latest)" in block[0]
+    assert "[D: KB option inventory]" in block[0]
+    smoothing = next(ln for ln in block if ln.startswith("#   smoothing:"))
+    assert "fwhm=[6] (GUI: 4)" in smoothing
+    assert any("shipped example, not a loaded default" in ln for ln in block)
+
+
+def test_a_release_the_paper_states_is_used_instead_of_the_date() -> None:
+    rec = _record()
+    rec["resolution"]["resolved_pipeline"] = {"value": "fmriprep", "kb": True}
+    rec["citing_software"] = [{"display_name": "fMRIPrep", "version": "20.2.1", "kept": True}]
+    rec["paper_date"] = "2024-09-11"  # ignored: the paper states its release
+    code = render_pseudocode(rec)
+    assert code is not None
+    block = _block(code)
+    assert block[0].startswith("# --- fMRIPrep 20.2.1 defaults (the release the paper states)")
+    coreg = next(ln for ln in block if ln.startswith("#   coregistration:"))
+    assert "--bold2t1w-dof=6" in coreg
+
+
+def test_no_block_for_other_pipelines_and_a_plain_line_without_a_date() -> None:
+    rec = _record()
+    code = render_pseudocode(rec)
+    assert code is not None and "if the paper left it to" not in code
+    rec["resolution"]["resolved_pipeline"] = {"value": "fmriprep", "kb": True}
+    code = render_pseudocode(rec)
+    assert code is not None
+    assert (
+        "# --- fMRIPrep defaults: no release (the paper states none and no date is known)" in code
+    )

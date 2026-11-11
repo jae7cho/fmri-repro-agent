@@ -22,6 +22,7 @@ tool versions and the data release; the footer the mandatory-row count of the CO
 
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from extractor_mvp.render import (
@@ -371,6 +372,156 @@ def _streams(record: dict[str, Any]) -> dict[str, list[int]]:
     return out
 
 
+#: 2026-11-11: the steps the release-defaults block lists, in order
+RELEASE_STEPS: tuple[str, ...] = (
+    "slice_timing",
+    "distortion_correction",
+    "coregistration",
+    "normalization",
+    "smoothing",
+    "temporal_filtering",
+    "nuisance_regression",
+    "scrubbing",
+)
+_PER_STEP = 4  # options and fixed values shown per step; the rest are in the KB
+
+
+def _paper_date(record: dict[str, Any]) -> tuple[Any, str] | None:
+    """The date the release defaults are read at, and what it is: a stored ``paper_date``, else
+    the PDF's creation date (the proxy the extraction's version inference uses)."""
+    from datetime import date
+    from pathlib import Path
+
+    if record.get("paper_date"):
+        return date.fromisoformat(str(record["paper_date"])[:10]), "the paper's date"
+    path = record.get("path")
+    if path and Path(path).is_file():
+        from extractor_mvp.pdf_loader import pdf_creation_date
+
+        found = pdf_creation_date(Path(path))
+        if found is not None:
+            return found, "the PDF's creation date"
+    return None
+
+
+def _stated_release(record: dict[str, Any], pipeline_id: str) -> str | None:
+    """A release of the pipeline the paper itself states (its cited software, or a data
+    release's pipeline version)."""
+    names = {"fmriprep": ("fmriprep",), "cpac": ("c-pac", "cpac")}[pipeline_id]
+    for c in record.get("citing_software") or []:
+        name = str(c.get("display_name") or c.get("tool_id") or "").lower()
+        if c.get("version") and any(n in name for n in names):
+            return str(c["version"]).lstrip("vV")
+    pv = ((record.get("resolution") or {}).get("resolved_pipeline") or {}).get("pipeline_version")
+    return str(pv).lstrip("vV") if pv else None
+
+
+def _fmt(value: Any) -> str:
+    return clip(
+        " ".join(json.dumps(value, default=str).split()) if not isinstance(value, str) else value,
+        60,
+    )
+
+
+def _release_defaults(record: dict[str, Any]) -> list[str]:
+    """2026-11-11 (the author's request): for a paper resolved to fMRIPrep or C-PAC, what the
+    pipeline's releases would have run, step by step, from the KB's option inventories. The
+    release the paper states, else the releases out by its date (the latest, and the last release
+    of each of the two minor versions before it). Values are the latest candidate's; an earlier
+    candidate that differs is named beside it. Comments only: none of this is the paper's."""
+    pipeline_id = ((record.get("resolution") or {}).get("resolved_pipeline") or {}).get("value")
+    if pipeline_id not in ("fmriprep", "cpac"):
+        return []
+    from fmri_defaults_kb import options_at_date, release_timeline, step_defaults
+    from fmri_defaults_kb.errors import KbError
+
+    label = {"fmriprep": "fMRIPrep", "cpac": "C-PAC"}[pipeline_id]
+    try:
+        releases = {str(t["version"]): t for t in release_timeline(pipeline_id)}
+        stated = _stated_release(record, pipeline_id)
+        if stated and stated in releases:
+            cands = [(stated, step_defaults(pipeline_id, stated))]
+            head = f"# --- {label} {stated} defaults (the release the paper states) [D: KB option inventory]"
+        else:
+            when = _paper_date(record)
+            if when is None:
+                return [
+                    "",
+                    f"# --- {label} defaults: no release (the paper states none and no date is known)",
+                ]
+            out = options_at_date(pipeline_id, when[0])
+            if not out["candidates"]:
+                return ["", f"# --- {label} defaults: no release out by {when[0].isoformat()}"]
+            cands = [(c["version"], c["step_defaults"]) for c in out["candidates"]]
+            listed = ", ".join(
+                f"{c['version']} ({c['released']}{', latest' if c['latest'] else ''})"
+                for c in out["candidates"]
+            )
+            head = (
+                f"# --- if the paper left it to {label}'s defaults: releases out by "
+                f"{when[0].isoformat()} ({when[1]}): {listed} [D: KB option inventory]"
+            )
+    except KbError:
+        return []
+    lines = ["", head]
+    latest_v, latest = cands[0]
+    for step in RELEASE_STEPS:
+        entry = latest.get(step) or {"options": {}, "fixed": []}
+        parts: list[str] = []
+        # every option any candidate offers for the step (a renamed option exists under one name
+        # in one release and another name in the next); the latest's value first, then each
+        # earlier candidate whose value differs, or that has the option when the latest does not
+        ids: list[str] = []
+        for _v, sd in cands:
+            for oid in (sd.get(step) or {}).get("options", {}):
+                if oid not in ids:
+                    ids.append(oid)
+        for oid in ids:
+            opt = entry["options"].get(oid)
+            shown_value = (
+                None
+                if opt is None
+                else (
+                    opt.get("default") if opt.get("default") is not None else opt.get("gui_default")
+                )
+            )
+            others = []
+            for v, sd in cands[1:]:
+                o2 = (sd.get(step) or {}).get("options", {}).get(oid)
+                if o2 is None or o2.get("default") is None:
+                    continue
+                if opt is None or o2.get("default") != opt.get("default"):
+                    others.append(f"{v}: {_fmt(o2.get('default'))}")
+            if shown_value is None and not others:
+                continue
+            if opt is None:
+                text = f"{oid} absent in {latest_v}"
+            else:
+                text = f"{oid}={_fmt(opt.get('default'))}"
+                if "gui_default" in opt and opt["gui_default"] != opt.get("default"):
+                    text += f" (GUI: {_fmt(opt['gui_default'])})"
+            parts.append(text + (f" [{'; '.join(others)}]" if others else ""))
+        for p in entry["fixed"]:
+            parts.append(
+                f"{p['parameter']}: {_fmt(p['value'])}"
+                + (" (uncertain)" if p.get("uncertain") else "")
+            )
+        if not parts:
+            continue
+        more = len(parts) - _PER_STEP
+        shown = "; ".join(parts[:_PER_STEP]) + (f"; +{more} more in the KB" if more > 0 else "")
+        lines.append(f"#   {step}: {shown}")
+    example = any(
+        o.get("config_role") == "example" for e in latest.values() for o in e["options"].values()
+    )
+    if example:
+        lines.append(
+            f"#   note: {label} {latest_v}'s configuration file is a shipped example, not a loaded "
+            "default; the GUI values are shown beside it"
+        )
+    return lines
+
+
 def render_pseudocode(record: dict[str, Any]) -> str | None:
     """The pseudo-code for one stored record, or None for a record with no extraction."""
     if "preprocessing" not in record:
@@ -406,6 +557,7 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
                     prep.steps[i], rows, supplied, hops, resolution, record.get("applied_by")
                 )
             )
+    lines.extend(_release_defaults(record))
     lines.append("")
     from extractor_mvp.verifier import drop_same_order_verdict
 
