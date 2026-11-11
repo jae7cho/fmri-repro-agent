@@ -39,10 +39,11 @@ def set_level_version() -> str:
 
 
 #: Papers held out by pre-registration C11/C26 (`docs/findings/motion-method-reachability-prereg.md`).
-#: Six copies of this set exist (this file, `derive_target_space_csv.py`, and
-#: `extractor_mvp/scripts/` {motion_probe, step_field_support_replay, value_support_survey,
-#: apply_motion_inference}). `extractor_mvp/tests/test_heldout_quote_redaction.py` DISCOVERS
-#: every copy in the tree and fails if any has drifted, so a new copy is covered when written.
+#: Several other files keep their own copy of this set (the other deriver,
+#: `scripts/merge_labels.py`, and scripts under `extractor_mvp/scripts/`). The guard in
+#: `extractor_mvp/tests/test_heldout_quote_redaction.py` DISCOVERS every copy in the tree and
+#: fails if any has drifted, so a new copy is covered the day it is written. No count is kept
+#: here: a count goes stale the next time someone adds one, and this one already did.
 _HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
 
 #: What replaces a held-out paper's supporting quote in the DERIVED csv.

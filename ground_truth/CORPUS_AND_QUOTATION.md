@@ -67,22 +67,6 @@ Each of those five names all three held-out papers and holds dozens of prose cel
 csvs reduced the surface that casual searching hits; **it did not remove held-out text from this
 public repository.** Closing that needs one of:
 
-**The same hole is about to be dug again.** `preproc_rows_labels_v1.xlsx` (commit `4d779a3`,
-2026-11-11) is empty today, so it carries nothing. But `ground_truth/preproc_rows_walk_v1.csv`
-lists all 19 corpus papers including `liu_2005`, `tang_2025` and `wheaton_2004` (ids only — that
-file is clean), and `extractor_mvp/scripts/merge_labels.py` contains no held-out handling of any
-kind. So labelling those rows and merging will write held-out quotes and notes into a tracked
-workbook and into `preproc_rows_progress_v1.csv`, reproducing in a new file exactly what the
-derivers were just changed to prevent. The redaction belongs in `merge_labels.py` before that
-labelling starts, not after.
-
-**Closed the same day, before any labelling.** `merge_labels.py` now writes a held-out paper's prose
-cells (`quote`, `notes`, and `method_quote` on the motion sheet) as a marker. It appends the prose
-itself to `ground_truth/heldout_label_prose.local.jsonl`, which is gitignored. States and values
-are written as for any paper, because they are the label. `preproc_rows_progress_v1.csv` holds row
-counts only and never held prose. Guarded in `tests/test_merge_labels.py`, with a positive control
-showing that a paper not held out keeps its prose.
-
 1. **Strip the held-out rows' prose columns in the workbooks** — touches the labelling instrument,
    which is the author's and is deliberately not edited by tooling.
 2. **Untrack the workbooks** — but they are the declared single source of truth that makes the csv
@@ -100,6 +84,24 @@ The consequences, stated plainly:
 - every merge test builds its own workbooks.
 
 The workbooks remain in git history, like the csv prose (next section).
+
+### The merge path would have dug the same hole
+
+**Caught before any labelling.** `preproc_rows_labels_v1.xlsx` (commit `4d779a3`, 2026-11-11) was
+empty, so it carried nothing. But `ground_truth/preproc_rows_walk_v1.csv` lists all 19 corpus papers
+including `liu_2005`, `tang_2025` and `wheaton_2004` (ids only — that file is clean), and
+`scripts/merge_labels.py` contained no held-out handling of any kind. Labelling those rows and
+merging would have written held-out quotes and notes into a tracked workbook and into
+`preproc_rows_progress_v1.csv`, reproducing in a new file exactly what the derivers had just been
+changed to prevent.
+
+**Closed the same day, before any labelling.** `scripts/merge_labels.py` now writes a held-out
+paper's prose cells (`quote`, `notes`, and `method_quote` on the motion sheet) as a marker. It
+appends the prose itself to `ground_truth/heldout_label_prose.local.jsonl`, which is gitignored.
+States and values are written as for any paper, because they are the label.
+`preproc_rows_progress_v1.csv` holds row counts only and never held prose. Guarded in
+`tests/test_merge_labels.py`, with a positive control showing that a paper not held out keeps its
+prose.
 
 ## Why the history is not being rewritten
 

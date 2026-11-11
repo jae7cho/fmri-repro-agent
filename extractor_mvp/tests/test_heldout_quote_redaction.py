@@ -126,10 +126,11 @@ def test_non_held_out_rows_still_carry_their_evidence(name: str) -> None:
 def test_every_copy_of_the_held_out_set_agrees() -> None:
     """Each file keeping its own copy of the held-out ids must not drift from the canonical one.
 
-    Six copies exist (the two derivers plus motion_probe, step_field_support_replay,
-    value_support_survey and apply_motion_inference). A copy that drifts is worse than no copy,
-    because redaction would silently stop covering a paper. The copies are DISCOVERED rather
-    than listed, so this keeps holding as more are written.
+    A copy that drifts is worse than no copy, because redaction would silently stop covering a
+    paper. The copies are DISCOVERED rather than listed, so this keeps holding as more are
+    written -- and they do get written: this guard was authored when there were six and
+    `scripts/merge_labels.py` made a seventh within hours. ``_MIN_HELD_OUT_COPIES`` is a floor
+    against the scan silently finding nothing, not a count of what exists.
     """
     checked: list[str] = []
     for path in sorted(_REPO.rglob("*.py")):
