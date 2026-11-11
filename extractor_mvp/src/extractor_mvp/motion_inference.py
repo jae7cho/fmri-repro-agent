@@ -224,6 +224,12 @@ def infer_motion_method(
                 field_id, "never", "named_tool: the paper names the tool"
             )
         path: Path_ = "diagnostic"
+    elif ext.status == "VARIED":
+        # 0.7.0 (DESIGN_applies_to.md): the paper states the method for parts of its data; nothing
+        # is inferred over what it states
+        return preprocessing, MotionInferenceRecord(
+            field_id, "never", "varied: the paper states the method for parts of its data"
+        )
     elif ext.status == "MISSING_FROM_PAPER" and str(
         getattr(pf.inference, "reason", "") or ""
     ).startswith("not_targeted_by_mvp"):

@@ -444,6 +444,10 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
             # 2026-11-02: an intensity convention that only names the operation, coerced by the
             # post-check (the author's queued fix); the sentence asserts the operation.
             "operation_word_not_value",
+            # 2026-11-11 (DESIGN_applies_to.md, fork D1): a VARIED field's weakest variant names a
+            # part its sentences do not contain; and a varied answer none of whose variants checked.
+            "applies_to_unverified",
+            "varied_no_variant_checked",
         }
     )
     # every member matches through _gap_base, suffixed as the producers emit them

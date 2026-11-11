@@ -1588,7 +1588,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.6.3"
+SCHEMA_VERSION = "0.7.0"
 
 
 class MigrationInfo(BaseModel):
@@ -1614,6 +1614,18 @@ class SoftwareMention(BaseModel):
     used_for: str | None = None
 
 
+class StepOrderPart(BaseModel):
+    """An order of processing steps the paper states for one part of its work only (0.7.0;
+    DESIGN_applies_to.md §2: power_2014's Part III replaces censored frames between regression and
+    filtering). ``applies_to`` is the paper's words for the part; ``applies_to_verified`` is False
+    when those words are not in the stating sentences (shown unverified, never dropped)."""
+
+    kinds: list[str] = Field(min_length=2)
+    applies_to: str = Field(min_length=1)
+    applies_to_verified: bool = True
+    spans: list[Span] = Field(min_length=1)
+
+
 class Preprocessing(BaseModel):
     """One ordered preprocessing pipeline applied to one or more functional
     acquisitions in the same :class:`ReplicationSpec`.
@@ -1637,7 +1649,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.6.3"] = "0.6.3"
+    schema_version: Literal["0.7.0"] = "0.7.0"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None
@@ -1653,8 +1665,12 @@ class Preprocessing(BaseModel):
     # in template order; "template": it states none and the list order is the catalog's, which a
     # reader must not take as the paper's. ``step_order_spans`` are the sentences that state it.
     # OPTIONAL: absent on a document written before 0.6.0.
-    step_order_source: Literal["paper", "partial", "template"] | None = None
+    # 0.7.0 (2026-11-11, DESIGN_applies_to.md §2): "by_part" when the paper states a different order
+    # for different parts of its work; each is in ``step_order_parts`` with its part, and ``steps``
+    # stay in template order. An order that holds throughout keeps "paper" / "partial" as before.
+    step_order_source: Literal["paper", "partial", "template", "by_part"] | None = None
     step_order_spans: list[Span] | None = None
+    step_order_parts: list[StepOrderPart] | None = None
 
     @model_validator(mode="after")
     def _default_written_under(self) -> Self:

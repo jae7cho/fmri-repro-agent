@@ -63,6 +63,9 @@ from fmri_repro.spec.preprocessing import (
     TemporalStandardizationMethod,
 )
 from fmri_repro.spec.provenance import (
+    APPLIES_TO_ALL,
+    COMPARED_MODELS,
+    STATED_STATUSES,
     Deferral,
     DeferredToCitation,
     Extracted,
@@ -70,21 +73,25 @@ from fmri_repro.spec.provenance import (
     MissingFromPaper,
     NotApplicable,
     ProvenancedField,
+    Variant,
+    Varied,
+    normalize_applies_to,
 )
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field, model_validator
 
 from extractor_mvp.coverage_fields import SPECS_BY_KIND
-from extractor_mvp.extraction_result import FieldExtractionResult
+from extractor_mvp.extraction_result import FieldExtractionResult, StepFieldResult
 from extractor_mvp.motion_guard import (
     MOTION_VALUE_ROUTED_FALLBACK,
     listed_package_in_quote,
     motion_post_check,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.prompt_rules import PREPROCESSING_RULES
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES, VARIANT_RULES
 from extractor_mvp.quote_support import (
     coverage_value_supported,
+    free_text_supported,
     is_operation_word_only,
     step_value_supported,
 )
@@ -109,12 +116,14 @@ class PreprocessingExtraction(BaseModel):
     (extracted / missing / deferred); see ``extraction_result.py``.
     """
 
-    target_space: FieldExtractionResult
-    resolution_mm: FieldExtractionResult
-    surface_registration: FieldExtractionResult
-    target_surface: FieldExtractionResult
-    intensity_convention: FieldExtractionResult
-    intensity_value: FieldExtractionResult
+    # 2026-11-11 (DESIGN_applies_to.md, fork A1): the Layer-2 fields may be "varied"; the
+    # base-pipeline fields below keep the three statuses.
+    target_space: StepFieldResult
+    resolution_mm: StepFieldResult
+    surface_registration: StepFieldResult
+    target_surface: StepFieldResult
+    intensity_convention: StepFieldResult
+    intensity_value: StepFieldResult
     # bandpass intentionally skipped for MVP (see module docstring).
 
     # Layer 1: base preprocessing pipeline (new). Defaulted to status="missing" so
@@ -131,8 +140,8 @@ class PreprocessingExtraction(BaseModel):
     )  # a SEPARATELY-stated version ("0.4.0", "5.0.10", "1.1-beta"); fused "SPM12" is name-only (Q1)
     # Build 2: per-voxel temporal z-scoring of the BOLD SIGNAL itself (Liu/Cho).
     # Defaulted to status="missing" so pre-existing fixtures still construct.
-    temporal_standardization_method: FieldExtractionResult = Field(
-        default_factory=lambda: FieldExtractionResult(status="missing")
+    temporal_standardization_method: StepFieldResult = Field(
+        default_factory=lambda: StepFieldResult(status="missing")
     )  # voxel_temporal_zscore when the BOLD SIGNAL is z-scored (Liu/Cho); missing otherwise
 
 
@@ -323,9 +332,14 @@ analysis. Canonical values: voxel_temporal_zscore, other.
   is it transforming something DERIVED from the signal (a correlation, a regressor, a
   component, a feature, a metric)? Only the former is voxel_temporal_zscore.
 
+"""
+    + VARIANT_RULES
+    + """The base-pipeline fields (base_pipeline_name, base_pipeline_version, base_pipeline_ref) are
+never "varied".
+
 ## Output status for each field
 
-For each field output exactly one of three statuses:
+For each field output exactly one of these statuses:
 
 "extracted": The paper explicitly states a value for this field.
   - value: the extracted value as a string
@@ -347,6 +361,11 @@ For each field output exactly one of three statuses:
     (e.g. "HCP minimal preprocessing pipeline"), "dataset_doc" for dataset
     documentation, "supplement" for the same paper's supplementary materials
   - searched_terms and sections_searched as above
+
+"varied": The paper states different values for this field for different parts of its data
+  (see "Values that differ by what they apply to").
+  - variants: one entry per part (value, verbatim_quote, applies_to, applies_to_quote)
+  - value: null, verbatim_quote: null
 
 CRITICAL: When uncertain, use "missing" not "deferred". A field is "deferred" only
 when you can quote a verbatim sentence pointing to another source. If the paper
@@ -547,6 +566,20 @@ def _process_field(
     if fe.status == "deferred":
         return _process_deferred(field_id, dotted, fe, t, text)
 
+    if fe.status == "varied":
+        return _process_varied(
+            field_id,
+            dotted,
+            fe,
+            literal_type,
+            t,
+            text,
+            value_context,
+            use_synonym_table,
+            value_kind,
+            synonyms,
+        )
+
     # fe.status == "extracted" — value validated, then quote resolved to a span.
     # The extracted arm guarantees both are set (enforce_status_constraints);
     # guard with a raise (not assert) so -O keeps it and value narrows to str.
@@ -707,6 +740,139 @@ def _process_field(
     return (
         _extracted_pf(field_id, t, value, resolution.span, span_recovered=resolution.recovered),
         None,
+        None,
+    )
+
+
+#: Diagnostic reasons of the varied arm (DESIGN_applies_to.md, 2026-11-11). A dropped variant keeps
+#: the reason its own value or quote failed; these name the ones that fail as variants.
+VARIED_APPLIES_TO_ALL = "varied_variant_applies_to_all"
+VARIED_APPLIES_TO_REPEATED = "varied_applies_to_repeated"
+VARIED_NO_VALUE = "varied_variant_without_value"
+APPLIES_TO_UNVERIFIED = "applies_to_unverified"
+
+
+def _process_varied(
+    field_id: str,
+    dotted: str,
+    fe: Any,
+    literal_type: Any,
+    t: Any,
+    text: str,
+    value_context: float | None,
+    use_synonym_table: bool,
+    value_kind: str | None,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+) -> tuple[ProvenancedField, ExtractionDiagnostic | None, DeferralRecord | None]:
+    """A field the paper states differently for different parts of its data (fork A1).
+
+    Each variant's value and quote go through the one span path and the value-support check
+    exactly as an extracted field's do; a variant that fails is dropped and counted
+    (``variants_dropped``), never shown as the paper's. Its ``applies_to`` words must be in its
+    quote, or in ``applies_to_quote`` resolved; if in neither, the variant is kept with
+    ``applies_to_verified`` False (shown unverified, never dropped, never made "all"). A variant
+    labelled "all" or repeating another's label (after :func:`normalize_applies_to`) is dropped.
+
+    Fork C2: one value-less entry, ``applies_to`` "varied across compared models", with the
+    sentence that states the comparison. One or more surviving variants stay ``Varied``, never
+    collapsed to an "all" value; none surviving is the first failure's gap. Returns the first
+    diagnostic only, as the other branches do."""
+    variants: list[Variant[Any]] = []
+    dropped = 0
+    first_gap: ProvenancedField | None = None
+    diag: ExtractionDiagnostic | None = None
+    seen: set[str] = set()
+
+    def note(reason: str, value: Any, quote: str | None, applies_to: str) -> None:
+        nonlocal diag
+        if diag is None:
+            diag = ExtractionDiagnostic(f"{dotted}[{applies_to}]", reason, value, quote)
+
+    for v in fe.variants:
+        key = normalize_applies_to(v.applies_to)
+        if key == APPLIES_TO_ALL or not key:
+            dropped += 1
+            note(VARIED_APPLIES_TO_ALL, v.value, v.verbatim_quote, v.applies_to)
+            continue
+        if key in seen:
+            dropped += 1
+            note(VARIED_APPLIES_TO_REPEATED, v.value, v.verbatim_quote, v.applies_to)
+            continue
+        if v.value is None:
+            res = resolve_quote(v.verbatim_quote, text)
+            if key != COMPARED_MODELS or len(fe.variants) != 1 or res.span is None:
+                dropped += 1
+                note(VARIED_NO_VALUE, None, v.verbatim_quote, v.applies_to)
+                continue
+            seen.add(key)
+            variants.append(
+                Variant[t](
+                    value=None,
+                    spans=[res.span],
+                    applies_to=COMPARED_MODELS,
+                    confidence=_CONFIDENCE,
+                    span_recovered=res.recovered,
+                )
+            )
+            continue
+        sub = FieldExtractionResult(
+            status="extracted", value=v.value, verbatim_quote=v.verbatim_quote
+        )
+        pf, sub_diag, _ = _process_field(
+            field_id,
+            dotted,
+            sub,
+            literal_type,
+            t,
+            text,
+            value_context,
+            use_synonym_table,
+            value_kind,
+            synonyms,
+        )
+        if not isinstance(pf.extraction, Extracted):
+            dropped += 1
+            first_gap = first_gap or pf
+            if sub_diag is not None:
+                note(sub_diag.failure_reason, v.value, v.verbatim_quote, v.applies_to)
+            continue
+        seen.add(key)
+        ext = pf.extraction
+        verified = free_text_supported(v.applies_to, ext.spans[0].text) or free_text_supported(
+            v.applies_to, v.verbatim_quote
+        )
+        at_spans = []
+        if not verified and v.applies_to_quote:
+            res = resolve_quote(v.applies_to_quote, text)
+            if res.span is not None:
+                at_spans = [res.span]
+                verified = free_text_supported(
+                    v.applies_to, v.applies_to_quote if res.repairs else res.span.text
+                )
+        if not verified:
+            note(
+                APPLIES_TO_UNVERIFIED, v.value, v.applies_to_quote or v.verbatim_quote, v.applies_to
+            )
+        variants.append(
+            Variant[t](
+                value=ext.value,
+                spans=ext.spans,
+                applies_to=v.applies_to.strip(),
+                applies_to_spans=at_spans,
+                applies_to_verified=verified,
+                confidence=ext.confidence,
+                span_recovered=ext.span_recovered,
+            )
+        )
+    if not variants:
+        return first_gap or _missing_pf(field_id, t, "varied_no_variant_checked"), diag, None
+    return (
+        ProvenancedField[t](
+            field_id=field_id,
+            extraction=Varied[t](variants=variants, variants_dropped=dropped),
+            inference=NotApplicable(),
+        ),
+        diag,
         None,
     )
 
@@ -1128,6 +1294,7 @@ def _assemble(
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
     software_mentions: list[ProvenancedField] | None = None,
     step_order: tuple[list[str], list[Any]] | None = None,
+    step_order_parts: list[Any] | None = None,
 ) -> Preprocessing:
     """Wrap the extracted/missing fields into a schema-valid Preprocessing block.
 
@@ -1248,12 +1415,17 @@ def _assemble(
         temporal_standardization,
     ]
     steps, order_source, order_spans = _apply_step_order(template_steps, step_order)
+    parts = list(step_order_parts or []) or None
+    if parts and order_source == "template":
+        # 0.7.0 (DESIGN_applies_to.md §2): orders stated per part only; steps stay in template order
+        order_source = "by_part"
     return Preprocessing(
         applies_to=[AcquisitionRef(suffix="bold", entities=AcquisitionEntities(task="rest"))],
         base_pipeline=base_pipeline_field,
         software_mentions=software_mentions,
         step_order_source=order_source,
         step_order_spans=order_spans,
+        step_order_parts=parts,
         steps=steps,
     )
 
@@ -1272,12 +1444,14 @@ def _step_reported(step: Any) -> bool:
             return True
         if status == "EXTRACTED" and not (name == "performed" and pf.extraction.value is False):
             return True
+        if status == "VARIED" and any(v.value is not False for v in pf.extraction.variants):
+            return True  # 0.7.0: stated for some part of the data
     return False
 
 
 def _apply_step_order(
     template_steps: list[Any], step_order: tuple[list[str], list[Any]] | None
-) -> tuple[list[Any], Literal["paper", "partial", "template"] | None, list[Any] | None]:
+) -> tuple[list[Any], Literal["paper", "partial", "template", "by_part"] | None, list[Any] | None]:
     """report v2 §1d (2026-10-29): the paper's stated order first, the rest in template order.
 
     ``None`` (no coverage calls were made -- the per-acquisition path, or a caller that predates
@@ -1291,7 +1465,9 @@ def _apply_step_order(
     ordered = [by_kind[k] for k in kinds if k in by_kind]
     rest = [s for s in template_steps if s.kind not in kinds]
     reported_unordered = [s for s in rest if _step_reported(s)]
-    source: Literal["paper", "partial"] = "partial" if reported_unordered else "paper"
+    source: Literal["paper", "partial", "template", "by_part"] = (
+        "partial" if reported_unordered else "paper"
+    )
     return ordered + rest, source, list(spans)
 
 
@@ -1762,6 +1938,7 @@ def _extract_from_prompt(
     coverage: dict[str, dict[str, ProvenancedField]] | None = None,
     software_mentions: list[ProvenancedField] | None = None,
     step_order: tuple[list[str], list[Any]] | None = None,
+    step_order_parts: list[Any] | None = None,
 ) -> tuple[Preprocessing, list[ExtractionDiagnostic], list[DeferralRecord]]:
     """Run one LLM extraction call + the shared post-processing pipeline.
 
@@ -1800,6 +1977,14 @@ def _extract_from_prompt(
         # 2026-11-02, the author's queued fix: an operation word is not a convention value. A
         # convention that only names the operation ("normalization") is coerced to unverifiable --
         # the paper states the operation, so the row must not read "not reported".
+        if isinstance(field_pf.extraction, Varied) and any(
+            isinstance(v.value, SpecifiedTerm)
+            and is_operation_word_only(dotted, v.value.verbatim or "")
+            for v in field_pf.extraction.variants
+        ):
+            # the same rule per variant: an operation-word variant is not a convention value
+            field_pf = _missing_pf(field_id, t, "operation_word_not_value")
+            diag = ExtractionDiagnostic(dotted, "operation_word_not_value", None, None)
         if (
             isinstance(field_pf.extraction, Extracted)
             and isinstance(field_pf.extraction.value, SpecifiedTerm)
@@ -1855,7 +2040,15 @@ def _extract_from_prompt(
         deferrals.append(bp_deferral)
 
     return (
-        _assemble(pf, base_pipeline, motion_method, coverage, software_mentions, step_order),
+        _assemble(
+            pf,
+            base_pipeline,
+            motion_method,
+            coverage,
+            software_mentions,
+            step_order,
+            step_order_parts,
+        ),
         diagnostics,
         deferrals,
     )
@@ -1872,8 +2065,8 @@ def extract_preprocessing(
     """Single-pass extraction -> (Preprocessing, diagnostics, deferral records).
 
     ``coverage_out`` (item 5, 2026-10-28): pass a list to receive the ``CoverageExtraction`` the
-    two coverage calls produced, for the record-level ``multiple_pipelines`` answers the batch
-    stores beside the record. Same idiom as ``motion_inference_out``; default None is a no-op.
+    two coverage calls produced (their diagnostics and raw answers). Same idiom as
+    ``motion_inference_out``; default None is a no-op.
 
     ``resolutions`` (optional): pass a list to collect per-field
     :class:`ResolutionRecord`s for successfully-extracted targeted fields (raw LLM
@@ -1909,6 +2102,7 @@ def extract_preprocessing(
         coverage.fields,
         coverage.software,
         (coverage.step_order, coverage.step_order_spans),
+        coverage.step_order_parts,
     )
     if motion_diag is not None:
         diagnostics.append(motion_diag)
@@ -1966,7 +2160,7 @@ def _apply_resolved_citations(
                 # the author's ruling 1 (2026-11-05): this field takes an inferred value only from a
                 # sourced KB entry, never from a resolved citation; it stays LEFT_MISSING here
                 continue
-            if inferred is not None and pf.extraction.status != "EXTRACTED":
+            if inferred is not None and pf.extraction.status not in STATED_STATUSES:
                 updates[fname] = type(pf)(
                     field_id=pf.field_id,
                     extraction=pf.extraction,  # unchanged

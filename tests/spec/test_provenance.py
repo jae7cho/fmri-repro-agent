@@ -398,3 +398,62 @@ def test_deferred_plus_inferred_default_accepted() -> None:
     )
     assert pf.inference.status == "INFERRED_DEFAULT"
     assert ProvenancedField[float].model_validate_json(pf.model_dump_json()) == pf
+
+
+# --- 0.7.0: Varied (DESIGN_applies_to.md Stage 1, fork A1, 2026-11-11) ---------------------------
+
+
+def _vspan() -> Span:
+    return Span(start=0, end=4, text="text")
+
+
+def test_varied_holds_parts_and_no_single_value() -> None:
+    from fmri_repro.spec.provenance import STATED_STATUSES, Variant, Varied
+
+    v = Varied[float](
+        variants=[
+            Variant[float](value=6.0, spans=[_vspan()], applies_to="ALFF", confidence=0.8),
+            Variant[float](value=4.0, spans=[_vspan()], applies_to="ReHo", confidence=0.8),
+        ]
+    )
+    pf = ProvenancedField[float](field_id="fwhm_mm", extraction=v, inference=NotApplicable())
+    assert pf.extraction.status == "VARIED" and not hasattr(pf.extraction, "value")
+    assert ProvenancedField[float].model_validate_json(pf.model_dump_json()) == pf
+    assert STATED_STATUSES == {"EXTRACTED", "VARIED"}
+
+
+def test_varied_rejects_all_repeats_and_a_stray_valueless_entry() -> None:
+    from fmri_repro.spec.provenance import COMPARED_MODELS, Variant, Varied
+
+    def var(value: float | None, applies_to: str) -> Variant[float]:
+        return Variant[float](value=value, spans=[_vspan()], applies_to=applies_to, confidence=0.8)
+
+    for bad in (
+        [var(6.0, "all")],
+        [var(6.0, "Part III"), var(4.0, "part III")],
+        [var(None, "ReHo")],
+        [var(None, COMPARED_MODELS), var(6.0, "ALFF")],
+    ):
+        with pytest.raises(ValidationError):
+            Varied[float](variants=bad)
+    with pytest.raises(ValidationError):
+        Varied[float](variants=[])
+    assert Varied[float](variants=[var(None, COMPARED_MODELS)]).variants[0].value is None
+
+
+def test_varied_couples_like_extracted() -> None:
+    from fmri_repro.spec.provenance import Variant, Varied
+
+    v = Varied[float](
+        variants=[Variant[float](value=6.0, spans=[_vspan()], applies_to="ALFF", confidence=0.8)]
+    )
+    with pytest.raises(ValidationError, match="VARIED requires inference=NOT_APPLICABLE"):
+        ProvenancedField[float](field_id="fwhm_mm", extraction=v, inference=LeftMissing(reason="x"))
+
+
+def test_normalize_applies_to() -> None:
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    assert normalize_applies_to("The Parts I\u2013II") == "parts i-ii"
+    assert normalize_applies_to("ALFF & fALFF.") == "alff and falff"
+    assert normalize_applies_to("  task - fMRI ") == "task-fmri"

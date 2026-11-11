@@ -6,10 +6,13 @@ model calls. Counts only; no rates.
 A label row is one paper x ``applies_to``. It is matched to the record by paper and applies_to:
 - one label row for the paper whose applies_to is "all" (or begins "all ") matches the record's one
   stream;
-- a paper with more than one label row on a sheet is multi-stream. Each row is scored against the
-  stream of the record that carries the same applies_to, and only when the record carries
-  applies_to at all; otherwise the row is "stream not separable", never matched to the record's
-  single value.
+- otherwise (more than one row on a sheet, or one row not for "all"), the paper's rows are scored as
+  one field by ``extractor_mvp.applies_to_scoring`` (DESIGN_applies_to.md §5, Stage 1, 2026-11-11):
+  a record holding one "all" value equal to one row's is **collapsed**; a record holding parts
+  where the label says "all" is **split**; otherwise each row is matched to the record's part whose
+  sentence overlaps the row's quote (fork E2: no alias list), and is scored against it, or is
+  **missed**. A record part that matches no row is spurious. "Equal" is the row's state and every
+  labelled value agreeing.
 
 Per row: the state, label vs record (the record's state is the report's own: ``cobidas.row_state``
 for the Spatial smoothing row, ``cobidas.kind_state`` for temporal filtering), and the values as
@@ -37,6 +40,13 @@ from pathlib import Path
 from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from extractor_mvp.applies_to_scoring import (
+    FieldScore,
+    LabelVariant,
+    PredictedVariant,
+    score_field,
+)
 
 REPO = Path(__file__).resolve().parents[2]
 LABELS = REPO / "ground_truth" / "smoothing_filtering_labels_v1.xlsx"
@@ -145,8 +155,9 @@ def validate_labels(rows: list[LabelRow]) -> list[tuple[str, str, str]]:
 
 
 def is_all(applies_to: str) -> bool:
-    a = applies_to.strip().lower()
-    return a == "all" or a.startswith("all ")
+    from extractor_mvp.applies_to_scoring import is_all as _is_all
+
+    return _is_all(applies_to)
 
 
 # --- records ------------------------------------------------------------------------------------
@@ -160,16 +171,50 @@ class StepView:
     values: dict[str, Any] = field(default_factory=dict)  # field -> EXTRACTED value
     asked: frozenset[str] = frozenset()  # fields the record's schema has on this step
     streams: dict[str, StepView] | None = None  # by applies_to, when the record carries it
+    applies_to: str = "all"  # a stream's part, in the record's words
+    quotes: tuple[str, ...] = ()  # the stream's sentences (value and applies_to quotes)
 
 
 def _carries_applies_to(step_json: dict[str, Any] | None) -> bool:
-    """A record written before DESIGN_applies_to.md carries none; any field with the key counts."""
+    """A record written before DESIGN_applies_to.md carries none: a field whose extraction is
+    VARIED (0.7.0) counts."""
     if not step_json:
         return False
     return any(
-        isinstance(v, dict) and "applies_to" in (v.get("extraction") or {})
+        isinstance(v, dict) and (v.get("extraction") or {}).get("status") == "VARIED"
         for v in step_json.values()
     )
+
+
+def _streams(kind: str, rows: list[Any], base: StepView) -> dict[str, StepView]:
+    """A step's parts (0.7.0): one view per part under the same-string rule. A VARIED field gives
+    each part its own value; a field stated for all data gives every part its value. A part whose
+    ``performed`` is no is stated_not_performed; one with any value, reported."""
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    streams: dict[str, StepView] = {}
+    shared = {k: v for k, v in base.values.items()}
+    for r in rows:
+        if r.group != kind or r.state != "VARIED":
+            continue
+        param = r.path.split(".", 1)[1]
+        for v in r.variants or []:
+            key = normalize_applies_to(v.applies_to)
+            view = streams.setdefault(
+                key, StepView(base.state, dict(shared), base.asked, None, v.applies_to)
+            )
+            view.quotes = (*view.quotes, v.span_text) + (
+                (v.applies_to_span_text,) if v.applies_to_span_text else ()
+            )
+            if v.value is None:
+                view.state = "not_reported"  # fork C2: no value for any one compared model
+                continue
+            view.values[param] = _plain(v.value)
+            if param == "performed":
+                view.state = "stated_not_performed" if v.value is False else "reported"
+    for view in streams.values():
+        view.values.pop("performed", None)
+    return streams
 
 
 def record_steps(record: dict[str, Any]) -> dict[str, StepView]:
@@ -198,13 +243,10 @@ def record_steps(record: dict[str, Any]) -> dict[str, StepView]:
             if r.group == kind and r.extraction_status == "EXTRACTED":
                 values[r.path.split(".", 1)[1]] = _plain(r.value)
         asked = frozenset(r.path.split(".", 1)[1] for r in rows if r.group == kind)
-        view = StepView(RECORD_TO_LABEL_STATE[st], values, asked)
+        quotes = tuple(r.span_text for r in rows if r.group == kind and r.span_text)
+        view = StepView(RECORD_TO_LABEL_STATE[st], values, asked, quotes=quotes)
         if _carries_applies_to(raw_steps.get(kind)):
-            # no stored record carries applies_to yet (DESIGN_applies_to.md is not built); reading
-            # its streams is built with it, and until then such a record is never scored silently
-            raise NotImplementedError(
-                f"{kind} carries applies_to; per-stream reading is not built (DESIGN_applies_to.md)"
-            )
+            view.streams = _streams(kind, rows, view)
         out[kind] = view
     return out
 
@@ -321,34 +363,70 @@ def compare_filtering(
 @dataclass
 class Scored:
     row: LabelRow
-    outcome: str  # "scored" | "stream not separable" | "no record"
+    outcome: str  # "scored" | "collapsed" | "split" | "missed" | "no record"
     record_state: str | None = None
     values: dict[str, str] = field(default_factory=dict)
+    #: the paper's field outcome on this sheet when it was scored as variants (applies_to_scoring)
+    scope: FieldScore | None = None
 
     @property
     def state_agrees(self) -> bool | None:
         return None if self.record_state is None else self.record_state == self.row.state
 
 
+def _equal(view: StepView, row: LabelRow) -> bool:
+    """A record view equals a label row: the state agrees and every labelled value agrees. A value
+    the record's schema did not have (``pass_type`` before 0.6.3) is no evidence either way and is
+    skipped; a value the record lacks, or one in another unit or measure, is not equal."""
+    if view.state != row.state:
+        return False
+    compare = compare_smoothing if row.sheet == "Smoothing" else compare_filtering
+    outcomes = compare(row.values, view.values, view.asked)
+    return all(o in _NEUTRAL_FOR_EQUALITY for o in outcomes.values())
+
+
+_NEUTRAL_FOR_EQUALITY = frozenset({"agree", "not labelled", "not asked in this record's schema"})
+
+
 def score(labels: list[LabelRow], records: dict[str, dict[str, StepView]]) -> list[Scored]:
-    per_paper_sheet = Counter((r.paper_id, r.sheet) for r in labels)
-    out: list[Scored] = []
+    groups: dict[tuple[str, str], list[LabelRow]] = {}
     for r in labels:
-        steps = records.get(r.paper_id)
+        groups.setdefault((r.paper_id, r.sheet), []).append(r)
+    scored: dict[int, Scored] = {}
+    for (paper, sheet), rows in groups.items():
+        steps = records.get(paper)
         if steps is None:
-            out.append(Scored(r, "no record"))
+            for r in rows:
+                scored[id(r)] = Scored(r, "no record")
             continue
-        view = steps[_STEP[r.sheet]]
-        multi = per_paper_sheet[(r.paper_id, r.sheet)] > 1 or not is_all(r.applies_to)
-        if multi:
-            stream = (view.streams or {}).get(r.applies_to.strip().lower())
-            if stream is None:
-                out.append(Scored(r, "stream not separable"))
+        view = steps[_STEP[sheet]]
+        compare = compare_smoothing if sheet == "Smoothing" else compare_filtering
+        if len(rows) == 1 and is_all(rows[0].applies_to) and not view.streams:
+            r = rows[0]
+            scored[id(r)] = Scored(
+                r, "scored", view.state, compare(r.values, view.values, view.asked)
+            )
+            continue
+        parts = list((view.streams or {}).values()) or [view]
+        preds = [PredictedVariant(p.applies_to, p, p.quotes) for p in parts]
+        fs = score_field(
+            [LabelVariant(r.applies_to, r, r.quote) for r in rows],
+            preds,
+            equal=lambda pv, lr: _equal(pv, lr),
+        )
+        if fs.outcome in ("collapsed", "split"):
+            for r in rows:
+                scored[id(r)] = Scored(r, fs.outcome, view.state, scope=fs)
+            continue
+        for r, hit in zip(rows, fs.matches, strict=True):
+            if hit is None:
+                scored[id(r)] = Scored(r, "missed", scope=fs)
                 continue
-            view = stream
-        compare = compare_smoothing if r.sheet == "Smoothing" else compare_filtering
-        out.append(Scored(r, "scored", view.state, compare(r.values, view.values, view.asked)))
-    return out
+            part = parts[hit]
+            scored[id(r)] = Scored(
+                r, "scored", part.state, compare(r.values, part.values, part.asked), scope=fs
+            )
+    return [scored[id(r)] for r in labels]
 
 
 def papers_scored(results: list[Scored], sheet: str) -> list[str]:
@@ -416,15 +494,46 @@ def render(results: list[Scored], results_dir: str) -> str:
         lines.append(f"Papers scored on {sheet}: {len(papers_scored(results, sheet))}")
         lines.append("")
         lines += _counts(rows)
+        lines += _scope_section(rows)
     return "\n".join(lines).rstrip() + "\n"
+
+
+def _scope_section(rows: list[Scored]) -> list[str]:
+    """Per paper scored as variants: its field outcome and the variant counts (DESIGN_applies_to.md
+    §5: reported beside the field-level outcome, never instead of it). Counts and classes only."""
+    seen: dict[str, Scored] = {}
+    for s in rows:
+        if s.scope is not None:
+            seen.setdefault(s.row.paper_id, s)
+    if not seen:
+        return []
+    out = [
+        "Scope (papers whose labels carry parts, or whose record does; DESIGN_applies_to.md §5):",
+        "",
+        "| paper | field outcome | label variants | matched correct | matched wrong | missed "
+        "| spurious |",
+        "|---|---|---|---|---|---|---|",
+    ]
+    for pid in sorted(seen):
+        fs = seen[pid].scope
+        assert fs is not None
+        n_labels = sum(1 for s in rows if s.row.paper_id == pid)
+        c = Counter(cls for _, cls in fs.label_classes)
+        out.append(
+            f"| {pid} | {fs.outcome} | {n_labels} | {c['matched_correct']} | "
+            f"{c['matched_wrong']} | {c['missed']} | {len(fs.spurious)} |"
+        )
+    out.append("")
+    return out
 
 
 def _counts(rows: list[Scored]) -> list[str]:
     out = ["Counts by class and label state (rows):", ""]
     out.append(
-        "| class | label state | state agrees | state disagrees | stream not separable | no record |"
+        "| class | label state | state agrees | state disagrees | collapsed | split | missed "
+        "| no record |"
     )
-    out.append("|---|---|---|---|---|---|")
+    out.append("|---|---|---|---|---|---|---|---|")
     for cls in CLASS_ORDER:
         mine = [s for s in rows if contamination_class(s.row.paper_id) == cls]
         for st in LABEL_STATES:
@@ -436,8 +545,8 @@ def _counts(rows: list[Scored]) -> list[str]:
                 for s in here
             )
             out.append(
-                f"| {cls} | {st} | {c['agree']} | {c['disagree']} | "
-                f"{c['stream not separable']} | {c['no record']} |"
+                f"| {cls} | {st} | {c['agree']} | {c['disagree']} | {c['collapsed']} | "
+                f"{c['split']} | {c['missed']} | {c['no record']} |"
             )
     out.append("")
     return out

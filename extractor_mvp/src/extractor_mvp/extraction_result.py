@@ -13,7 +13,7 @@ provenance.py is FROZEN. This module does not import it.
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, model_validator
 
@@ -62,4 +62,47 @@ class FieldExtractionResult(BaseModel):
                 )
             if self.value is not None or self.verbatim_quote is not None:
                 raise ValueError("status='deferred' must not set value or verbatim_quote.")
+        return self
+
+
+class VariantResult(BaseModel):
+    """One value the paper states for a part of its data (DESIGN_applies_to.md, 2026-11-11).
+    ``applies_to`` is the paper's own words for the part; ``applies_to_quote`` is the sentence that
+    ties the value to the part, when it is not the value's own sentence. ``value`` is null only on
+    the single "varied across compared models" entry."""
+
+    value: str | None = None
+    verbatim_quote: str
+    applies_to: str
+    applies_to_quote: str | None = None
+
+
+class StepFieldResult(FieldExtractionResult):
+    """A step field's output: the three statuses plus ``varied`` (fork A1), for the extraction,
+    temporal/volume and spatial calls only. Every other call keeps :class:`FieldExtractionResult`,
+    so its schema is unchanged."""
+
+    status: Literal["extracted", "missing", "deferred", "varied"]  # type: ignore[assignment]
+    variants: list[VariantResult] = []
+
+    @model_validator(mode="before")
+    @classmethod
+    def _a_three_state_result(cls, data: Any) -> Any:
+        """A :class:`FieldExtractionResult` (a stub, a fixture, another call's answer) is read as
+        its fields: the three states are a subset of these four. Adds nothing to the JSON schema."""
+        if isinstance(data, FieldExtractionResult) and not isinstance(data, StepFieldResult):
+            return data.model_dump()
+        return data
+
+    @model_validator(mode="after")
+    def enforce_varied_constraints(self) -> StepFieldResult:
+        if self.status == "varied":
+            if not self.variants:
+                raise ValueError("status='varied' requires variants.")
+            if self.value is not None or self.verbatim_quote is not None:
+                raise ValueError("status='varied' carries its values in variants, not value.")
+            if self.deferral_sentence is not None or self.ref_string is not None:
+                raise ValueError("status='varied' must not set deferral fields.")
+        elif self.variants:
+            raise ValueError("variants are set only with status='varied'.")
         return self

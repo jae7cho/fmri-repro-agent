@@ -11,9 +11,13 @@ sentence does not resolve is shown as an unverified verdict and has no effect.
 a checking column, saying so. A ``wrong`` verdict demotes the drafted value to a flag in the report
 (the renderer's job); the extraction arm in the JSON is untouched.
 
-It also carries the record-level ``multiple_pipelines`` question, re-worded (F3a): does this paper
-preprocess its own data in more than one way -- a benchmark of denoising strategies run on the
-same data excluded -- and, per software mention, whether it was used for preprocessing (F1d).
+Per software mention, it also says whether the software was used for preprocessing (F1d).
+
+2026-11-11 (DESIGN_applies_to.md Stage 1, fork F1): it judges ``applies_to`` as part of the value. A
+field whose value differs by what it applies to is one draft line per part, ``<field>[<part>]``;
+"wrong" when the value does not hold for the part named, "missed" when the paper ties a value to a
+part the draft gives for all data. This replaces the record-level ``multiple_pipelines`` question,
+which is no longer asked; a stored record keeps the answer it was given.
 
 Caveat recorded with the design: the verifier is a second draw from the same model family as the
 drafter; its verdicts are spot-checked against the author's reading before anyone trusts them.
@@ -29,8 +33,6 @@ from typing import Any
 from pydantic import BaseModel, Field, field_validator
 
 from extractor_mvp.cobidas import COBIDAS_D3_ROWS
-from extractor_mvp.coverage_fields import RECORD_SPECS
-from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.prompt_rules import CHECKING_RULES
 from extractor_mvp.span_resolver import resolve_quote
@@ -48,16 +50,25 @@ the draft line by line.
 State is one of: extracted (the drafter took a value from the paper), deferred (the drafter says
 the paper sends the reader to a citation), not reported (the drafter found nothing), unverifiable
 (the drafter found something it could not check).
+A line whose field ends in `[<part>]` gives the value for that part of the paper's data only (a
+derived measure, an analysis or part of the paper, a data type, a scanner or site, or a named
+preprocessing variant, in the paper's words). A line without `[...]` gives a value for ALL of the
+paper's data.
 
 ## Your verdict for EVERY line
-- "supported": the value, or the gap, is right for THIS field.
-- "wrong": the value is not what the paper says for this field. Typical: the sentence is about the
-  structural (T1/T2) image's own preprocessing but the field is about the functional (BOLD) data;
+- "supported": the value, or the gap, is right for THIS field (and, on a `[<part>]` line, for that
+  part).
+- "wrong": the value is not what the paper says for this field; on a `[<part>]` line, also when the
+  value does not hold for the part named. Typical: the sentence is about the structural (T1/T2)
+  image's own preprocessing but the field is about the functional (BOLD) data;
   the sentence describes covariates of a first-level statistical model (task regressors, motion or
   trend covariates in the GLM), which are analysis, not preprocessing; the sentence is about a
   different step; the value overstates the sentence (e.g. a specific variant the sentence does not
   name); a "not performed" the paper does not state.
-- "missed": the draft has a gap (not reported / unverifiable) but the methods text states it.
+- "missed": the draft has a gap (not reported / unverifiable) but the methods text states it; or the
+  line has no `[...]` and the paper ties the value to a part of its data (it states a different
+  value, or no value, for another part), in which case better_value = each part and its value, in
+  the paper's words.
 For "wrong" and "missed": better_value = what the field should say, in the paper's words (or
 "not reported" when a value should not be there); relied_on = the sentence YOU relied on, copied
 EXACTLY from the methods text. For "supported": relied_on may repeat the drafter's sentence.
@@ -79,15 +90,6 @@ analysis: registration, segmentation, brain extraction, bias-field correction, m
 denoising, ...), false if only for a structural-only analysis, statistics, visualization,
 prediction or stimulus presentation.
 
-## More than one preprocessing variant (a record-level question)
-multiple_pipelines: "yes" only if the paper PREPROCESSES ITS OWN DATA IN MORE THAN ONE WAY -- for
-  example separate task and rest preprocessing branches, or a main pipeline and an alternative
-  whose results are reported. A comparison or benchmark of several denoising or preprocessing
-  strategies applied to the same data, as the object of study, is NOT this (answer missing).
-  verbatim_quote = the sentence that shows it. "missing" otherwise. Never "no", never "deferred".
-pipeline_variant_count: when multiple_pipelines is "yes", the number of variants as an integer
-  string, with the sentence that lets it be counted; "missing" otherwise.
-
 ## Preprocessing statements no draft line captures (added 2026-11-02)
 unplaced: a list of the preprocessing statements in the methods text -- in the scope above -- that
 NO draft line captures: a step, a parameter, a threshold, a filter, a branch of the pipeline that
@@ -97,7 +99,7 @@ is done, in a few words; relied_on = the sentence, copied EXACTLY from the metho
 COBIDAS D.3 row it would belong to, one of: {rows}; or "no row" when none fits. An empty list when
 the draft captures everything. This list never changes a field.
 
-Every quoted sentence (relied_on, verbatim_quote) must be copied EXACTLY from the methods text.
+Every quoted sentence (relied_on) must be copied EXACTLY from the methods text.
 
 """
     + CHECKING_RULES
@@ -112,10 +114,6 @@ Drafted report (one line per field):
 \"\"\"
 """
 )
-
-
-def _missing_field() -> FieldExtractionResult:
-    return FieldExtractionResult(status="missing")
 
 
 class FieldVerdict(BaseModel):
@@ -147,8 +145,6 @@ class VerifierExtraction(BaseModel):
     fields: list[FieldVerdict] = Field(default_factory=list)
     unplaced: list[UnplacedStatement] = Field(default_factory=list)
     software: list[SoftwareVerdict] = Field(default_factory=list)
-    multiple_pipelines: FieldExtractionResult = Field(default_factory=_missing_field)
-    pipeline_variant_count: FieldExtractionResult = Field(default_factory=_missing_field)
 
     @field_validator("fields", "unplaced", "software", mode="before")
     @classmethod
@@ -185,6 +181,10 @@ def compact_draft(preprocessing: Any) -> str:
     for r in flatten(preprocessing):
         if r.left_missing_reason == "not_targeted_by_mvp":
             continue
+        if r.state == "VARIED":
+            # fork F1 (2026-11-11): one line per part, so each is judged as part of the value
+            lines.extend(_variant_draft_lines(r))
+            continue
         if r.state == "EXTRACTED":
             state, value = "extracted", _fmt(r.value)
         elif r.state == "DEFERRED_TO_CITATION":
@@ -218,8 +218,31 @@ def compact_draft(preprocessing: Any) -> str:
         quotes = json_safe(
             " ".join(" ".join(sp.text.split()) for sp in preprocessing.step_order_spans or [])
         )
-        lines.append(f'step_order | {source} | {order} | quote: "{quotes}" | reason: ')
+        if source != "by_part":
+            lines.append(f'step_order | {source} | {order} | quote: "{quotes}" | reason: ')
+    for part in getattr(preprocessing, "step_order_parts", None) or []:
+        quotes = json_safe(" ".join(" ".join(sp.text.split()) for sp in part.spans))
+        lines.append(
+            f"step_order[{part.applies_to}] | extracted | {', '.join(part.kinds)} | "
+            f'quote: "{quotes}" | reason: '
+        )
     return "\n".join(lines)
+
+
+def _variant_draft_lines(r: Any) -> list[str]:
+    """A VARIED row's draft lines: ``<field>[<part>]``, its value and its own quote."""
+    from extractor_mvp.citation_hop import json_safe
+    from extractor_mvp.render import _variant_value, variant_key
+
+    out = []
+    for v in r.variants or []:
+        quote = json_safe(" ".join(v.span_text.split()))
+        reason = "" if v.verified else "the words for the part are not in the quote"
+        out.append(
+            f"{variant_key(r.path, v.applies_to)} | extracted | {_variant_value(r, v)} | "
+            f'quote: "{quote}" | reason: {reason}'
+        )
+    return out
 
 
 #: The rows an unplaced statement may name: every D.3 preprocessing row id, then "no row".
@@ -287,24 +310,6 @@ def _normalise(verdict: str) -> str | None:
         if v.startswith(known):
             return known
     return None
-
-
-def _record_field(fe: FieldExtractionResult, spec: Any, text: str) -> dict[str, Any]:
-    from extractor_mvp.extractor import _process_field
-
-    pf, _diag, _deferral = _process_field(
-        spec.field_id,
-        f"record.{spec.field_id}",
-        fe,
-        None,
-        spec.t,
-        text,
-        None,
-        use_synonym_table=False,
-        value_kind=spec.value_kind,
-    )
-    dumped: dict[str, Any] = pf.model_dump(mode="json")
-    return dumped
 
 
 def run_verifier(
@@ -385,17 +390,6 @@ def run_verifier(
         sv.name: sv.preprocessing_use for sv in raw.software if sv.preprocessing_use is not None
     }
     unplaced = [_unplaced_record(u, text) for u in raw.unplaced if u.statement.strip()]
-    specs = {s.field_id: s for s in RECORD_SPECS}
-    multiple = {
-        "V": {
-            "multiple_pipelines": _record_field(
-                raw.multiple_pipelines, specs["multiple_pipelines"], text
-            ),
-            "pipeline_variant_count": _record_field(
-                raw.pipeline_variant_count, specs["pipeline_variant_count"], text
-            ),
-        }
-    }
     return (
         drop_same_order_verdict(
             {
@@ -404,7 +398,9 @@ def run_verifier(
                 "wall_time_s": round(time.perf_counter() - t0, 3),
                 "fields": fields,
                 "software": software,
-                "multiple_pipelines": multiple,
+                # fork F1 (2026-11-11): no longer asked; the key stays so stored and new records
+                # share one shape, and the render derives the variants line from the values
+                "multiple_pipelines": None,
                 "unplaced": unplaced,
                 "n_draft_lines": len(known_fields),
                 "read": read,

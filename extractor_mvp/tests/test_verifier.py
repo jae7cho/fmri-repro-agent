@@ -196,26 +196,15 @@ def test_a_failing_verifier_never_fails_the_paper() -> None:
     assert "Checking pass: unavailable — no field was checked" in report
 
 
-def test_multiple_pipelines_is_asked_here_and_a_benchmark_wording_is_in_the_prompt() -> None:
-    quote = "Task and rest data were preprocessed separately in two branches."
-    _, record, report = _run(
-        verifier=VerifierExtraction(
-            multiple_pipelines=_ex("yes", quote),
-            pipeline_variant_count=_ex(
-                "2",
-                "Two preprocessing variants were compared: with and without global signal "
-                "regression (n = 2).",
-            ),
-        )
-    )
-    assert record["multiple_pipelines"]["V"]["multiple_pipelines"]["extraction"]["value"] is True
-    assert (
-        "> ⚠ More than one preprocessing variant is described — checking pass: yes, count 2"
-        in report
-    )
-    assert "PREPROCESSES ITS OWN DATA IN MORE THAN ONE WAY" in VERIFIER_PROMPT
-    assert "benchmark of several denoising or preprocessing" in VERIFIER_PROMPT
-    # the coverage calls no longer ask it (F3a)
+def test_multiple_pipelines_is_asked_nowhere_now() -> None:
+    """2026-11-11 (DESIGN_applies_to.md, fork F1): the record-level question is gone from the checking
+    pass, as it left the coverage calls on 2026-10-29 (F3a); a record's variants are read off its
+    values (tests/test_applies_to.py). A stored answer still renders (the same file)."""
+    _, record, report = _run()
+    assert record["multiple_pipelines"] is None
+    assert "More than one preprocessing variant" not in report
+    assert "multiple_pipelines" not in VERIFIER_PROMPT
+    assert "multiple_pipelines" not in VerifierExtraction.model_fields
     assert "multiple_pipelines" not in SpatialExtraction.model_fields
     assert "multiple_pipelines" not in TemporalVolumeExtraction.model_fields
 

@@ -319,8 +319,8 @@ def _apply_param_result(
     current_pf: ProvenancedField | None = getattr(step, field_name, None)
     if current_pf is None:
         return
-    if current_pf.extraction.status == "EXTRACTED":
-        return
+    if current_pf.extraction.status in ("EXTRACTED", "VARIED"):
+        return  # 0.7.0: values the paper states for parts of its data are stated too
 
     if isinstance(result.value, ConditionalParam):
         _apply_conditional(preprocessing, step, field_name, result.value, current_pf)

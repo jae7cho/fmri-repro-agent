@@ -29,6 +29,7 @@ from extractor_mvp.render import (
     DEFERRED_TO_CITATION,
     EXTRACTED,
     INFERRED_DEFAULT,
+    VARIED,
     FieldRow,
     _fmt_value,
     flatten,
@@ -175,6 +176,15 @@ def _row_arg(
         )
     if row.state == EXTRACTED:
         return _Arg(name, _literal(row.value), "E", f"«{clip(row.span_text)}»")
+    if row.state == VARIED:
+        # one block for the whole paper: every part's value, the paper's words for each part
+        variants = row.variants or []
+        if len(variants) == 1 and variants[0].value is None:
+            return _Arg(
+                name, '"varied across compared models"', "E", f"«{clip(variants[0].span_text)}»"
+            )
+        text = ", ".join(f"{_clean(v.applies_to)}: {_literal(v.value)}" for v in variants)
+        return _Arg(name, f"varies({text})", "E", f"«{clip(variants[0].span_text)}»")
     if row.state == INFERRED_DEFAULT:
         note = getattr(row.basis, "note", None) or getattr(row.basis, "citation", None)
         if row.basis_type == "prior_publication":
@@ -255,6 +265,36 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
     return args, set(MOTION_SUB_ITEMS)
 
 
+def _for_part(row: FieldRow, part: str | None) -> FieldRow | None:
+    """A VARIED row as one part sees it (DESIGN_applies_to.md, 2026-11-11): that part's variant as
+    an EXTRACTED row, or None when the field states nothing for the part. Any other row as is. With
+    no part (one block), a VARIED row stays VARIED."""
+    if row.state != VARIED or part is None:
+        return row
+    from dataclasses import replace
+
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    v = next((v for v in row.variants or [] if normalize_applies_to(v.applies_to) == part), None)
+    if v is None:
+        return None
+    return replace(row, state=EXTRACTED, value=v.value, span_text=v.span_text, variants=None)
+
+
+def _parts(rows: list[FieldRow]) -> dict[str, str]:
+    """The parts the record's values are tied to: normalized key -> the paper's words (first
+    spelling). The compared-models entry (fork C2) is not a part: it describes no one model."""
+    from fmri_repro.spec.provenance import COMPARED_MODELS, normalize_applies_to
+
+    out: dict[str, str] = {}
+    for r in rows:
+        for v in r.variants or [] if r.state == VARIED else []:
+            key = normalize_applies_to(v.applies_to)
+            if key != COMPARED_MODELS:
+                out.setdefault(key, v.applies_to)
+    return out
+
+
 def _step_line(
     step: Any,
     rows: list[FieldRow],
@@ -262,9 +302,12 @@ def _step_line(
     hops: dict[str, tuple[Any, str, str | None]],
     resolution: dict[str, Any] | None,
     applied: dict[str, dict[str, str]] | None = None,
+    part: str | None = None,
 ) -> str:
     kind = step.kind
-    mine = [r for r in rows if r.group == kind]
+    seen = [(r, _for_part(r, part)) for r in rows if r.group == kind]
+    unstated = {r.path for r, view in seen if view is None}
+    mine = [view if view is not None else r for r, view in seen]
     performed = next((r for r in mine if r.path == f"{kind}.performed"), None)
     if performed is not None and performed.state == EXTRACTED and performed.value is False:
         return f"{kind}()  [x]  # «{clip(performed.span_text)}»"
@@ -280,6 +323,9 @@ def _step_line(
             continue  # the call itself says the step was performed
         if name in covered:
             continue  # the resolution call's answer replaces the field
+        if r.path in unstated:
+            args.append(_Arg(name, "?", "?", "not stated for this part"))
+            continue
         arg = _row_arg(r, name, supplied, hops)
         if (
             arg is not None
@@ -531,7 +577,20 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
     lines = _header(record, prep)
     streams = _streams(record)
     n = _variants(record)
-    if streams:
+    parts = _parts(rows)
+    blocks: list[tuple[str, list[int]]]
+    part_keys: list[str | None] = []
+    if parts:
+        # 0.7.0: one block per part the values are tied to, each field at that part's value
+        lines.append(
+            "# note: values differ by what they apply to; one block per part, "
+            "a field stated for all data appears in every block"
+        )
+        blocks = [
+            (f"applies to: {words}", list(range(len(prep.steps)))) for words in parts.values()
+        ]
+        part_keys = list(parts)
+    elif streams:
         blocks = [(f"stream: {label}", idx) for label, idx in streams.items()]
     else:
         if n and n > 1:
@@ -540,14 +599,15 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
                 "them by stream (no applies_to), so one block is shown"
             )
         blocks = [("", list(range(len(prep.steps))))]
-    for label, idx in blocks:
+    for b, (label, idx) in enumerate(blocks):
         lines.append("")
         if label:
             lines.append(f"# --- {label}")
+        part = part_keys[b] if part_keys else None
         for i in idx:
             lines.append(
                 _step_line(
-                    prep.steps[i], rows, supplied, hops, resolution, record.get("applied_by")
+                    prep.steps[i], rows, supplied, hops, resolution, record.get("applied_by"), part
                 )
             )
     lines.extend(_release_defaults(record))

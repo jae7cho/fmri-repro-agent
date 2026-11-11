@@ -76,6 +76,7 @@ from fmri_repro.spec.provenance import (
     Basis,
     NotApplicable,
     ProvenancedField,
+    Varied,
 )
 
 from extractor_mvp.cobidas import (
@@ -99,6 +100,9 @@ DEFERRED_TO_CITATION = "DEFERRED_TO_CITATION"
 MISSING_FROM_PAPER = "MISSING_FROM_PAPER"
 LEFT_MISSING = "LEFT_MISSING"
 BASE_NOT_APPLICABLE = "BASE_NOT_APPLICABLE"
+#: 0.7.0 (DESIGN_applies_to.md, 2026-11-11): the paper states the field differently for different
+#: parts of its data; the row carries ``variants`` and no single value.
+VARIED = "VARIED"
 
 #: Display-state order used for the to_field_table header counts (stable, exhaustive).
 _STATE_ORDER: tuple[str, ...] = (
@@ -108,6 +112,7 @@ _STATE_ORDER: tuple[str, ...] = (
     MISSING_FROM_PAPER,
     LEFT_MISSING,
     BASE_NOT_APPLICABLE,
+    VARIED,
 )
 
 #: Condensed labels for to_field_bullets, for the states that carry a value or a
@@ -120,9 +125,24 @@ _SHORT_LABEL: dict[str, str] = {
     INFERRED_DEFAULT: "inferred",
     DEFERRED_TO_CITATION: "deferred",
     BASE_NOT_APPLICABLE: "not applicable (from-scratch)",
+    VARIED: "differs by what it applies to",
 }
 
 _SPAN_QUOTE_MAX = 80
+
+
+@dataclass
+class VariantRow:
+    """One variant of a VARIED field (DESIGN_applies_to.md §4): the part in the paper's words, its
+    value, its quote, and whether the part's words were found."""
+
+    applies_to: str
+    verified: bool
+    value: Any
+    span_text: str
+    span_recovered: bool = False
+    span_repairs: list[str] | None = None
+    applies_to_span_text: str | None = None
 
 
 @dataclass
@@ -154,6 +174,25 @@ class FieldRow:
     # corrupted-source tolerant tier repaired mangled PDF text. Carried to the report because a
     # span located by repair is weaker evidence than a clean match, and a flag no surface reads
     # is not a disclosure (the field shipped in v0.4.0 with no consumer).
+    #: VARIED only: the variants, and how many the extractor dropped because they did not check.
+    variants: list[VariantRow] | None = None
+    variants_dropped: int = 0
+
+    @property
+    def coverage_status(self) -> str | None:
+        """The extraction status coverage and completeness count (fork D1): a VARIED field counts
+        under its weakest variant -- EXTRACTED when every variant is, else a gap whose reason is in
+        ``left_missing_reason``. Every other row, its extraction status."""
+        if self.extraction_status != VARIED:
+            return self.extraction_status
+        return EXTRACTED if not self.left_missing_reason else MISSING_FROM_PAPER
+
+    @property
+    def tally_state(self) -> str:
+        """The display state the completeness header counts: :attr:`coverage_status` for VARIED."""
+        if self.state != VARIED:
+            return self.state
+        return EXTRACTED if not self.left_missing_reason else MISSING_FROM_PAPER
 
 
 # ---------------------------------------------------------------------------
@@ -187,6 +226,8 @@ def _display_state(extraction_status: str, inference_status: str) -> str:
     """Collapse the coupled (extraction, inference) pair to one display state."""
     if extraction_status == "EXTRACTED":
         return EXTRACTED
+    if extraction_status == VARIED:
+        return VARIED
     if inference_status == "INFERRED_DEFAULT":
         return INFERRED_DEFAULT
     if extraction_status == "DEFERRED_TO_CITATION":
@@ -224,6 +265,25 @@ def _row_from_field(
         row.span_recovered = bool(getattr(ext, "span_recovered", False))
         repairs = list(getattr(ext.spans[0], "repairs", None) or [])
         row.span_repairs = repairs or None
+    if isinstance(ext, Varied):
+        row.variants = [
+            VariantRow(
+                applies_to=v.applies_to,
+                verified=v.applies_to_verified,
+                value=v.value,
+                span_text=v.spans[0].text,
+                span_recovered=v.span_recovered,
+                span_repairs=list(getattr(v.spans[0], "repairs", None) or []) or None,
+                applies_to_span_text=v.applies_to_spans[0].text if v.applies_to_spans else None,
+            )
+            for v in ext.variants
+        ]
+        row.variants_dropped = ext.variants_dropped
+        # fork D1: the weakest variant's state, as a gap reason the coverage and the header read
+        if any(v.value is None for v in ext.variants):
+            row.left_missing_reason = "varied_across_compared_models"
+        elif not all(v.applies_to_verified for v in ext.variants):
+            row.left_missing_reason = "applies_to_unverified"
     if ext.status in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION"):
         row.searched_terms = list(ext.searched_terms)
     if ext.status == "DEFERRED_TO_CITATION":
@@ -391,6 +451,8 @@ def _fmt_field_text(row: FieldRow) -> str:
         return _reason_detail(row)
     if row.state == BASE_NOT_APPLICABLE:
         return "not applicable (from-scratch)"
+    if row.state == VARIED:
+        return "differs by what it applies to: " + _variants_summary(row)
     return ""
 
 
@@ -446,6 +508,8 @@ def _fmt_value_suffix(row: FieldRow) -> str:
         return f" {_fmt_row_value(row)}"
     if row.state == DEFERRED_TO_CITATION and row.deferral_refs:
         return f" ({', '.join(row.deferral_refs)})"
+    if row.state == VARIED:
+        return f" ({_variants_summary(row)})"
     return ""
 
 
@@ -529,6 +593,13 @@ _REASON_BUCKET: dict[str, str] = {
     "value_not_boolean": "unmappable",
     "performed_cannot_defer": "not_covered",  # 2026-10-29: the post-check; unverifiable, not absent
     "operation_word_not_value": "not_covered",  # 2026-11-02: names the operation, not a convention
+    # DESIGN_applies_to.md (2026-11-11). A field with variants is counted under its weakest variant
+    # (fork D1): a part named in words the quotes do not contain is unverifiable; the single
+    # compared-models entry (fork C2) has no value for any one model, its own bucket. A varied
+    # answer none of whose variants checked is the extractor's evidence, not the paper's silence.
+    "applies_to_unverified": "not_covered",
+    "varied_across_compared_models": "varied_models",
+    "varied_no_variant_checked": "not_covered",
 }
 
 #: Per-field callout wording by base reason (source-absence vs extractor limitation).
@@ -604,6 +675,17 @@ _REASON_LINE: dict[str, str] = {
     "operation_word_not_value": (
         "the quoted sentence names the operation but no convention — check the source yourself"
     ),
+    "applies_to_unverified": (
+        "the paper states values for parts of its data; the words for a part were not found in "
+        "its sentences — check the source yourself"
+    ),
+    "varied_across_compared_models": (
+        "varies across the models the paper compares; no single pipeline is described"
+    ),
+    "varied_no_variant_checked": (
+        "the extractor returned values for parts of the data and none of their quotes checked — "
+        "check the source yourself"
+    ),
 }
 
 #: Completeness-header gap buckets: (bucket key, display label), fixed order, non-zero only.
@@ -612,6 +694,7 @@ _BUCKET_HEADER: tuple[tuple[str, str], ...] = (
     ("unmappable", "reported but unmappable to controlled vocabulary"),
     ("not_covered", "not covered by extractor"),
     ("not_applicable", "not applicable (step stated as not performed)"),
+    ("varied_models", "varied across compared models"),
     ("unclassified", "unclassified"),
 )
 
@@ -821,6 +904,137 @@ def _multiple_pipelines_line(answers: dict[str, Any] | None) -> str | None:
     if not parts:
         return None
     return "> ⚠ More than one preprocessing variant is described — " + "; ".join(parts)
+
+
+# --- Values that differ by what they apply to (DESIGN_applies_to.md §4, 2026-11-11) ---------------
+
+_APPLIES_TO_UNVERIFIED = "(what it applies to was not found in the text, unverified)"
+
+
+def variant_key(path: str, applies_to: str) -> str:
+    """The id of one variant's line, in the draft the checking pass reads and in its verdicts."""
+    return f"{path}[{applies_to}]"
+
+
+def _variant_value(row: FieldRow, v: VariantRow) -> str:
+    if v.value is None:
+        return "no single value"
+    if row.path.endswith(".performed") and isinstance(v.value, bool):
+        return "performed" if v.value else "not performed"
+    return _fmt_row_value(_ValueOnly(row.path, v.value))
+
+
+@dataclass
+class _ValueOnly:
+    path: str
+    value: Any
+
+
+def _variants_summary(row: FieldRow) -> str:
+    return "; ".join(f"{v.applies_to}: {_variant_value(row, v)}" for v in row.variants or [])
+
+
+def _not_performed_parts(rows: list[FieldRow], kind: str) -> list[VariantRow]:
+    """The parts the step's ``performed`` states as not performed, when ``performed`` varies: a
+    parameter of the step is "not performed" for those parts (chen_2015: ReHo is not smoothed)."""
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    performed = next((r for r in rows if r.path == f"{kind}.performed"), None)
+    if performed is None or performed.state != VARIED:
+        return []
+    seen: set[str] = set()
+    out = []
+    for v in performed.variants or []:
+        key = normalize_applies_to(v.applies_to)
+        if v.value is False and key not in seen:
+            seen.add(key)
+            out.append(v)
+    return out
+
+
+def _varied_lines(
+    row: FieldRow,
+    label: str,
+    verifier: dict[str, Any] | None,
+    not_performed: list[VariantRow] | None = None,
+) -> list[str]:
+    """A field with variants, in the citation hop's shape (render.py's second-hop variant lines):
+    the field, then one line per variant with its own state, quote and checking-pass verdict. A
+    part named in words the text does not contain says so. The single compared-models entry
+    (fork C2) is one line. Parts the step's ``performed`` states as not performed are added."""
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    variants = row.variants or []
+    if len(variants) == 1 and variants[0].value is None:
+        v = variants[0]
+        main = (
+            f"{label}: varies across the models the paper compares; no single value   "
+            f"[from paper]  «{_truncate_quote(v.span_text)}»"
+        )
+        probe = FieldRow(path=variant_key(row.path, v.applies_to), group=row.group, state=EXTRACTED)
+        return [_with_verdict(main, probe, verifier)]
+    out = [f"- {label}: differs by what it applies to"]
+    shown: set[str] = set()
+    for v in variants:
+        shown.add(normalize_applies_to(v.applies_to))
+        tag = (
+            "[from paper — quote matched after source-text repair]"
+            if v.span_recovered
+            else ("[from paper]")
+        )
+        main = f"{v.applies_to}: {_variant_value(row, v)}   {tag}  «{_truncate_quote(v.span_text)}»"
+        if not v.verified:
+            main += f"   {_APPLIES_TO_UNVERIFIED}"
+        probe = FieldRow(path=variant_key(row.path, v.applies_to), group=row.group, state=EXTRACTED)
+        out.append("    " + _with_verdict(main, probe, verifier))
+    if not row.path.endswith(".performed"):
+        for v in not_performed or []:
+            if normalize_applies_to(v.applies_to) not in shown:
+                out.append(
+                    f"    - {v.applies_to}: not performed   (the step is stated as not performed "
+                    f"for this part)  «{_truncate_quote(v.span_text)}»"
+                )
+    if row.variants_dropped:
+        out.append(
+            f"    - {row.variants_dropped} more stated value(s) not shown: their quote or value did "
+            "not check"
+        )
+    return out
+
+
+def _values_differ_line(rows: list[FieldRow], preprocessing: Any) -> str | None:
+    """The header line derived from the values (DESIGN_applies_to.md §4), replacing the stored
+    multiple_pipelines warning on a 0.7.0 record: every part a value is tied to, in the paper's
+    words (one spelling per part under the same-string rule), and the fields that differ. None
+    when every value applies to all."""
+    from fmri_repro.spec.provenance import normalize_applies_to
+
+    parts: dict[str, str] = {}
+    fields: list[str] = []
+    for r in rows:
+        if r.state != VARIED:
+            continue
+        fields.append(r.path)
+        for v in r.variants or []:
+            parts.setdefault(normalize_applies_to(v.applies_to), v.applies_to)
+    for p in getattr(preprocessing, "step_order_parts", None) or []:
+        parts.setdefault(normalize_applies_to(p.applies_to), p.applies_to)
+        if "step order" not in fields:
+            fields.append("step order")
+    if not parts:
+        return None
+    return f"> Values differ by: {', '.join(parts.values())} ({', '.join(fields)})"
+
+
+def _order_part_lines(preprocessing: Any) -> list[str]:
+    """One "Order stated in:" line per part when the paper states a different order for different
+    parts of its work (0.7.0, ``step_order_parts``)."""
+    out = []
+    for p in getattr(preprocessing, "step_order_parts", None) or []:
+        quotes = "  ".join(f"«{_truncate_quote(sp.text)}»" for sp in p.spans)
+        flag = "" if p.applies_to_verified else f"   {_APPLIES_TO_UNVERIFIED}"
+        out.append(f"Order stated in: {p.applies_to}: {' → '.join(p.kinds)}  {quotes}{flag}")
+    return out
 
 
 def _verdict_for(row: FieldRow, verifier: dict[str, Any] | None) -> dict[str, Any] | None:
@@ -1377,8 +1591,10 @@ def to_protocol(
     counts = {state: 0 for state in _STATE_ORDER}
     bucket_counts = {bucket: 0 for bucket, _ in _BUCKET_HEADER}
     for r in rows:
-        counts[r.state] = counts.get(r.state, 0) + 1
-        if r.state in (MISSING_FROM_PAPER, LEFT_MISSING):
+        # fork D1 (2026-11-11): a field with variants is counted once, under its weakest variant
+        st = r.tally_state
+        counts[st] = counts.get(st, 0) + 1
+        if st in (MISSING_FROM_PAPER, LEFT_MISSING):
             bucket_counts[_gap_bucket(r)] += 1
     segments: list[str] = []
     if counts[EXTRACTED]:
@@ -1409,6 +1625,11 @@ def to_protocol(
             "## Preprocessing steps (the paper's order for the steps it orders; the rest follow in "
             "template order, which the paper does not state)"
         )
+    elif order_source == "by_part":
+        lines.append(
+            "## Preprocessing steps (template order — the paper states a different order for "
+            "different parts of its work, each below)"
+        )
     else:
         lines.append(
             "## Preprocessing steps (template order — the paper does not state an order; a reader "
@@ -1417,8 +1638,13 @@ def to_protocol(
     if order_source in ("paper", "partial") and preprocessing.step_order_spans:
         quotes = "  ".join(f"«{_truncate_quote(sp.text)}»" for sp in preprocessing.step_order_spans)
         lines.append(f"Order stated in: {quotes}")
+    lines.extend(_order_part_lines(preprocessing))
     lines.append("")
-    variants = _multiple_pipelines_line(multiple_pipelines)
+    # DESIGN_applies_to.md §4: the header line is derived from the values; a record written before
+    # 0.7.0 carries none and keeps its stored multiple_pipelines line, as it rendered before
+    variants = _values_differ_line(rows, preprocessing) or _multiple_pipelines_line(
+        multiple_pipelines
+    )
     if variants:
         lines.append(variants)
         lines.append("")
@@ -1435,7 +1661,11 @@ def to_protocol(
                 main = f"{param}: {_supplement_words(supplement)}"
             else:
                 main = _protocol_main(r, param, equals_for_extracted=True)
-            if r.path in supplied:
+            if r.state == VARIED:
+                lines.extend(
+                    _varied_lines(r, param, verifier, _not_performed_parts(rows, step.kind))
+                )
+            elif r.path in supplied:
                 lines.append(_checker_supplied_line(param, supplied[r.path]))
             else:
                 lines.append(_with_verdict(main, r, verifier))
@@ -1859,6 +2089,10 @@ def _expanded_rows_section(
                 values.append(f"{param} = {_fmt_row_value(r)}")
                 if quote is None and r.span_text:
                     quote = r.span_text
+            elif r.state == VARIED:
+                values.append(f"{param} differs: {_variants_summary(r)}")
+                if quote is None and r.variants:
+                    quote = r.variants[0].span_text
             elif r.extraction_status == DEFERRED_TO_CITATION and r.path in supp_fields:
                 values.append(f"{param}: {_supplement_words(supplement)}")  # fix 4 (2026-11-05)
             elif r.extraction_status == DEFERRED_TO_CITATION:
@@ -1917,6 +2151,9 @@ def _expanded_rows_section(
             if r.state == EXTRACTED:
                 values.append(f"{param} = {_fmt_row_value(r)}")
                 quote = quote or r.span_text
+            elif r.state == VARIED:
+                values.append(f"{param} differs: {_variants_summary(r)}")
+                quote = quote or (r.variants[0].span_text if r.variants else None)
             elif r.state == DEFERRED_TO_CITATION:
                 values.append(
                     f"{param}: deferred to {', '.join(r.deferral_refs or []) or '(unspecified)'}"

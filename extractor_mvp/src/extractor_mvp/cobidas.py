@@ -178,8 +178,22 @@ _UNVERIFIABLE_GAP_BASES = frozenset(
         # post-check of 2026-11-02: the quoted sentence asserts the operation, so "not reported"
         # would be false of the row -- the same reason the motion reasons are in.
         "operation_word_not_value",
+        # DESIGN_applies_to.md (2026-11-11). A VARIED field whose weakest variant names a part in
+        # words its sentences do not contain counts as a gap with this reason (fork D1): the paper
+        # stated values, the extractor could not tie one to its part. And a varied answer none of
+        # whose variants checked: the extractor looked and could not credit what it found.
+        "applies_to_unverified",
+        "varied_no_variant_checked",
     }
 )
+
+
+def _status(r: Any) -> str | None:
+    """A flattened row's extraction status as coverage reads it: a VARIED field counts under its
+    weakest variant (fork D1, DESIGN_applies_to.md §4), so a D.3 row is addressed by it only when
+    every variant is (``render.FieldRow.coverage_status``)."""
+    status: str | None = getattr(r, "coverage_status", r.extraction_status)
+    return status
 
 
 def _gap_base(reason: str | None) -> str:
@@ -453,7 +467,7 @@ def assess_coverage(
             #
             # Applies to every row that maps to spec kinds, mandatory or optional alike (ruling 5).
             # Software maps to none and keeps its own rule above (ruling 2).
-            addressed = any(r.extraction_status in _ADDRESSING_STATUSES for r in mapped)
+            addressed = any(_status(r) in _ADDRESSING_STATUSES for r in mapped)
             covered = _row_covered_by_extractor(mapped)
             unverifiable = False
             if not addressed and any(
@@ -536,19 +550,15 @@ def row_state(rc: RowCoverage, rows: list[Any]) -> str:
         negatives = [
             r
             for r in mapped
-            if r.path.endswith(".performed")
-            and r.extraction_status == "EXTRACTED"
-            and r.value is False
+            if r.path.endswith(".performed") and _status(r) == "EXTRACTED" and r.value is False
         ]
-        others = [
-            r for r in mapped if r not in negatives and r.extraction_status in _ADDRESSING_STATUSES
-        ]
+        others = [r for r in mapped if r not in negatives and _status(r) in _ADDRESSING_STATUSES]
         if negatives and not others:
             return "performed_no"
     if rc.partial:
         return "partially_reported"
     if rc.addressed:
-        if any(r.extraction_status == "EXTRACTED" for r in mapped):
+        if any(_status(r) == "EXTRACTED" for r in mapped):
             return "reported"
         return "deferred"
     if rc.unverifiable:
@@ -567,12 +577,12 @@ def kind_state(kind_rows: list[Any]) -> str:
     negatives = [
         r
         for r in kind_rows
-        if r.path.endswith(".performed") and r.extraction_status == "EXTRACTED" and r.value is False
+        if r.path.endswith(".performed") and _status(r) == "EXTRACTED" and r.value is False
     ]
-    addressing = [r for r in kind_rows if r.extraction_status in _ADDRESSING_STATUSES]
+    addressing = [r for r in kind_rows if _status(r) in _ADDRESSING_STATUSES]
     if negatives and all(r in negatives for r in addressing):
         return "performed_no"
-    if any(r.extraction_status == "EXTRACTED" for r in addressing):
+    if any(_status(r) == "EXTRACTED" for r in addressing):
         return "reported"
     if addressing:
         return "deferred"

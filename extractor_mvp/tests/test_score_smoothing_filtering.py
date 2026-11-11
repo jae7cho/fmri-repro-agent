@@ -80,46 +80,94 @@ def test_an_all_row_matches_the_records_single_stream() -> None:
     assert s.outcome == "scored"
 
 
-def test_a_multi_stream_paper_is_not_separable_when_the_record_carries_no_applies_to() -> None:
+def test_a_record_with_one_all_value_equal_to_one_row_is_collapsed() -> None:
+    """DESIGN_applies_to.md §5 (Stage 1, 2026-11-11): the stored records' shape for chen_2015."""
     labels = [
         _row(paper="chen_2015", applies_to="ALFF and fALFF"),
         _row(paper="chen_2015", applies_to="ReHo", state="stated_not_performed"),
     ]
-    out = sf.score(labels, {"chen_2015": _views(sm={"fwhm_mm": 6.0})})
-    assert [s.outcome for s in out] == ["stream not separable"] * 2
-    assert all(s.record_state is None and s.values == {} for s in out)
+    sm = {"fwhm_mm": 8.0, "kernel_type": "gaussian"}
+    out = sf.score(labels, {"chen_2015": _views(sm=sm)})
+    assert [s.outcome for s in out] == ["collapsed"] * 2
+    assert all(s.values == {} and s.scope is not None for s in out)
+    assert out[0].scope is not None and out[0].scope.outcome == "collapsed"
 
 
-def test_any_paper_with_two_rows_on_a_sheet_is_multi_stream_even_if_one_says_all() -> None:
+def test_an_all_value_equal_to_no_row_misses_every_row_and_is_spurious() -> None:
+    """Positive control for the collapsed class: a 6 mm "all" value against an 8 mm row is not
+    collapsed; under fork E2 each row is missed and the record's value spurious."""
+    labels = [
+        _row(paper="chen_2015", applies_to="ALFF and fALFF"),
+        _row(paper="chen_2015", applies_to="ReHo", state="stated_not_performed"),
+    ]
+    out = sf.score(labels, {"chen_2015": _views(sm={"fwhm_mm": 6.0, "kernel_type": "gaussian"})})
+    assert [s.outcome for s in out] == ["missed"] * 2
+    assert out[0].scope is not None and out[0].scope.spurious == ["all"]
+
+
+def test_any_paper_with_two_rows_on_a_sheet_is_scored_as_variants_even_if_one_says_all() -> None:
     labels = [_row(), _row(applies_to="ReHo", state="stated_not_performed")]
-    out = sf.score(labels, {"agtzidis_2020": _views(sm={"fwhm_mm": 8.0})})
-    assert [s.outcome for s in out] == ["stream not separable"] * 2
-
-
-def test_a_record_carrying_applies_to_stops_the_scorer_until_streams_are_read() -> None:
-    rec = _canned_record()
-    for step in rec["preprocessing"]["steps"]:
-        if step["kind"] == "spatial_smoothing":
-            step["fwhm_mm"]["extraction"]["applies_to"] = "ReHo"
-    with pytest.raises(NotImplementedError, match="applies_to"):
-        sf.record_steps(rec)
+    out = sf.score(
+        labels, {"agtzidis_2020": _views(sm={"fwhm_mm": 8.0, "kernel_type": "gaussian"})}
+    )
+    assert [s.outcome for s in out] == ["collapsed"] * 2
 
 
 def test_a_single_row_not_for_all_is_not_matched_silently() -> None:
-    (s,) = sf.score([_row(applies_to="task-fMRI")], {"agtzidis_2020": _views(sm={"fwhm_mm": 8.0})})
-    assert s.outcome == "stream not separable"
+    sm = {"fwhm_mm": 8.0, "kernel_type": "gaussian"}
+    (s,) = sf.score([_row(applies_to="task-fMRI")], {"agtzidis_2020": _views(sm=sm)})
+    assert s.outcome == "collapsed"
 
 
-def test_a_record_that_carries_streams_is_scored_per_stream() -> None:
+def test_a_record_with_parts_against_an_all_row_is_split() -> None:
+    stream = sf.StepView("reported", {"effective_band_hz": [0.01, 0.1]}, frozenset(), None, "rest")
+    (s,) = sf.score([_row("Filtering")], {"agtzidis_2020": _views(streams={"rest": stream})})
+    assert s.outcome == "split"
+
+
+def test_a_record_that_carries_streams_is_scored_per_stream_by_quote_overlap() -> None:
+    q1 = "Parts I and II were band-pass filtered at 0.01 to 0.1 Hz."
+    q2 = "In Part III the filter was applied after interpolation."
     labels = [
-        _row("Filtering", paper="power_2014", applies_to="Parts I\u2013II"),
-        _row("Filtering", paper="power_2014", applies_to="Part III"),
+        _row("Filtering", paper="power_2014", applies_to="Parts I\u2013II", quote=q1),
+        _row("Filtering", paper="power_2014", applies_to="Part III", quote=q2),
     ]
-    stream = sf.StepView("reported", {"effective_band_hz": [0.01, 0.1]}, frozenset())
-    views = _views(streams={"parts i\u2013ii": stream})
-    out = sf.score(labels, {"power_2014": views})
-    assert [s.outcome for s in out] == ["scored", "stream not separable"]
+    # the record calls the part something else; its sentence overlaps the first row's quote only
+    stream = sf.StepView(
+        "reported",
+        {"effective_band_hz": [0.01, 0.1]},
+        frozenset(),
+        None,
+        "the first two parts",
+        (q1,),
+    )
+    out = sf.score(labels, {"power_2014": _views(streams={"the first two parts": stream})})
+    assert [s.outcome for s in out] == ["scored", "missed"]
     assert out[0].values["band"] == "agree"
+    assert out[0].scope is not None and out[0].scope.spurious == []
+
+
+def test_a_record_carrying_applies_to_is_read_as_streams() -> None:
+    rec = _canned_record()
+    for step in rec["preprocessing"]["steps"]:
+        if step["kind"] == "spatial_smoothing":
+            ext = step["fwhm_mm"]["extraction"]
+            span = {"start": 0, "end": 5, "text": "Data were smoothed at 6 mm for ALFF."}
+            step["fwhm_mm"]["extraction"] = {
+                "status": "VARIED",
+                "variants": [
+                    {"value": 6.0, "spans": [span], "applies_to": "ALFF", "confidence": 0.8},
+                    {"value": 4.0, "spans": [span], "applies_to": "ReHo", "confidence": 0.8},
+                ],
+            }
+            step["fwhm_mm"]["inference"] = {"status": "NOT_APPLICABLE"}
+            assert ext["status"] != "VARIED"
+    views = sf.record_steps(rec)
+    streams = views["spatial_smoothing"].streams
+    assert streams is not None and set(streams) == {"alff", "reho"}
+    assert streams["alff"].values["fwhm_mm"] == 6.0 and streams["reho"].values["fwhm_mm"] == 4.0
+    assert streams["alff"].quotes == ("Data were smoothed at 6 mm for ALFF.",)
+    assert views["temporal_filtering"].streams is None
 
 
 def test_a_paper_without_a_record_is_no_record() -> None:
@@ -129,7 +177,7 @@ def test_a_paper_without_a_record_is_no_record() -> None:
 
 def test_the_records_streams_are_read_only_when_it_carries_applies_to() -> None:
     assert not sf._carries_applies_to({"fwhm_mm": {"extraction": {"status": "EXTRACTED"}}})
-    assert sf._carries_applies_to({"fwhm_mm": {"extraction": {"applies_to": "ReHo"}}})
+    assert sf._carries_applies_to({"fwhm_mm": {"extraction": {"status": "VARIED"}}})
 
 
 # --- values as stated ----------------------------------------------------------------------------
@@ -214,9 +262,9 @@ def test_a_withheld_papers_values_never_reach_the_output(paper: str) -> None:
 def test_counts_are_grouped_by_class_and_carry_no_rate() -> None:
     labels = [_row(), _row(paper="liu_2005"), _row(paper="wheaton_2004")]
     text = sf.render(sf.score(labels, {"agtzidis_2020": _views(sm={"fwhm_mm": 8.0})}), "r")
-    assert "| co-adjudicated | reported | 1 | 0 | 0 | 0 |" in text
-    assert "| author-ruled, assistant exposure | reported | 0 | 0 | 0 | 1 |" in text
-    assert "| author alone | reported | 0 | 0 | 0 | 1 |" in text
+    assert "| co-adjudicated | reported | 1 | 0 | 0 | 0 | 0 | 0 |" in text
+    assert "| author-ruled, assistant exposure | reported | 0 | 0 | 0 | 0 | 0 | 1 |" in text
+    assert "| author alone | reported | 0 | 0 | 0 | 0 | 0 | 1 |" in text
     assert "%" not in text and "rate" not in text.lower().replace("no rates", "")
 
 
@@ -243,3 +291,20 @@ def test_a_record_written_before_pass_type_does_not_ask_it() -> None:
         if step["kind"] == "temporal_filtering":
             step.pop("pass_type", None)
     assert "pass_type" not in sf.record_steps(rec)["temporal_filtering"].asked
+
+
+def test_a_value_the_records_schema_did_not_have_does_not_block_collapsed() -> None:
+    """coverage_v4 predates pass_type: 'not asked in this record's schema' is no evidence either way,
+    so the record's one band equal to a row's is collapsed. A band the record lacks is not."""
+    labels = [
+        _row("Filtering", paper="power_2014", applies_to="Parts I\u2013II"),
+        _row("Filtering", paper="power_2014", applies_to="Part III"),
+    ]
+    old = sf.StepView(
+        "reported", {"effective_band_hz": [0.01, 0.1]}, frozenset({"effective_band_hz"})
+    )
+    views = {**_views(), "temporal_filtering": old}
+    assert [s.outcome for s in sf.score(labels, {"power_2014": views})] == ["collapsed"] * 2
+    lacking = sf.StepView("reported", {}, frozenset({"effective_band_hz", "pass_type"}))
+    views = {**_views(), "temporal_filtering": lacking}
+    assert [s.outcome for s in sf.score(labels, {"power_2014": views})] == ["missed"] * 2

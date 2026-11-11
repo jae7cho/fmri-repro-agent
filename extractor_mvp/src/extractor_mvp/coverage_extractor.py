@@ -8,7 +8,7 @@ distortion correction with gradient distortion folded in, intensity correction, 
 smoothing). Both run on the SAME slice as the motion and the shared call, with the same model,
 temperature and ``max_retries``, on the single-acquisition path only.
 
-Every field is a three-state ``FieldExtractionResult`` and goes through ``_process_field`` (the one
+Every field is a ``StepFieldResult`` (three states, and ``varied`` from 2026-11-11) and goes through ``_process_field`` (the one
 span path), with the coercion and the value-support check picked by the field's value kind
 (``coverage_fields``). ``performed`` comes first on every step (R2): a stated negative is EXTRACTED
 ``False`` with its quote, and the step's parameters are then ``step_not_performed``.
@@ -19,7 +19,7 @@ from __future__ import annotations
 import dataclasses
 from typing import Any
 
-from fmri_repro.spec.preprocessing import Detrend, SoftwareMention, SpecifiedTerm
+from fmri_repro.spec.preprocessing import Detrend, SoftwareMention, SpecifiedTerm, StepOrderPart
 from fmri_repro.spec.provenance import Extracted, ProvenancedField
 from pydantic import BaseModel, Field
 
@@ -28,11 +28,10 @@ from extractor_mvp.coverage_fields import (
     CALL_T_SPECS,
     COVERAGE_KINDS,
     DETREND,
-    RECORD_SPECS,
     SPECS_BY_KIND,
     CoverageFieldSpec,
 )
-from extractor_mvp.extraction_result import FieldExtractionResult
+from extractor_mvp.extraction_result import StepFieldResult
 from extractor_mvp.extractor import (
     DeferralRecord,
     ExtractionDiagnostic,
@@ -44,7 +43,7 @@ from extractor_mvp.extractor import (
     build_client,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.prompt_rules import PREPROCESSING_RULES
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES, VARIANT_RULES
 from extractor_mvp.quote_support import free_text_supported, phrase_in_quote, version_in_quote
 from extractor_mvp.span_resolver import resolve_quote
 
@@ -105,18 +104,6 @@ one. verbatim_quote and deferral_sentence are copied EXACTLY from the text, char
 character; a field whose quote cannot be found is discarded.
 """
 
-_RECORD_RULES = """\
-## More than one preprocessing variant (a record-level question, asked once per call)
-multiple_pipelines: "yes" if the methods text describes MORE THAN ONE preprocessing variant for
-  the functional data -- two pipelines compared, a main pipeline and an alternative, different
-  preprocessing for different datasets or analyses; verbatim_quote = the sentence that introduces
-  the alternative. "missing" when one preprocessing is described. Never "no" and never
-  "deferred".
-pipeline_variant_count: when multiple_pipelines is "yes", the number of variants described, as an
-  integer string, quoting the sentence that lets it be counted; "missing" otherwise.
-
-"""
-
 _OUTPUT_STATUS = """\
 ## Output status for each field
 
@@ -128,6 +115,10 @@ _OUTPUT_STATUS = """\
   pipeline), and states nothing itself.
   - deferral_sentence: that sentence verbatim; ref_string: the citation or pipeline name as
     written; target_kind: "paper" / "pipeline" / "dataset_doc" / "supplement".
+"varied": the paper states different values for different parts of its data (see "Values that
+  differ by what they apply to").
+  - variants: one entry per part (value, verbatim_quote, applies_to, applies_to_quote); value and
+    verbatim_quote of the field itself are null.
 
 CRITICAL: when uncertain, use "missing", not "deferred". Each field is independent. Do not apply
 "deferred" to every field because one field is deferred.
@@ -146,6 +137,7 @@ Read the methods text below; nothing comes from anywhere else.
 
 """
     + _SHARED_RULES
+    + VARIANT_RULES
     + """
 ## T1 stabilization (nonsteadystate_removal)
 D.3 asks: "Number of initial 'dummy' scans discarded as part of preprocessing (if not already
@@ -231,6 +223,10 @@ step_order: the preprocessing steps IN THE ORDER THE PAPER STATES THEM, as a lis
   by", "after", or steps narrated one after another as a procedure. verbatim_quotes = every
   sentence that states the order, each copied exactly. Leave step_order empty when the text names
   steps without stating their order.
+step_order_parts: when the text states a DIFFERENT order for different parts of its work, one
+  entry per part: kinds (the order, as above), verbatim_quotes (the sentences stating it),
+  applies_to (the paper's words for the part, the identical phrase it uses in the fields). Then
+  leave step_order empty. An order that holds throughout goes in step_order, never here.
 
 ## Temporal filtering (temporal_filtering) -- beyond COBIDAS D.3, asked because a replication needs it
 filter_performed: was the BOLD time series temporally filtered (band-pass, high-pass, low-pass)?
@@ -260,6 +256,7 @@ text below; nothing comes from anywhere else.
 
 """
     + _SHARED_RULES
+    + VARIANT_RULES
     + """
 ## Brain extraction (brain_extraction)
 D.3 asks: name of software/method (BET, recon-all, ...); parameter choices (BET's fractional
@@ -352,8 +349,8 @@ smoothing_space: canonical native_volume, native_surface, mni_volume, template_s
 )
 
 
-def _missing_field() -> FieldExtractionResult:
-    return FieldExtractionResult(status="missing")
+def _missing_field() -> StepFieldResult:
+    return StepFieldResult(status="missing")
 
 
 class SoftwareMentionResult(BaseModel):
@@ -368,7 +365,8 @@ class SoftwareMentionResult(BaseModel):
 def _response_model(
     name: str, specs: tuple[CoverageFieldSpec, ...], extra: dict[str, Any] | None = None
 ) -> type[BaseModel]:
-    """One ``FieldExtractionResult`` per spec, defaulted to missing so a stub may omit any.
+    """One ``StepFieldResult`` per spec (the three statuses plus ``varied``, 2026-11-11), defaulted
+    to missing so a stub may omit any.
 
     NO validator (the author's ruling of 2026-10-29): a rule about one field must never be able to
     remove a paper's report. The never-deferred rule for ``performed`` is a post-check on the
@@ -379,8 +377,9 @@ def _response_model(
     from pydantic import create_model
 
     fields: dict[str, Any] = {
-        spec.attr: (FieldExtractionResult, Field(default_factory=_missing_field))
-        # F3a (2026-10-29): the record-level multiple_pipelines question moved to the verifier
+        spec.attr: (StepFieldResult, Field(default_factory=_missing_field))
+        # F3a (2026-10-29): the record-level multiple_pipelines question moved to the verifier;
+        # 2026-11-11 (DESIGN_applies_to.md, F1): it is not asked anywhere now
         for spec in specs
     }
     fields.update(extra or {})
@@ -395,10 +394,21 @@ class StepOrderResult(BaseModel):
     verbatim_quotes: list[str] = Field(default_factory=list)
 
 
+class StepOrderPartResult(BaseModel):
+    """An order the paper states for one part of its work (call T; DESIGN_applies_to.md §2)."""
+
+    kinds: list[str] = Field(default_factory=list)
+    verbatim_quotes: list[str] = Field(default_factory=list)
+    applies_to: str = ""
+
+
 TemporalVolumeExtraction: type[BaseModel] = _response_model(
     "TemporalVolumeExtraction",
     CALL_T_SPECS,
-    {"step_order": (StepOrderResult | None, None)},
+    {
+        "step_order": (StepOrderResult | None, None),
+        "step_order_parts": (list[StepOrderPartResult], Field(default_factory=list)),
+    },
 )
 SpatialExtraction: type[BaseModel] = _response_model(
     "SpatialExtraction",
@@ -409,27 +419,19 @@ SpatialExtraction: type[BaseModel] = _response_model(
 
 @dataclasses.dataclass
 class CoverageExtraction:
-    """The two calls' processed fields by kind and bare id, with their diagnostics and deferrals;
-    ``record`` holds the record-level answers by call ("T" / "S") -- item 5's
-    ``multiple_pipelines`` and ``pipeline_variant_count``."""
+    """The two calls' processed fields by kind and bare id, with their diagnostics and deferrals."""
 
     fields: dict[str, dict[str, ProvenancedField]]
     diagnostics: list[ExtractionDiagnostic]
     deferrals: list[DeferralRecord]
-    record: dict[str, dict[str, ProvenancedField]] = dataclasses.field(default_factory=dict)
     #: report v2 §1c: every software mention call S returned, each its own provenanced field.
     software: list[ProvenancedField] = dataclasses.field(default_factory=list)
     #: report v2 §1d: the stated order (kinds) and the resolved sentences stating it; empty when the
     #: paper states none or a sentence did not resolve (then the template order, said so).
     step_order: list[str] = dataclasses.field(default_factory=list)
     step_order_spans: list[Any] = dataclasses.field(default_factory=list)
-
-    def multiple_pipelines_dump(self) -> dict[str, dict[str, Any]]:
-        """The record-level answers as plain dicts, the shape the batch stores and the renderer reads."""
-        return {
-            call: {name: pf.model_dump(mode="json") for name, pf in fields.items()}
-            for call, fields in self.record.items()
-        }
+    #: 0.7.0 (DESIGN_applies_to.md §2): orders stated for one part of the work each
+    step_order_parts: list[StepOrderPart] = dataclasses.field(default_factory=list)
 
 
 def _call(
@@ -452,7 +454,7 @@ def _process(
     out: CoverageExtraction,
 ) -> None:
     for spec in specs:
-        fe: FieldExtractionResult = getattr(extraction, spec.attr)
+        fe: StepFieldResult = getattr(extraction, spec.attr)
         pf, diag, deferral = _process_field(
             spec.field_id,
             spec.dotted,
@@ -527,28 +529,6 @@ def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
             quote,
         )
     )
-
-
-def _process_record(extraction: BaseModel, call: str, text: str, out: CoverageExtraction) -> None:
-    """Item 5: the two record-level fields of one call, through the same span path."""
-    for spec in RECORD_SPECS:
-        fe: FieldExtractionResult = getattr(extraction, spec.attr)
-        pf, diag, deferral = _process_field(
-            spec.field_id,
-            f"record.{spec.field_id}",
-            fe,
-            None,
-            spec.t,
-            text,
-            None,
-            use_synonym_table=False,
-            value_kind=spec.value_kind,
-        )
-        out.record.setdefault(call, {})[spec.field_id] = pf
-        if diag is not None:
-            out.diagnostics.append(diag)
-        if deferral is not None:
-            out.deferrals.append(deferral)
 
 
 def _process_software(extraction: BaseModel, text: str, out: CoverageExtraction) -> None:
@@ -676,6 +656,58 @@ def _process_step_order(extraction: BaseModel, text: str, out: CoverageExtractio
     out.step_order, out.step_order_spans = kinds, spans
 
 
+def _process_step_order_parts(extraction: BaseModel, text: str, out: CoverageExtraction) -> None:
+    """DESIGN_applies_to.md §2 (2026-11-11): each order the paper states for one part is kept when
+    every sentence cited for it resolves and it names two or more known kinds; its part's words must
+    be in those sentences, or it is kept with ``applies_to_verified`` False. A part repeating
+    another's label (same-string rule) is dropped with a diagnostic."""
+    from fmri_repro.spec.provenance import APPLIES_TO_ALL, normalize_applies_to
+
+    seen: set[str] = set()
+    for part in getattr(extraction, "step_order_parts", None) or []:
+        key = normalize_applies_to(part.applies_to or "")
+        kinds: list[str] = []
+        for k in part.kinds:
+            k = k.strip()
+            if k in ORDERABLE_KINDS and k not in kinds:
+                kinds.append(k)
+        dotted = f"record.step_order[{part.applies_to}]"
+        if not key or key == APPLIES_TO_ALL or key in seen or len(kinds) < 2:
+            out.diagnostics.append(
+                ExtractionDiagnostic(dotted, "step_order_part_dropped", ",".join(kinds), None)
+            )
+            continue
+        spans: list[Any] = []
+        for q in part.verbatim_quotes:
+            res = resolve_quote(q, text)
+            if res.span is None:
+                spans = []
+                out.diagnostics.append(
+                    ExtractionDiagnostic(
+                        dotted,
+                        f"step_order_quote_unresolved:{res.failure_reason}",
+                        ",".join(kinds),
+                        q,
+                    )
+                )
+                break
+            spans.append(res.span)
+        if not spans:
+            continue
+        seen.add(key)
+        verified = any(free_text_supported(part.applies_to, sp.text) for sp in spans) or any(
+            free_text_supported(part.applies_to, q) for q in part.verbatim_quotes
+        )
+        out.step_order_parts.append(
+            StepOrderPart(
+                kinds=kinds,
+                applies_to=part.applies_to.strip(),
+                applies_to_verified=verified,
+                spans=spans,
+            )
+        )
+
+
 def _apply_not_performed(out: CoverageExtraction) -> None:
     """R2: when a kind's ``performed`` is EXTRACTED ``False``, its parameters are
     ``step_not_performed`` whatever the model returned for them."""
@@ -718,6 +750,7 @@ def extract_coverage(
     _process(spatial, CALL_S_SPECS, parsed_paper.text, out)
     _process_software(spatial, parsed_paper.text, out)
     _process_step_order(temporal, parsed_paper.text, out)
+    _process_step_order_parts(temporal, parsed_paper.text, out)
     _apply_not_performed(out)
     _apply_detrend_highest_order(out)
     return out

@@ -296,6 +296,13 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # version, fix 3's follow-up (2026-11-05) sets inference_applicable on eleven step fields the KB
     # now holds pipeline defaults for: a relaxation, so every 0.6.2 document stays valid.
     #
+    # 0.6.3 -> 0.7.0 (MINOR, additive, pure re-stamp -- NO doc transform; 2026-11-11, DESIGN_applies_to.md
+    # Stage 1, fork A1): the extraction arm gains ``Varied`` (the values a paper states for parts of
+    # its data, each with its ``applies_to``), and ``step_order_source`` gains "by_part" with
+    # ``step_order_parts``. Every stored value applies to "all": under A1 that is what an
+    # ``Extracted`` value means, so the migration gives every stored value "all" by leaving it as it
+    # is. A 0.6.3 document carries no ``Varied`` arm and no parts, and stays valid unchanged.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
