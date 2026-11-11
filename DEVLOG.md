@@ -4833,3 +4833,47 @@ Commits here: `1e48066`, then this entry. The tag `sfn2026-freeze` is not moved.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `0214e79`, then this entry; fmri-defaults-kb `e2364e6`, `baf06f4`.
+
+## 2026-11-11 — KB and labels after the freeze: washu_4dfp, verification, resolved_tool on all 19
+
+`sfn2026-freeze` is **not moved**. The poster's numbers stay at `e437668`, which pins KB `baf06f4`.
+Everything below is the post-freeze state.
+
+- **KB** (fmri-defaults-kb `5ffc547`; DEVLOG `7b1e9f7`, `f6fb7e9`, `84d417b`; CI fix `f176e24`):
+  - washu_4dfp (cross_realign3d_4dfp, manual, no reference frame asserted, paper-anchored Power2014);
+  - `verification` on every realignment entry;
+  - the AFNI timeline (3dvolreg documented from 2.21, November 1998; imreg/2dImReg as the 2D
+    alternatives);
+  - `realignment_settings` by version for fmriprep, cpac and hcp_minimal (two blocks);
+  - FSL's reslice and flirt defaults.
+- `501588a` — **the motion workbook alone** (sha256 1ef2cc6f42bff106213e3a3c1f2c7e1029b4d46216b6b33ad0b20a89aaab380f,
+  22,980 bytes; the committed blob verified).
+  - resolved_tool/resolved_basis set for 10 rows by the author's decisions of 2026-11-10/11.
+  - Column U, resolved_adjudication: "author ruled 2026-11-11; assistant proposed".
+  - 31 cells, none previously set; no other cell changed.
+- `9915933` — the renderer and the scorer; CI pins KB `84d417b`.
+  - **The renderer:** the program's [D] now carries the KB's verification, e.g. [D: manual].
+  - **score_motion_resolved:** an unknown group, and the package-only and "unknown" label forms.
+  - **Tests and gates:** extractor_mvp 976 passed (coverage 90.06%); root 295 (95.21%).
+- **Re-resolved from stored answers, no model call:** poldrack_2015 and power_2014 are unchanged.
+  - Their stored pipeline answers are "hcp_minimal" and "none". Resolution maps only the model's
+    pipeline answer (and data releases) to the KB, so the new WashU entry is not reached. A new
+    resolution call, or a rule reading the paper's own words ("a pipeline developed at Washington
+    University, St Louis"), would be needed.
+  - poldrack stays model-only fsl (HCP version-dependent); power stays unknown.
+- **score_motion_resolved on the 19** (`results/corpus_full_v2_post_freeze`: the re-resolved
+  records, with poldrack and power re-resolved):
+
+  | group | agree | disagree | label blank |
+  |---|---|---|---|
+  | KB-confirmed | 13 | 0 | 0 |
+  | model-only | 2 | 2 | 0 |
+  | unknown | 1 | 1 | 0 |
+
+  - Model-only agree: binder (afni, no program), weber (afni 3dvolreg). Model-only disagree:
+    poldrack (labelled 4dfp, record fsl), and liu_2005 (held out).
+  - Unknown: braun agrees (unknown); power disagrees (labelled 4dfp, record none).
+
+`docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
+
+Commits here: `501588a`, `9915933`, then this entry.
