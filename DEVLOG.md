@@ -4877,3 +4877,20 @@ Everything below is the post-freeze state.
 `docs/design/DESIGN_applies_to.md` stays staged, uncommitted.
 
 Commits here: `501588a`, `9915933`, then this entry.
+
+## 2026-11-11 (2) — option inventories for fMRIPrep and C-PAC (KB); CI pin
+
+- **KB** (fmri-defaults-kb `e66d7d3`, DEVLOG `4fb49dc`): every fMRIPrep CLI option (91, over 21
+  versions) and every C-PAC default-config key (766, over 34 versions), extracted at each tag.
+  - Also the values their code fixes (fMRIPrep 32 parameters, C-PAC 19).
+  - Lookups: `pipeline_options`, `step_parameters`, `options_at_date`. From a paper's date,
+    they give the version released by then, its earlier alternatives, and each one's options
+    and fixed values.
+  - C-PAC 0.3.2-1.0.2 options are flagged as from a shipped example config.
+- `c75331f` — CI pins KB `4fb49dc`. extractor_mvp 976 and root 295 passed against it. No agent code
+  changed; nothing reads the inventories yet. Using them for the pseudo-code is the next step.
+
+`sfn2026-freeze` stays at `e437668`; this is post-freeze. `docs/design/DESIGN_applies_to.md` stays
+staged, uncommitted.
+
+Commits here: `c75331f`, then this entry.
