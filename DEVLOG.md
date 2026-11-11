@@ -5100,3 +5100,36 @@ Commits here: `7733759`, then this entry.
   - Stage 2 total: $7.9206; 9 of 9 papers reported.
 
 Commits here: `2496d88`, `b7e28cc`, then this entry.
+
+## 2026-11-11 (10) — applies_to Stage 2b
+
+- `1cb7383` — the author's items 1-5 (DESIGN_applies_to.md §9).
+  - **Compared models:** one variant per described model. The null "varied across compared models"
+    entry is used only when the models are undescribed, and the phrase is recognised in the value
+    or in `applies_to`.
+  - **Pseudo-code:** a part table for more than four parts that differ only on confound fields.
+  - **The two part rules** are in `PREPROCESSING_RULES`, so they reach the extraction prompts and
+    the checking pass. Five prompts were re-pinned with dated notes, a new vintage.
+  - **`applies_to`** is looked for in the whole methods text, with its location kept (schema
+    0.7.1: `StepOrderPart.applies_to_spans`, an additive re-stamp).
+  - **`base_pipeline_ref`:** a bare citation marker with no quote is a deferral grounded on its
+    sentence, never a validation failure.
+  - **`merge_labels`** fails closed.
+  - **Variant spans** get full-paper offsets.
+  - **Checks:** 12 mutations, each diff non-empty, all killed. The gate is 68/68 plus 8/8
+    (`applies_to_v1`) identical vs `c96a804`; positive control 12/12. Root 318, extractor_mvp 1055.
+- `5741b6d` — `docs/findings/applies_to_stage2b.md`.
+  - **Run:** chen_2015, gracia-tabuenca_2024, power_2014 and ciric_2017, from a worktree pinned at
+    `1cb7383`, under `caffeinate -i`, into `results/applies_to_v2`. $3.2618 metered over 44 calls.
+  - **Smoothing:** chen_2015 and ciric_2017 are no longer collapsed. 3 label variants matched
+    correct, 1 missed, 2 spurious.
+  - **Filtering:** chen_2015 is missed. Its record has the ReHo part with the right band, but the
+    label quote begins with "…", so the overlap test finds no match.
+  - power_2014's filtering spans all failed to resolve this draw; ciric_2017 is split.
+  - gracia-tabuenca_2024 still has no parts.
+  - ciric_2017 has 17 parts and smoothing differs among them, so no compact table was rendered.
+  - chen_2015 spells one part two ways across fields, and the same-string rule does not join them.
+
+`sfn2026-freeze` stays at `e437668`; post-freeze.
+
+Commits here: `1cb7383`, `5741b6d`, then this entry.
