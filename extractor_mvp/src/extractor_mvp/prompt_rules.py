@@ -3,6 +3,10 @@
 
 from __future__ import annotations
 
+#: 2026-11-11 (Stage 2b, the author's item 2): the two part rules (a measure, data type or dataset's
+#: preprocessing is preprocessing for that part; "not applied to one part" is a value), in the
+#: author's words, which name ALFF, fALFF, ReHo and functional connectivity. Shared with the checking
+#: pass through CHECKING_RULES.
 PREPROCESSING_RULES = """\
 Rules for every field:
 - Volumes "co-registered" or "registered" to correct for head motion (to a volume of the same run)
@@ -16,6 +20,12 @@ Rules for every field:
 - A confound that is computed or made available (framewise displacement, DVARS, motion parameters,
   CompCor components) is not applied unless the paper says it was regressed out, censored or
   otherwise removed.
+- Preprocessing applied before a derived measure is computed (e.g. ALFF, fALFF, ReHo, functional
+  connectivity), or applied to one data type (e.g. task or rest data) or to one dataset, is
+  preprocessing for that part of the data, not analysis: give it with applies_to = the measure, data
+  type or dataset in the paper's words.
+- A statement that a step was not applied to one part of the data is a value for that part: the
+  step's performed is "no" for that part.
 
 """
 
@@ -30,7 +40,9 @@ CHECKING_RULES = (
 #: variant rule, with the author's same-phrase instruction (fork B1). One text for the extraction,
 #: temporal/volume and spatial prompts. Not part of the checking rules: the checking pass gets its
 #: own wording of what a ``[<part>]`` line means. No example is taken from a corpus paper: the five
-#: case papers of DESIGN_applies_to.md §3 are scored against this prompt in Stage 2.
+#: case papers of DESIGN_applies_to.md §3 are scored against this prompt in Stage 2. 2026-11-11
+#: (Stage 2b, the author's item 1): compared models, one variant each when each is described; the
+#: null "varied across compared models" entry only when the variation is stated without description.
 VARIANT_RULES = """\
 ## Values that differ by what they apply to
 When the text gives different values for a field for different parts of its data -- different
@@ -44,9 +56,10 @@ sentence that ties the value to the part when that is not the value's own senten
 - Use the IDENTICAL phrase for the same part across fields: copy one applies_to once, then reuse it
   word for word in every field where that part has its own value.
 - A value that holds for all of the data stays "extracted", as before.
-- When the paper's object of study is a comparison of several preprocessing or denoising models
-  applied to the same data, and a field differs across those models, return ONE variant with
-  value null, applies_to "varied across compared models", and verbatim_quote = the sentence that
-  states the comparison. Do not list the models.
+- When the paper compares several preprocessing or denoising models applied to the same data and
+  describes each one, return one variant per model, applies_to = the model's name in the paper.
+  Only when the text states that a field varies across the compared models WITHOUT describing them,
+  return ONE variant with value null, applies_to "varied across compared models", and
+  verbatim_quote = the sentence that states the variation.
 
 """

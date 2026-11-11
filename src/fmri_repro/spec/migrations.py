@@ -303,6 +303,10 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # ``Extracted`` value means, so the migration gives every stored value "all" by leaving it as it
     # is. A 0.6.3 document carries no ``Varied`` arm and no parts, and stays valid unchanged.
     #
+    # 0.7.0 -> 0.7.1 (PATCH, pure re-stamp -- NO doc transform; 2026-11-11, Stage 2b item 3):
+    # StepOrderPart gains an OPTIONAL ``applies_to_spans`` (where the part's words were found in the
+    # methods text). A 0.7.0 document's parts parse with it empty.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

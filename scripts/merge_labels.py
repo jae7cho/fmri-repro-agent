@@ -20,8 +20,9 @@ workbook had no adjudication column; one is added after its last column the firs
 appended to it. Bullets 2-7 of the motion row are left blank (the labeler covers bullet 1 only).
 
 Held-out papers (2026-11-11, the author's ruling): for liu_2005, tang_2025 and wheaton_2004 the
-prose cells (``quote``, ``notes``; ``method_quote`` and ``notes`` on the motion sheet) are written as
-:data:`REDACTED`, and the prose itself is appended to ``ground_truth/heldout_label_prose.local.jsonl``,
+cells outside the known label columns (:data:`LABEL_COLUMNS`: ids, states, values, adjudication; so
+``quote``, ``notes``, ``method_quote`` and any column added later) are written as :data:`REDACTED`
+(fail closed, Stage 2b), and the text itself is appended to ``ground_truth/heldout_label_prose.local.jsonl``,
 which is gitignored. States and values are written as for any paper: they are the label. The
 workbooks are untracked from the same day, so this keeps a held-out paper's text out of any
 workbook that is published later.
@@ -61,8 +62,11 @@ REDACTED = (
     "[withheld: held-out paper, prereg C11/C26 — kept in ground_truth/"
     "heldout_label_prose.local.jsonl, untracked]"
 )
-#: The workbook columns that hold prose (the rest are states and values).
-PROSE_COLUMNS = frozenset({"quote", "notes", "method_quote"})
+#: The workbook columns that are the label (ids, states, values, adjudication). Stage 2b item 5
+#: (2026-11-11): for a held-out paper every OTHER column is withheld, so a prose column added later
+#: is withheld without anyone remembering to list it (fail closed). Filled in below, after the
+#: sheets' fields are defined.
+LABEL_COLUMNS: frozenset[str] = frozenset()
 
 SCHEMA = "aespa-labels/1"
 #: The workbooks' dropdown lists, exactly (Labels!B, Smoothing!C, Filtering!C, Labels!R).
@@ -163,6 +167,19 @@ MOTION_COLUMNS = {
     "notes": "notes",
     "attribution": "attribution",
 }
+LABEL_COLUMNS = frozenset(
+    {
+        "paper_id",
+        "applies_to",
+        "state",
+        "adjudication",
+        "method_state",
+        "method_value",
+        "attribution",
+    }
+    | {f for f in SMOOTHING_FIELDS + FILTERING_FIELDS if f not in ("quote", "notes")}
+    | {f for fields in ROW_STEP_FIELDS.values() for f in fields}
+)
 PAPER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 NUMBER = re.compile(r"^\d+(\.\d+)?$")
 
@@ -396,12 +413,12 @@ def update_progress(path: Path, written: dict[str, dict[str, int]], adjudication
 def _withhold(
     pid: str, sheet: str, values: dict[str, Any], sink: list[dict[str, Any]]
 ) -> dict[str, Any]:
-    """A held-out paper's row with its prose cells replaced by :data:`REDACTED`, the prose moved to
-    ``sink``; any other paper's row unchanged."""
+    """A held-out paper's row with every non-empty cell outside :data:`LABEL_COLUMNS` replaced by
+    :data:`REDACTED` (fail closed), the text moved to ``sink``; any other paper's row unchanged."""
     if pid not in _HELD_OUT:
         return values
     out = dict(values)
-    for col in PROSE_COLUMNS & set(values):
+    for col in sorted(set(values) - LABEL_COLUMNS):
         if values[col] not in (None, ""):
             sink.append(
                 {

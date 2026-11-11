@@ -295,6 +295,50 @@ def _parts(rows: list[FieldRow]) -> dict[str, str]:
     return out
 
 
+#: Stage 2b (2026-11-11, the author's item 1): the steps whose fields are confounds. A record with
+#: more than COMPACT_MIN_PARTS - 1 parts that differ only on these renders the common steps once and
+#: a table, one row per part and one column per differing field.
+CONFOUND_KINDS = frozenset({"nuisance_regression", "compcor", "ica_denoise", "despike", "scrub"})
+COMPACT_MIN_PARTS = 5
+BY_PART = "by_part"
+
+
+def _compact(rows: list[FieldRow], parts: dict[str, str]) -> list[FieldRow] | None:
+    """The varied rows to tabulate when the record is compact-eligible, else None."""
+    from fmri_repro.spec.provenance import COMPARED_MODELS, normalize_applies_to
+
+    varied = [
+        r
+        for r in rows
+        if r.state == VARIED
+        and any(normalize_applies_to(v.applies_to) != COMPARED_MODELS for v in r.variants or [])
+    ]
+    if len(parts) < COMPACT_MIN_PARTS or not varied:
+        return None
+    if any(r.group not in CONFOUND_KINDS for r in varied):
+        return None
+    return varied
+
+
+def _part_table(varied: list[FieldRow], parts: dict[str, str]) -> list[str]:
+    """One row per part, one column per differing field; "?" where the field states nothing for
+    the part. Comment lines, so the block stays pseudo-code."""
+    head = ["part", *(r.path for r in varied)]
+    lines = [
+        f"# --- {len(parts)} parts differ only on confound fields: the steps above hold for every "
+        "part, the table gives the fields marked by_part",
+        "# | " + " | ".join(head) + " |",
+        "# |" + "---|" * len(head),
+    ]
+    for key, words in parts.items():
+        cells = []
+        for r in varied:
+            view = _for_part(r, key)
+            cells.append("?" if view is None else _clean(_literal(view.value)).replace("|", "/"))
+        lines.append("# | " + " | ".join([_clean(words), *cells]) + " |")
+    return lines
+
+
 def _step_line(
     step: Any,
     rows: list[FieldRow],
@@ -303,6 +347,7 @@ def _step_line(
     resolution: dict[str, Any] | None,
     applied: dict[str, dict[str, str]] | None = None,
     part: str | None = None,
+    by_part: frozenset[str] = frozenset(),
 ) -> str:
     kind = step.kind
     seen = [(r, _for_part(r, part)) for r in rows if r.group == kind]
@@ -325,6 +370,9 @@ def _step_line(
             continue  # the resolution call's answer replaces the field
         if r.path in unstated:
             args.append(_Arg(name, "?", "?", "not stated for this part"))
+            continue
+        if r.path in by_part:
+            args.append(_Arg(name, BY_PART, "E"))  # its value per part is in the table below
             continue
         arg = _row_arg(r, name, supplied, hops)
         if (
@@ -580,7 +628,24 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
     parts = _parts(rows)
     blocks: list[tuple[str, list[int]]]
     part_keys: list[str | None] = []
-    if parts:
+    table = _compact(rows, parts)
+    if table is not None:
+        lines.append(
+            f"# note: values differ by what they apply to; {len(parts)} parts differ only on "
+            "confound fields, so the steps are given once and the parts as a table"
+        )
+        lines.append("")
+        by_part = frozenset(r.path for r in table)
+        for step in prep.steps:
+            lines.append(
+                _step_line(
+                    step, rows, supplied, hops, resolution, record.get("applied_by"), None, by_part
+                )
+            )
+        lines.append("")
+        lines.extend(_part_table(table, parts))
+        blocks = []
+    elif parts:
         # 0.7.0: one block per part the values are tied to, each field at that part's value
         lines.append(
             "# note: values differ by what they apply to; one block per part, "

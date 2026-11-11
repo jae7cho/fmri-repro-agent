@@ -672,3 +672,27 @@ def test_the_held_out_ids_and_the_sidecar_are_where_the_rest_of_the_repo_expects
     ignore = (REPO / ".gitignore").read_text().splitlines()
     assert "ground_truth/*.local.jsonl" in ignore
     assert "ground_truth/*.xlsx" in ignore
+
+
+def test_the_redaction_fails_closed_on_a_column_it_does_not_know() -> None:
+    """Stage 2b item 5 (2026-11-11): a prose column added later is withheld without being listed."""
+    sink: list[dict] = []
+    row = {
+        "applies_to": "all",
+        "state": "reported",
+        "threshold": "0.5 mm",
+        "quote": "Q.",
+        "a_new_comment_column": "prose",
+        "empty_new_column": None,
+    }
+    out = ml._withhold("wheaton_2004", "scrub", row, sink)
+    assert out["a_new_comment_column"] == ml.REDACTED and out["quote"] == ml.REDACTED
+    assert out["empty_new_column"] is None
+    assert (out["applies_to"], out["state"], out["threshold"]) == ("all", "reported", "0.5 mm")
+    assert {d["column"] for d in sink} == {"a_new_comment_column", "quote"}
+    # every column the merge writes for a label is known, so nothing a label holds is withheld
+    for fields in (*ml.ROW_SHEETS.values(), ml.SMOOTHING_FIELDS, ml.FILTERING_FIELDS):
+        assert set(fields) - ml.LABEL_COLUMNS <= {"quote", "notes"}
+    assert set(ml.MOTION_COLUMNS.values()) - ml.LABEL_COLUMNS == {"method_quote", "notes"}
+    # positive control: a paper not held out keeps everything
+    assert ml._withhold("chen_2015", "scrub", row, []) == row

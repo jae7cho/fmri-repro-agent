@@ -1588,7 +1588,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.7.0"
+SCHEMA_VERSION = "0.7.1"
 
 
 class MigrationInfo(BaseModel):
@@ -1624,6 +1624,9 @@ class StepOrderPart(BaseModel):
     applies_to: str = Field(min_length=1)
     applies_to_verified: bool = True
     spans: list[Span] = Field(min_length=1)
+    # 0.7.1 (2026-11-11, Stage 2b item 3): where the part's words were found when not in the stating
+    # sentences (anywhere in the methods text, headings included); empty when they were, or nowhere.
+    applies_to_spans: list[Span] = Field(default_factory=list)
 
 
 class Preprocessing(BaseModel):
@@ -1649,7 +1652,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.7.0"] = "0.7.0"
+    schema_version: Literal["0.7.1"] = "0.7.1"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

@@ -20,7 +20,7 @@ import dataclasses
 from typing import Any
 
 from fmri_repro.spec.preprocessing import Detrend, SoftwareMention, SpecifiedTerm, StepOrderPart
-from fmri_repro.spec.provenance import Extracted, ProvenancedField
+from fmri_repro.spec.provenance import Extracted, ProvenancedField, Span
 from pydantic import BaseModel, Field
 
 from extractor_mvp.coverage_fields import (
@@ -44,7 +44,12 @@ from extractor_mvp.extractor import (
 )
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.prompt_rules import PREPROCESSING_RULES, VARIANT_RULES
-from extractor_mvp.quote_support import free_text_supported, phrase_in_quote, version_in_quote
+from extractor_mvp.quote_support import (
+    free_text_supported,
+    locate_phrase,
+    phrase_in_quote,
+    version_in_quote,
+)
 from extractor_mvp.span_resolver import resolve_quote
 
 _SHARED_RULES = """\
@@ -698,12 +703,20 @@ def _process_step_order_parts(extraction: BaseModel, text: str, out: CoverageExt
         verified = any(free_text_supported(part.applies_to, sp.text) for sp in spans) or any(
             free_text_supported(part.applies_to, q) for q in part.verbatim_quotes
         )
+        at_spans: list[Any] = []
+        if not verified:
+            # Stage 2b item 3: anywhere in the methods text, headings included; the location kept
+            at = locate_phrase(part.applies_to, text)
+            if at is not None:
+                verified = True
+                at_spans = [Span(start=at[0], end=at[1], text=text[at[0] : at[1]])]
         out.step_order_parts.append(
             StepOrderPart(
                 kinds=kinds,
                 applies_to=part.applies_to.strip(),
                 applies_to_verified=verified,
                 spans=spans,
+                applies_to_spans=at_spans,
             )
         )
 

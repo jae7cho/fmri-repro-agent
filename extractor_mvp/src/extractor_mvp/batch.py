@@ -302,7 +302,8 @@ def _translate_spans(
     supplement_start: int | None = None,
     supplement_offset: int = 0,
 ) -> None:
-    """Add ``span_in_slice`` / ``span_in_full_paper`` to every extracted span.
+    """Add ``span_in_slice`` / ``span_in_full_paper`` to every extracted span (and, from 0.7.x, every
+    variant's spans and the spans locating its part, and the step-order parts' spans).
 
     The model's spans are offsets into the methods slice; add the slice's
     ``start_offset`` to recover full-paper offsets. Mutates in place. A span at or after
@@ -311,23 +312,36 @@ def _translate_spans(
     ``supplement_offset`` is where the slice of the supplement the model read starts in the
     supplement's text (the author's list of 2026-11-05, third round, item 1).
     """
+
+    def annotate(span: dict[str, Any]) -> None:
+        s, e = span["start"], span["end"]
+        if supplement_start is not None and s >= supplement_start:
+            span["span_in_supplement"] = {
+                "start": s - supplement_start + supplement_offset,
+                "end": e - supplement_start + supplement_offset,
+            }
+            return
+        span["span_in_slice"] = {"start": s, "end": e}
+        span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
+
     for step in prep_dump.get("steps", []):
         for value in step.values():
             if not isinstance(value, dict):
                 continue
             extraction = value.get("extraction")
-            if not isinstance(extraction, dict) or extraction.get("status") != "EXTRACTED":
+            if not isinstance(extraction, dict):
                 continue
-            for span in extraction.get("spans", []):
-                s, e = span["start"], span["end"]
-                if supplement_start is not None and s >= supplement_start:
-                    span["span_in_supplement"] = {
-                        "start": s - supplement_start + supplement_offset,
-                        "end": e - supplement_start + supplement_offset,
-                    }
-                    continue
-                span["span_in_slice"] = {"start": s, "end": e}
-                span["span_in_full_paper"] = {"start": s + start_offset, "end": e + start_offset}
+            if extraction.get("status") == "EXTRACTED":
+                for span in extraction.get("spans", []):
+                    annotate(span)
+            elif extraction.get("status") == "VARIED":
+                # 0.7.x (Stage 2b): each variant's value spans and the spans locating its part
+                for variant in extraction.get("variants", []):
+                    for span in variant.get("spans", []) + variant.get("applies_to_spans", []):
+                        annotate(span)
+    for part in prep_dump.get("step_order_parts") or []:
+        for span in part.get("spans", []) + part.get("applies_to_spans", []):
+            annotate(span)
 
 
 def _methods_record(methods: MethodsSlice) -> dict[str, Any]:

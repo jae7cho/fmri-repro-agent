@@ -274,3 +274,37 @@ the identical phrase for a part across fields), C2, D1, E2, F1. No model call wa
   step-order labels of the case papers are the author's to key (§6) before Stage 2 scores them.
 - **Gate.** 68 of 68 stored reports are identical against `868ec27`: a1 19, coverage_v4 18,
   stress_v1 12 (the 49 of §7) and corpus_grobid_v1 19. A positive control changed 12 of 12.
+
+## 9. Stage 2b (2026-11-11, from Stage 2's findings)
+
+The author's items, as built. No re-run of the 45.
+
+1. **Compared models** (supersedes fork C2 as first built).
+   - When each model is described: one variant per model, `applies_to` the model's name.
+   - Only when the variation is stated without description: the null "varied across compared
+     models" entry.
+   - The phrase is recognised in `value` or in `applies_to`, and normalised to the null form.
+   - A compared-models entry beside described variants is dropped, with the reason
+     `varied_compared_entry_beside_described_variants`.
+   - **Pseudo-code:** with more than four parts that differ only on confound fields (nuisance
+     regression, CompCor, ICA denoising, despiking, scrubbing), the common steps are printed once
+     and the parts follow as a table, one row per part and one column per differing field.
+2. **The part rules,** in `PREPROCESSING_RULES` and so in the extraction prompts and the checking pass.
+   - Preprocessing applied before a derived measure (ALFF, fALFF, ReHo, FC), or for one data type or
+     dataset, is that part's preprocessing, not analysis.
+   - "Not applied to one part" is a value: performed = no for that part.
+3. **Finding a part's words.** `applies_to` is looked for in the value's sentence, then its
+   `applies_to_quote`, then anywhere in the methods text, headings included
+   (`quote_support.locate_phrase`).
+   - The location is kept in `applies_to_spans`, and for a step-order part in its new
+     `applies_to_spans` (schema 0.7.1, an additive patch).
+   - A part is unverified only when its words are found nowhere.
+4. **`base_pipeline_ref` as a bare citation marker with no quote** (yang_2025's "(67)").
+   - It becomes a deferral to that marker, grounded on the sentence of the methods text that carries
+     it, and the hop resolves it.
+   - Anything else extracted without a quote becomes missing.
+   - Neither is a validation failure any more.
+5. **`merge_labels.py` fails closed.** For a held-out paper, every column outside the known label
+   columns is withheld.
+
+Variant and part spans now get `span_in_slice` / `span_in_full_paper` like extracted spans.

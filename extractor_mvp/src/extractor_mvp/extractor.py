@@ -73,6 +73,7 @@ from fmri_repro.spec.provenance import (
     MissingFromPaper,
     NotApplicable,
     ProvenancedField,
+    Span,
     Variant,
     Varied,
     normalize_applies_to,
@@ -93,6 +94,7 @@ from extractor_mvp.quote_support import (
     coverage_value_supported,
     free_text_supported,
     is_operation_word_only,
+    locate_phrase,
     step_value_supported,
 )
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
@@ -107,6 +109,48 @@ def _coerce_float(v: Any) -> float | None:
 
 
 _CONFIDENCE = 0.8  # placeholder for MVP; calibration is post-abstract
+
+
+#: A bare citation marker: numbered ("(67)", "[12, 14]", "3-5") or author-year ("Smith et al.,
+#: 2019", "(Glasser and Van Essen 2011)").
+_NUMBERED_MARKER = re.compile(r"^[\(\[]?\s*\d+(?:\s*[,;\u2013\-]\s*\d+)*\s*[\)\]]?$")
+_AUTHOR_YEAR_MARKER = re.compile(
+    r"^\(?(?:[A-Z][\w'\-]+\s+)?[A-Z][\w'\-]+"
+    r"(?:\s+(?:et\s+al\.?|(?:and|&)\s+(?:[A-Z][\w'\-]+\s+)?[A-Z][\w'\-]+))?,?\s+"
+    r"(?:19|20)\d{2}[a-z]?\)?$"
+)
+
+
+def is_citation_marker(value: str) -> bool:
+    v = value.strip()
+    return bool(_NUMBERED_MARKER.match(v) or _AUTHOR_YEAR_MARKER.match(v))
+
+
+def marker_sentence(marker: str, text: str) -> Any:
+    """The sentence of ``text`` that carries a bare citation marker, as a Span, or None: the marker
+    as written, else (numbered) its numbers inside a bracket group ("(12, 67)" carries "67"). The
+    first occurrence; the sentence runs from the previous sentence end to the next."""
+    from fmri_repro.spec.provenance import Span as _Span
+
+    at = text.find(marker)
+    if at < 0:
+        nums = re.findall(r"\d+", marker)
+        if not nums or not _NUMBERED_MARKER.match(marker.strip()):
+            return None
+        rx = re.compile(r"[\(\[][^\)\]]*\b" + r"\b[^\)\]]*\b".join(nums) + r"\b[^\)\]]*[\)\]]")
+        m = rx.search(text)
+        if m is None:
+            return None
+        at = m.start()
+    ends = [m.end() for m in re.finditer(r"[.!?](?=\s+[A-Z(\[])|\n\s*\n", text[:at])]
+    start = ends[-1] if ends else 0
+    nxt = re.search(r"[.!?](?=\s|$)", text[at + len(marker) :])
+    end = at + len(marker) + (nxt.end() if nxt else len(text) - at - len(marker))
+    while start < end and text[start].isspace():
+        start += 1
+    if end <= start:
+        return None
+    return _Span(start=start, end=end, text=text[start:end])
 
 
 class PreprocessingExtraction(BaseModel):
@@ -142,7 +186,42 @@ class PreprocessingExtraction(BaseModel):
     # Defaulted to status="missing" so pre-existing fixtures still construct.
     temporal_standardization_method: StepFieldResult = Field(
         default_factory=lambda: StepFieldResult(status="missing")
-    )  # voxel_temporal_zscore when the BOLD SIGNAL is z-scored (Liu/Cho); missing otherwise
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def _a_bare_citation_marker_ref(cls, data: Any) -> Any:
+        """Stage 2b item 4 (2026-11-11, after yang_2025 failed whole three times on value "(67)" with
+        no quote): a ``base_pipeline_ref`` returned as extracted with a value and no quote is never a
+        validation failure. A bare citation marker becomes a deferral to that marker, which
+        :func:`_build_base_pipeline` grounds on the sentence carrying it and the hop resolves;
+        anything else becomes missing. Adds nothing to the JSON schema the model sees."""
+        if not isinstance(data, dict):
+            return data
+        ref = data.get("base_pipeline_ref")
+        if not isinstance(ref, dict) or ref.get("status") != "extracted":
+            return data
+        value = str(ref.get("value") or "").strip()
+        if not value or ref.get("verbatim_quote"):
+            return data
+        searched = {
+            "searched_terms": ref.get("searched_terms") or [],
+            "sections_searched": ref.get("sections_searched") or [],
+        }
+        if is_citation_marker(value):
+            fixed = {
+                "status": "deferred",
+                "ref_string": value,
+                "deferral_sentence": value,
+                "target_kind": "paper",
+                **searched,
+            }
+        else:
+            fixed = {"status": "missing", **searched}
+        return {
+            **data,
+            "base_pipeline_ref": fixed,
+        }  # voxel_temporal_zscore when the BOLD SIGNAL is z-scored (Liu/Cho); missing otherwise
 
 
 EXTRACTION_PROMPT = (
@@ -750,6 +829,37 @@ VARIED_APPLIES_TO_ALL = "varied_variant_applies_to_all"
 VARIED_APPLIES_TO_REPEATED = "varied_applies_to_repeated"
 VARIED_NO_VALUE = "varied_variant_without_value"
 APPLIES_TO_UNVERIFIED = "applies_to_unverified"
+#: Stage 2b (2026-11-11, the author's item 1): the compared-models entry beside described variants
+COMPARED_BESIDE_DESCRIBED = "varied_compared_entry_beside_described_variants"
+
+
+def _names_compared(v: Any) -> bool:
+    """A variant that is the compared-models entry, whether the model put the phrase in
+    ``applies_to`` or in ``value`` (Stage 2: power_2014 put it in the value)."""
+    if normalize_applies_to(v.applies_to or "") == COMPARED_MODELS:
+        return True
+    return isinstance(v.value, str) and normalize_applies_to(v.value) == COMPARED_MODELS
+
+
+def _applies_to_located(applies_to: str, ext: Any, v: Any, text: str) -> tuple[bool, list[Span]]:
+    """Stage 2b item 3: whether the part's words are in the paper, and where. In order: the value's
+    own sentence (its span is the location); the sentence the model tied it with
+    (``applies_to_quote``, resolved); anywhere in the methods text, headings included (the matched
+    words' span). Unverified only when found nowhere."""
+    if free_text_supported(applies_to, ext.spans[0].text) or free_text_supported(
+        applies_to, v.verbatim_quote
+    ):
+        return True, []
+    if v.applies_to_quote:
+        res = resolve_quote(v.applies_to_quote, text)
+        if res.span is not None and free_text_supported(
+            applies_to, v.applies_to_quote if res.repairs else res.span.text
+        ):
+            return True, [res.span]
+    at = locate_phrase(applies_to, text)
+    if at is not None:
+        return True, [Span(start=at[0], end=at[1], text=text[at[0] : at[1]])]
+    return False, []
 
 
 def _process_varied(
@@ -769,12 +879,16 @@ def _process_varied(
     Each variant's value and quote go through the one span path and the value-support check
     exactly as an extracted field's do; a variant that fails is dropped and counted
     (``variants_dropped``), never shown as the paper's. Its ``applies_to`` words must be in its
-    quote, or in ``applies_to_quote`` resolved; if in neither, the variant is kept with
+    quote, in ``applies_to_quote`` resolved, or (Stage 2b) anywhere in the methods text, whose span
+    is then kept in ``applies_to_spans``; if found nowhere, the variant is kept with
     ``applies_to_verified`` False (shown unverified, never dropped, never made "all"). A variant
     labelled "all" or repeating another's label (after :func:`normalize_applies_to`) is dropped.
 
-    Fork C2: one value-less entry, ``applies_to`` "varied across compared models", with the
-    sentence that states the comparison. One or more surviving variants stay ``Varied``, never
+    Compared models (Stage 2b, the author's item 1, superseding fork C2 as first built): variants
+    each described are kept, one per model, and a compared-models entry beside them is dropped; the
+    compared-models entry alone, with the phrase in ``applies_to`` or in ``value``, becomes the one
+    value-less entry with the sentence that states the variation. One or more surviving variants
+    stay ``Varied``, never
     collapsed to an "all" value; none surviving is the first failure's gap. Returns the first
     diagnostic only, as the other branches do."""
     variants: list[Variant[Any]] = []
@@ -788,7 +902,43 @@ def _process_varied(
         if diag is None:
             diag = ExtractionDiagnostic(f"{dotted}[{applies_to}]", reason, value, quote)
 
-    for v in fe.variants:
+    # Stage 2b item 1: variants each described win; the compared-models entry stands alone only when
+    # nothing is described, normalised to the null form whichever slot carried the phrase
+    compared = [v for v in fe.variants if _names_compared(v)]
+    described = [v for v in fe.variants if not _names_compared(v)]
+    if compared and described:
+        dropped += len(compared)
+        for v in compared:
+            note(COMPARED_BESIDE_DESCRIBED, v.value, v.verbatim_quote, v.applies_to)
+    elif compared:
+        lead = compared[0]
+        res = resolve_quote(lead.verbatim_quote, text)
+        dropped += len(compared) - 1
+        if res.span is None:
+            dropped += 1
+            note(VARIED_NO_VALUE, None, lead.verbatim_quote, COMPARED_MODELS)
+            return _missing_pf(field_id, t, "varied_no_variant_checked"), diag, None
+        return (
+            ProvenancedField[t](
+                field_id=field_id,
+                extraction=Varied[t](
+                    variants=[
+                        Variant[t](
+                            value=None,
+                            spans=[res.span],
+                            applies_to=COMPARED_MODELS,
+                            confidence=_CONFIDENCE,
+                            span_recovered=res.recovered,
+                        )
+                    ],
+                    variants_dropped=dropped,
+                ),
+                inference=NotApplicable(),
+            ),
+            diag,
+            None,
+        )
+    for v in described:
         key = normalize_applies_to(v.applies_to)
         if key == APPLIES_TO_ALL or not key:
             dropped += 1
@@ -798,22 +948,9 @@ def _process_varied(
             dropped += 1
             note(VARIED_APPLIES_TO_REPEATED, v.value, v.verbatim_quote, v.applies_to)
             continue
-        if v.value is None:
-            res = resolve_quote(v.verbatim_quote, text)
-            if key != COMPARED_MODELS or len(fe.variants) != 1 or res.span is None:
-                dropped += 1
-                note(VARIED_NO_VALUE, None, v.verbatim_quote, v.applies_to)
-                continue
-            seen.add(key)
-            variants.append(
-                Variant[t](
-                    value=None,
-                    spans=[res.span],
-                    applies_to=COMPARED_MODELS,
-                    confidence=_CONFIDENCE,
-                    span_recovered=res.recovered,
-                )
-            )
+        if v.value is None:  # a value-less variant that is not the compared-models entry
+            dropped += 1
+            note(VARIED_NO_VALUE, None, v.verbatim_quote, v.applies_to)
             continue
         sub = FieldExtractionResult(
             status="extracted", value=v.value, verbatim_quote=v.verbatim_quote
@@ -838,17 +975,7 @@ def _process_varied(
             continue
         seen.add(key)
         ext = pf.extraction
-        verified = free_text_supported(v.applies_to, ext.spans[0].text) or free_text_supported(
-            v.applies_to, v.verbatim_quote
-        )
-        at_spans = []
-        if not verified and v.applies_to_quote:
-            res = resolve_quote(v.applies_to_quote, text)
-            if res.span is not None:
-                at_spans = [res.span]
-                verified = free_text_supported(
-                    v.applies_to, v.applies_to_quote if res.repairs else res.span.text
-                )
+        verified, at_spans = _applies_to_located(v.applies_to, ext, v, text)
         if not verified:
             note(
                 APPLIES_TO_UNVERIFIED, v.value, v.applies_to_quote or v.verbatim_quote, v.applies_to
@@ -1144,7 +1271,13 @@ def _build_base_pipeline(
     if ref_result.status == "deferred" and ref_result.ref_string and ref_result.deferral_sentence:
         ref_string = ref_result.ref_string
         ref_sentence = ref_result.deferral_sentence
-        ref_span = resolve_quote(ref_sentence, text).span
+        if ref_sentence == ref_string and is_citation_marker(ref_string):
+            # Stage 2b item 4: a bare marker, grounded on the sentence of the methods text carrying it
+            ref_span = marker_sentence(ref_string, text)
+            if ref_span is not None:
+                ref_sentence = ref_span.text
+        else:
+            ref_span = resolve_quote(ref_sentence, text).span
         if ref_span is not None:
             ref_record = DeferralRecord(
                 field=bp_id,

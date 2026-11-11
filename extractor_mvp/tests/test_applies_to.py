@@ -547,3 +547,197 @@ def test_the_motion_arm_infers_nothing_over_a_varied_method() -> None:
     _, rec = infer_motion_method(prep)
     assert rec.path == "never" and rec.reason.startswith("varied")
     assert step.method.inference.status == "NOT_APPLICABLE"
+
+
+# --- Stage 2b (2026-11-11, the author's items 1-4) ----------------------------------------------
+
+
+def test_the_compared_phrase_in_the_value_is_normalised_to_the_null_entry() -> None:
+    """power_2014 in Stage 2: the phrase came back as the value."""
+    for variant in (
+        _v("varied across compared models", S_COMPARE, "the regressor sets"),
+        _v('"Varied across compared models."', S_COMPARE, "regressor sets"),
+        _v("24P", S_COMPARE, "varied across compared models"),
+    ):
+        pf, diag, _ = _process(_varied(variant))
+        (v,) = pf.extraction.variants
+        assert v.value is None and v.applies_to == COMPARED_MODELS
+        assert v.spans[0].text == S_COMPARE and diag is None
+
+
+def test_described_variants_win_over_a_compared_entry_beside_them() -> None:
+    pf, diag, _ = _process(
+        _varied(
+            _v("6", S_AMP, "Amplitude maps"),
+            _v("varied across compared models", S_COMPARE, "all models"),
+        )
+    )
+    assert [v.applies_to for v in pf.extraction.variants] == ["Amplitude maps"]
+    assert pf.extraction.variants_dropped == 1
+    assert (
+        diag is not None
+        and diag.failure_reason == "varied_compared_entry_beside_described_variants"
+    )
+
+
+def test_a_part_is_found_anywhere_in_the_methods_text_and_its_location_kept() -> None:
+    pf, diag, _ = _process(_varied(_v("6", S_AMP, "second analysis")))
+    (v,) = pf.extraction.variants
+    assert v.applies_to_verified is True and diag is None
+    (at,) = v.applies_to_spans
+    assert at.text == "second analysis" and TEXT[at.start : at.end] == "second analysis"
+    # found nowhere: still unverified, nothing located
+    pf, diag, _ = _process(_varied(_v("6", S_AMP, "the ALFF maps")))
+    assert pf.extraction.variants[0].applies_to_verified is False
+    assert pf.extraction.variants[0].applies_to_spans == []
+
+
+def test_locate_phrase() -> None:
+    from extractor_mvp.quote_support import locate_phrase
+
+    t = "Model 10 used AROMA. In Parts I\u2013II the data were filtered. Task runs were censored."
+    assert locate_phrase("Model 1", t) is None  # whole words only
+    assert t[slice(*locate_phrase("Model 10", t))] == "Model 10"  # type: ignore[misc]
+    assert t[slice(*locate_phrase("parts i-ii", t))] == "Parts I\u2013II"  # type: ignore[misc]
+    assert t[slice(*locate_phrase("task run", t))] == "Task runs"  # type: ignore[misc]
+
+
+def test_a_step_order_part_is_found_anywhere_in_the_methods_text() -> None:
+    temporal = {
+        "step_order_parts": [
+            StepOrderPartResult(
+                kinds=["nuisance_regression", "temporal_filtering"],
+                verbatim_quotes=[S_ORDER_A],
+                applies_to="second analysis",
+            )
+        ]
+    }
+    prep, _, _ = _run(temporal=temporal)
+    (part,) = prep.step_order_parts or []
+    assert part.applies_to_verified is True
+    assert [s.text for s in part.applies_to_spans] == ["second analysis"]
+
+
+def test_the_part_rules_are_in_the_extraction_prompts_and_the_checking_pass() -> None:
+    from extractor_mvp.coverage_extractor import SPATIAL_PROMPT, TEMPORAL_VOLUME_PROMPT
+    from extractor_mvp.extractor import EXTRACTION_PROMPT
+
+    for line in (
+        "Preprocessing applied before a derived measure is computed (e.g. ALFF, fALFF, ReHo",
+        "is preprocessing for that part of the data, not analysis",
+        "A statement that a step was not applied to one part of the data is a value for that part",
+    ):
+        for prompt in (EXTRACTION_PROMPT, TEMPORAL_VOLUME_PROMPT, SPATIAL_PROMPT, VERIFIER_PROMPT):
+            assert line in " ".join(prompt.split()), line
+    compared = "describes each one, return one variant per model"
+    assert compared in " ".join(SPATIAL_PROMPT.split())
+    assert "WITHOUT describing them" in SPATIAL_PROMPT
+
+
+def test_a_bare_citation_marker_ref_is_a_deferral_never_a_validation_failure() -> None:
+    base = {
+        k: {"status": "missing"}
+        for k in (
+            "target_space",
+            "resolution_mm",
+            "surface_registration",
+            "target_surface",
+            "intensity_convention",
+            "intensity_value",
+        )
+    }
+    got = PreprocessingExtraction.model_validate(
+        {**base, "base_pipeline_ref": {"status": "extracted", "value": "(67)"}}
+    )
+    ref = got.base_pipeline_ref
+    assert (ref.status, ref.ref_string, ref.deferral_sentence) == ("deferred", "(67)", "(67)")
+    got = PreprocessingExtraction.model_validate(
+        {**base, "base_pipeline_ref": {"status": "extracted", "value": "the usual pipeline"}}
+    )
+    assert got.base_pipeline_ref.status == "missing"
+    # positive control: an extracted ref WITH a quote is untouched
+    got = PreprocessingExtraction.model_validate(
+        {
+            **base,
+            "base_pipeline_ref": {
+                "status": "extracted",
+                "value": "(67)",
+                "verbatim_quote": "q (67)",
+            },
+        }
+    )
+    assert got.base_pipeline_ref.status == "extracted"
+
+
+def test_a_marker_deferral_is_grounded_on_the_sentence_carrying_it() -> None:
+    from extractor_mvp.extractor import _build_base_pipeline
+
+    text = (
+        "Imaging was at 3T. Data were preprocessed with the pipeline described in (12, 67). Then."
+    )
+    ref = FieldExtractionResult(status="deferred", ref_string="(67)", deferral_sentence="(67)")
+    pf, record = _build_base_pipeline(FieldExtractionResult(status="missing"), ref, text)
+    assert pf.extraction.status == "DEFERRED_TO_CITATION"
+    (d,) = pf.extraction.deferrals
+    assert (
+        d.ref == "(67)"
+        and d.span.text == "Data were preprocessed with the pipeline described in (12, 67)."
+    )
+    assert record is not None and record.deferral_sentence == d.span.text
+    # a marker the text does not carry does not ground: the existing unresolved reason, no failure
+    pf, _ = _build_base_pipeline(FieldExtractionResult(status="missing"), ref, "No markers here.")
+    assert pf.extraction.status != "DEFERRED_TO_CITATION"
+
+
+def _many_parts_record(kind: str, field: str, n: int, numeric: bool = False) -> dict[str, Any]:
+    prep, _, _ = _run()
+    step = _step(prep, kind)
+    span = {"start": 0, "end": 4, "text": "text"}
+    variants = [
+        {
+            "value": float(i) if numeric else f"v{i}",
+            "spans": [span],
+            "applies_to": f"Model {i}",
+            "confidence": 0.8,
+        }
+        for i in range(1, n + 1)
+    ]
+    # the field's own class, so the value is typed as the schema types it
+    pf = type(getattr(step, field)).model_validate(
+        {
+            "field_id": field,
+            "extraction": {"status": "VARIED", "variants": variants},
+            "inference": {"status": "NOT_APPLICABLE"},
+        }
+    )
+    setattr(step, field, pf)
+    return {"preprocessing": prep.model_dump(mode="json")}
+
+
+def test_more_than_four_confound_parts_render_the_steps_once_and_a_table() -> None:
+    code = render_pseudocode(_many_parts_record("nuisance_regression", "regressor_list", 5))
+    assert code is not None
+    assert "# --- applies to:" not in code
+    assert "regressor_list=by_part [E]" in code
+    assert "# | part | nuisance_regression.regressor_list |" in code
+    assert '# | Model 5 | "v5" |' in code
+    assert code.count("nuisance_regression(") == 1
+
+
+def test_four_parts_or_a_non_confound_field_keep_one_block_per_part() -> None:
+    code = render_pseudocode(_many_parts_record("nuisance_regression", "regressor_list", 4))
+    assert code is not None and code.count("# --- applies to: Model") == 4 and "by_part" not in code
+    code = render_pseudocode(_many_parts_record("spatial_smoothing", "fwhm_mm", 6, numeric=True))
+    assert code is not None and code.count("# --- applies to: Model") == 6 and "by_part" not in code
+
+
+def test_variant_spans_get_full_paper_offsets() -> None:
+    from extractor_mvp.batch import _translate_spans
+
+    prep, _, _ = _run(spatial=_smoothing_varied())
+    dump = prep.model_dump(mode="json")
+    _translate_spans(dump, 1000)
+    step = next(s for s in dump["steps"] if s["kind"] == "spatial_smoothing")
+    for v in step["fwhm_mm"]["extraction"]["variants"]:
+        sp = v["spans"][0]
+        assert sp["span_in_full_paper"] == {"start": sp["start"] + 1000, "end": sp["end"] + 1000}

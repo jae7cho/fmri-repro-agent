@@ -410,3 +410,22 @@ def version_in_quote(version: str, quote: str) -> bool:
         return False
     pattern = r"(?<![0-9A-Za-z.])(?:v|version\s*)?" + re.escape(v) + r"(?![0-9])(?!\.[0-9])"
     return re.search(pattern, quote, re.IGNORECASE) is not None
+
+
+def locate_phrase(phrase: str, text: str) -> tuple[int, int] | None:
+    """Where ``phrase`` first occurs in ``text`` (2026-11-11, Stage 2b item 3: an ``applies_to`` is
+    looked for in the whole methods text, headings included, when its value's sentence does not
+    carry it). The words in order, case-insensitive, a plural "s"/"es" tolerated on an alphabetic
+    word, any run of non-word characters between words (dashes, spaces, line breaks), whole words
+    only; a ``Name (ACRONYM)`` phrase is also looked for through each of its first-use variants."""
+    best: tuple[int, int] | None = None
+    for variant in _first_use_variants(phrase):
+        words = re.findall(r"[A-Za-z0-9]+", variant)
+        if not words:
+            continue
+        parts = [re.escape(w) + ("(?:e?s)?" if w.isalpha() else "") for w in words]
+        rx = re.compile(r"(?<![A-Za-z0-9])" + r"[\W_]+".join(parts) + r"(?![A-Za-z0-9])", re.I)
+        m = rx.search(text)
+        if m and (best is None or m.start() < best[0]):
+            best = (m.start(), m.end())
+    return best
