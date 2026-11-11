@@ -4980,3 +4980,54 @@ Commits here: `a0ede47`, then this entry.
 `sfn2026-freeze` stays at `e437668`; post-freeze.
 
 Commits here: `94fd078`, then this entry.
+
+## 2026-11-11 (6) — labeler and merge path for the remaining COBIDAS rows (no extraction change)
+
+- `4d779a3`, the author's request of the same day.
+  - **Labeler:** new cards for slice_time_correction, nuisance_regression (compcor, ica_denoise as
+    sub-cards), volume censoring (scrub, despike as sub-cards), nonsteadystate_removal,
+    coregistration, distortion_correction, brain_extraction, segmentation and
+    intensity_correction.
+    - Each card has the five states and the step's `*_FIELD_META` names as free-text "as
+      stated" boxes. `performed` is not a box; the state carries it.
+    - Each card also has applies_to with "add stream", quote via selection and notes.
+    - The help panel gives the five standing rulings. Checked in the browser pane: sub-cards
+      nest, the export carries the new keys, and the filled-without-state and repeated
+      applies_to checks fire.
+  - **Workbook:** `ground_truth/preproc_rows_labels_v1.xlsx` has a README (vocabulary, rules,
+    rulings, columns) and one sheet per card and sub-card (12), each with the state dropdown.
+    It is created empty by `scripts/make_preproc_rows_workbook.py`, which refuses to
+    overwrite.
+  - **Merge:** `merge_labels.py` writes those sheets under the same refuse-on-existing rule. It
+    saves a workbook only when it appended to it, so the motion and smoothing/filtering
+    workbooks are untouched by a rows-only merge (tested on copies).
+  - **Walk list and progress:** `preproc_rows_walk_v1.csv` holds the 19 corpus ids (the
+    smoothing/filtering workbook's).
+    - `preproc_rows_progress_v1.csv` has one row per paper, a column per sheet and
+      `last_merged`.
+    - The merge adds the row counts; a dry run or a refusal leaves it unchanged.
+  - **Scorers:** `preproc_rows_scoring.py` and 12 `score_rows_<sheet>.py`, pre-registered
+    before any label exists. The test pins each file's sha256 (rules file `b7e49ab1…`).
+    - Scoring: state by `kind_state`; values as stated (numbers digit-exact, units never
+      converted; terms against verbatim or resolved; lists item by item); applies_to classes.
+    - Records: the newest results dir holding every walk paper (today
+      `corpus_full_v2_post_freeze`).
+    - The no-labels run prints the expected schema and exits 0 (all 12, against the real
+      empty workbook).
+- **Columns follow `*_FIELD_META` source order,** read once at import. An existing test
+  (`test_step_bijection_rejects_missing_registry_entry`) monkeypatches an entry out and back
+  in, which moves it to the end of the dict for later tests. That test was left alone. Note
+  that `model_fields` order differs from `*_FIELD_META` order for 5 of the 12 steps.
+- **Checks:**
+  - 68/68 identical vs `11901e7` (a1 19, coverage_v4 18, stress_v1 12, corpus_grobid_v1 19);
+    positive control 12/12 changed.
+  - 16 mutations, each diff non-empty, all killed. One survived first: the canned record has
+    no extracted `performed`; a test with one was added.
+  - One equivalent mutation was not run: progress counts adding vs overwriting cannot differ
+    under refuse-on-existing.
+  - Root 313 passed (95.38%); extractor_mvp 1044 passed.
+- **Untouched:** the other session's 19 staged files are not committed.
+
+`sfn2026-freeze` stays at `e437668`; post-freeze.
+
+Commits here: `4d779a3`, then this entry.
