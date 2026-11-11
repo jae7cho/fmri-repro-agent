@@ -18,6 +18,17 @@ assert _spec and _spec.loader
 ml = importlib.util.module_from_spec(_spec)
 sys.modules["merge_labels"] = ml  # dataclasses look the module up by name
 _spec.loader.exec_module(ml)
+sys.path.insert(0, str(REPO / "scripts"))
+import make_preproc_rows_workbook as builder  # noqa: E402
+
+#: The label workbooks are untracked from 2026-11-11 (the author's ruling: they hold held-out prose).
+#: A check that reads the real ones runs where they exist (the author's machine) and says why it
+#: skipped elsewhere (CI). Every merge test builds its own workbooks, so none of them skips.
+_REAL = (ml.MOTION_XLSX, ml.SF_XLSX)
+needs_real_workbooks = pytest.mark.skipif(
+    not all(p.exists() for p in _REAL),
+    reason="the label workbooks are untracked (2026-11-11); this check runs where they exist",
+)
 
 MOTION_HEAD = [
     "paper_id",
@@ -109,7 +120,7 @@ def _workbooks(tmp: Path) -> tuple[Path, Path]:
     sp = tmp / "sf.xlsx"
     s.save(sp)
     # 2026-11-11: the remaining-rows workbook and its progress file, copies of the real (empty) ones
-    shutil.copy(ml.ROWS_XLSX, tmp / "rows.xlsx")
+    builder.build_workbook(tmp / "rows.xlsx")
     shutil.copy(ml.PROGRESS_CSV, tmp / "progress.csv")
     return mp, sp
 
@@ -130,7 +141,7 @@ def _rows(path: Path, sheet: str) -> list[dict]:
 def _run(tmp: Path, *extra: str) -> tuple[int, Path, Path]:
     mp, sp = tmp / "motion.xlsx", tmp / "sf.xlsx"
     if not (tmp / "rows.xlsx").exists():
-        shutil.copy(ml.ROWS_XLSX, tmp / "rows.xlsx")
+        builder.build_workbook(tmp / "rows.xlsx")
         shutil.copy(ml.PROGRESS_CSV, tmp / "progress.csv")
     code = ml.main(
         [
@@ -143,6 +154,8 @@ def _run(tmp: Path, *extra: str) -> tuple[int, Path, Path]:
             str(tmp / "rows.xlsx"),
             "--progress",
             str(tmp / "progress.csv"),
+            "--heldout-sidecar",
+            str(tmp / "heldout.local.jsonl"),
             *extra,
         ]
     )
@@ -303,6 +316,7 @@ def _dv_lists(path: Path, sheet: str) -> dict[str, tuple[str, ...]]:
     }
 
 
+@needs_real_workbooks
 def test_vocabularies_match_the_workbooks():
     motion = _dv_lists(ml.MOTION_XLSX, "Labels")
     assert motion["B2"] == ml.MOTION_STATES
@@ -311,6 +325,7 @@ def test_vocabularies_match_the_workbooks():
         assert _dv_lists(ml.SF_XLSX, sheet)["C2"] == ml.SF_STATES
 
 
+@needs_real_workbooks
 def test_headers_match_the_workbooks():
     ws = openpyxl.load_workbook(ml.MOTION_XLSX)["Labels"]
     head = [c.value for c in ws[1]]
@@ -354,6 +369,7 @@ def _cells(path: Path) -> dict:
     }
 
 
+@needs_real_workbooks
 def test_append_to_copies_of_the_real_workbooks_keeps_every_existing_cell(tmp_path):
     mp, sp = tmp_path / "motion.xlsx", tmp_path / "sf.xlsx"
     shutil.copy(ml.MOTION_XLSX, mp)
@@ -449,13 +465,20 @@ def test_the_row_sheets_are_the_schemas_steps_without_performed() -> None:
     assert ml.ROW_STATES == ml.SF_STATES
 
 
-def test_the_rows_workbook_matches_the_merge_script() -> None:
-    wb = openpyxl.load_workbook(ml.ROWS_XLSX)
+def test_the_rows_workbook_matches_the_merge_script(tmp_path) -> None:
+    """The builder's output (CI) and, where it exists, the author's workbook (README and headers)."""
+    built = tmp_path / "rows.xlsx"
+    builder.build_workbook(built)
+    for path in [built] + ([ml.ROWS_XLSX] if ml.ROWS_XLSX.exists() else []):
+        _check_rows_workbook(path)
+
+
+def _check_rows_workbook(path: Path) -> None:
+    wb = openpyxl.load_workbook(path)
     assert wb.sheetnames == ["README", *ROW_KINDS]
     for kind in ROW_KINDS:
         assert [c.value for c in wb[kind][1]] == ["paper_id", *ml.ROW_SHEETS[kind], "adjudication"]
-        assert _dv_lists(ml.ROWS_XLSX, kind)["C2"] == ml.ROW_STATES
-        assert wb[kind].max_row == 1  # created empty: no label exists yet
+        assert _dv_lists(path, kind)["C2"] == ml.ROW_STATES
     readme = " ".join(str(c.value) for row in wb["README"].iter_rows() for c in row if c.value)
     for text in (*ml.ROW_STATES, *ml.ROW_RULINGS):
         assert text in readme
@@ -479,8 +502,10 @@ def test_the_walk_list_is_the_19_corpus_papers_and_progress_starts_with_them() -
     import csv
 
     walk = [r["paper_id"] for r in csv.DictReader(ml.WALK_CSV.open())]
-    sf_ids = {r["paper_id"] for r in _rows(ml.SF_XLSX, "Smoothing") if r["paper_id"]}
-    assert len(walk) == 19 and walk == sorted(sf_ids)
+    assert len(walk) == 19 and walk == sorted(walk) and {"liu_2005", "tang_2025"} <= set(walk)
+    if ml.SF_XLSX.exists():  # untracked from 2026-11-11: compared where it exists
+        sf_ids = {r["paper_id"] for r in _rows(ml.SF_XLSX, "Smoothing") if r["paper_id"]}
+        assert walk == sorted(sf_ids)
     progress = ml.read_progress(ml.PROGRESS_CSV)
     assert [r["paper_id"] for r in progress] == walk
     assert list(progress[0]) == list(ml.PROGRESS_HEAD)
@@ -584,3 +609,66 @@ def test_a_motion_and_smoothing_export_leaves_the_rows_workbook_alone(tmp_path) 
         (tmp_path / "progress.csv").read_text(),
         (tmp_path / "rows.xlsx").read_bytes(),
     ) == before
+
+
+# --- held-out prose never goes into a workbook (2026-11-11) --------------------------------------
+
+
+def test_a_held_out_papers_prose_goes_to_the_sidecar_and_never_into_a_workbook(tmp_path, capsys):
+    _workbooks(tmp_path)
+    doc = json.loads(json.dumps(SYNTHETIC))
+    doc["paper_id"] = "tang_2025"
+    doc["scrub"] = [ROWS_DOC["scrub"][0]]
+    _export(tmp_path / "in", doc)
+    assert _run(tmp_path, "--date", "2099-01-02")[0] == 0
+    motion = next(
+        r for r in _rows(tmp_path / "motion.xlsx", "Labels") if r["paper_id"] == "tang_2025"
+    )
+    assert motion["method_quote"] == ml.REDACTED and motion["notes"] == ml.REDACTED
+    assert motion["method_state"] == "named_tool" and motion["method_value"] == "ToolX"
+    smoothing = [
+        r for r in _rows(tmp_path / "sf.xlsx", "Smoothing") if r["paper_id"] == "tang_2025"
+    ]
+    assert [r["quote"] for r in smoothing] == [ml.REDACTED, ml.REDACTED]
+    assert [r["width"] for r in smoothing] == [6, "2.5 mm"]  # the values are the label: kept
+    assert smoothing[0]["notes"] is None  # nothing to withhold stays empty
+    (scrub,) = _rows(tmp_path / "rows.xlsx", "scrub")
+    assert scrub["quote"] == ml.REDACTED and scrub["threshold"] == "0.5 mm"
+    every_cell = " ".join(
+        str(c.value)
+        for book in ("motion.xlsx", "sf.xlsx", "rows.xlsx")
+        for ws in openpyxl.load_workbook(tmp_path / book).worksheets
+        for row in ws.iter_rows()
+        for c in row
+    )
+    for prose in ("Synthetic sentence", "synthetic note"):
+        assert prose not in every_cell
+    side = [json.loads(ln) for ln in (tmp_path / "heldout.local.jsonl").read_text().splitlines()]
+    assert {(d["sheet"], d["column"]) for d in side} == {
+        ("Labels", "method_quote"),
+        ("Labels", "notes"),
+        ("Smoothing", "quote"),
+        ("Filtering", "quote"),
+        ("scrub", "quote"),
+    }
+    assert len(side) == 6 and {d["paper_id"] for d in side} == {"tang_2025"}
+    assert {d["adjudication"] for d in side} == {"author alone, 2099-01-02"}
+    assert "held-out prose cells withheld: 6" in capsys.readouterr().out
+
+
+def test_a_paper_not_held_out_keeps_its_prose_and_writes_no_sidecar(tmp_path):
+    _workbooks(tmp_path)
+    _export(tmp_path / "in", SYNTHETIC)
+    assert _run(tmp_path)[0] == 0
+    motion = next(
+        r for r in _rows(tmp_path / "motion.xlsx", "Labels") if r["paper_id"] == "synthetic_2099"
+    )
+    assert motion["method_quote"] == "Synthetic sentence one."
+    assert not (tmp_path / "heldout.local.jsonl").exists()
+
+
+def test_the_held_out_ids_and_the_sidecar_are_where_the_rest_of_the_repo_expects() -> None:
+    assert ml._HELD_OUT == frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+    ignore = (REPO / ".gitignore").read_text().splitlines()
+    assert "ground_truth/*.local.jsonl" in ignore
+    assert "ground_truth/*.xlsx" in ignore

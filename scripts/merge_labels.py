@@ -19,6 +19,13 @@ gets ``adjudication`` = "author alone, <date>", or "<rater>, <date>" with ``--ra
 workbook had no adjudication column; one is added after its last column the first time a row is
 appended to it. Bullets 2-7 of the motion row are left blank (the labeler covers bullet 1 only).
 
+Held-out papers (2026-11-11, the author's ruling): for liu_2005, tang_2025 and wheaton_2004 the
+prose cells (``quote``, ``notes``; ``method_quote`` and ``notes`` on the motion sheet) are written as
+:data:`REDACTED`, and the prose itself is appended to ``ground_truth/heldout_label_prose.local.jsonl``,
+which is gitignored. States and values are written as for any paper: they are the label. The
+workbooks are untracked from the same day, so this keeps a held-out paper's text out of any
+workbook that is published later.
+
 Exit status: 0 when every file was appended, 1 when anything was refused (the rest is still
 written), 2 on a usage error. ``--dry-run`` reports the same counts and writes nothing.
 
@@ -46,6 +53,16 @@ SF_XLSX = REPO / "ground_truth" / "smoothing_filtering_labels_v1.xlsx"
 ROWS_XLSX = REPO / "ground_truth" / "preproc_rows_labels_v1.xlsx"
 WALK_CSV = REPO / "ground_truth" / "preproc_rows_walk_v1.csv"
 PROGRESS_CSV = REPO / "ground_truth" / "preproc_rows_progress_v1.csv"
+HELDOUT_SIDECAR = REPO / "ground_truth" / "heldout_label_prose.local.jsonl"
+
+#: Held out by pre-registration C11/C26: their prose never goes into a workbook.
+_HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+REDACTED = (
+    "[withheld: held-out paper, prereg C11/C26 — kept in ground_truth/"
+    "heldout_label_prose.local.jsonl, untracked]"
+)
+#: The workbook columns that hold prose (the rest are states and values).
+PROSE_COLUMNS = frozenset({"quote", "notes", "method_quote"})
 
 SCHEMA = "aespa-labels/1"
 #: The workbooks' dropdown lists, exactly (Labels!B, Smoothing!C, Filtering!C, Labels!R).
@@ -186,6 +203,7 @@ class Outcome:
         }
     )
     empty_cards: int = 0
+    withheld: int = 0  # held-out prose cells moved to the sidecar
 
 
 class InvalidExportError(ValueError):
@@ -375,6 +393,29 @@ def update_progress(path: Path, written: dict[str, dict[str, int]], adjudication
             os.unlink(tmp)
 
 
+def _withhold(
+    pid: str, sheet: str, values: dict[str, Any], sink: list[dict[str, Any]]
+) -> dict[str, Any]:
+    """A held-out paper's row with its prose cells replaced by :data:`REDACTED`, the prose moved to
+    ``sink``; any other paper's row unchanged."""
+    if pid not in _HELD_OUT:
+        return values
+    out = dict(values)
+    for col in PROSE_COLUMNS & set(values):
+        if values[col] not in (None, ""):
+            sink.append(
+                {
+                    "paper_id": pid,
+                    "sheet": sheet,
+                    "applies_to": values.get("applies_to"),
+                    "column": col,
+                    "text": values[col],
+                }
+            )
+            out[col] = REDACTED
+    return out
+
+
 def merge(
     folder: Path,
     adjudication: str,
@@ -384,6 +425,7 @@ def merge(
     say: Any = print,
     rows_xlsx: Path = ROWS_XLSX,
     progress_csv: Path = PROGRESS_CSV,
+    sidecar: Path = HELDOUT_SIDECAR,
 ) -> Outcome:
     import openpyxl
 
@@ -394,6 +436,7 @@ def merge(
     sheets.update({name: rwb[name] for name in ROW_SHEETS})
     taken = {name: existing_ids(ws) for name, ws in sheets.items()}
     written: dict[str, dict[str, int]] = {}
+    withheld: list[dict[str, Any]] = []
 
     for path in sorted(folder.glob("*.labels.json")):
         out.files += 1
@@ -418,6 +461,7 @@ def merge(
         if paper.motion:
             ensure_column(sheets["Labels"], "adjudication")
             row = {MOTION_COLUMNS[k]: _cell_value(k, v) for k, v in paper.motion.items()}
+            row = _withhold(paper.paper_id, "Labels", row, withheld)
             append_row(
                 sheets["Labels"], {"paper_id": paper.paper_id, **row, "adjudication": adjudication}
             )
@@ -429,6 +473,7 @@ def merge(
         ):
             for r in rows:
                 values = {k: _cell_value(k, v) for k, v in r.items()}
+                values = _withhold(paper.paper_id, name, values, withheld)
                 append_row(
                     sheets[name],
                     {"paper_id": paper.paper_id, **values, "adjudication": adjudication},
@@ -448,6 +493,11 @@ def merge(
         if written:
             save_atomically(rwb, rows_xlsx)
             update_progress(progress_csv, written, adjudication)
+        if withheld:
+            with sidecar.open("a", encoding="utf-8") as fh:
+                for item in withheld:
+                    fh.write(json.dumps({**item, "adjudication": adjudication}) + "\n")
+    out.withheld = len(withheld)
     return out
 
 
@@ -460,6 +510,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--sf-workbook", type=Path, default=SF_XLSX)
     ap.add_argument("--rows-workbook", type=Path, default=ROWS_XLSX)
     ap.add_argument("--progress", type=Path, default=PROGRESS_CSV)
+    ap.add_argument("--heldout-sidecar", type=Path, default=HELDOUT_SIDECAR)
     ap.add_argument("--dry-run", action="store_true", help="report counts, write nothing")
     args = ap.parse_args(argv)
     if not args.folder.is_dir():
@@ -479,6 +530,7 @@ def main(argv: list[str] | None = None) -> int:
         args.dry_run,
         rows_xlsx=args.rows_workbook,
         progress_csv=args.progress,
+        sidecar=args.heldout_sidecar,
     )
     verb = "would append" if args.dry_run else "appended"
     row_counts = ", ".join(f"{s} {out.rows[s]}" for s in ROW_SHEETS if out.rows[s])
@@ -488,6 +540,7 @@ def main(argv: list[str] | None = None) -> int:
         f"Filtering {out.rows['Filtering']}"
         + (f", {row_counts}" if row_counts else "")
         + f"; empty cards skipped: {out.empty_cards}"
+        + (f"; held-out prose cells withheld: {out.withheld}" if out.withheld else "")
     )
     return 1 if out.refused else 0
 

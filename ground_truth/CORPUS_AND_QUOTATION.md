@@ -62,7 +62,7 @@ and withholding them would destroy the ground truth the file exists to carry. Gu
 `extractor_mvp/tests/test_heldout_quote_redaction.py`, with a positive control asserting that
 non-held-out rows keep their evidence — without which a deriver that redacted everything would pass.
 
-**NOT fixed, and this matters:** five of the six tracked workbooks still contain held-out prose.
+**NOT fixed, and this matters:** five of the six then-tracked workbooks contained held-out prose (untracked the same day, below).
 Each of those five names all three held-out papers and holds dozens of prose cells. Cleaning the
 csvs reduced the surface that casual searching hits; **it did not remove held-out text from this
 public repository.** Closing that needs one of:
@@ -76,6 +76,13 @@ workbook and into `preproc_rows_progress_v1.csv`, reproducing in a new file exac
 derivers were just changed to prevent. The redaction belongs in `merge_labels.py` before that
 labelling starts, not after.
 
+**Closed the same day, before any labelling.** `merge_labels.py` now writes a held-out paper's prose
+cells (`quote`, `notes`, and `method_quote` on the motion sheet) as a marker. It appends the prose
+itself to `ground_truth/heldout_label_prose.local.jsonl`, which is gitignored. States and values
+are written as for any paper, because they are the label. `preproc_rows_progress_v1.csv` holds row
+counts only and never held prose. Guarded in `tests/test_merge_labels.py`, with a positive control
+showing that a paper not held out keeps its prose.
+
 1. **Strip the held-out rows' prose columns in the workbooks** — touches the labelling instrument,
    which is the author's and is deliberately not edited by tooling.
 2. **Untrack the workbooks** — but they are the declared single source of truth that makes the csv
@@ -83,7 +90,16 @@ labelling starts, not after.
 3. **Accept it** — the papers remain unread *by the extractor and by the project*, which is what
    C11/C26 actually protects; publication of the prose does not by itself contaminate a future run.
 
-That is the author's decision and is deliberately left open.
+**Ruled 2026-11-11 by the author: option 2, untrack.** The six `ground_truth/*.xlsx` workbooks were
+removed from the index (`git rm --cached`; the files stay on the author's machine). `ground_truth/*.xlsx`
+is now in `.gitignore`. Examples will be published later, deliberately, once labelling is finished.
+The consequences, stated plainly:
+- the derived csvs stay tracked, but a cloner cannot re-derive them;
+- the tests that read the real workbooks skip in CI with that reason, and run where the workbooks
+  exist;
+- every merge test builds its own workbooks.
+
+The workbooks remain in git history, like the csv prose (next section).
 
 ## Why the history is not being rewritten
 
