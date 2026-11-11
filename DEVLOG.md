@@ -4947,3 +4947,36 @@ Commits here: `7a43a75`, then this entry.
 until Stage 1 lands.
 
 Commits here: `a0ede47`, then this entry.
+
+## 2026-11-11 (5) — DESIGN_applies_to Stage 1 (built, no re-run)
+
+- `94fd078`, the author's forks: A1, B1 (normalized same-string match plus the same-phrase
+  instruction), C2, D1, E2, F1.
+  - **Schema 0.7.0** (additive re-stamp): the `Varied` arm and `step_order_parts`
+    ("by_part"). Every stored value stays `Extracted`, i.e. "all".
+  - **Prompts:** one shared variant paragraph in the extraction, T and S prompts, with no
+    corpus example. The checking pass judges `<field>[<part>]` lines; `multiple_pipelines` is
+    asked nowhere now. Five hashes re-pinned with dated notes (a new vintage, not yet drawn).
+  - **Render:** variant lines; a "Values differ by" header (stored records keep their old
+    warning line); D1 counting; pseudo-code one block per part.
+- **Scorer** (`applies_to_scoring.py` in `score_smoothing_filtering.py`), on stored
+  `batch_coverage_v4`: collapsed for chen_2015 and ciric_2017 (smoothing), and chen_2015 and
+  power_2014 (filtering).
+  - tang_2025 has no record in that vintage.
+  - Single-stream rows are unchanged against the HEAD script.
+  - Equality skips a field the record's schema lacked (`pass_type` before 0.6.3).
+- **Checks:**
+  - 68/68 reports identical vs `868ec27` (a1 19, coverage_v4 18, stress_v1 12,
+    corpus_grobid_v1 19); positive control 12/12 changed.
+  - 18 mutations, each diff non-empty, all killed. The first KB-gate test was vacuous
+    (`_find_step` does not know `spatial_smoothing`); it was rewritten on
+    `temporal_filtering` with a control.
+  - extractor_mvp 1015 passed (90.20%); root 300 (95.38%).
+- **Not done here:** no `applies_to` column in the label CSVs. No case varies in those fields,
+  and another session has them staged. The scrub, nuisance and step-order labels of the case
+  papers are the author's to key before Stage 2.
+- **Untouched:** the other session's 19 staged files are not committed.
+
+`sfn2026-freeze` stays at `e437668`; post-freeze.
+
+Commits here: `94fd078`, then this entry.
