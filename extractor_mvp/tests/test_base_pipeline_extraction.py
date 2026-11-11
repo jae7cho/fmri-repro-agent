@@ -4,12 +4,12 @@ plus a live Cho-2021 full-PDF probe (marked ``live``)."""
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import pytest
 from fmri_repro.spec.preprocessing import PipelineRef
 from fmri_repro.spec.provenance import MissingFromPaper
 
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.extraction_result import FieldExtractionResult
 from extractor_mvp.extractor import (
     PreprocessingExtraction,
@@ -309,7 +309,7 @@ def test_version_none_supplied_is_missing():
 
 # --- 6d: live Cho 2021 full PDF Layer-1 probe ----------------------------------
 MODEL = os.environ.get("EXTRACTOR_MODEL", "bedrock/us.anthropic.claude-sonnet-4-6")
-CHO_PDF = Path("/Users/cwook/Documents/neurorepro/tested_lit/multi_batch/Cho_2021.pdf")
+CHO_PDF = corpus_dir("multi_batch") / "Cho_2021.pdf"
 
 
 @pytest.mark.xfail(

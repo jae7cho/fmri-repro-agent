@@ -2,14 +2,13 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import pytest
 
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.methods_finder import _METHODS_RE, _NEXT_RE, find_methods_section
 from extractor_mvp.pdf_loader import load_pdf_text
 
-_CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
+_CORPUS = corpus_dir("sfn_batch")
 _corpus = pytest.mark.skipif(not _CORPUS.exists(), reason="corpus PDFs absent (e.g. CI)")
 
 
@@ -260,7 +259,7 @@ def test_an_ordinary_methods_slice_is_kept() -> None:
     assert s.found_via == "header_match" and s.fallback_reason is None
 
 
-_STRESS = Path("/Users/cwook/Documents/neurorepro/tested_lit/stress_v1")
+_STRESS = corpus_dir("stress_v1")
 
 
 @pytest.mark.skipif(not (_STRESS / "Cattarinussi_2026.pdf").exists(), reason="corpus PDF absent")

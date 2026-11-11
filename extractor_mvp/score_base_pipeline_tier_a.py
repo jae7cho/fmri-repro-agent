@@ -23,6 +23,7 @@ import os
 from pathlib import Path
 
 from extractor_mvp.base_pipeline_match import matches_tier_a, matches_tier_b, normalize
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.pdf_loader import load_pdf_text
 
 REPO = Path(__file__).resolve().parents[1]
@@ -30,7 +31,7 @@ LABELS = REPO / "ground_truth" / "base_pipeline_labels_v1.csv"
 FROZEN = REPO / "ground_truth" / "predictions_v040_frozen.csv"
 ALIASES = REPO / "ground_truth" / "tier_b_aliases.csv"
 BATCH = REPO / "extractor_mvp" / "results" / "batch_v040_labelset"
-CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
+CORPUS = corpus_dir("sfn_batch")
 PDF = {  # paper_id -> filename (for the fabrication vs deferral-recognition text check)
     "poldrack_2015": "Poldrack_2015.pdf",
     "viduarre_2017": "Viduarre_2017.pdf",

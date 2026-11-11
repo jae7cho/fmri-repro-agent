@@ -115,15 +115,7 @@ full-width at half-maximum (FWHM) of 8 mm. Finally, a
 band-pass filter was applied to the data to restrict signal variation to frequencies between 0.01 Hz and 0.1 Hz, corre-
 sponding to the frequency range established in the literature
 for fluctuations in resting state data [Biswal et al., 1995].",,Jae Wook Cho
-liu_2005,REPORTED,BrainVoyager; custom software,toolbox_only; in_house,"fMRI Data Analysis Imaging data were analyzed using BrainVoyager (Brain Innovation,
-Maastricht, the Netherlands) and custom software written in Mat- lab. Each participant’s high-resolution anatomic volume was trans- formed into Talairach space (Talairach and Tournoux, 1988), after which an automated segmentation procedure was applied to ob- tain a surface reconstruction of the white-gray matter boundary. The surface was further inflated to reveal the sulci/gyri pattern. All analyses were performed on this inflated representation of the cor-
-tical sheet. Preprocessing of functional data included slice time
-correction, motion correction, linear trend removal, and temporal
-high-pass filtering (three cycles per scan) to remove slow drifts in
-the fMRI signal. Given the block design, no slice time correction
-was applied to data from the localizer scan. The 2D functional data
-were then aligned with the high-resolution anatomic volume and
-transformed into 3D data in the Talairach space with 3 × 3 × 3 mm resolution. Images were not spatially smoothed.",,Jae Wook Cho
+liu_2005,REPORTED,BrainVoyager; custom software,toolbox_only; in_house,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",,Jae Wook Cho
 liu_2013,REPORTED,FCP ,named_pipeline,"PRE-PROCESSING OF RESTING-STATE fMRI SIGNALS
 FCP analysis scripts (version 1.1-beta, available at http://www.
 nitrc.org/frs/shownotes.php?release_id=938) (Biswal et al.,
@@ -233,20 +225,7 @@ presented in a mode 1000 scale (10 units = 1% BOLD). Atlas transformation of the
 functional data was computed for each individual via the T2-weighted and MP-RAGE scans.
 Each run was then resampled in atlas space on an isotropic 3 mm grid combining
 realignment and atlas transformation in a single interpolation (Shulman et al., 2010).",Preprocessing steps reported but no tools or software mentioned,Jae Wook Cho
-tang_2025,REPORTED,DPABI; SPM12,toolbox_only; toolbox_only,"The rs-fMRI data were analyzed using the DPABI and SPM12 toolboxes based on MATLAB, with the
-preprocessing steps following those described in our previous studies28. It includes: (1) removing the first 10
-volumes to ensure that the subjects adapt to the scanning environment and stabilization of MRI signals; (2) slice
-timing: selecting a standard slice collected at a certain time point and using the Sinc interpolation algorithm
-to align other slices to match the collection time of the standard slice; (3) head motion correction, removing
-subjects with head motion displacement > 3 mm, rotation > 3°, or mean framewise displacement (FD) > 0.5; (4)
-spatial normalization, registering individual rs-fMRI images to individual 3D-T1WI images, then normalizing
-to MNI standard space and resampling to 3 × 3 × 3 mm3 voxels; (5) linear detrending; (6) detrending covariates,
-including 24 head motion parameters and white matter and cerebrospinal fluid signals; (7) bandpass filtering
-(0.01–0.10 Hz); (8) the brain regions with statistical differences in CVR among the three groups were used
-as ROI to extract the average time process from the pre-processed rs-fMRI data; (9) calculating the Pearson
-correlation coefficients between the average time course of each ROI and all other voxels in the brain to obtain a
-correlation map; (10) transforming the correlation map into a z-score map using Fisher’s r-to-z transformation.
-(Fig. S2B)",Preprocessed with DPABI and SPM12 according to citation (28). Steps provided Names DPABI+SPM12 (REPORTED for name); step parameters deferred to ref 28 (D11).,Jae Wook Cho
+tang_2025,REPORTED,DPABI; SPM12,toolbox_only; toolbox_only,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]","[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",Jae Wook Cho
 vanderwal_2016,REPORTED,C-PAC,named_pipeline,"Data processing. Standard data preprocessing was performed using the Con-
 figurable Pipeline for Analysis of Connectomes (C-PAC) including motion re-
 alignment and transformation into Montreal Neurological Institute (MNI) space
@@ -290,10 +269,4 @@ ASD diagnosis using ComBat [86], which minimizes site-
 specific scaling factors by estimating their additive and
 multiplicative influence in a linear model, using empirical
 Bayes to predict site parameters more accurately [87, 88].","""As described previously…"" but also lists C-PAC and all steps.",Jae Wook Cho
-wheaton_2004,REPORTED,SPM99,toolbox_only,"Data were analyzed using SPM99. Following motion correc-
-tion and slice timing adjustment, each subject’s EPI data were
-spatially normalized to the SPM MNI template and smoothed with
-a 7-mm full width at half maximum (FWHM) isometric Gaussian
-kernel. The fMRI time series were band-pass filtered using a high
-pass of 1/144 Hz and a low pass cut-off corresponding to
-frequencies above the hemodynamic response function.",,Jae Wook Cho
+wheaton_2004,REPORTED,SPM99,toolbox_only,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",,Jae Wook Cho

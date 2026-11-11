@@ -1,5 +1,11 @@
 # `base_pipeline` ground-truth labels
 
+> **Corpus, quotation and the hold-out:** what this public repository does and does not contain,
+> and why held-out papers' prose is withheld from the derived csv, is recorded in
+> [`CORPUS_AND_QUOTATION.md`](CORPUS_AND_QUOTATION.md). The `supporting_quote` and `notes` columns
+> are **withheld for `liu_2005`, `tang_2025` and `wheaton_2004`** (prereg C11/C26) and retained in
+> the workbook; the csv is still fully reproducible from the xlsx.
+
 Ground truth for the `base_pipeline` field across the 20-paper `tested_lit/sfn_batch` corpus
 (analysed denominator 19; cabral_2017 excluded). Single-rater, **author-labeled** (Jae Wook Cho)
 strictly against [`docs/ground-truth-protocol.md`](../docs/ground-truth-protocol.md), which was

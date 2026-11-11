@@ -24,13 +24,14 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.extractor import build_client, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 
 _MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
-_CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
+_CORPUS = corpus_dir("sfn_batch")
 _TARGET = "temporal_standardization_method"
 
 

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.extractor import build_client, extract
 from extractor_mvp.methods_finder import find_methods_section
 from extractor_mvp.parsed_paper import ParsedPaper
@@ -29,7 +30,7 @@ MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"
 K = 3
 REPO = Path(__file__).resolve().parents[2]
 SLICE = REPO / "ground_truth" / "liu_2005_deinterleaved_methods.txt"
-BINDER_PDF = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch/Binder_1999.pdf")
+BINDER_PDF = corpus_dir("sfn_batch") / "Binder_1999.pdf"
 
 
 def _field(prep: object, attr: str) -> dict | None:

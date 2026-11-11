@@ -77,6 +77,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fmri_repro.spec.preprocessing import SpecifiedTerm
 from fmri_repro.spec.provenance import DeferredToCitation, Extracted
 
+from extractor_mvp.corpus_paths import corpus_dir
 from extractor_mvp.extractor import (
     MOTION_METHOD_PROMPT,
     extract_motion_method,
@@ -86,7 +87,7 @@ from extractor_mvp.parsed_paper import ParsedPaper
 from extractor_mvp.pdf_loader import load_pdf_text, pdf_creation_date
 
 _MODEL = "bedrock/us.anthropic.claude-sonnet-4-5-20250929-v1:0"  # the v6/v7-pinned model
-_CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
+_CORPUS = corpus_dir("sfn_batch")
 
 #: The papers the pre-registration names, and nothing else: six at v1 (prereg :5-7), plus
 #: ciric_2017 from Amendment 4 (2026-10-22). The controls are marked because their expected

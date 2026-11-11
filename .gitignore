@@ -55,3 +55,14 @@ CLAUDE.local.md
 
 # --- Self-contained pilot (own venv/caches; extract to its own repo when ready) ---
 blindness_pilot/
+
+# --- Review workbooks: generated, and they carry verbatim paper prose ---
+# sfn_review*.xlsx are per-pass review spreadsheets regenerated from stored results. They hold
+# extracted values alongside the quotes those values came from, including quotes from the papers
+# held out by prereg C11/C26. This repository is PUBLIC, and GitHub push protection only catches
+# credentials -- it would not stop a workbook full of third-party prose. They were untracked but
+# not ignored, i.e. one `git add -A` from publication; the explicit-pathspec habit was the only
+# thing holding them back. Now it is structural.
+# The LABEL workbooks under ground_truth/ are deliberately tracked and are a different thing:
+# they are the labelling instrument and the source of truth the scored csv derives from.
+extractor_mvp/sfn_review*.xlsx

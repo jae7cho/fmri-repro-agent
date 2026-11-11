@@ -36,6 +36,13 @@ import re
 import sys
 from pathlib import Path
 
+# This script is run directly (``python scripts/glyph_leak_prediction.py``), sometimes with an
+# interpreter that does not have the package installed, so ``src`` goes on the path at module
+# scope -- before the corpus_paths import below, which would otherwise fail at import time.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from extractor_mvp.corpus_paths import corpus_dir
+
 _REPO = Path(__file__).resolve().parents[2]
 _RESULTS = Path(__file__).resolve().parents[1] / "results"
 _LEAK = re.compile(r"/C\d+")
@@ -45,7 +52,7 @@ _LEAK = re.compile(r"/C\d+")
 #: input the extraction read, or it predicts the wrong thing.
 _TEXT_OVERRIDE = {"liu_2005": _REPO / "ground_truth" / "liu_2005_deinterleaved_methods.txt"}
 
-_CORPUS = Path("/Users/cwook/Documents/neurorepro/tested_lit/sfn_batch")
+_CORPUS = corpus_dir("sfn_batch")
 _PDF = {
     "agtzidis_2020": "Agtzidis_2020.pdf",
     "poldrack_2015": "Poldrack_2015.pdf",

@@ -25,14 +25,7 @@ freedom linear transformation.",,Jae Wook Cho
 gordon_2014,family_specified,epi template,"Images were then slice-time corrected, normalized to an
 EPI template, and smoothed using a Gaussian kernel with
 full-width at half-maximum (FWHM) of 8 mm.","gordon named ""an EPI template"" (a tool-shipped template artifact) -> family_specified per the broadened CALL 3 definition. CAVEAT: the referent (SPM's stock EPI template) and the stereotactic space it occupies are BOTH unverified -- same open lineage question as wheaton's ""SPM MNI template"" under CALL 2. Do not assert SPM-EPI-is-MNI; the paper does not state it.",Jae Wook Cho
-liu_2005,family_specified,Talairach,"Each participant’s high-resolution anatomic volume was trans- formed into Talairach space (Talairach and Tournoux, 1988), after which an automated segmentation procedure was applied to ob- tain a surface reconstruction of the white-gray matter boundary. The surface was further inflated to reveal the sulci/gyri pattern. All analyses were performed on this inflated representation of the cor-
-tical sheet. Preprocessing of functional data included slice time
-correction, motion correction, linear trend removal, and temporal
-high-pass filtering (three cycles per scan) to remove slow drifts in
-the fMRI signal. Given the block design, no slice time correction
-was applied to data from the localizer scan. The 2D functional data
-were then aligned with the high-resolution anatomic volume and
-transformed into 3D data in the Talairach space ",,Jae Wook Cho
+liu_2005,family_specified,Talairach,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",,Jae Wook Cho
 liu_2013,family_specified,152-brain Montreal Neurological Institute (MNI),"The fMRI data was first co-registered to the high-resolution
 anatomical (T1-weighted) images acquired from the same sub-
 ject and then normalized to the 152-brain Montreal Neurological Institute (MNI) normalized space. Here, as departure from
@@ -48,7 +41,7 @@ oconnor_2017,canonical,FSL's MNI152T1_2mm_brain.nii.gz,"A non-rigid registration
 poldrack_2015,deferred,atlas,"fMRI preprocessing. All fMRI data were preprocessed according to a pipeline developed at Washington University, St Louis45. Data were realigned to correct for head motion and normalized to a mode of 1,000 (one multiplicative constant applied to all voxels and all frames). Each session was registered to a single session that had previously been registered to the mean T1-weighted structural image and
 an atlas. The session-to-atlas transform was inverted and applied to the mean field map so that the distortion correction could be applied in each session’s space. The undistorted data were then re-registered to the atlas space. The transforms for head motion correction and affine registration to atlas space were combined with the field-map-based distortion correction to resample the data from the original session space to the undistorted 3-mm isotropic atlas space in a single step using FSL’s applywarp tool46.",,Jae Wook Cho
 power_2014,absent,atlas,"Atlas transformation of the functional data was computed for each individual via the T2-weighted and MP-RAGE scans. Each run was then resampled in atlas space on an isotropic 3 mm grid combining realignment and atlas transformation in a single interpolation (Shulman et al., 2010).",,Jae Wook Cho
-tang_2025,family_specified,MNI standard space,then normalizing to MNI standard space and resampling to 3 × 3 × 3 mm3 voxels;,,Jae Wook Cho
+tang_2025,family_specified,MNI standard space,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",,Jae Wook Cho
 vanderwal_2016,family_specified,Montreal Neurological Institute (MNI) space,"Data processing. Standard data preprocessing was performed using the Con-
 figurable Pipeline for Analysis of Connectomes (C-PAC) including motion re-
 alignment and transformation into Montreal Neurological Institute (MNI) space using Advanced Normalization Tools (Avants et al., 2008).",,Jae Wook Cho
@@ -60,11 +53,7 @@ Functional imaging data were mapped to correspond-
 ing mid-thickness surfaces. We resampled data to the
 Conte69 surface template [79] via Workbench [78] with
 10,242 surface points (vertices) per hemisphere.",,Jae Wook Cho
-wheaton_2004,family_specified,SPM MNI template,"Data were analyzed using SPM99. Following motion correc-
-tion and slice timing adjustment, each subject’s EPI data were
-spatially normalized to the SPM MNI template and smoothed with
-a 7-mm full width at half maximum (FWHM) isometric Gaussian
-kernel.","Additional analyses in native space: ""For each subject, motion-corrected, slice timing adjusted EPI data that were not spatially normalized were aligned to their high-resolution T1 SPGR anatomical images and smoothed with a 4 4 7 mm FWHM Gaussian kernel.""",Jae Wook Cho
+wheaton_2004,family_specified,SPM MNI template,"[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]","[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]",Jae Wook Cho
 binder_1999,native_volume,,"All EPI images were spatially coregistered using an itera-
 tive procedure that minimizes variance in voxel intensity
 differences between images (Cox, 1996b).","Individual anatomical (SPGR) scans and SPMs were

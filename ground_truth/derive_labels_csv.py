@@ -38,6 +38,45 @@ def set_level_version() -> str:
     return f"v{m.group(1)}" if m else "unknown"
 
 
+#: Papers held out by pre-registration C11/C26 (`docs/findings/motion-method-reachability-prereg.md`).
+#: Six copies of this set exist (this file, `derive_target_space_csv.py`, and
+#: `extractor_mvp/scripts/` {motion_probe, step_field_support_replay, value_support_survey,
+#: apply_motion_inference}). `extractor_mvp/tests/test_heldout_quote_redaction.py` DISCOVERS
+#: every copy in the tree and fails if any has drifted, so a new copy is covered when written.
+_HELD_OUT = frozenset({"liu_2005", "tang_2025", "wheaton_2004"})
+
+#: What replaces a held-out paper's supporting quote in the DERIVED csv.
+#:
+#: The quote stays in the workbook, which is the labeller's own instrument and source of truth.
+#: It is withheld from the csv because the csv is the artifact that gets grepped: this repository
+#: is PUBLIC, and a `git grep` or `rg` for any ordinary methods term was enough to put held-out
+#: prose on screen -- which happened twice on 2026-10-22 and is logged in
+#: `docs/design/DELTA_glyph_leak_span_recovery.md` section 0. `.rgignore` cannot prevent it,
+#: because it matches PATHS and this text sits inside a file named for the label set.
+#: Redacting here rather than in the workbook keeps the csv fully reproducible from the xlsx.
+_REDACTED = "[withheld: held-out paper, prereg C11/C26 — quote retained in the workbook]"
+
+
+#: Columns withheld for a held-out paper. ``notes`` is included because the labeller's rationale
+#: quotes the paper directly in places -- wheaton_2004's target_space note embeds a verbatim
+#: passage -- so withholding only ``supporting_quote`` would leave prose behind in the very file
+#: the redaction exists to clean. ``value`` and the state columns are NOT withheld: they are the
+#: label itself, they are short parameter values rather than prose, and withholding them would
+#: destroy the ground truth this file exists to carry.
+_WITHHELD_COLUMNS = ("supporting_quote", "notes")
+
+
+def _redact_held_out(row: list[str]) -> list[str]:
+    """Withhold the prose-bearing columns when the row's paper is held out; labels untouched."""
+    if row[0].strip() not in _HELD_OUT:
+        return row
+    row = list(row)
+    for name in _WITHHELD_COLUMNS:
+        if name in COLUMNS and row[COLUMNS.index(name)]:
+            row[COLUMNS.index(name)] = _REDACTED
+    return row
+
+
 def derive() -> int:
     import openpyxl
 
@@ -59,7 +98,7 @@ def derive() -> int:
                 *["" if v is None else str(v) for v in cells[2:]],
                 LABELER,
             ]
-            w.writerow(row)
+            w.writerow(_redact_held_out(row))
             n += 1
     print(f"derived {CSV.name}: {n} rows, {len(COLUMNS)} columns (no protocol_version)")
     print(
