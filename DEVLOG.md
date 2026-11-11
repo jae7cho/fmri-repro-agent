@@ -5031,3 +5031,31 @@ Commits here: `94fd078`, then this entry.
 `sfn2026-freeze` stays at `e437668`; post-freeze.
 
 Commits here: `4d779a3`, then this entry.
+
+## 2026-11-11 (7) — the public repo: held-out prose and local paths
+
+Both commits are by the author's instruction, after 17:00, with no override.
+
+- `81dbb77`: the security-scan session's 19 staged files, committed as staged. It verified them
+  green at `4786707`, and so did I: root 313, extractor_mvp 1044.
+  - `corpus_paths.py` replaces 11 hardcoded home-directory corpus paths.
+  - Held-out `supporting_quote` and `notes` are withheld at derive time, and the two CSVs are
+    regenerated.
+  - `.gitignore` covers the `sfn_review*.xlsx` workbooks.
+  - `CORPUS_AND_QUOTATION.md` is new.
+- `18dce1d`: the author's ruling (option 2, untrack).
+  - The six `ground_truth/*.xlsx` label workbooks are removed from the index (`git rm --cached`;
+    the files stay on disk) and added to `.gitignore`. Examples will be published deliberately
+    later.
+  - `merge_labels.py` writes a held-out paper's `quote`/`notes`/`method_quote` cells as a
+    marker, and appends the prose to the gitignored
+    `ground_truth/heldout_label_prose.local.jsonl`. States and values are written as for any
+    paper.
+  - Tests that read the real workbooks skip in CI with that reason; every merge test builds its
+    own.
+  - Checks: 5 mutations, each diff non-empty, all killed. Without the workbooks, root gives 313
+    passed and 3 skipped; with them, 316. extractor_mvp 1044.
+- **Not undone:** the workbooks and the earlier CSV prose remain in git history. No history
+  rewrite was made (`CORPUS_AND_QUOTATION.md` gives why).
+
+Commits here: `81dbb77`, `18dce1d`, then this entry.
