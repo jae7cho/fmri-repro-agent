@@ -4894,3 +4894,30 @@ Commits here: `501588a`, `9915933`, then this entry.
 staged, uncommitted.
 
 Commits here: `c75331f`, then this entry.
+
+## 2026-11-11 (3) — the option inventories' gaps filled; the pseudo-code shows release defaults
+
+- **KB** (fmri-defaults-kb `ff83a7f`, DEVLOG `57bf49c`): the inventories filled out.
+  - Every release tag (fMRIPrep 143, C-PAC 34).
+  - C-PAC's GUI defaults wherever the GUI exists (0.3.2-1.8.0).
+  - C-PAC's own 1.7-1.8 key map.
+  - Curated step maps, and step_defaults / options_at_date by date.
+- `7a43a75` — the pseudo-code, for a paper resolved to fMRIPrep or C-PAC: a comment block of what
+  the pipeline's releases would have run, step by step.
+  - **Which releases:** the release the paper states, else those out by the paper's date (the
+    PDF's creation date): the latest, plus the last release of each of the two minor versions
+    before it. An earlier candidate is named where it differs.
+  - **C-PAC:** the GUI value beside the config value, and a note for a shipped example config.
+  - **Tagged** [D: KB option inventory]; comments only.
+  - **Examples:**
+    - oconnor_2017 (C-PAC, PDF dated 2017-03-16): 1.0.1 and 0.3.9.1, fwhm=[6] (GUI: 4).
+    - hermans_2024 (fMRIPrep, 2024-09-11): 24.0.1, 23.2.3 and 23.1.4, with --bold2t1w-dof=null
+      [23.2.3: 6] beside --bold2anat-dof=6, the 24.0 rename.
+  - **Tests and gates:** extractor_mvp 979 passed (coverage 90.07%); root 295 (95.21%). Two
+    mutations caught (the GUI annotation, the stated release).
+  - **CI** pins KB `57bf49c`.
+
+`sfn2026-freeze` stays at `e437668`; post-freeze. `docs/design/DESIGN_applies_to.md` stays staged,
+uncommitted.
+
+Commits here: `7a43a75`, then this entry.
