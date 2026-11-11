@@ -5078,7 +5078,8 @@ Commits here: `81dbb77`, `18dce1d`, then this entry.
     entry.
   - power_2014's three nuisance fields carry the C2 phrase as a value, not null, so the code
     read them as ordinary variants and marked them unverified.
-  - 30 of the 38 diagnostics on parts are `applies_to_unverified`.
+  - All 25 diagnostics on parts are `applies_to_unverified` (one per field); 50 values were kept
+    unverified. (Corrected: this line first read "30 of the 38", a figure I did not compute.)
 - The security-scan session's four further staged files are not in these commits (they await
   the author's own word).
 
