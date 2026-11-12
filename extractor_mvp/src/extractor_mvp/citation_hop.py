@@ -93,14 +93,49 @@ def _surname_keys(first_author: str) -> set[str]:
     return {_norm_name(first_author), _norm_name(words[0])} if words else set()
 
 
-def parse_reference_list(text: str) -> list[RefEntry]:
-    """The entries of the LAST reference heading's section, split at lines that start an entry
-    (a number, or "Surname, I") after a line ending in a period, a DOI or a URL. Empty when the
-    text has no reference heading."""
+#: A line that opens a numbered entry, for the headless fallback: "47. Cao H" or "[47] Cao H".
+_NUMBERED_LINE = re.compile(r"^[ \t]*\[?(\d{1,3})[\].][ \t]+[A-Z\u00c0-\u00de]", re.MULTILINE)
+#: The fewest consecutively numbered entries the headless fallback accepts as a reference list.
+MIN_NUMBERED_RUN = 5
+
+
+def numbered_run_start(text: str) -> int | None:
+    """Where the longest run of consecutively numbered entry lines (1, 2, 3, ...) starts, when no
+    reference heading survives the text layer (pre-rerun item 5, 2026-11-11: braun_2015's pypdf text,
+    a PNAS layout). Each next number is the first line after the previous one that opens with it.
+    None when no run reaches :data:`MIN_NUMBERED_RUN`; the longest run wins, the later on a tie."""
+    lines = [(int(m.group(1)), m.start()) for m in _NUMBERED_LINE.finditer(text)]
+    best: tuple[int, int] | None = None  # (length, start)
+    for i, (n, pos) in enumerate(lines):
+        if n != 1:
+            continue
+        want, length = 2, 1
+        for m, _p in lines[i + 1 :]:
+            if m == want:
+                want, length = want + 1, length + 1
+        if length >= MIN_NUMBERED_RUN and (best is None or length >= best[0]):
+            best = (length, pos)
+    return best[1] if best else None
+
+
+def reference_section_start(text: str) -> tuple[int, str] | None:
+    """``(offset, how)``: after the LAST reference heading ("heading"), else at the start of the
+    longest numbered run ("numbered_run"); None when neither is found."""
     headings = list(_REF_HEADING.finditer(text))
-    if not headings:
+    if headings:
+        return headings[-1].end(), "heading"
+    start = numbered_run_start(text)
+    return (start, "numbered_run") if start is not None else None
+
+
+def parse_reference_list(text: str) -> list[RefEntry]:
+    """The entries of the reference section (:func:`reference_section_start`), split at lines that
+    start an entry (a number, or "Surname, I") after a line ending in a period, a DOI or a URL.
+    Empty when the text has neither a reference heading nor a numbered run."""
+    found = reference_section_start(text)
+    if found is None:
         return []
-    sec_start = headings[-1].end()
+    sec_start = found[0]
     starts: list[int] = []
     prev_line = "."
     pos = sec_start

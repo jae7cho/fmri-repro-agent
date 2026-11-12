@@ -150,6 +150,7 @@ def run_paper(
             record["hop_tei"][label] = source
         except GrobidUnavailableError as exc:
             record["hop_tei"][label] = f"unavailable: {exc}"[:300]
+    record["hop_reference_list"] = reference_list_record(reference_text, teis)
     refs: list[str] = []
     sentences: dict[str, list[str]] = {}
     for d in record.get("deferred_fields") or []:
@@ -249,6 +250,32 @@ def run_paper(
     wall = time.perf_counter() - t0
     record["run"] = {**run_totals(meter.calls, wall), "calls": meter.calls}
     return FullResult(paper_id, first.status, report, record, meter.calls, round(wall, 1), first)
+
+
+def reference_list_record(reference_text: str, teis: list[tuple[str, bytes]]) -> dict[str, Any]:
+    """Where the hop's reference list came from (pre-rerun item 5, 2026-11-11): GROBID's listBibl
+    entry count for the paper's TEI (None without one), whether it was empty, and the pypdf list the
+    marker text is matched against, with how its start was found ("heading", "numbered_run" when no
+    heading survives the text layer, or None). A ref the TEI cannot resolve -- an empty listBibl
+    among the reasons -- is matched against the pypdf list."""
+    from extractor_mvp.citation_hop import parse_reference_list, reference_section_start
+    from extractor_mvp.grobid_source import bibliography
+
+    tei = next((t for label, t in teis if label == "paper"), None)
+    n_bibl: int | None = None
+    if tei is not None:
+        try:
+            n_bibl = len(bibliography(tei))
+        except Exception:  # an unreadable TEI is recorded as no count
+            n_bibl = None
+    found = reference_section_start(reference_text)
+    return {
+        "grobid_listbibl_entries": n_bibl,
+        "grobid_listbibl_empty": None if n_bibl is None else n_bibl == 0,
+        "markers_matched_against": "pypdf",
+        "pypdf_entries": len(parse_reference_list(reference_text)),
+        "pypdf_found_by": found[1] if found else None,
+    }
 
 
 def apply_resolution(
