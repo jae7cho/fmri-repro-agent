@@ -308,3 +308,33 @@ The author's items, as built. No re-run of the 45.
    columns is withheld.
 
 Variant and part spans now get `span_in_slice` / `span_in_full_paper` like extracted spans.
+
+## 10. Stage 2c (2026-11-11, from Stage 2b's findings)
+
+The author's items, as built. No model call: the four Stage 2b records were re-rendered and
+re-scored (`extractor_mvp/scripts/rerender_records.py`).
+
+1. **Scorer** (`applies_to_scoring.py`; supersedes fork E2's "no alias fallback").
+   - Leading and trailing ellipses ("…", "...") and quote marks are stripped from both quotes
+     before the overlap test (`clean_quote`).
+   - A label variant with no quote, or whose quote overlapped nothing, is then matched by part name
+     (`names_match`): the same words under the same-string rule, or the same content words.
+   - Quote overlap runs over every label variant before any name match, so a name never takes the
+     part another label's quote overlaps. A label variant matched by neither is missed.
+   - `FieldScore.routes` records "quote" or "name" per label variant; the scope table reports both.
+2. **Pseudo-code tables for more than four parts, whatever fields differ.** Every step is printed
+   once, a differing field as `by_part`. Below, one table per step whose fields differ, in step
+   order: a row per part that states one of those fields, a column per field, then how many parts
+   state none of them. `CONFOUND_KINDS` is no longer a condition.
+3. **Joining two spellings of one part** (`part_names.py`).
+   - Two names join when one name's content words (punctuation, parentheses and stopwords dropped)
+     are a subset of the other's.
+   - Not joined: two names one field carries side by side (the extractor gave each its own value);
+     a group in which some pair is not a subset (ambiguous); the compared-models entry; a name with
+     no content words.
+   - "a" is not a stopword: it is also a part label ("Model A"), and dropping it would join "Model A"
+     into "Model B".
+   - The spelling kept is the first met in render order. The paper's words stay on every value.
+   - Every join and every refused group is logged in the record (`part_joins`, written by
+     `batch.py`). The report header shows a join as `kept (joined: other)`; the pseudo-code notes it.
+   - The scorer's streams, the pseudo-code's parts and the header all group by the joined key.

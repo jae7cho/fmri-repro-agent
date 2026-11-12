@@ -265,46 +265,54 @@ def _motion_args(resolution: dict[str, Any] | None) -> tuple[list[_Arg], set[str
     return args, set(MOTION_SUB_ITEMS)
 
 
-def _for_part(row: FieldRow, part: str | None) -> FieldRow | None:
+def _for_part(
+    row: FieldRow, part: str | None, joins: dict[str, str] | None = None
+) -> FieldRow | None:
     """A VARIED row as one part sees it (DESIGN_applies_to.md, 2026-11-11): that part's variant as
     an EXTRACTED row, or None when the field states nothing for the part. Any other row as is. With
-    no part (one block), a VARIED row stays VARIED."""
+    no part (one block), a VARIED row stays VARIED. ``part`` is a grouping key
+    (part_names.part_key), so a joined spelling finds its part (Stage 2c)."""
     if row.state != VARIED or part is None:
         return row
     from dataclasses import replace
 
-    from fmri_repro.spec.provenance import normalize_applies_to
+    from extractor_mvp.part_names import part_key
 
-    v = next((v for v in row.variants or [] if normalize_applies_to(v.applies_to) == part), None)
+    v = next((v for v in row.variants or [] if part_key(v.applies_to, joins or {}) == part), None)
     if v is None:
         return None
     return replace(row, state=EXTRACTED, value=v.value, span_text=v.span_text, variants=None)
 
 
-def _parts(rows: list[FieldRow]) -> dict[str, str]:
-    """The parts the record's values are tied to: normalized key -> the paper's words (first
-    spelling). The compared-models entry (fork C2) is not a part: it describes no one model."""
-    from fmri_repro.spec.provenance import COMPARED_MODELS, normalize_applies_to
+def _parts(rows: list[FieldRow], joins: dict[str, str] | None = None) -> dict[str, str]:
+    """The parts the record's values are tied to: grouping key -> the paper's words (first
+    spelling; a joined spelling groups under the one kept, Stage 2c). The compared-models entry
+    (fork C2) is not a part: it describes no one model."""
+    from fmri_repro.spec.provenance import COMPARED_MODELS
+
+    from extractor_mvp.part_names import part_key
 
     out: dict[str, str] = {}
     for r in rows:
         for v in r.variants or [] if r.state == VARIED else []:
-            key = normalize_applies_to(v.applies_to)
+            key = part_key(v.applies_to, joins or {})
             if key != COMPARED_MODELS:
                 out.setdefault(key, v.applies_to)
     return out
 
 
-#: Stage 2b (2026-11-11, the author's item 1): the steps whose fields are confounds. A record with
-#: more than COMPACT_MIN_PARTS - 1 parts that differ only on these renders the common steps once and
-#: a table, one row per part and one column per differing field.
+#: Stage 2b (2026-11-11, the author's item 1), widened in Stage 2c (item 2): a record with
+#: COMPACT_MIN_PARTS or more parts renders every step once and, per step whose fields differ, a
+#: table with one row per part and one column per differing field, whatever the fields are.
+#: CONFOUND_KINDS is no longer a condition; it is kept for the record of what Stage 2b required.
 CONFOUND_KINDS = frozenset({"nuisance_regression", "compcor", "ica_denoise", "despike", "scrub"})
 COMPACT_MIN_PARTS = 5
 BY_PART = "by_part"
 
 
 def _compact(rows: list[FieldRow], parts: dict[str, str]) -> list[FieldRow] | None:
-    """The varied rows to tabulate when the record is compact-eligible, else None."""
+    """The varied rows to tabulate when the record has COMPACT_MIN_PARTS or more parts, else
+    None."""
     from fmri_repro.spec.provenance import COMPARED_MODELS, normalize_applies_to
 
     varied = [
@@ -315,27 +323,41 @@ def _compact(rows: list[FieldRow], parts: dict[str, str]) -> list[FieldRow] | No
     ]
     if len(parts) < COMPACT_MIN_PARTS or not varied:
         return None
-    if any(r.group not in CONFOUND_KINDS for r in varied):
-        return None
     return varied
 
 
-def _part_table(varied: list[FieldRow], parts: dict[str, str]) -> list[str]:
-    """One row per part, one column per differing field; "?" where the field states nothing for
-    the part. Comment lines, so the block stays pseudo-code."""
-    head = ["part", *(r.path for r in varied)]
+def _part_tables(
+    varied: list[FieldRow],
+    parts: dict[str, str],
+    kinds: list[str],
+    joins: dict[str, str] | None = None,
+) -> list[str]:
+    """Per step whose fields differ, in step order: one row per part that states one of them, one
+    column per differing field ("?" where the field states nothing for the part), then how many
+    parts state none. Comment lines, so the block stays pseudo-code."""
     lines = [
-        f"# --- {len(parts)} parts differ only on confound fields: the steps above hold for every "
-        "part, the table gives the fields marked by_part",
-        "# | " + " | ".join(head) + " |",
-        "# |" + "---|" * len(head),
+        f"# --- {len(parts)} parts: the steps above hold for every part; the fields marked "
+        f"{BY_PART} are given per part below, grouped by step"
     ]
-    for key, words in parts.items():
-        cells = []
-        for r in varied:
-            view = _for_part(r, key)
-            cells.append("?" if view is None else _clean(_literal(view.value)).replace("|", "/"))
-        lines.append("# | " + " | ".join([_clean(words), *cells]) + " |")
+    for kind in kinds:
+        mine = [r for r in varied if r.group == kind]
+        if not mine:
+            continue
+        head = ["part", *(r.path.split(".", 1)[1] for r in mine)]
+        body = []
+        for key, words in parts.items():
+            views = [_for_part(r, key, joins) for r in mine]
+            if all(v is None for v in views):
+                continue
+            cells = [
+                "?" if v is None else _clean(_literal(v.value)).replace("|", "/") for v in views
+            ]
+            body.append("# | " + " | ".join([_clean(words), *cells]) + " |")
+        lines += ["#", f"# {kind}", "# | " + " | ".join(head) + " |", "# |" + "---|" * len(head)]
+        lines += body
+        rest = len(parts) - len(body)
+        if rest:
+            lines.append(f"# ({rest} other parts state none of these fields)")
     return lines
 
 
@@ -348,9 +370,10 @@ def _step_line(
     applied: dict[str, dict[str, str]] | None = None,
     part: str | None = None,
     by_part: frozenset[str] = frozenset(),
+    joins: dict[str, str] | None = None,
 ) -> str:
     kind = step.kind
-    seen = [(r, _for_part(r, part)) for r in rows if r.group == kind]
+    seen = [(r, _for_part(r, part, joins)) for r in rows if r.group == kind]
     unstated = {r.path for r, view in seen if view is None}
     mine = [view if view is not None else r for r, view in seen]
     performed = next((r for r in mine if r.path == f"{kind}.performed"), None)
@@ -625,25 +648,39 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
     lines = _header(record, prep)
     streams = _streams(record)
     n = _variants(record)
-    parts = _parts(rows)
+    from extractor_mvp.part_names import join_map, joins_for
+
+    joined = joins_for(rows, prep)
+    joins = join_map(joined)
+    parts = _parts(rows, joins)
+    for j in joined:  # Stage 2c: every join of two spellings of one part is shown
+        lines.append(f"# note: part joined: {j.joined!r} is {j.into!r} (content-word subset)")
     blocks: list[tuple[str, list[int]]]
     part_keys: list[str | None] = []
     table = _compact(rows, parts)
     if table is not None:
         lines.append(
-            f"# note: values differ by what they apply to; {len(parts)} parts differ only on "
-            "confound fields, so the steps are given once and the parts as a table"
+            f"# note: values differ by what they apply to; {len(parts)} parts, so the steps are "
+            "given once and the differing fields as tables by step"
         )
         lines.append("")
         by_part = frozenset(r.path for r in table)
         for step in prep.steps:
             lines.append(
                 _step_line(
-                    step, rows, supplied, hops, resolution, record.get("applied_by"), None, by_part
+                    step,
+                    rows,
+                    supplied,
+                    hops,
+                    resolution,
+                    record.get("applied_by"),
+                    None,
+                    by_part,
+                    joins,
                 )
             )
         lines.append("")
-        lines.extend(_part_table(table, parts))
+        lines.extend(_part_tables(table, parts, [st.kind for st in prep.steps], joins))
         blocks = []
     elif parts:
         # 0.7.0: one block per part the values are tied to, each field at that part's value
@@ -672,7 +709,14 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
         for i in idx:
             lines.append(
                 _step_line(
-                    prep.steps[i], rows, supplied, hops, resolution, record.get("applied_by"), part
+                    prep.steps[i],
+                    rows,
+                    supplied,
+                    hops,
+                    resolution,
+                    record.get("applied_by"),
+                    part,
+                    joins=joins,
                 )
             )
     lines.extend(_release_defaults(record))

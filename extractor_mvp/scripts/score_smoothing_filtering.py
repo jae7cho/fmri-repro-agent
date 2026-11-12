@@ -10,8 +10,8 @@ A label row is one paper x ``applies_to``. It is matched to the record by paper 
   one field by ``extractor_mvp.applies_to_scoring`` (DESIGN_applies_to.md §5, Stage 1, 2026-11-11):
   a record holding one "all" value equal to one row's is **collapsed**; a record holding parts
   where the label says "all" is **split**; otherwise each row is matched to the record's part whose
-  sentence overlaps the row's quote (fork E2: no alias list), and is scored against it, or is
-  **missed**. A record part that matches no row is spurious. "Equal" is the row's state and every
+  sentence overlaps the row's quote (ellipses and quote marks stripped), or failing that whose
+  part name is the row's (Stage 2c, 2026-11-11), and is scored against it, or is **missed**. A record part that matches no row is spurious. "Equal" is the row's state and every
   labelled value agreeing.
 
 Per row: the state, label vs record (the record's state is the report's own: ``cobidas.row_state``
@@ -186,11 +186,14 @@ def _carries_applies_to(step_json: dict[str, Any] | None) -> bool:
     )
 
 
-def _streams(kind: str, rows: list[Any], base: StepView) -> dict[str, StepView]:
+def _streams(
+    kind: str, rows: list[Any], base: StepView, joins: dict[str, str] | None = None
+) -> dict[str, StepView]:
     """A step's parts (0.7.0): one view per part under the same-string rule. A VARIED field gives
     each part its own value; a field stated for all data gives every part its value. A part whose
-    ``performed`` is no is stated_not_performed; one with any value, reported."""
-    from fmri_repro.spec.provenance import normalize_applies_to
+    ``performed`` is no is stated_not_performed; one with any value, reported. Two spellings of
+    one part joined by part_names (Stage 2c) are one stream."""
+    from extractor_mvp.part_names import part_key
 
     streams: dict[str, StepView] = {}
     shared = {k: v for k, v in base.values.items()}
@@ -199,7 +202,7 @@ def _streams(kind: str, rows: list[Any], base: StepView) -> dict[str, StepView]:
             continue
         param = r.path.split(".", 1)[1]
         for v in r.variants or []:
-            key = normalize_applies_to(v.applies_to)
+            key = part_key(v.applies_to, joins or {})
             view = streams.setdefault(
                 key, StepView(base.state, dict(shared), base.asked, None, v.applies_to)
             )
@@ -235,6 +238,9 @@ def record_steps(record: dict[str, Any]) -> dict[str, StepView]:
         "spatial_smoothing": row_state(sm, rows),
         "temporal_filtering": kind_state([r for r in rows if r.group == "temporal_filtering"]),
     }
+    from extractor_mvp.part_names import join_map, joins_for
+
+    joins = join_map(joins_for(rows, prep))
     out: dict[str, StepView] = {}
     raw_steps = {s["kind"]: s for s in raw.get("steps", [])}
     for kind, st in states.items():
@@ -246,7 +252,7 @@ def record_steps(record: dict[str, Any]) -> dict[str, StepView]:
         quotes = tuple(r.span_text for r in rows if r.group == kind and r.span_text)
         view = StepView(RECORD_TO_LABEL_STATE[st], values, asked, quotes=quotes)
         if _carries_applies_to(raw_steps.get(kind)):
-            view.streams = _streams(kind, rows, view)
+            view.streams = _streams(kind, rows, view, joins)
         out[kind] = view
     return out
 
@@ -511,8 +517,8 @@ def _scope_section(rows: list[Scored]) -> list[str]:
         "Scope (papers whose labels carry parts, or whose record does; DESIGN_applies_to.md §5):",
         "",
         "| paper | field outcome | label variants | matched correct | matched wrong | missed "
-        "| spurious |",
-        "|---|---|---|---|---|---|---|",
+        "| spurious | matched by quote | matched by name |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for pid in sorted(seen):
         fs = seen[pid].scope
@@ -521,7 +527,8 @@ def _scope_section(rows: list[Scored]) -> list[str]:
         c = Counter(cls for _, cls in fs.label_classes)
         out.append(
             f"| {pid} | {fs.outcome} | {n_labels} | {c['matched_correct']} | "
-            f"{c['matched_wrong']} | {c['missed']} | {len(fs.spurious)} |"
+            f"{c['matched_wrong']} | {c['missed']} | {len(fs.spurious)} | "
+            f"{fs.routes.count('quote')} | {fs.routes.count('name')} |"
         )
     out.append("")
     return out

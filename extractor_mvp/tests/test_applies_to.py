@@ -495,24 +495,64 @@ def test_scope_classes() -> None:
     assert is_all("All (Parts I\u2013III)") and not is_all("allocated")
 
 
-def test_variants_match_by_quote_overlap_never_by_alias_e2() -> None:
+def test_variants_match_by_quote_overlap_then_by_name_stage2c() -> None:
     labels = [LabelVariant("ALFF and fALFF", 6, S_AMP), LabelVariant("ReHo", None, S_CONN)]
     preds = [
         PredictedVariant("amplitude maps", 6, (S_AMP,)),
         PredictedVariant("connectivity maps", None, (S_CONN,)),
     ]
     fs = score_field(labels, preds, _eq)
-    assert fs.correct and fs.matches == [0, 1]
-    # same words, no overlapping sentence: missed plus spurious, not matched (E2)
+    assert fs.correct and fs.matches == [0, 1] and fs.routes == ["quote", "quote"]
+    # same name, no overlapping sentence: matched by name (Stage 2c replaced E2)
     fs = score_field(
-        [LabelVariant("ReHo", None, S_CONN)], [PredictedVariant("ReHo", None, (S_AMP,))], _eq
+        [LabelVariant("ReHo", None, S_CONN)], [PredictedVariant("reho", None, (S_AMP,))], _eq
+    )
+    assert fs.correct and fs.routes == ["name"]
+    # a label with no quote is matched by name; content words, not spelling, decide
+    fs = score_field(
+        [LabelVariant("ALFF/fALFF", 6, "")], [PredictedVariant("ALFF and fALFF", 6, (S_AMP,))], _eq
+    )
+    assert fs.correct and fs.routes == ["name"]
+    # different names and no overlap: still missed plus spurious
+    fs = score_field(
+        [LabelVariant("ReHo", None, S_CONN)], [PredictedVariant("ALFF", None, (S_AMP,))], _eq
     )
     assert fs.outcome == "wrong" and fs.label_classes == [("ReHo", "missed")]
-    assert fs.spurious == ["ReHo"]
+    assert fs.spurious == ["ALFF"] and fs.routes == [None]
+    # quote overlap is tried for every label before any name: a name match never steals the
+    # variant another label's quote overlaps
+    fs = score_field(
+        [LabelVariant("ALFF", 6, ""), LabelVariant("x", 6, S_AMP)],
+        [PredictedVariant("ALFF", 6, (S_AMP,)), PredictedVariant("ALFF maps", 6, ())],
+        _eq,
+    )
+    assert fs.matches == [None, 0] and fs.routes == [None, "quote"]
     # matched with the wrong value
     fs = score_field(labels, [PredictedVariant("a", 8, (S_AMP,)), preds[1]], _eq)
     assert fs.label_classes == [("ALFF and fALFF", "matched_wrong"), ("ReHo", "matched_correct")]
     assert not fs.correct
+
+
+def test_label_quote_ellipses_and_quote_marks_are_stripped_before_overlap() -> None:
+    from extractor_mvp.applies_to_scoring import clean_quote, quotes_overlap
+
+    pred = PredictedVariant("ReHo", None, (S_CONN,))
+    inner = S_CONN[10:-5]
+    for q in (
+        f"\u2026{inner}\u2026",
+        f"...{inner}",
+        f"\u201c{inner}\u201d",
+        f"\u00ab {inner}...\u00bb",
+    ):
+        assert clean_quote(q) == inner.strip()
+        assert quotes_overlap(LabelVariant("ReHo", None, q), pred)
+    # positive control: unstripped, the same quotes resolve nowhere (span_resolver)
+    from extractor_mvp.span_resolver import resolve_quote
+
+    assert resolve_quote(f"\u2026{inner}\u2026", S_CONN).span is None
+    # control: another sentence, with the same edge marks, overlaps nothing
+    assert not quotes_overlap(LabelVariant("ReHo", None, f"\u2026{S_AMP[10:-5]}\u2026"), pred)
+    assert clean_quote("") == "" and clean_quote("\u2026") == ""
 
 
 def test_a_resolved_citation_never_fills_a_varied_field() -> None:
@@ -689,18 +729,12 @@ def test_a_marker_deferral_is_grounded_on_the_sentence_carrying_it() -> None:
     assert pf.extraction.status != "DEFERRED_TO_CITATION"
 
 
-def _many_parts_record(kind: str, field: str, n: int, numeric: bool = False) -> dict[str, Any]:
-    prep, _, _ = _run()
+def _set_varied(prep: Any, kind: str, field: str, values: dict[str, Any]) -> None:
     step = _step(prep, kind)
     span = {"start": 0, "end": 4, "text": "text"}
     variants = [
-        {
-            "value": float(i) if numeric else f"v{i}",
-            "spans": [span],
-            "applies_to": f"Model {i}",
-            "confidence": 0.8,
-        }
-        for i in range(1, n + 1)
+        {"value": v, "spans": [span], "applies_to": part, "confidence": 0.8}
+        for part, v in values.items()
     ]
     # the field's own class, so the value is typed as the schema types it
     pf = type(getattr(step, field)).model_validate(
@@ -711,24 +745,53 @@ def _many_parts_record(kind: str, field: str, n: int, numeric: bool = False) -> 
         }
     )
     setattr(step, field, pf)
+
+
+def _many_parts_record(kind: str, field: str, n: int, numeric: bool = False) -> dict[str, Any]:
+    prep, _, _ = _run()
+    _set_varied(
+        prep, kind, field, {f"Model {i}": float(i) if numeric else f"v{i}" for i in range(1, n + 1)}
+    )
     return {"preprocessing": prep.model_dump(mode="json")}
 
 
-def test_more_than_four_confound_parts_render_the_steps_once_and_a_table() -> None:
+def test_more_than_four_parts_render_the_steps_once_and_tables_by_step() -> None:
+    # Stage 2b's confound case still renders as a table
     code = render_pseudocode(_many_parts_record("nuisance_regression", "regressor_list", 5))
     assert code is not None
     assert "# --- applies to:" not in code
     assert "regressor_list=by_part [E]" in code
-    assert "# | part | nuisance_regression.regressor_list |" in code
+    assert "# nuisance_regression\n# | part | regressor_list |" in code
     assert '# | Model 5 | "v5" |' in code
     assert code.count("nuisance_regression(") == 1
+    # Stage 2c: any field, here smoothing alone
+    code = render_pseudocode(_many_parts_record("spatial_smoothing", "fwhm_mm", 6, numeric=True))
+    assert code is not None and "# --- applies to:" not in code
+    assert "fwhm_mm=by_part [E]" in code and "# | Model 6 | 6 |" in code
 
 
-def test_four_parts_or_a_non_confound_field_keep_one_block_per_part() -> None:
+def test_tables_are_grouped_by_step_and_list_only_parts_stating_a_value() -> None:
+    prep, _, _ = _run()
+    _set_varied(prep, "spatial_smoothing", "fwhm_mm", {"Model 1": 6.0, "Model 2": 8.0})
+    _set_varied(
+        prep, "nuisance_regression", "regressor_list", {f"Model {i}": f"v{i}" for i in range(1, 6)}
+    )
+    code = render_pseudocode({"preprocessing": prep.model_dump(mode="json")})
+    assert code is not None and "# --- applies to:" not in code
+    sm = code.index("# spatial_smoothing\n# | part | fwhm_mm |")
+    nr = code.index("# nuisance_regression\n# | part | regressor_list |")
+    order = [st.kind for st in prep.steps]
+    assert (sm < nr) == (order.index("spatial_smoothing") < order.index("nuisance_regression"))
+    smoothing_table = code[sm : code.index("\n#\n", sm) if "\n#\n" in code[sm:] else None]
+    assert "# | Model 1 | 6 |" in smoothing_table and "Model 3" not in smoothing_table
+    assert "# (3 other parts state none of these fields)" in smoothing_table
+
+
+def test_four_parts_keep_one_block_per_part() -> None:
     code = render_pseudocode(_many_parts_record("nuisance_regression", "regressor_list", 4))
     assert code is not None and code.count("# --- applies to: Model") == 4 and "by_part" not in code
-    code = render_pseudocode(_many_parts_record("spatial_smoothing", "fwhm_mm", 6, numeric=True))
-    assert code is not None and code.count("# --- applies to: Model") == 6 and "by_part" not in code
+    code = render_pseudocode(_many_parts_record("spatial_smoothing", "fwhm_mm", 4, numeric=True))
+    assert code is not None and code.count("# --- applies to: Model") == 4 and "by_part" not in code
 
 
 def test_variant_spans_get_full_paper_offsets() -> None:
@@ -741,3 +804,68 @@ def test_variant_spans_get_full_paper_offsets() -> None:
     for v in step["fwhm_mm"]["extraction"]["variants"]:
         sp = v["spans"][0]
         assert sp["span_in_full_paper"] == {"start": sp["start"] + 1000, "end": sp["end"] + 1000}
+
+
+# --- Stage 2c (2026-11-11, the author's item 3): joining two spellings of one part ---------------
+
+CHEN_A = "global connectome (DCw and ECw)"
+CHEN_B = "global connectome metrics (DCw, ECw)"
+
+
+def test_content_word_subset_joins_two_spellings_of_one_part() -> None:
+    from extractor_mvp.part_names import compute_joins, content_words
+
+    assert content_words(CHEN_A) == {"global", "connectome", "dcw", "ecw"}
+    joins, refused = compute_joins([[CHEN_A, "ReHo"], [CHEN_B, "ReHo"]])
+    assert [(j.joined, j.into) for j in joins] == [(CHEN_B, CHEN_A)] and refused == []
+    # equal content words in another order join too
+    joins, _ = compute_joins([["DCw and ECw"], ["ECw, DCw"]])
+    assert len(joins) == 1
+    # control: no subset, no join
+    assert compute_joins([["ALFF"], ["ReHo"]]) == ([], [])
+
+
+def test_join_guards_side_by_side_ambiguous_and_compared_models() -> None:
+    from extractor_mvp.part_names import compute_joins
+
+    # one field names both: the extractor gave each its own value, never joined
+    joins, refused = compute_joins([[CHEN_A, CHEN_B]])
+    assert joins == [] and refused[0].reason.startswith("one field")
+    # "rest" is a subset of both "rest data A" and "rest data B", which are not subsets of
+    # each other: ambiguous, nothing joined
+    joins, refused = compute_joins([["rest"], ["rest data A"], ["rest data B"]])
+    assert joins == [] and refused[0].reason.startswith("ambiguous")
+    # a one-letter label is a content word: "Model A" and "Model B" stay two parts
+    assert compute_joins([["Model A"], ["Model B"]]) == ([], [])
+    # the compared-models entry and a name of stopwords only join nothing
+    assert compute_joins([[COMPARED_MODELS], ["models compared varied across"]])[0] == []
+    assert compute_joins([["the"], ["of the"]])[0] == []
+
+
+def _chen_like_record() -> Any:
+    prep, _, _ = _run()
+    # temporal_filtering comes before spatial_smoothing in step order, so CHEN_A is met first
+    _set_varied(prep, "temporal_filtering", "performed", {CHEN_A: True, "ReHo": False})
+    _set_varied(prep, "spatial_smoothing", "fwhm_mm", {CHEN_B: 6.0, "ReHo": 4.0})
+    return prep
+
+
+def test_a_join_is_one_part_in_the_header_pseudocode_and_record() -> None:
+    from extractor_mvp.batch import _part_joins
+
+    prep = _chen_like_record()
+    report = render.to_report(prep, source="t")
+    line = next(ln for ln in report.splitlines() if ln.startswith("> Values differ by:"))
+    assert line.startswith(f"> Values differ by: {CHEN_A} (joined: {CHEN_B}), ReHo (")
+    code = render_pseudocode({"preprocessing": prep.model_dump(mode="json")})
+    assert code is not None
+    assert f"# note: part joined: {CHEN_B!r} is {CHEN_A!r}" in code
+    assert code.count("# --- applies to:") == 2  # two parts, not three
+    entry = _part_joins(prep)
+    assert [(j["joined"], j["into"]) for j in entry["joins"]] == [(CHEN_B, CHEN_A)]
+    # control: with the join refused (both names in one field), three parts
+    prep2, _, _ = _run()
+    _set_varied(prep2, "spatial_smoothing", "fwhm_mm", {CHEN_A: 6.0, CHEN_B: 8.0, "ReHo": 4.0})
+    code2 = render_pseudocode({"preprocessing": prep2.model_dump(mode="json")})
+    assert code2 is not None and code2.count("# --- applies to:") == 3
+    assert _part_joins(prep2)["joins"] == [] and len(_part_joins(prep2)["refused"]) == 1

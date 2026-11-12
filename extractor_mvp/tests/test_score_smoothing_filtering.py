@@ -170,6 +170,32 @@ def test_a_record_carrying_applies_to_is_read_as_streams() -> None:
     assert views["temporal_filtering"].streams is None
 
 
+def test_two_spellings_of_one_part_are_one_stream_key_across_steps_stage2c() -> None:
+    a, b = "global connectome (DCw and ECw)", "global connectome metrics (DCw, ECw)"
+    rec = _canned_record()
+    span = {"start": 0, "end": 5, "text": "x"}
+    for step in rec["preprocessing"]["steps"]:
+        field = {"spatial_smoothing": "fwhm_mm", "temporal_filtering": "performed"}.get(
+            step["kind"]
+        )
+        if field is None:
+            continue
+        value = 6.0 if field == "fwhm_mm" else True
+        step[field]["extraction"] = {
+            "status": "VARIED",
+            "variants": [
+                {"value": value, "spans": [span], "applies_to": p, "confidence": 0.8}
+                for p in ((b, "ReHo") if field == "fwhm_mm" else (a, "ReHo"))
+            ],
+        }
+        step[field]["inference"] = {"status": "NOT_APPLICABLE"}
+    views = sf.record_steps(rec)
+    sm, tf = views["spatial_smoothing"].streams, views["temporal_filtering"].streams
+    assert sm is not None and tf is not None
+    assert set(sm) == set(tf) == {"global connectome dcw and ecw", "reho"}
+    assert sm["global connectome dcw and ecw"].applies_to == b  # the paper's words stay
+
+
 def test_a_paper_without_a_record_is_no_record() -> None:
     (s,) = sf.score([_row(paper="wheaton_2004")], {})
     assert s.outcome == "no record"

@@ -1006,9 +1006,12 @@ def _values_differ_line(rows: list[FieldRow], preprocessing: Any) -> str | None:
     """The header line derived from the values (DESIGN_applies_to.md §4), replacing the stored
     multiple_pipelines warning on a 0.7.0 record: every part a value is tied to, in the paper's
     words (one spelling per part under the same-string rule), and the fields that differ. None
-    when every value applies to all."""
-    from fmri_repro.spec.provenance import normalize_applies_to
+    when every value applies to all. Stage 2c: two spellings joined by part_names are one part,
+    shown with the joined spelling beside it."""
+    from extractor_mvp.part_names import join_map, joins_for, part_key
 
+    joins = joins_for(rows, preprocessing)
+    mapping = join_map(joins)
     parts: dict[str, str] = {}
     fields: list[str] = []
     for r in rows:
@@ -1016,14 +1019,21 @@ def _values_differ_line(rows: list[FieldRow], preprocessing: Any) -> str | None:
             continue
         fields.append(r.path)
         for v in r.variants or []:
-            parts.setdefault(normalize_applies_to(v.applies_to), v.applies_to)
+            parts.setdefault(part_key(v.applies_to, mapping), v.applies_to)
     for p in getattr(preprocessing, "step_order_parts", None) or []:
-        parts.setdefault(normalize_applies_to(p.applies_to), p.applies_to)
+        parts.setdefault(part_key(p.applies_to, mapping), p.applies_to)
         if "step order" not in fields:
             fields.append("step order")
     if not parts:
         return None
-    return f"> Values differ by: {', '.join(parts.values())} ({', '.join(fields)})"
+    also: dict[str, list[str]] = {}
+    for j in joins:
+        also.setdefault(part_key(j.into, mapping), []).append(j.joined)
+    shown = [
+        words + (f" (joined: {'; '.join(also[k])})" if k in also else "")
+        for k, words in parts.items()
+    ]
+    return f"> Values differ by: {', '.join(shown)} ({', '.join(fields)})"
 
 
 def _order_part_lines(preprocessing: Any) -> list[str]:

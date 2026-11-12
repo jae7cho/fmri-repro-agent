@@ -296,6 +296,13 @@ def load_supplement(path: Path) -> tuple[dict[str, Any], str]:
     return rec, text
 
 
+def _part_joins(preprocessing: Any) -> dict[str, Any]:
+    from extractor_mvp.part_names import record_entry
+    from extractor_mvp.render import flatten
+
+    return record_entry(flatten(preprocessing), preprocessing)
+
+
 def _translate_spans(
     prep_dump: dict[str, Any],
     start_offset: int,
@@ -610,6 +617,9 @@ def process_paper(
         "verifier": verifier,
         # 2026-11-09 (item 2): values the checking pass supplied for unverifiable fields
         "checker_supplied": supplied,
+        # Stage 2c (2026-11-11, item 3): every join of two spellings of one part, and every subset
+        # relation refused, so a grouping the report shows can be traced (part_names.py)
+        "part_joins": _part_joins(preprocessing),
         # SUCCESS-path capture: raw LLM value + resolved value/alias for each
         # successfully-extracted targeted field (diagnostic-only; see ResolutionRecord).
         "resolutions": [dataclasses.asdict(r) for r in resolutions],
