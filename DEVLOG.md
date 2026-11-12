@@ -5171,3 +5171,35 @@ Commits here: `1cb7383`, `5741b6d`, then this entry.
     flagged MISSED with per-part values (0.9 mm task, 0.2 mm rest).
 
 Commits here: `97218c7`, `2ceea60`, then this entry.
+
+## 2026-11-11 (12) — four more labeler rows
+
+- `185a0cb` — the author's request: cards, sheets and pre-registered scorers for four more rows,
+  same conventions as `4d779a3`. No extraction change.
+  - **Cards:** gradient_distortion_correction (method, tool); intersubject_registration (method,
+    volume_or_surface, template, resolution, warp_type, interpolation, cost_function; applies_to);
+    resting_state_feature (measure, band_hz, reho_neighbourhood, reho_measure; applies_to per
+    measure); software (one row per package, keyed by name: version_as_stated, used_for).
+    - Software has an "add package" button. A paper naming no software gets one nameless
+      not_reported row.
+    - These fields are the label's own (`merge_labels.ROW_LABEL_FIELDS`), not one schema step's.
+  - **Merge:** every new value column is a label column, so a held-out paper loses only its quote
+    and notes. A paper needing a sheet the rows workbook lacks is refused, with the fix named.
+  - **Workbook:** `make_preproc_rows_workbook.py --add-sheets` adds missing sheets and their README
+    notes without touching existing cells. It refuses a changed header, and widens the progress
+    header while keeping its rows. The author's workbook gained the four sheets this way: existing
+    cells unchanged, still no labels.
+  - **Scorers:** `preproc_rows_scoring_v2.py` and four `score_rows_<sheet>.py`, sha256-pinned before
+    any label. The twelve's pinned files are untouched.
+    - Gradient and intersubject: the state is the report's own D.3 row state. Gradient values count
+      only when the record's source is gradient_nonlinearity. Intersubject values map onto the
+      spatial_normalization and surface_projection fields.
+    - resting_state_feature is scored as not assessed, since the extractor does not cover that row.
+    - Software is matched per package by name or content words, versions digit-exact; unmatched
+      record packages are counted.
+  - Walk list unchanged.
+  - **Checks:** 17 mutations, each diff non-empty, all killed (the pin test excluded from each run).
+    Labeler checked in the browser: the four cards render, "add package" adds a row, and the export
+    check refuses an empty or repeated name. Root 329, extractor_mvp 1082.
+
+Commits here: `185a0cb`, then this entry.
