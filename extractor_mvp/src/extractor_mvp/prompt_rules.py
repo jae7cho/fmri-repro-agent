@@ -43,6 +43,8 @@ CHECKING_RULES = (
 #: case papers of DESIGN_applies_to.md §3 are scored against this prompt in Stage 2. 2026-11-11
 #: (Stage 2b, the author's item 1): compared models, one variant each when each is described; the
 #: null "varied across compared models" entry only when the variation is stated without description.
+#: 2026-11-11 (pre-rerun item 3): what a part is, and that a value is never one (ciric_2017's Stage 2b
+#: record gave temporal_filtering.applied_to's value "all regressors" as a part).
 VARIANT_RULES = """\
 ## Values that differ by what they apply to
 When the text gives different values for a field for different parts of its data -- different
@@ -50,6 +52,9 @@ derived measures, analyses or parts of the paper, data types, scanners or sites,
 preprocessing variants -- the field is "varied": return each value in variants, with applies_to = the paper's own words for the part it
 applies to, verbatim_quote = the sentence that states the value, and applies_to_quote = the
 sentence that ties the value to the part when that is not the value's own sentence.
+- A part names a subset of the paper's data or analyses (a measure, a data type, a dataset, a named
+  variant). A value is never a part: "all regressors", "6 mm" or "band-pass" is a value, not
+  something a value applies to.
 - Never choose one value. Never write "all" for a value the text ties to a part of its data.
 - A step stated as not performed for one part and performed for another is a varied
   `<step>_performed` ("no" for that part, "yes" for the other).

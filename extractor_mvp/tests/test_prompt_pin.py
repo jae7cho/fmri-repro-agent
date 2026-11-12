@@ -35,7 +35,8 @@ _PINNED = {
     #: UPDATED 2026-11-11 (Stage 2b, the author's items 1-2; a vintage event, deliberate): the two part rules in PREPROCESSING_RULES (a measure, data type or dataset's preprocessing is that part's, not analysis; 'not applied to one part' is a value) and the compared-models rule (one variant per described model; the null entry only when the models are not described).
     #: First drawn on the Stage 2b re-run. Superseded value was e81e5d0a8ddcae9470ed63933a453e9fb84fe2987caf1a68853010d22133a221.
     #: UPDATED 2026-11-11 (pre-rerun item 1; a vintage event, deliberate): QUOTE_RULES, a value's evidence as 1-3 verbatim spans (verbatim_quote plus additional_quotes), never one stitched quote. First drawn on corpus_full_v3. Superseded value was 0dee2e5ea51640e7470c7801989965a6c5bc6b68df7932f4ae21f96c42772f02.
-    "EXTRACTION_PROMPT": "d4b7dfb601a3572002ca1e7e737dff4b26c67b8f38af75722424df1d4df10c27",
+    #: UPDATED 2026-11-11 (pre-rerun item 3; a vintage event, deliberate): VARIANT_RULES says a part names a subset of the paper's data or analyses (a measure, a data type, a dataset, a named variant) and a value is never a part. First drawn on corpus_full_v3. Superseded value was d4b7dfb601a3572002ca1e7e737dff4b26c67b8f38af75722424df1d4df10c27.
+    "EXTRACTION_PROMPT": "0c547c670cb02f21b990fe2f317530c97f6e82e3fda68ccda83c48cbc94c5857",
     #: UPDATED 2026-11-09 (the author's item 3: the shared rules of prompt_rules.py; a vintage event,
     #: deliberate). Superseded value was 04ba3cb76b55342cee2ed2fd8b62fb515226fdb21511c6803f380d51913c4648.
     #: UPDATED 2026-11-11 (DESIGN_applies_to.md Stage 1, a vintage event, deliberate): inherits EXTRACTION_PROMPT's variant paragraph. Not
@@ -43,8 +44,9 @@ _PINNED = {
     #: UPDATED 2026-11-11 (Stage 2b, the author's items 1-2; a vintage event, deliberate): inherits EXTRACTION_PROMPT's change.
     #: First drawn on the Stage 2b re-run. Superseded value was 7292b1b94129db5afe519a8dfe3e2a2f07ac8b9de9b34d97a2ffd5d62feb7783.
     #: UPDATED 2026-11-11 (pre-rerun item 1; a vintage event, deliberate): QUOTE_RULES, a value's evidence as 1-3 verbatim spans (verbatim_quote plus additional_quotes), never one stitched quote. First drawn on corpus_full_v3. Superseded value was aaabf01e22739d817f8b73667b15b8e751fb7210de7aa6a8859fca0cae99e68a.
+    #: UPDATED 2026-11-11 (pre-rerun item 3; a vintage event, deliberate): VARIANT_RULES says a part names a subset of the paper's data or analyses (a measure, a data type, a dataset, a named variant) and a value is never a part. First drawn on corpus_full_v3. Superseded value was b80e3b01dfa1036e827b2e0107977af72ffff7fc91ec690449d1b31d643520e7.
     "PER_ACQUISITION_EXTRACTION_PROMPT": (
-        "b80e3b01dfa1036e827b2e0107977af72ffff7fc91ec690449d1b31d643520e7"
+        "16df4476e82cbf45ed8758c392578e0ff903d989ee2bf2fe2e3fe3e34b885c8c"
     ),
     #: The motion stanza, pinned 2026-10-21 BEFORE the reachability probe runs. This is what makes
     #: prereg C2 ("committed BEFORE the run") and C21 ("the vocabulary may not be extended after
@@ -214,7 +216,8 @@ _PINNED = {
     #: UPDATED 2026-11-11 (Stage 2b, the author's items 1-2; a vintage event, deliberate): the two part rules and the compared-models rule.
     #: First drawn on the Stage 2b re-run. Superseded value was d0c8827d10daabf1939e1ed1c823bfaf1361bc687bc42b3a4a716ea3e92da614.
     #: UPDATED 2026-11-11 (pre-rerun item 1; a vintage event, deliberate): QUOTE_RULES, a value's evidence as 1-3 verbatim spans (verbatim_quote plus additional_quotes), never one stitched quote. First drawn on corpus_full_v3. Superseded value was df6a9dfa611a8bc907fd36f5e12f3977c9f5dc26764a2fca746b6478dd5f7ff4.
-    "TEMPORAL_VOLUME_PROMPT": "1324cc79e8c5f29cf3f1c0ba8f3e24ffb6a12c7e9ce75fbc98d575c534a0a9d1",
+    #: UPDATED 2026-11-11 (pre-rerun item 3; a vintage event, deliberate): VARIANT_RULES says a part names a subset of the paper's data or analyses (a measure, a data type, a dataset, a named variant) and a value is never a part. First drawn on corpus_full_v3. Superseded value was 1324cc79e8c5f29cf3f1c0ba8f3e24ffb6a12c7e9ce75fbc98d575c534a0a9d1.
+    "TEMPORAL_VOLUME_PROMPT": "466991d8cc4e24b6b17fa1bfbb6fd97002df92cb96e375b9b20043ca474c8b81",
     #: UPDATED 2026-10-28, the author's item 4: coregistration method = the tool, cost_function =
     #: bbr | mutual_information | correlation_ratio | other. Superseded SPATIAL_PROMPT value (item 2):
     #: 95189d772ff6dbe3e547a1cff69941adf4a4f084aaab75f11b4d6d9648b42b80.
@@ -250,7 +253,8 @@ _PINNED = {
     #: UPDATED 2026-11-11 (Stage 2b, the author's items 1-2; a vintage event, deliberate): the two part rules and the compared-models rule.
     #: First drawn on the Stage 2b re-run. Superseded value was 68bf6651e83e3694178bdd7ac6fc31f3c7ff81700e2f2392b07eae044ef0aa92.
     #: UPDATED 2026-11-11 (pre-rerun item 1; a vintage event, deliberate): QUOTE_RULES, a value's evidence as 1-3 verbatim spans (verbatim_quote plus additional_quotes), never one stitched quote. First drawn on corpus_full_v3. Superseded value was e8512e039ac7c6d6016e7bea26a747dfbbbd42dcae8b4db1351c8af511eaaee0.
-    "SPATIAL_PROMPT": "c3627b3e2a8d1ac088e6746e297af28be646318847ddf7009c4e8ffefd9458b5",
+    #: UPDATED 2026-11-11 (pre-rerun item 3; a vintage event, deliberate): VARIANT_RULES says a part names a subset of the paper's data or analyses (a measure, a data type, a dataset, a named variant) and a value is never a part. First drawn on corpus_full_v3. Superseded value was c3627b3e2a8d1ac088e6746e297af28be646318847ddf7009c4e8ffefd9458b5.
+    "SPATIAL_PROMPT": "4145b6cb1b8bac5bd18c7b52e6fc7988d5d7a3c4721586da8a7b11f218dd3a75",
     #: The checking pass, pinned 2026-10-29 at its first build (DESIGN_report_v2.md §3, ratified that
     #: day). Its first run is the vintage coverage_v3; a change is a dated vintage event.
     #: UPDATED 2026-11-02, the author's item 2: the checking pass returns `unplaced` (preprocessing statements no field captured, each with its sentence and its D.3 row or "no row"; never changes a field); its scope paragraph and software question restated to the SCOPE rule of the same day (structural steps that feed the fMRI analysis in). First drawn as coverage_v4. Superseded VERIFIER_PROMPT value:
@@ -378,14 +382,14 @@ def test_the_three_pre_existing_hashes_did_not_move_with_the_coverage_calls() ->
     """R8 (2026-10-28), as a literal. The coverage build left these three untouched; they moved once,
     deliberately, on 2026-11-09 with the shared rules of prompt_rules.py (the author's item 3), and
     again on 2026-11-11 with DESIGN_applies_to.md Stage 1's variant paragraph, and with Stage 2b's
-    part rules the same evening, and with the pre-rerun quote rule. The values before those were 31a050b2…b77535 / 04ba3cb7…c4648,
+    part rules the same evening, and with the pre-rerun quote and part rules. The values before those were 31a050b2…b77535 / 04ba3cb7…c4648,
     then bea152d7…5a71426 / b9f050d0…24290be, then e81e5d0a…2133a221 / 7292b1b9…2feb7783; the
     motion stanza did not move."""
     assert _PINNED["EXTRACTION_PROMPT"] == (
-        "d4b7dfb601a3572002ca1e7e737dff4b26c67b8f38af75722424df1d4df10c27"
+        "0c547c670cb02f21b990fe2f317530c97f6e82e3fda68ccda83c48cbc94c5857"
     )
     assert _PINNED["PER_ACQUISITION_EXTRACTION_PROMPT"] == (
-        "b80e3b01dfa1036e827b2e0107977af72ffff7fc91ec690449d1b31d643520e7"
+        "16df4476e82cbf45ed8758c392578e0ff903d989ee2bf2fe2e3fe3e34b885c8c"
     )
     assert _PINNED["MOTION_METHOD_PROMPT"] == (
         "b00937747b00f0f7dc46d6e68d54deca95d860e5b6c3b3e03542f07866f43837"

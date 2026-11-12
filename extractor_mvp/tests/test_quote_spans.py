@@ -139,3 +139,19 @@ def test_every_span_gets_full_paper_offsets() -> None:
     _translate_spans(dump, 100)
     for sp in dump["steps"][0]["fwhm_mm"]["extraction"]["spans"]:
         assert sp["span_in_full_paper"] == {"start": sp["start"] + 100, "end": sp["end"] + 100}
+
+
+def test_the_part_rule_says_a_value_is_never_a_part_in_the_three_prompts() -> None:
+    """Pre-rerun item 3 (2026-11-11)."""
+    from extractor_mvp.coverage_extractor import SPATIAL_PROMPT, TEMPORAL_VOLUME_PROMPT
+    from extractor_mvp.extractor import EXTRACTION_PROMPT, PER_ACQUISITION_EXTRACTION_PROMPT
+
+    line = "A part names a subset of the paper's data or analyses"
+    for p in (
+        EXTRACTION_PROMPT,
+        PER_ACQUISITION_EXTRACTION_PROMPT,
+        TEMPORAL_VOLUME_PROMPT,
+        SPATIAL_PROMPT,
+    ):
+        squashed = " ".join(p.split())
+        assert line in squashed and "A value is never a part" in squashed
