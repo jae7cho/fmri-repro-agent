@@ -88,8 +88,8 @@ def test_migrate_fills_new_nuisance_fields_and_stamps():
 
 
 def test_migrate_current_doc_is_passthrough():
-    out = parse_any_version(migrate_to_current({"schema_version": "0.7.1", **_native_min()}))
-    assert out.schema_version == "0.7.1"
+    out = parse_any_version(migrate_to_current({"schema_version": "0.7.2", **_native_min()}))
+    assert out.schema_version == "0.7.2"
     assert out.migration is None  # a native/current doc is not marked migrated
 
 
@@ -119,11 +119,11 @@ def test_migrate_0_3_0_to_current_restamps():
     out = migrate_to_current(src)
 
     assert src == original  # read-only: input never mutated
-    assert out["schema_version"] == "0.7.1"
+    assert out["schema_version"] == "0.7.2"
     assert out["written_under"] == "0.3.0"  # a 0.3.0-stamped source is observed, not inferred
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.3.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.7.1/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.7.2/v1"
     # No nuisance-field mutation: the sentinel reason from _missing (not the migrator's
     # "field_not_in_schema_version") survives, proving the setdefault backfill did not fire.
     nuis = next(s for s in out["steps"] if s["kind"] == "nuisance_regression")
@@ -140,13 +140,13 @@ def test_migrate_0_4_0_to_current_restamps():
     original = copy.deepcopy(src)
     out = migrate_to_current(src)
     assert src == original  # read-only
-    assert out["schema_version"] == "0.7.1"
+    assert out["schema_version"] == "0.7.2"
     assert out["written_under"] == "0.4.0"
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.4.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.7.1/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.7.2/v1"
     # parses cleanly under the current model
-    assert parse_any_version(src).schema_version == "0.7.1"
+    assert parse_any_version(src).schema_version == "0.7.2"
 
 
 def _extracted_member(member: str) -> dict[str, Any]:
@@ -244,8 +244,8 @@ def test_migrate_0_4_1_to_0_5_0_lifts_all_five_retyped_fields_and_carries_false_
     }
     # the MISSING temporal method carries forward with NO value (false-missing, structurally retyped)
     assert "value" not in out["steps"][3]["method"]["extraction"]
-    assert out["schema_version"] == "0.7.1"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.7.1/v1"
+    assert out["schema_version"] == "0.7.2"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.7.2/v1"
 
     # the whole doc round-trips cleanly under the current model, verbatim preserved on every arm
     prep = parse_any_version(src)
@@ -277,7 +277,7 @@ def _native_min() -> dict[str, Any]:
 def test_parse_any_version_migrates_and_parses():
     prep = parse_any_version(_v020_doc_with_nuisance())
     assert isinstance(prep, Preprocessing)
-    assert prep.schema_version == "0.7.1"
+    assert prep.schema_version == "0.7.2"
     assert prep.written_under == "0.2.0" and prep.written_under_inferred is True
     assert prep.migration is not None and prep.migration.migrated_from == "0.2.0"
     nr = next(s for s in prep.steps if s.kind == "nuisance_regression")
@@ -346,7 +346,7 @@ def test_a_0_6_0_doc_with_tool_names_in_the_distortion_method_restamps_unchanged
     src = {"schema_version": "0.6.0", **_native_min(), "steps": [step]}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"]  # no doc transform
-    assert out["schema_version"] == "0.7.1" and out["written_under"] == "0.6.0"
+    assert out["schema_version"] == "0.7.2" and out["written_under"] == "0.6.0"
     dc = parse_any_version(src).steps[0]
     assert dc.method.extraction.value[0].resolved == "topup" and dc.tool is None
 
@@ -356,7 +356,7 @@ def test_a_0_6_1_doc_restamps_unchanged_to_0_6_2():
     src = {"schema_version": "0.6.1", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.1"
-    assert out["schema_version"] == "0.7.1"
+    assert out["schema_version"] == "0.7.2"
 
 
 def test_a_0_6_2_doc_restamps_unchanged_to_0_6_3_without_pass_type():
@@ -364,8 +364,8 @@ def test_a_0_6_2_doc_restamps_unchanged_to_0_6_3_without_pass_type():
     src = {"schema_version": "0.6.2", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.2"
-    assert out["schema_version"] == "0.7.1"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.2->0.7.1/v1"
+    assert out["schema_version"] == "0.7.2"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.2->0.7.2/v1"
     prep = parse_any_version(src)
     tf = [s for s in prep.steps if s.kind == "temporal_filtering"]
     assert all(s.pass_type is None for s in tf)
@@ -377,8 +377,8 @@ def test_a_0_6_3_doc_restamps_unchanged_to_0_7_0_every_value_applying_to_all():
     src = {"schema_version": "0.6.3", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.3"
-    assert out["schema_version"] == "0.7.1"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.3->0.7.1/v1"
+    assert out["schema_version"] == "0.7.2"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.3->0.7.2/v1"
     prep = parse_any_version(src)
     assert prep.step_order_parts is None
     for step in prep.steps:
@@ -392,8 +392,17 @@ def test_a_0_7_0_doc_restamps_unchanged_to_0_7_1() -> None:
     src = {"schema_version": "0.7.0", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.7.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.0->0.7.1/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.0->0.7.2/v1"
     span = {"start": 0, "end": 4, "text": "text"}
     part = {"kinds": ["scrub", "despike"], "applies_to": "Part III", "spans": [span]}
     prep = parse_any_version({**src, "step_order_source": "by_part", "step_order_parts": [part]})
     assert prep.step_order_parts is not None and prep.step_order_parts[0].applies_to_spans == []
+
+
+def test_a_0_7_1_doc_restamps_unchanged_to_0_7_2() -> None:
+    """0.7.1 -> 0.7.2 (2026-11-11, pre-rerun item 1): a value's spans may be 1-3 places of the text."""
+    src = {"schema_version": "0.7.1", **_native_min()}
+    out = migrate_to_current(src)
+    assert out["steps"] == src["steps"] and out["written_under"] == "0.7.1"
+    assert out["schema_version"] == "0.7.2"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.1->0.7.2/v1"

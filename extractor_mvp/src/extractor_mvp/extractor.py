@@ -89,7 +89,7 @@ from extractor_mvp.motion_guard import (
     motion_post_check,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.prompt_rules import PREPROCESSING_RULES, VARIANT_RULES
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES, QUOTE_RULES, VARIANT_RULES
 from extractor_mvp.quote_support import (
     coverage_value_supported,
     free_text_supported,
@@ -413,6 +413,7 @@ analysis. Canonical values: voxel_temporal_zscore, other.
 
 """
     + VARIANT_RULES
+    + QUOTE_RULES
     + """The base-pipeline fields (base_pipeline_name, base_pipeline_version, base_pipeline_ref) are
 never "varied".
 
@@ -470,6 +471,8 @@ class ExtractionDiagnostic:
     failure_reason: str
     raw_value: object | None
     raw_quote: str | None
+    #: 2026-11-11 (pre-rerun item 1): the value's further quotes, when it gave more than one
+    raw_more_quotes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -587,10 +590,12 @@ def _missing_pf(field_id: str, t: Any, reason: str) -> ProvenancedField:
 def _extracted_pf(
     field_id: str, t: Any, value: Any, span: Any, span_recovered: bool = False
 ) -> ProvenancedField:
+    """``span`` is one Span or (pre-rerun item 1) the list of a value's 1-3 spans."""
+    spans = span if isinstance(span, list) else [span]
     return ProvenancedField[t](
         field_id=field_id,
         extraction=Extracted[t](
-            value=value, spans=[span], confidence=_CONFIDENCE, span_recovered=span_recovered
+            value=value, spans=spans, confidence=_CONFIDENCE, span_recovered=span_recovered
         ),
         inference=NotApplicable(),
     )
@@ -768,7 +773,29 @@ def _process_field(
             None,
         )
 
+    # 2026-11-11 (pre-rerun item 1): a value's evidence is 1-3 verbatim spans. Each is resolved on
+    # its own; the value is supported only if every span resolves, and the support check reads their
+    # texts together. One quote is the path as it always was.
+    more = tuple(
+        q
+        for q in dict.fromkeys(getattr(fe, "additional_quotes", None) or [])
+        if q and q != fe.verbatim_quote
+    )[:2]
     resolution = resolve_quote(fe.verbatim_quote, text)
+    extra = [resolve_quote(q, text) for q in more]
+    failed = next((r for r in (resolution, *extra) if r.span is None), None)
+    if failed is not None and resolution.span is not None:
+        return (
+            _missing_pf(field_id, t, f"extraction_quote_unresolved:{failed.failure_reason}"),
+            ExtractionDiagnostic(
+                dotted,
+                f"extraction_quote_unresolved:{failed.failure_reason}",
+                fe.value,
+                fe.verbatim_quote,
+                more,
+            ),
+            None,
+        )
     # A tolerant-tier RECOVERED span (span_resolver tier 5) is now KEPT and marked
     # span_recovered=True — honest because the marker distinguishes it from a clean match.
     # Step fields are marked-only in this release (no value-support guard here; that guard is
@@ -788,6 +815,7 @@ def _process_field(
                 f"extraction_quote_unresolved:{resolution.failure_reason}",
                 fe.value,
                 fe.verbatim_quote,
+                more,
             ),
             None,
         )
@@ -805,6 +833,9 @@ def _process_field(
     # reads "40.25 mm" and the number would otherwise sit after a 4). A clean or tier-5 span keeps
     # reading the located text, as before.
     support_text = fe.verbatim_quote if resolution.repairs else resolution.span.text
+    for q, r in zip(more, extra, strict=True):
+        assert r.span is not None
+        support_text += " " + (q if r.repairs else r.span.text)
     supported = (
         coverage_value_supported(dotted, value, support_text)
         if value_kind is not None
@@ -813,11 +844,20 @@ def _process_field(
     if supported is False:
         return (
             _missing_pf(field_id, t, "value_unsupported_by_quote"),
-            ExtractionDiagnostic(dotted, "value_unsupported_by_quote", fe.value, fe.verbatim_quote),
+            ExtractionDiagnostic(
+                dotted, "value_unsupported_by_quote", fe.value, fe.verbatim_quote, more
+            ),
             None,
         )
+    spans = [resolution.span, *(r.span for r in extra if r.span is not None)]
     return (
-        _extracted_pf(field_id, t, value, resolution.span, span_recovered=resolution.recovered),
+        _extracted_pf(
+            field_id,
+            t,
+            value,
+            spans,
+            span_recovered=resolution.recovered or any(r.recovered for r in extra),
+        ),
         None,
         None,
     )
@@ -846,8 +886,10 @@ def _applies_to_located(applies_to: str, ext: Any, v: Any, text: str) -> tuple[b
     own sentence (its span is the location); the sentence the model tied it with
     (``applies_to_quote``, resolved); anywhere in the methods text, headings included (the matched
     words' span). Unverified only when found nowhere."""
-    if free_text_supported(applies_to, ext.spans[0].text) or free_text_supported(
-        applies_to, v.verbatim_quote
+    if (
+        any(free_text_supported(applies_to, s.text) for s in ext.spans)
+        or free_text_supported(applies_to, v.verbatim_quote)
+        or any(free_text_supported(applies_to, q) for q in getattr(v, "additional_quotes", []))
     ):
         return True, []
     if v.applies_to_quote:
@@ -952,8 +994,11 @@ def _process_varied(
             dropped += 1
             note(VARIED_NO_VALUE, None, v.verbatim_quote, v.applies_to)
             continue
-        sub = FieldExtractionResult(
-            status="extracted", value=v.value, verbatim_quote=v.verbatim_quote
+        sub = StepFieldResult(
+            status="extracted",
+            value=v.value,
+            verbatim_quote=v.verbatim_quote,
+            additional_quotes=list(getattr(v, "additional_quotes", None) or []),
         )
         pf, sub_diag, _ = _process_field(
             field_id,
@@ -2042,7 +2087,7 @@ def extract_motion_method(
                         field_id,
                         t,
                         SpecifiedTerm(verbatim=package, resolved=None, resolution="unrecognized"),
-                        pf.extraction.spans[0],
+                        list(pf.extraction.spans),
                         pf.extraction.span_recovered,
                     ),
                     ExtractionDiagnostic(

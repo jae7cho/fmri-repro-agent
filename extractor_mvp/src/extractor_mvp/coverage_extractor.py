@@ -43,7 +43,7 @@ from extractor_mvp.extractor import (
     build_client,
 )
 from extractor_mvp.parsed_paper import ParsedPaper
-from extractor_mvp.prompt_rules import PREPROCESSING_RULES, VARIANT_RULES
+from extractor_mvp.prompt_rules import PREPROCESSING_RULES, QUOTE_RULES, VARIANT_RULES
 from extractor_mvp.quote_support import (
     free_text_supported,
     locate_phrase,
@@ -143,6 +143,7 @@ Read the methods text below; nothing comes from anywhere else.
 """
     + _SHARED_RULES
     + VARIANT_RULES
+    + QUOTE_RULES
     + """
 ## T1 stabilization (nonsteadystate_removal)
 D.3 asks: "Number of initial 'dummy' scans discarded as part of preprocessing (if not already
@@ -262,6 +263,7 @@ text below; nothing comes from anywhere else.
 """
     + _SHARED_RULES
     + VARIANT_RULES
+    + QUOTE_RULES
     + """
 ## Brain extraction (brain_extraction)
 D.3 asks: name of software/method (BET, recon-all, ...); parameter choices (BET's fractional
@@ -507,7 +509,7 @@ def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
     if pf is None or not isinstance(pf.extraction, Extracted):
         return
     term = pf.extraction.value
-    quote = pf.extraction.spans[0].text
+    quote = " ".join(s.text for s in pf.extraction.spans)
     named = [
         member
         for member in _DETREND_ORDER
@@ -523,7 +525,7 @@ def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
         "detrend",
         SpecifiedTerm[Detrend],
         SpecifiedTerm(verbatim=term.verbatim, resolved=highest, resolution="resolved"),
-        pf.extraction.spans[0],
+        list(pf.extraction.spans),
         pf.extraction.span_recovered,
     )
     out.diagnostics.append(

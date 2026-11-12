@@ -63,3 +63,17 @@ sentence that ties the value to the part when that is not the value's own senten
   verbatim_quote = the sentence that states the variation.
 
 """
+
+
+#: 2026-11-11 (pre-rerun item 1): a value's evidence as 1-3 verbatim spans, never one quote stitched
+#: from several places. For the extraction, temporal/volume and spatial prompts (the step fields).
+QUOTE_RULES = """\
+## Quotes
+verbatim_quote is one passage copied exactly from the text. When the evidence for a value is in two
+or three places (for example, the value in one sentence and the step or part it belongs to in
+another), give each place as its own quote: the first in verbatim_quote, the others in
+additional_quotes (at most two), each copied exactly. Never stitch: never join words from different
+sentences into one quote, and never leave words out of the middle of a quote. A variant's quotes
+follow the same rule.
+
+"""

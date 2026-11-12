@@ -307,6 +307,11 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # StepOrderPart gains an OPTIONAL ``applies_to_spans`` (where the part's words were found in the
     # methods text). A 0.7.0 document's parts parse with it empty.
     #
+    # 0.7.1 -> 0.7.2 (PATCH, pure re-stamp -- NO doc transform; 2026-11-11, pre-rerun item 1):
+    # an Extracted value's or a Variant's ``spans`` may now hold 1-3 spans, the value's evidence in
+    # one to three places of the text, each resolved; the value was checked against their texts
+    # together. Before 0.7.2 a value had exactly one span. A 0.7.1 document is valid unchanged.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

@@ -145,6 +145,15 @@ class VariantRow:
     applies_to_span_text: str | None = None
 
 
+#: 2026-11-11 (pre-rerun item 1): how a value's 1-3 quote spans are shown as one quote. One span is
+#: its text, exactly as before.
+SPAN_JOIN = " […] "
+
+
+def joined_spans(spans: Any) -> str:
+    return SPAN_JOIN.join(s.text for s in spans)
+
+
 @dataclass
 class FieldRow:
     """One flattened provenanced field (or the from-scratch base_pipeline sentinel).
@@ -261,7 +270,7 @@ def _row_from_field(
         value=_resolved_value(pf),
     )
     if ext.status == "EXTRACTED":
-        row.span_text = ext.spans[0].text
+        row.span_text = joined_spans(ext.spans)
         row.span_recovered = bool(getattr(ext, "span_recovered", False))
         repairs = list(getattr(ext.spans[0], "repairs", None) or [])
         row.span_repairs = repairs or None
@@ -271,7 +280,7 @@ def _row_from_field(
                 applies_to=v.applies_to,
                 verified=v.applies_to_verified,
                 value=v.value,
-                span_text=v.spans[0].text,
+                span_text=joined_spans(v.spans),
                 span_recovered=v.span_recovered,
                 span_repairs=list(getattr(v.spans[0], "repairs", None) or []) or None,
                 applies_to_span_text=v.applies_to_spans[0].text if v.applies_to_spans else None,

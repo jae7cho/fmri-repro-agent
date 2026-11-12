@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from typing import Any, Literal
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 
 class FieldExtractionResult(BaseModel):
@@ -73,6 +73,9 @@ class VariantResult(BaseModel):
 
     value: str | None = None
     verbatim_quote: str
+    #: 2026-11-11 (pre-rerun item 1): up to two more spans of the text, when the evidence is in two
+    #: or three places; each is resolved, and the value is checked against all of them together
+    additional_quotes: list[str] = Field(default_factory=list, max_length=2)
     applies_to: str
     applies_to_quote: str | None = None
 
@@ -83,6 +86,9 @@ class StepFieldResult(FieldExtractionResult):
     so its schema is unchanged."""
 
     status: Literal["extracted", "missing", "deferred", "varied"]  # type: ignore[assignment]
+    #: 2026-11-11 (pre-rerun item 1): up to two more spans of the text, with status "extracted",
+    #: when the evidence is in two or three places; never one quote stitched from several
+    additional_quotes: list[str] = Field(default_factory=list, max_length=2)
     variants: list[VariantResult] = []
 
     @model_validator(mode="before")
@@ -96,6 +102,8 @@ class StepFieldResult(FieldExtractionResult):
 
     @model_validator(mode="after")
     def enforce_varied_constraints(self) -> StepFieldResult:
+        if self.additional_quotes and self.status != "extracted":
+            raise ValueError("additional_quotes are set only with status='extracted'.")
         if self.status == "varied":
             if not self.variants:
                 raise ValueError("status='varied' requires variants.")

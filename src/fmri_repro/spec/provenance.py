@@ -57,6 +57,8 @@ class Extracted(BaseModel, Generic[T]):
     status: Literal["EXTRACTED"] = "EXTRACTED"
     value: T
     spans: list[Span] = Field(min_length=1)  # no extraction without grounding
+    # 0.7.2 (2026-11-11): 1-3 spans, the value's evidence in one to three places of the text, each
+    # resolved; the value was checked against their texts together. Before 0.7.2 exactly one.
     confidence: float = Field(ge=0.0, le=1.0)
     span_recovered: bool = False  # True iff the span was located ONLY by the corrupted-source
     # tolerant tier (span_resolver tier 5), not a clean exact/near match.
