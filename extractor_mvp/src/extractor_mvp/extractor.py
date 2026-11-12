@@ -2529,7 +2529,13 @@ def extract(
     if verifier_out is not None:
         from extractor_mvp.verifier import run_verifier
 
-        verifier_out.append(
-            run_verifier(parsed_paper, preprocessing, model, client=client, text=verifier_text)
+        checked = run_verifier(
+            parsed_paper, preprocessing, model, client=client, text=verifier_text
         )
+        # pre-rerun item 2 (2026-11-11): a MISSED or WRONG verdict with a value and a sentence that
+        # passes the extraction's own checks fills a field left without a value (checker_supplied)
+        from extractor_mvp.checker_promotion import promote
+
+        checked["supplied"] = promote(preprocessing, checked, parsed_paper.text)
+        verifier_out.append(checked)
     return preprocessing, diagnostics, deferral_records

@@ -143,6 +143,7 @@ class VariantRow:
     span_recovered: bool = False
     span_repairs: list[str] | None = None
     applies_to_span_text: str | None = None
+    checker_supplied: bool = False  # 0.7.3: the checking pass's value, quote-checked
 
 
 #: 2026-11-11 (pre-rerun item 1): how a value's 1-3 quote spans are shown as one quote. One span is
@@ -186,6 +187,9 @@ class FieldRow:
     #: VARIED only: the variants, and how many the extractor dropped because they did not check.
     variants: list[VariantRow] | None = None
     variants_dropped: int = 0
+    #: 0.7.3 (pre-rerun item 2): the value came from the checking pass and passed the extraction's
+    #: span and value-in-quote checks
+    checker_supplied: bool = False
 
     @property
     def coverage_status(self) -> str | None:
@@ -271,6 +275,7 @@ def _row_from_field(
     )
     if ext.status == "EXTRACTED":
         row.span_text = joined_spans(ext.spans)
+        row.checker_supplied = bool(getattr(ext, "checker_supplied", False))
         row.span_recovered = bool(getattr(ext, "span_recovered", False))
         repairs = list(getattr(ext.spans[0], "repairs", None) or [])
         row.span_repairs = repairs or None
@@ -284,10 +289,12 @@ def _row_from_field(
                 span_recovered=v.span_recovered,
                 span_repairs=list(getattr(v.spans[0], "repairs", None) or []) or None,
                 applies_to_span_text=v.applies_to_spans[0].text if v.applies_to_spans else None,
+                checker_supplied=bool(getattr(v, "checker_supplied", False)),
             )
             for v in ext.variants
         ]
         row.variants_dropped = ext.variants_dropped
+        row.checker_supplied = bool(row.variants) and all(v.checker_supplied for v in row.variants)
         # fork D1: the weakest variant's state, as a gap reason the coverage and the header read
         if any(v.value is None for v in ext.variants):
             row.left_missing_reason = "varied_across_compared_models"
@@ -427,10 +434,18 @@ def _repair_note(row: FieldRow) -> str:
 
 
 def _from_paper_tag(row: FieldRow) -> str:
-    """``[from paper]``, widened when the span was recovered rather than cleanly matched."""
+    """``[from paper]``, widened when the span was recovered rather than cleanly matched;
+    ``[checker-supplied]`` for a value the checking pass supplied (pre-rerun item 2)."""
+    if row.checker_supplied:
+        return CHECKER_SUPPLIED_TAG
     if row.span_recovered:
         return f"[from paper — {_repair_note(row)}]"
     return "[from paper]"
+
+
+#: pre-rerun item 2 (2026-11-11): the tag of a value the checking pass supplied and the extraction's
+#: checks passed. The verdict it came from is not shown beside it: the value is that verdict.
+CHECKER_SUPPLIED_TAG = "[checker-supplied]"
 
 
 def _truncate_quote(text: str) -> str:
@@ -987,14 +1002,21 @@ def _varied_lines(
     for v in variants:
         shown.add(normalize_applies_to(v.applies_to))
         tag = (
-            "[from paper — quote matched after source-text repair]"
+            CHECKER_SUPPLIED_TAG
+            if v.checker_supplied
+            else "[from paper — quote matched after source-text repair]"
             if v.span_recovered
             else ("[from paper]")
         )
         main = f"{v.applies_to}: {_variant_value(row, v)}   {tag}  «{_truncate_quote(v.span_text)}»"
         if not v.verified:
             main += f"   {_APPLIES_TO_UNVERIFIED}"
-        probe = FieldRow(path=variant_key(row.path, v.applies_to), group=row.group, state=EXTRACTED)
+        probe = FieldRow(
+            path=variant_key(row.path, v.applies_to),
+            group=row.group,
+            state=EXTRACTED,
+            checker_supplied=v.checker_supplied,
+        )
         out.append("    " + _with_verdict(main, probe, verifier))
     if not row.path.endswith(".performed"):
         for v in not_performed or []:
@@ -1059,6 +1081,8 @@ def _order_part_lines(preprocessing: Any) -> list[str]:
 def _verdict_for(row: FieldRow, verifier: dict[str, Any] | None) -> dict[str, Any] | None:
     if not verifier or verifier.get("status") != "ok":
         return None
+    if row.checker_supplied:
+        return None  # pre-rerun item 2: the verdict became the value; it is not judged again
     found: dict[str, Any] | None = verifier.get("fields", {}).get(row.path)
     return found
 
@@ -1145,6 +1169,8 @@ def _with_verdict(main: str, row: FieldRow, verifier: dict[str, Any] | None) -> 
     states; a verdict whose sentence did not resolve is shown as unverified and does nothing."""
     from extractor_mvp.verifier import effective
 
+    if row.checker_supplied:
+        return f"- {main}"  # the value IS the checking pass's verdict (pre-rerun item 2)
     v = _verdict_for(row, verifier)
     if row.state == INFERRED_DEFAULT and verifier and verifier.get("status") == "ok":
         # fix 1d (2026-11-05): an inference is AESPA's, not the paper's; it is never judged against

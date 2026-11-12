@@ -312,6 +312,11 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # one to three places of the text, each resolved; the value was checked against their texts
     # together. Before 0.7.2 a value had exactly one span. A 0.7.1 document is valid unchanged.
     #
+    # 0.7.2 -> 0.7.3 (PATCH, pure re-stamp -- NO doc transform; 2026-11-11, pre-rerun item 2):
+    # Extracted and Variant gain an OPTIONAL ``checker_supplied`` (default False): the value came
+    # from a checking-pass verdict that passed the extraction's span and value-in-quote checks. A
+    # 0.7.2 document's values parse with it False.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

@@ -44,6 +44,8 @@ TAGS: dict[str, str] = {
     "?": "not reported",
     "x": "stated not performed",
 }
+#: pre-rerun item 2 (2026-11-11): shown in the legend only when the record has such a value
+CHECKER_TAG = ("E†", "the checking pass's value, quote-checked like [E]")
 COMMENT_MAX = 80
 #: Reasons that mean the extractor never looked: such a field is omitted, never shown as [?].
 UNEXAMINED = ("not_targeted_by_mvp", "field_not_in_schema_version")
@@ -175,7 +177,8 @@ def _row_arg(
             f"checker-supplied «{clip(entry.get('quote'), 60)}»",
         )
     if row.state == EXTRACTED:
-        return _Arg(name, _literal(row.value), "E", f"«{clip(row.span_text)}»")
+        tag = CHECKER_TAG[0] if row.checker_supplied else "E"
+        return _Arg(name, _literal(row.value), tag, f"«{clip(row.span_text)}»")
     if row.state == VARIED:
         # one block for the whole paper: every part's value, the paper's words for each part
         variants = row.variants or []
@@ -281,7 +284,14 @@ def _for_part(
     v = next((v for v in row.variants or [] if part_key(v.applies_to, joins or {}) == part), None)
     if v is None:
         return None
-    return replace(row, state=EXTRACTED, value=v.value, span_text=v.span_text, variants=None)
+    return replace(
+        row,
+        state=EXTRACTED,
+        value=v.value,
+        span_text=v.span_text,
+        variants=None,
+        checker_supplied=v.checker_supplied,
+    )
 
 
 def _parts(rows: list[FieldRow], joins: dict[str, str] | None = None) -> dict[str, str]:
@@ -421,7 +431,12 @@ def _step_line(
     if args and all(a.tag == "?" for a in args) and not stated:
         return f"{kind}(...)  [?]  # nothing reported for this step"
     comment = next(
-        (a.comment for tag in ("E", "D", "C", "M") for a in args if a.tag == tag and a.comment),
+        (
+            a.comment
+            for tag in ("E", CHECKER_TAG[0], "D", "C", "M")
+            for a in args
+            if a.tag == tag and a.comment
+        ),
         f"performed: «{clip(performed.span_text)}»" if stated and performed is not None else None,
     )
     call = f"{kind}(" + ", ".join(a.text() for a in args) + ")"
@@ -646,6 +661,8 @@ def render_pseudocode(record: dict[str, Any]) -> str | None:
     hops = _hop_values(record)
     resolution = record.get("resolution")
     lines = _header(record, prep)
+    if any(r.checker_supplied or any(v.checker_supplied for v in r.variants or []) for r in rows):
+        lines[-1] += f" · [{CHECKER_TAG[0]}] {CHECKER_TAG[1]}"
     streams = _streams(record)
     n = _variants(record)
     from extractor_mvp.part_names import join_map, joins_for

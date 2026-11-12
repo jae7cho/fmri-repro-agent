@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.7.2",
+  "schema_version": "0.7.3",
   "run": {
     "run_id": "00000000000000000000000000000001",
     "created_at": "2026-05-20T00:00:00Z",
@@ -33,7 +33,8 @@
                 }
               ],
               "confidence": 0.98,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -54,7 +55,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -75,7 +77,8 @@
                 }
               ],
               "confidence": 0.99,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -110,7 +113,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -145,7 +149,8 @@
                 }
               ],
               "confidence": 0.93,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -180,7 +185,8 @@
                 }
               ],
               "confidence": 0.97,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -201,7 +207,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -226,7 +233,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -299,7 +307,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -322,7 +331,8 @@
                 }
               ],
               "confidence": 0.98,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -343,7 +353,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -364,7 +375,8 @@
                 }
               ],
               "confidence": 0.99,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -399,7 +411,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -434,7 +447,8 @@
                 }
               ],
               "confidence": 0.93,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -469,7 +483,8 @@
                 }
               ],
               "confidence": 0.97,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -490,7 +505,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -515,7 +531,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -590,7 +607,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -652,7 +670,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -673,7 +692,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -750,7 +770,8 @@
                 }
               ],
               "confidence": 0.9,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -818,7 +839,8 @@
                 }
               ],
               "confidence": 0.92,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1053,7 +1075,8 @@
                 }
               ],
               "confidence": 0.98,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1074,7 +1097,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1095,7 +1119,8 @@
                 }
               ],
               "confidence": 0.99,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1130,7 +1155,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1165,7 +1191,8 @@
                 }
               ],
               "confidence": 0.93,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1200,7 +1227,8 @@
                 }
               ],
               "confidence": 0.97,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1221,7 +1249,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1246,7 +1275,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1319,7 +1349,8 @@
                 }
               ],
               "confidence": 0.9,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1370,7 +1401,8 @@
                 }
               ],
               "confidence": 0.9,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1391,8 +1423,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.7.2",
-          "written_under": "0.7.2",
+          "schema_version": "0.7.3",
+          "written_under": "0.7.3",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -1453,7 +1485,8 @@
                 }
               ],
               "confidence": 0.93,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -1478,7 +1511,8 @@
                     }
                   ],
                   "confidence": 0.92,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1507,7 +1541,8 @@
                     }
                   ],
                   "confidence": 0.9,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1549,7 +1584,8 @@
                     }
                   ],
                   "confidence": 0.95,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1705,7 +1741,8 @@
                     }
                   ],
                   "confidence": 0.92,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1737,7 +1774,8 @@
                     }
                   ],
                   "confidence": 0.9,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1792,7 +1830,8 @@
                     }
                   ],
                   "confidence": 0.9,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1852,7 +1891,8 @@
                     }
                   ],
                   "confidence": 0.95,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1873,7 +1913,8 @@
                     }
                   ],
                   "confidence": 0.93,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1894,7 +1935,8 @@
                     }
                   ],
                   "confidence": 0.95,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -1915,7 +1957,8 @@
                     }
                   ],
                   "confidence": 0.95,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2013,7 +2056,8 @@
                 }
               ],
               "confidence": 0.98,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2034,7 +2078,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2055,7 +2100,8 @@
                 }
               ],
               "confidence": 0.99,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2090,7 +2136,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2125,7 +2172,8 @@
                 }
               ],
               "confidence": 0.92,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2160,7 +2208,8 @@
                 }
               ],
               "confidence": 0.97,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2181,7 +2230,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2206,7 +2256,8 @@
                 }
               ],
               "confidence": 0.96,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2281,7 +2332,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2343,7 +2395,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2364,7 +2417,8 @@
                 }
               ],
               "confidence": 0.94,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2441,7 +2495,8 @@
                 }
               ],
               "confidence": 0.88,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2711,8 +2766,8 @@
       ],
       "preprocessing": [
         {
-          "schema_version": "0.7.2",
-          "written_under": "0.7.2",
+          "schema_version": "0.7.3",
+          "written_under": "0.7.3",
           "written_under_inferred": false,
           "migration": null,
           "applies_to": [
@@ -2767,7 +2822,8 @@
                 }
               ],
               "confidence": 0.95,
-              "span_recovered": false
+              "span_recovered": false,
+              "checker_supplied": false
             },
             "inference": {
               "status": "NOT_APPLICABLE"
@@ -2795,7 +2851,8 @@
                     }
                   ],
                   "confidence": 0.95,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2947,7 +3004,8 @@
                     }
                   ],
                   "confidence": 0.94,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"
@@ -2972,7 +3030,8 @@
                     }
                   ],
                   "confidence": 0.9,
-                  "span_recovered": false
+                  "span_recovered": false,
+                  "checker_supplied": false
                 },
                 "inference": {
                   "status": "NOT_APPLICABLE"

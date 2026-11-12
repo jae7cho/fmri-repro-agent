@@ -62,6 +62,10 @@ class Extracted(BaseModel, Generic[T]):
     confidence: float = Field(ge=0.0, le=1.0)
     span_recovered: bool = False  # True iff the span was located ONLY by the corrupted-source
     # tolerant tier (span_resolver tier 5), not a clean exact/near match.
+    # 0.7.3 (2026-11-11, pre-rerun item 2): the value came from a checking-pass verdict (MISSED or
+    # WRONG with a value and a sentence) that passed the same span and value-in-quote checks as an
+    # extracted value; set only on a field the extraction left without a value.
+    checker_supplied: bool = False
 
 
 # --- Values that differ by what they apply to (0.7.0; DESIGN_applies_to.md, fork A1) ---
@@ -103,6 +107,7 @@ class Variant(BaseModel, Generic[T]):
     applies_to_verified: bool = True
     confidence: float = Field(ge=0.0, le=1.0)
     span_recovered: bool = False
+    checker_supplied: bool = False  # 0.7.3: as on Extracted
 
 
 class Varied(BaseModel, Generic[T]):

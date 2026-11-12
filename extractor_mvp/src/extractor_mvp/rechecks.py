@@ -63,6 +63,11 @@ def checker_supplied(record: dict[str, Any]) -> list[dict[str, Any]]:
     verifier = record.get("verifier") or {}
     if verifier.get("status") != "ok":
         return []
+    if "supplied" in verifier:
+        # pre-rerun item 2 (2026-11-11): a record drawn with checker promotion (checker_promotion.py)
+        # carries the checking pass's values on the fields themselves, quote-checked; a verdict that
+        # failed those checks stays a flag and is never shown beside the field as this did
+        return []
     verdicts = verifier.get("fields") or {}
     quotes = {d.get("field"): d.get("raw_quote") for d in record.get("diagnostics") or []}
     out: list[dict[str, Any]] = []

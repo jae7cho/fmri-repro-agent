@@ -133,7 +133,9 @@ def test_wrong_demotes_the_value_to_a_flag_and_never_replaces_it() -> None:
     assert "Checking pass (unvalidated" in report and "wrong 1" in report
 
 
-def test_missed_names_what_the_paper_states_and_fills_nothing() -> None:
+def test_missed_with_a_value_in_its_sentence_fills_the_field_as_checker_supplied() -> None:
+    """Pre-rerun item 2 (2026-11-11) replaced "missed fills nothing": the verdict's value went
+    through the extraction's span and value-in-quote checks and passed."""
     verdict = VerifierExtraction(
         fields=[
             FieldVerdict(
@@ -147,8 +149,32 @@ def test_missed_names_what_the_paper_states_and_fills_nothing() -> None:
     )
     prep, _, report = _run(verifier=verdict)
     fwhm = next(s for s in prep.steps if s.kind == "spatial_smoothing").fwhm_mm
+    assert fwhm.extraction.status == "EXTRACTED" and fwhm.extraction.checker_supplied
+    assert fwhm.extraction.value == 6.0
+    assert (
+        "- fwhm_mm = 6.0   [checker-supplied]  «Images were smoothed with a 6 mm FWHM Gaussian "
+        "kernel.»" in report
+    )
+    assert "[missed per the checking pass" not in report  # counted, not flagged
+    assert "checking pass: MISSED — the paper states: 6" not in report
+
+
+def test_missed_whose_value_is_not_in_its_sentence_stays_a_flag_and_fills_nothing() -> None:
+    verdict = VerifierExtraction(
+        fields=[
+            FieldVerdict(
+                field="spatial_smoothing.fwhm_mm",
+                verdict="missed",
+                reason="the kernel is stated",
+                relied_on=_SMOOTH,
+                better_value="8",
+            )
+        ]
+    )
+    prep, _, report = _run(verifier=verdict)
+    fwhm = next(s for s in prep.steps if s.kind == "spatial_smoothing").fwhm_mm
     assert fwhm.extraction.status == "MISSING_FROM_PAPER"
-    assert "checking pass: MISSED — the paper states: 6 «Images were smoothed" in report
+    assert "checking pass: MISSED — the paper states: 8 «Images were smoothed" in report
     assert "[missed per the checking pass: fwhm_mm]" in report
 
 
