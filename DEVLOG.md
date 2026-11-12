@@ -5229,8 +5229,10 @@ Commits here: `185a0cb`, then this entry.
   - braun_2015's GROBID listBibl is not empty (62 entries). Its hop failed because GROBID did not tag
     the sentence's refs and its pypdf text has no heading.
 - **Checks:**
-  - 50 mutations across the five items, each diff non-empty, all killed; three first survived and
-    their tests were strengthened.
+  - 36 mutations across the five items (item 1: 9, item 2: 13, item 3: 1, item 4: 7, item 5: 6),
+    each diff non-empty, all killed; three first survived and their tests were strengthened.
+    `bf05d8b`'s message says 11 for item 1; 9 were run (1a-1i). This entry first said 50; corrected
+    in the commit after it.
   - Gate 68/68 + 12/12 identical after every item; positive control 12/12. Root 332, extractor_mvp
     1116.
 - `26058e3` — `docs/findings/corpus_full_v3.md`, **incomplete.**
