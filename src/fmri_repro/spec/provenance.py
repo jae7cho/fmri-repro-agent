@@ -157,6 +157,11 @@ class Deferral(BaseModel):
     ref: str  # citation label / DOI / pipeline name
     span: Span  # the deferring sentence
     target_kind: Literal["paper", "pipeline", "dataset_doc"] = "paper"
+    # 0.7.4 (2026-11-11, pre-rerun item 4): the citation hop looked for the cited source and could
+    # not open it (no local PDF and no Europe PMC full text, for every target behind ``ref``). Still a
+    # deferral, and counted as one: the paper sends the reader elsewhere; this says where could not
+    # be read.
+    source_could_not_be_opened: bool = False
 
 
 class DeferredToCitation(BaseModel):

@@ -1588,7 +1588,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.7.3"
+SCHEMA_VERSION = "0.7.4"
 
 
 class MigrationInfo(BaseModel):
@@ -1652,7 +1652,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.7.3"] = "0.7.3"
+    schema_version: Literal["0.7.4"] = "0.7.4"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

@@ -155,6 +155,17 @@ def joined_spans(spans: Any) -> str:
     return SPAN_JOIN.join(s.text for s in spans)
 
 
+#: pre-rerun item 4 (2026-11-11): how a deferral whose source the hop could not open is written
+UNOPENED_WORDS = "source could not be opened: no local PDF, no Europe PMC full text"
+
+
+def refs_words(row: Any) -> str:
+    """The refs a field defers to, each marked when its source could not be opened."""
+    unopened = set(getattr(row, "unopened_refs", None) or [])
+    refs = [f"{r} ({UNOPENED_WORDS})" if r in unopened else r for r in row.deferral_refs or []]
+    return ", ".join(refs) or "(unspecified)"
+
+
 @dataclass
 class FieldRow:
     """One flattened provenanced field (or the from-scratch base_pipeline sentinel).
@@ -179,6 +190,8 @@ class FieldRow:
     left_missing_reason: str | None = None  # LeftMissing.reason, for protocol hole callouts
     searched_terms: list[str] | None = None
     deferral_refs: list[str] | None = None
+    #: 0.7.4 (pre-rerun item 4): the refs whose source the citation hop could not open
+    unopened_refs: list[str] | None = None
     span_repairs: list[str] | None = None  # Span.repairs (0.5.3): the named substitutions, tier 6
     span_recovered: bool = False  # Extracted.span_recovered: the quote matched only after the
     # corrupted-source tolerant tier repaired mangled PDF text. Carried to the report because a
@@ -304,6 +317,9 @@ def _row_from_field(
         row.searched_terms = list(ext.searched_terms)
     if ext.status == "DEFERRED_TO_CITATION":
         row.deferral_refs = [d.ref for d in ext.deferrals]
+        row.unopened_refs = [
+            d.ref for d in ext.deferrals if getattr(d, "source_could_not_be_opened", False)
+        ] or None
     if inf.status == "INFERRED_DEFAULT":
         row.basis_type = inf.basis.basis_type
         row.confidence = inf.confidence
@@ -463,7 +479,7 @@ def _fmt_field_text(row: FieldRow) -> str:
     if row.state == INFERRED_DEFAULT:
         return f"inferred: {_fmt_row_value(row)}   ({row.basis_type}, conf {row.confidence})"
     if row.state == DEFERRED_TO_CITATION:
-        refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+        refs = refs_words(row)
         return f"deferred to {refs}"
     if row.state in (MISSING_FROM_PAPER, LEFT_MISSING):
         # CHARACTERISE the absence, never label it. A bare "not reported" is a claim about
@@ -531,7 +547,7 @@ def _fmt_value_suffix(row: FieldRow) -> str:
     if row.state in (EXTRACTED, INFERRED_DEFAULT) and row.value is not None:
         return f" {_fmt_row_value(row)}"
     if row.state == DEFERRED_TO_CITATION and row.deferral_refs:
-        return f" ({', '.join(row.deferral_refs)})"
+        return f" ({refs_words(row)})"
     if row.state == VARIED:
         return f" ({_variants_summary(row)})"
     return ""
@@ -803,7 +819,7 @@ def _protocol_main(row: FieldRow, label: str, *, equals_for_extracted: bool) -> 
     if st == INFERRED_DEFAULT:
         return f"{label}{sep}{_fmt_row_value(row)}   [INFERRED — not stated in source]"
     if st == DEFERRED_TO_CITATION:
-        refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+        refs = refs_words(row)
         return f"{label}: deferred to {refs} — resolve by consulting the cited source"
     if st in (MISSING_FROM_PAPER, LEFT_MISSING):
         # Reason-partitioned callout: source-absence vs extractor-coverage. (LEFT_MISSING
@@ -826,7 +842,7 @@ def _motion_method_line(row: FieldRow, label: str, record: Any | None) -> str:
     filled (state INFERRED) or a described_only diagnostic record travels with the result."""
     if row.state == INFERRED_DEFAULT:
         if row.extraction_status == DEFERRED_TO_CITATION:
-            refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+            refs = refs_words(row)
             words = f"deferred to {refs}"
         else:
             words = "not stated"
@@ -898,7 +914,7 @@ def _supplement_words(supplement: dict[str, Any] | None) -> str:
 
 
 def _deferred_inferred_line(row: FieldRow, label: str) -> str:
-    refs = ", ".join(row.deferral_refs or []) or "(unspecified)"
+    refs = refs_words(row)
     return f"{label} = deferred to {refs}" + _DEFERRED_INFERS.format(
         value=_fmt_row_value(row),
         basis_type=row.basis_type,
@@ -2142,7 +2158,7 @@ def _expanded_rows_section(
                 values.append(f"{param}: {_supplement_words(supplement)}")  # fix 4 (2026-11-05)
             elif r.extraction_status == DEFERRED_TO_CITATION:
                 # fix 3 (2026-11-05): a deferral AESPA filled from the KB is still the paper's deferral
-                refs = ", ".join(r.deferral_refs or []) or "(unspecified)"
+                refs = refs_words(r)
                 values.append(f"{param}: deferred to {refs}")
         if rc.row.row_id == "software" and mentions:
             # report v2 §1c: every named software, with its version or the lack of one.
@@ -2200,9 +2216,7 @@ def _expanded_rows_section(
                 values.append(f"{param} differs: {_variants_summary(r)}")
                 quote = quote or (r.variants[0].span_text if r.variants else None)
             elif r.state == DEFERRED_TO_CITATION:
-                values.append(
-                    f"{param}: deferred to {', '.join(r.deferral_refs or []) or '(unspecified)'}"
-                )
+                values.append(f"{param}: deferred to {refs_words(r)}")
         tag = validation_tag("temporal_filtering")
         line = f"- Temporal filtering [beyond COBIDAS; {tag}] — {_ROW_STATE_LABEL[state]}"
         if values:

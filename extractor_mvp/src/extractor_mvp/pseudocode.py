@@ -198,7 +198,9 @@ def _row_arg(
         return _Arg(name, _literal(value), "C", f"{clip(ref, 30)} «{clip(quote, 45)}»")
     if row.state == DEFERRED_TO_CITATION:
         refs = _clean(", ".join(row.deferral_refs or []) or "unspecified").replace('"', "'")
-        return _Arg(name, f'see("{refs}")', "C", None)
+        # pre-rerun item 4 (2026-11-11): the hop could not open the cited source
+        unopened = "source could not be opened" if row.unopened_refs else None
+        return _Arg(name, f'see("{refs}")', "C", unopened)
     if (row.left_missing_reason or "").split(":", 1)[0] in UNEXAMINED:
         return None
     return _Arg(name, "?", "?", None)

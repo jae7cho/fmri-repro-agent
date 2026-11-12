@@ -1,4 +1,4 @@
-"""Versioned root for the ReplicationSpec — the single live ``StudySpec`` root (currently stamps 0.7.3).
+"""Versioned root for the ReplicationSpec — the single live ``StudySpec`` root (currently stamps 0.7.4).
 
 This module is the sole live root. Both additive-patch bumps and the one structural bump so far are
 applied IN PLACE (see :mod:`fmri_repro.spec.migrations`), the module keeping its name and its
@@ -42,7 +42,7 @@ from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):
-    schema_version: Literal["0.7.3"] = "0.7.3"
+    schema_version: Literal["0.7.4"] = "0.7.4"
     run: RunMeta
     specs: list[ReplicationSpec] = Field(min_length=1)
     study_analysis: StudyAnalysis | None = None

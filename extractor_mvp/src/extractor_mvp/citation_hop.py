@@ -1475,3 +1475,49 @@ def apply_rules(fields: dict[str, Any]) -> dict[str, dict[str, Any]]:
             "note": "the coregistration transform is rigid, so no nonlinear transform is used",
         }
     return out
+
+
+# ---------------------------------------------------------------------------
+# A deferral whose source could not be opened (pre-rerun item 4, 2026-11-11)
+# ---------------------------------------------------------------------------
+
+#: The hop status meaning no local PDF and no Europe PMC full text (or a local PDF that failed to
+#: load): run_hop's "not_retrievable".
+NOT_RETRIEVABLE = "not_retrievable"
+
+
+def unopened_refs(hops: Sequence[dict[str, Any]]) -> list[str]:
+    """The refs every one of whose hop records is not retrievable, in first-seen order. A ref with
+    one target opened is not among them; a ref the hop never reached a target for (no reference
+    section, reference not found) is not either: its source was not looked for."""
+    by_ref: dict[str, list[str]] = {}
+    for h in hops:
+        by_ref.setdefault(str(h.get("ref")), []).append(str(h.get("status")))
+    return [ref for ref, states in by_ref.items() if all(s == NOT_RETRIEVABLE for s in states)]
+
+
+def mark_unopened_deferrals(record: dict[str, Any]) -> list[str]:
+    """Set ``source_could_not_be_opened`` (schema 0.7.4) on every deferral, in the stored
+    preprocessing, whose ref the hop could not open; returns the dotted fields marked. Fields from
+    every call are covered (the extraction, motion, temporal/volume and spatial calls all write
+    DEFERRED_TO_CITATION the same way), and the base pipeline's deferral too. The field stays
+    deferred and is counted as deferred."""
+    refs = set(unopened_refs(record.get("second_hop") or []))
+    marked: list[str] = []
+    prep = record.get("preprocessing") or {}
+    fields: list[tuple[str, Any]] = [("base_pipeline", prep.get("base_pipeline"))]
+    for step in prep.get("steps", []):
+        for key, value in step.items():
+            fields.append((f"{step.get('kind')}.{key}", value))
+    for dotted, pf in fields:
+        ext = (pf or {}).get("extraction") if isinstance(pf, dict) else None
+        if not isinstance(ext, dict) or ext.get("status") != "DEFERRED_TO_CITATION":
+            continue
+        hit = False
+        for d in ext.get("deferrals") or []:
+            if d.get("ref") in refs:
+                d["source_could_not_be_opened"] = True
+                hit = True
+        if hit:
+            marked.append(dotted)
+    return marked

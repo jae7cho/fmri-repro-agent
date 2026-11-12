@@ -317,6 +317,11 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # from a checking-pass verdict that passed the extraction's span and value-in-quote checks. A
     # 0.7.2 document's values parse with it False.
     #
+    # 0.7.3 -> 0.7.4 (PATCH, pure re-stamp -- NO doc transform; 2026-11-11, pre-rerun item 4):
+    # Deferral gains an OPTIONAL ``source_could_not_be_opened`` (default False): the citation hop
+    # found no local PDF and no Europe PMC full text for the cited source. A 0.7.3 document's
+    # deferrals parse with it False.
+    #
     # The re-stamp hops and the two transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION

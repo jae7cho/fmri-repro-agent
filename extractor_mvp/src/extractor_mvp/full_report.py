@@ -229,6 +229,10 @@ def run_paper(
         software_mentions=uses,
         citing_software=software,
     )
+    # pre-rerun item 4 (2026-11-11): a deferral whose cited source the hop could not open says so
+    from extractor_mvp.citation_hop import mark_unopened_deferrals
+
+    record["deferrals_unopened"] = mark_unopened_deferrals(record)
     # 2026-11-09 (the author's item 3): fields the data provider applied to a released dataset
     from extractor_mvp.provider_applied import provider_applied
 
