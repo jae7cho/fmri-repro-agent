@@ -5133,3 +5133,41 @@ Commits here: `2496d88`, `b7e28cc`, then this entry.
 `sfn2026-freeze` stays at `e437668`; post-freeze.
 
 Commits here: `1cb7383`, `5741b6d`, then this entry.
+
+## 2026-11-11 (11) — applies_to Stage 2c
+
+- `97218c7` — the author's items 1-3 (DESIGN_applies_to.md §10).
+  - **Scorer:** leading and trailing ellipses and quote marks are stripped before the overlap test.
+    A label variant with no quote, or no overlap, is then matched by part name (same string, or
+    same content words). Quote overlap runs for every label first. `FieldScore.routes` records the
+    route; the scope table has two new columns for it.
+  - **Pseudo-code:** more than four parts gives every step once and a table per step whose fields
+    differ, whatever the fields. A row is printed for each part that states one of them.
+  - **Part joins** (`part_names.py`): content-word subset after dropping punctuation, parentheses
+    and stopwords. Never two names that one field carries side by side, and never an ambiguous group.
+    "a" is kept as a content word, because it labels parts ("Model A").
+    - Every join and refusal is logged in the record's `part_joins`. Joins are shown in the header
+      line and the pseudo-code.
+    - The scorer's streams, the pseudo-code's parts and the header group by the joined key.
+  - `scripts/rerender_records.py` re-renders stored records with no model call.
+  - **Checks:** 16 mutations, each diff non-empty, all killed. Gate 68/68 + 8/8 (`applies_to_v1`)
+    identical vs `755508c`; positive control 12/12. Root 318, extractor_mvp 1061.
+- `2ceea60` — `docs/findings/applies_to_stage2c.md`.
+  - **Records:** the four Stage 2b records (`results/applies_to_v2`), re-rendered into
+    `results/applies_to_v2c`, no model call. The render path reproduces all 8 stored files at
+    `755508c`.
+  - **chen_2015 filtering, ReHo:** now matched correct by quote (band and pass type agree).
+    ALFF/fALFF is still missed: the record has no filtering part for it. No other row moved.
+  - **The name fallback** matched nothing on these four papers.
+  - **One join:** chen_2015's "global connectome (DCw and ECw)" into "global connectome metrics
+    (DCw, ECw)".
+  - **ciric_2017:** 17 parts as tables by step, 155 lines against 368. One part, "all regressors",
+    is `temporal_filtering.applied_to`'s value taken as a part.
+  - **power_2014 (diagnosis):** the filtering quote joins two sentences and skips the one between
+    them, so `quote_not_found`. The text layer is unchanged: same source, same slice, and the
+    Stage 2 quotes resolve at their stored offsets.
+  - **gracia-tabuenca_2024 (diagnosis):** the rest-fMRI paragraph is in the slice, the sentence
+    straight after the 0.9 mm scrub sentence. No extraction call returned a part. The checking pass
+    flagged MISSED with per-part values (0.9 mm task, 0.2 mm rest).
+
+Commits here: `97218c7`, `2ceea60`, then this entry.
