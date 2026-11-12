@@ -5203,3 +5203,42 @@ Commits here: `97218c7`, `2ceea60`, then this entry.
     check refuses an empty or repeated name. Root 329, extractor_mvp 1082.
 
 Commits here: `185a0cb`, then this entry.
+
+## 2026-11-11 (13) — pre-rerun bundle; corpus_full_v3 (incomplete)
+
+- `bf05d8b` — item 1: a value's evidence is 1-3 verbatim spans.
+  - `additional_quotes` sits beside `verbatim_quote` on the step fields and variants of the
+    extraction, temporal/volume and spatial calls. Each span is resolved; the value is supported
+    only if every span resolves, and it is checked against their texts together.
+  - QUOTE_RULES: never stitch. Four prompts re-pinned. Schema 0.7.2 (re-stamp).
+- `4873f67` — item 2: checker-supplied values.
+  - A MISSED or WRONG verdict with a value and a resolved sentence goes through `_process_field`.
+    Passing, it fills a MISSING field, marked `checker_supplied` (schema 0.7.3) and tagged
+    `[checker-supplied]` / `[E†]`. Failing, it stays a flag.
+  - Parts are created from per-part verdicts. An extracted value is never overridden. The log is in
+    `verifier.supplied`. The 2026-11-09 beside-the-field path is off for records carrying that log.
+- `d411763` — item 3: a part names a subset of the data; a value is never a part. Four prompts
+  re-pinned.
+- `fe1f0e5` — item 4: `Deferral.source_could_not_be_opened` (schema 0.7.4).
+  - It is set after the hop for refs all of whose hop records are `not_retrievable`, on fields from
+    every call.
+  - Rendered as such; still counted as deferred.
+- `80f0c63` — item 5: the reference-list fallback.
+  - With no heading, the longest consecutively numbered run is the list; the source is recorded in
+    `hop_reference_list`.
+  - braun_2015's GROBID listBibl is not empty (62 entries). Its hop failed because GROBID did not tag
+    the sentence's refs and its pypdf text has no heading.
+- **Checks:**
+  - 50 mutations across the five items, each diff non-empty, all killed; three first survived and
+    their tests were strengthened.
+  - Gate 68/68 + 12/12 identical after every item; positive control 12/12. Root 332, extractor_mvp
+    1116.
+- `26058e3` — `docs/findings/corpus_full_v3.md`, **incomplete.**
+  - **Run:** 40 of 45 records, $31.6542 metered.
+  - **Token limit:** the Bedrock daily limit failed 5 papers and cut 2 papers' last calls.
+  - **No `--corpus` (my error):** the runner left it out, so the hop results, item 4's marks and the
+    hop-fed resolution are wrong for 10 papers.
+  - **What stands:** the extraction-side results on the 40.
+  - **Still to do:** 16 papers to re-run with `--corpus` once the limit allows (about $13).
+
+Commits here: `bf05d8b`, `4873f67`, `d411763`, `fe1f0e5`, `80f0c63`, `26058e3`, then this entry.
