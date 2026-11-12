@@ -475,12 +475,12 @@ def test_the_rows_workbook_matches_the_merge_script(tmp_path) -> None:
 
 def _check_rows_workbook(path: Path) -> None:
     wb = openpyxl.load_workbook(path)
-    assert wb.sheetnames == ["README", *ROW_KINDS]
-    for kind in ROW_KINDS:
+    assert wb.sheetnames == ["README", *ml.ROW_SHEETS]
+    for kind in ml.ROW_SHEETS:
         assert [c.value for c in wb[kind][1]] == ["paper_id", *ml.ROW_SHEETS[kind], "adjudication"]
         assert _dv_lists(path, kind)["C2"] == ml.ROW_STATES
     readme = " ".join(str(c.value) for row in wb["README"].iter_rows() for c in row if c.value)
-    for text in (*ml.ROW_STATES, *ml.ROW_RULINGS):
+    for text in (*ml.ROW_STATES, *ml.ROW_RULINGS, *builder.LABEL_SHEET_NOTES.values()):
         assert text in readme
 
 
@@ -489,9 +489,14 @@ def test_the_labeler_cards_and_rulings_match_the_merge_script() -> None:
     m = re.search(r"const ROW_STATES = \[([^\]]*)\];", html)
     assert m and tuple(re.findall(r'"([^"]+)"', m.group(1))) == ml.ROW_STATES
     cards = dict(re.findall(r"^  (\w+): \{ title: .*?step: \[(.*?)\] \},$", html, re.M))
-    assert tuple(cards) == ROW_KINDS
+    assert tuple(cards) == tuple(ml.ROW_SHEETS)
+    fields = {**ml.ROW_STEP_FIELDS, **ml.ROW_LABEL_FIELDS}
     for kind, step in cards.items():
-        assert tuple(re.findall(r'"(\w+)"', step)) == ml.ROW_STEP_FIELDS[kind], kind
+        assert tuple(re.findall(r'"(\w+)"', step)) == fields[kind], kind
+    # the card keyed by something other than applies_to says so, and adds a package, not a stream
+    keyed = re.findall(r'^  (\w+): \{ title: .*?key: "(\w+)", add: "([^"]+)"', html, re.M)
+    assert {k: v for k, v, _ in keyed} == ml.ROW_KEY
+    assert [a for _, _, a in keyed] == ["add package"]
     rulings = re.search(r'<ol id="row-rulings">(.*?)</ol>', html, re.S)
     assert rulings
     items = [" ".join(i.split()) for i in re.findall(r"<li>(.*?)</li>", rulings.group(1), re.S)]
@@ -696,3 +701,236 @@ def test_the_redaction_fails_closed_on_a_column_it_does_not_know() -> None:
     assert set(ml.MOTION_COLUMNS.values()) - ml.LABEL_COLUMNS == {"method_quote", "notes"}
     # positive control: a paper not held out keeps everything
     assert ml._withhold("chen_2015", "scrub", row, []) == row
+
+
+# --- the four rows added on 2026-11-11 (second set) ----------------------------------------------
+
+SOFTWARE_DOC = {
+    "schema": "aespa-labels/1",
+    "paper_id": "sw_2099",
+    "exported_at": "2099-01-01T00:00:00.000Z",
+    "software": [
+        {
+            "name": "ToolA",
+            "state": "reported",
+            "version_as_stated": "v1.2.3",
+            "used_for": "synthetic use",
+            "quote": "Synthetic sentence.",
+            "notes": "",
+        },
+        {
+            "name": "ToolB",
+            "state": "partially_reported",
+            "version_as_stated": "",
+            "used_for": "",
+            "quote": "Synthetic sentence.",
+            "notes": "",
+        },
+    ],
+    "resting_state_feature": [
+        {
+            "applies_to": "ALFF",
+            "state": "reported",
+            "measure": "ALFF",
+            "band_hz": "0.01-0.08 Hz",
+            "reho_neighbourhood": "",
+            "reho_measure": "",
+            "quote": "Synthetic sentence.",
+            "notes": "",
+        }
+    ],
+    "intersubject_registration": [
+        _row(
+            method="nonlinear",
+            volume_or_surface="volume",
+            template="TemplateX",
+            resolution="2 mm",
+            warp_type="",
+            interpolation="",
+            cost_function="",
+        )
+    ],
+    "gradient_distortion_correction": [_row(state="not_reported", method="", tool="", quote="")],
+}
+
+
+def test_the_four_rows_sheets_and_the_software_key() -> None:
+    assert tuple(ml.ROW_SHEETS)[len(ROW_KINDS) :] == tuple(ml.ROW_LABEL_FIELDS)
+    assert ml.ROW_SHEETS["software"] == (
+        "name",
+        "state",
+        "version_as_stated",
+        "used_for",
+        "quote",
+        "notes",
+    )
+    for sheet in ml.ROW_LABEL_FIELDS:
+        if sheet != "software":
+            assert ml.ROW_SHEETS[sheet][0] == "applies_to"
+    assert ml.PROGRESS_HEAD == ("paper_id", *ml.ROW_SHEETS, "last_merged")
+    # every value column is a label column, so only quote and notes are withheld for a held-out paper
+    for sheet in ml.ROW_LABEL_FIELDS:
+        assert set(ml.ROW_SHEETS[sheet]) - ml.LABEL_COLUMNS == {"quote", "notes"}
+
+
+def test_software_rows_are_one_per_package_keyed_by_name(tmp_path) -> None:
+    _workbooks(tmp_path)
+    _export(tmp_path / "in", SOFTWARE_DOC)
+    assert _run(tmp_path, "--date", "2099-01-02")[0] == 0
+    rows = tmp_path / "rows.xlsx"
+    sw = _rows(rows, "software")
+    assert [(r["name"], r["state"], r["version_as_stated"]) for r in sw] == [
+        ("ToolA", "reported", "v1.2.3"),  # as stated, the "v" kept
+        ("ToolB", "partially_reported", None),
+    ]
+    assert _rows(rows, "resting_state_feature")[0]["band_hz"] == "0.01-0.08 Hz"
+    assert _rows(rows, "intersubject_registration")[0]["resolution"] == "2 mm"
+    assert _rows(rows, "gradient_distortion_correction")[0]["state"] == "not_reported"
+    progress = {r["paper_id"]: r for r in ml.read_progress(tmp_path / "progress.csv")}
+    assert progress["sw_2099"]["software"] == "2"
+
+
+def _sw_doc(rows: list[dict]) -> dict:
+    return {
+        **SOFTWARE_DOC,
+        "software": rows,
+        "resting_state_feature": [],
+        "intersubject_registration": [],
+        "gradient_distortion_correction": [],
+    }
+
+
+def test_a_paper_naming_no_software_is_one_not_reported_row_without_a_name(tmp_path) -> None:
+    _workbooks(tmp_path)
+    none = {
+        "name": "",
+        "state": "not_reported",
+        "version_as_stated": "",
+        "used_for": "",
+        "quote": "",
+        "notes": "",
+    }
+    _export(tmp_path / "in", _sw_doc([none]))
+    assert _run(tmp_path)[0] == 0
+    assert [(r["name"], r["state"]) for r in _rows(tmp_path / "rows.xlsx", "software")] == [
+        (None, "not_reported")
+    ]
+
+
+@pytest.mark.parametrize(
+    "change,reason",
+    [
+        (lambda r: r[0].update(name=""), "has an empty name"),
+        (lambda r: r[1].update(name="ToolA"), "name 'ToolA' appears twice"),
+        (lambda r: r[0].update(applies_to="all"), "unknown fields"),
+    ],
+)
+def test_invalid_software_rows_are_refused(tmp_path, capsys, change, reason) -> None:
+    import copy as _copy
+
+    _workbooks(tmp_path)
+    rows = _copy.deepcopy(SOFTWARE_DOC["software"])
+    change(rows)
+    _export(tmp_path / "in", _sw_doc(rows))
+    assert _run(tmp_path)[0] == 1
+    assert reason in capsys.readouterr().out
+    assert _rows(tmp_path / "rows.xlsx", "software") == []
+
+
+def _old_twelve_sheet_workbook(path: Path) -> None:
+    builder.build_workbook(path)
+    wb = openpyxl.load_workbook(path)
+    for sheet in ml.ROW_LABEL_FIELDS:
+        del wb[sheet]
+    wb.save(path)
+
+
+def test_a_workbook_without_the_new_sheets_refuses_the_paper_and_names_the_fix(
+    tmp_path, capsys
+) -> None:
+    _workbooks(tmp_path)
+    _old_twelve_sheet_workbook(tmp_path / "rows_old.xlsx")
+    shutil.move(tmp_path / "rows_old.xlsx", tmp_path / "rows.xlsx")
+    _export(tmp_path / "in", SOFTWARE_DOC)
+    _export(tmp_path / "in", ROWS_DOC)  # control: a paper on the old sheets is still merged
+    assert _run(tmp_path)[0] == 1
+    out = capsys.readouterr().out
+    assert "refused sw_2099: the rows workbook has no sheet" in out and "--add-sheets" in out
+    assert len(_rows(tmp_path / "rows.xlsx", "scrub")) == 2
+
+
+def test_add_sheets_adds_the_four_keeps_every_existing_cell_and_is_idempotent(tmp_path) -> None:
+    path = tmp_path / "rows.xlsx"
+    _old_twelve_sheet_workbook(path)
+    wb = openpyxl.load_workbook(path)
+    wb["scrub"].append(["kept_2099", "all", "reported", "m", "c", "0.5 mm", "r", "", "q", "n", "a"])
+    wb.save(path)
+    before = {
+        n: [[c.value for c in r] for r in openpyxl.load_workbook(path)[n].iter_rows()]
+        for n in ["README", *ROW_KINDS]
+    }
+    assert builder.add_sheets(path) == list(ml.ROW_LABEL_FIELDS)
+    after = openpyxl.load_workbook(path)
+    for n, rows in before.items():
+        got = [[c.value for c in r] for r in after[n].iter_rows()]
+        assert got[: len(rows)] == rows, n
+        assert n == "README" or len(got) == len(rows), n
+    _check_rows_workbook(path)
+    assert builder.add_sheets(path) == []  # a second run adds nothing
+
+
+def test_add_sheets_refuses_a_workbook_whose_headers_differ(tmp_path) -> None:
+    path = tmp_path / "rows.xlsx"
+    _old_twelve_sheet_workbook(path)
+    wb = openpyxl.load_workbook(path)
+    wb["scrub"].cell(row=1, column=4, value="renamed")
+    wb.save(path)
+    before = path.read_bytes()
+    with pytest.raises(ValueError, match="sheet scrub has another header"):
+        builder.add_sheets(path)
+    assert path.read_bytes() == before
+
+
+def test_widening_the_progress_file_keeps_its_rows_and_counts(tmp_path) -> None:
+    import csv
+
+    path = tmp_path / "progress.csv"
+    old_head = [c for c in ml.PROGRESS_HEAD if c not in ml.ROW_LABEL_FIELDS]
+    with path.open("w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=old_head, lineterminator="\n")
+        w.writeheader()
+        w.writerow(
+            {
+                **dict.fromkeys(old_head, ""),
+                "paper_id": "a_2099",
+                "scrub": "2",
+                "last_merged": "author alone, 2099-01-01",
+            }
+        )
+    assert builder.widen_progress(path) == list(ml.ROW_LABEL_FIELDS)
+    (row,) = ml.read_progress(path)
+    assert list(row) == list(ml.PROGRESS_HEAD)
+    assert (row["scrub"], row["software"], row["last_merged"]) == (
+        "2",
+        "",
+        "author alone, 2099-01-01",
+    )
+    assert builder.widen_progress(path) == []
+
+
+def test_a_held_out_papers_software_prose_is_withheld_and_its_label_kept(tmp_path) -> None:
+    _workbooks(tmp_path)
+    _export(tmp_path / "in", {**SOFTWARE_DOC, "paper_id": "tang_2025"})
+    assert _run(tmp_path)[0] == 0
+    (a, b) = _rows(tmp_path / "rows.xlsx", "software")
+    assert (a["name"], a["version_as_stated"], a["used_for"]) == (
+        "ToolA",
+        "v1.2.3",
+        "synthetic use",
+    )
+    assert a["quote"] == ml.REDACTED and b["quote"] == ml.REDACTED
+    side = [json.loads(x) for x in (tmp_path / "heldout.local.jsonl").read_text().splitlines()]
+    assert {(d["sheet"], d["applies_to"]) for d in side if d["sheet"] == "software"} == {
+        ("software", "ToolA"),
+        ("software", "ToolB"),
+    }

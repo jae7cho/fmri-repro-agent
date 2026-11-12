@@ -119,10 +119,38 @@ ROW_STEP_FIELDS: dict[str, tuple[str, ...]] = {
     "segmentation": ("method", "tissue_classes"),
     "intensity_correction": ("target", "method"),
 }
+#: Four more rows (the author's request of 2026-11-11, second set). These are not one schema step
+#: each, so their fields are the label's own, named by the author: gradient distortion correction
+#: (the distortion_correction step's method and tool; its source is the sheet), intersubject
+#: registration (spatial_normalization and surface_projection together), the resting-state fMRI
+#: feature (a D.3 row the extractor does not assess) and software (one row per package). Values as
+#: stated, like the rest.
+ROW_LABEL_FIELDS: dict[str, tuple[str, ...]] = {
+    "gradient_distortion_correction": ("method", "tool"),
+    "intersubject_registration": (
+        "method",
+        "volume_or_surface",
+        "template",
+        "resolution",
+        "warp_type",
+        "interpolation",
+        "cost_function",
+    ),
+    "resting_state_feature": ("measure", "band_hz", "reho_neighbourhood", "reho_measure"),
+    "software": ("version_as_stated", "used_for"),
+}
+#: The column that names a row within a paper: applies_to, except software, one row per package.
+ROW_KEY: dict[str, str] = {"software": "name"}
+
+
+def row_key(sheet: str) -> str:
+    return ROW_KEY.get(sheet, "applies_to")
+
+
 #: sheet -> every labeler field of a row, in workbook column order (after paper_id)
 ROW_SHEETS: dict[str, tuple[str, ...]] = {
-    sheet: ("applies_to", "state", *fields, "quote", "notes")
-    for sheet, fields in ROW_STEP_FIELDS.items()
+    sheet: (row_key(sheet), "state", *fields, "quote", "notes")
+    for sheet, fields in {**ROW_STEP_FIELDS, **ROW_LABEL_FIELDS}.items()
 }
 
 #: The standing rulings for these rows, as the labeler's help panel and the workbook's README state
@@ -179,6 +207,8 @@ LABEL_COLUMNS = frozenset(
     }
     | {f for f in SMOOTHING_FIELDS + FILTERING_FIELDS if f not in ("quote", "notes")}
     | {f for fields in ROW_STEP_FIELDS.values() for f in fields}
+    | {f for fields in ROW_LABEL_FIELDS.values() for f in fields}
+    | set(ROW_KEY.values())
 )
 PAPER_ID = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]*$")
 NUMBER = re.compile(r"^\d+(\.\d+)?$")
@@ -245,6 +275,7 @@ def _strings(row: Any, fields: tuple[str, ...], where: str) -> dict[str, str]:
 
 
 def _filled(row: dict[str, str]) -> bool:
+    """Anything entered besides the default applies_to "all"."""
     return any(v and not (k == "applies_to" and v == "all") for k, v in row.items())
 
 
@@ -295,11 +326,14 @@ def parse(path: Path, outcome: Outcome) -> Paper:
                 raise InvalidExportError(
                     f"{key} row {i} state {row['state']!r} is not in the workbook vocabulary"
                 )
-            if not row["applies_to"]:
-                raise InvalidExportError(f"{key} row {i} has an empty applies_to")
-            if row["applies_to"] in seen:
-                raise InvalidExportError(f"{key} applies_to {row['applies_to']!r} appears twice")
-            seen.add(row["applies_to"])
+            col = row_key(key) if key in ROW_SHEETS else "applies_to"
+            # software: a row naming no package is allowed only as the paper's "none named"
+            # (not_reported), once
+            if not row[col] and not (col == "name" and row["state"] == "not_reported"):
+                raise InvalidExportError(f"{key} row {i} has an empty {col}")
+            if row[col] in seen:
+                raise InvalidExportError(f"{key} {col} {row[col]!r} appears twice")
+            seen.add(row[col])
             kept.append(row)
         streams[key] = kept
     return Paper(
@@ -424,7 +458,7 @@ def _withhold(
                 {
                     "paper_id": pid,
                     "sheet": sheet,
-                    "applies_to": values.get("applies_to"),
+                    "applies_to": values.get("applies_to", values.get("name")),
                     "column": col,
                     "text": values[col],
                 }
@@ -450,8 +484,9 @@ def merge(
     mwb, swb = openpyxl.load_workbook(motion_xlsx), openpyxl.load_workbook(sf_xlsx)
     rwb = openpyxl.load_workbook(rows_xlsx)
     sheets = {"Labels": mwb["Labels"], "Smoothing": swb["Smoothing"], "Filtering": swb["Filtering"]}
-    sheets.update({name: rwb[name] for name in ROW_SHEETS})
+    sheets.update({name: rwb[name] for name in ROW_SHEETS if name in rwb.sheetnames})
     taken = {name: existing_ids(ws) for name, ws in sheets.items()}
+    missing = [name for name in ROW_SHEETS if name not in rwb.sheetnames]
     written: dict[str, dict[str, int]] = {}
     withheld: list[dict[str, Any]] = []
 
@@ -462,6 +497,15 @@ def merge(
         except InvalidExportError as e:
             out.refused.append(path.name)
             say(f"refused {path.name}: {e}; nothing written for it")
+            continue
+        absent = [s for s in paper.sheets() if s in missing]
+        if absent:
+            out.refused.append(paper.paper_id)
+            say(
+                f"refused {paper.paper_id}: the rows workbook has no sheet {', '.join(absent)}; "
+                "add it with scripts/make_preproc_rows_workbook.py --add-sheets, nothing written "
+                "for it"
+            )
             continue
         clash = [s for s in paper.sheets() if paper.paper_id in taken[s]]
         if clash:

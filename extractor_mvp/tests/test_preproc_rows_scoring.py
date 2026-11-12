@@ -78,15 +78,18 @@ def _view(state: str = "reported", values: dict | None = None, **kw: Any) -> pr.
 
 
 def test_the_sheets_and_columns_are_the_merge_scripts() -> None:
-    assert pr.SHEETS == tuple(ml.ROW_STEP_FIELDS)
+    assert pr.SHEETS == tuple(ml.ROW_STEP_FIELDS)  # the second set is ROW_LABEL_FIELDS
     for sheet in pr.SHEETS:
         assert pr.step_fields(sheet) == ml.ROW_STEP_FIELDS[sheet]
         assert pr.columns(sheet) == ("paper_id", *ml.ROW_SHEETS[sheet], "adjudication")
 
 
 def test_one_script_per_sheet_each_calling_the_shared_rules() -> None:
+    # the four rows of 2026-11-11's second set have their own rules (preproc_rows_scoring_v2.py)
+    from preproc_rows_scoring_v2 import SHEETS as V2_SHEETS
+
     scripts = sorted(p.name for p in SCRIPTS.glob("score_rows_*.py"))
-    assert scripts == sorted(f"score_rows_{s}.py" for s in pr.SHEETS)
+    assert scripts == sorted(f"score_rows_{s}.py" for s in (*pr.SHEETS, *V2_SHEETS))
     for s in pr.SHEETS:
         assert f'raise SystemExit(main("{s}"))' in (SCRIPTS / f"score_rows_{s}.py").read_text()
     with pytest.raises(ValueError):

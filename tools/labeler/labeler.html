@@ -159,6 +159,14 @@ button:disabled { opacity: .5; cursor: default; }
         <li>"Co-registered to correct for head motion" is motion correction, not coregistration.</li>
         <li>Dummy volumes discarded by the scanner and dummy volumes discarded in preprocessing both count for T1 stabilization (nonsteadystate_removal); say which in notes.</li>
       </ol>
+      <h3>Four more rows (added 2026-11-11)</h3>
+      <p style="margin:0 0 4px">These fields are the label's own, not one schema step's; values as stated, like the rest.</p>
+      <dl>
+        <dt>Gradient distortion correction</dt><dd>Correction for gradient nonlinearity (scanner gradient distortion). Susceptibility distortion is the Distortion correction card.</dd>
+        <dt>Intersubject registration</dt><dd>Each subject to a common template. volume_or_surface: volume, surface or both; template as named (e.g. MNI152NLin2009cAsym, fsaverage5); resolution in its own unit; warp_type: rigid, affine, nonlinear, or the transform as named.</dd>
+        <dt>Resting-state fMRI feature</dt><dd>One row per measure computed, applies_to = the measure. band_hz as stated; reho_neighbourhood (e.g. 27 voxels) and reho_measure (e.g. Kendall's W) for ReHo only.</dd>
+        <dt>Software</dt><dd>One row per package, keyed by name ("add package"). version_as_stated exactly as written, blank when none; used_for in the paper's words. State per package: reported when a version is stated, partially_reported when named without one, deferred when its version is left to a citation. A paper naming no software: one row, name blank, not_reported.</dd>
+      </dl>
     </div>
   </details>
 </header>
@@ -221,10 +229,23 @@ const ROW_CARDS = {
   brain_extraction: { title: "Brain extraction", group: null, step: ["parameters", "method", "manual_edits"] },
   segmentation: { title: "Segmentation", group: null, step: ["method", "tissue_classes"] },
   intensity_correction: { title: "Intensity correction", group: null, step: ["target", "method"] },
+  gradient_distortion_correction: { title: "Gradient distortion correction (gradient nonlinearity)", group: null, step: ["method", "tool"] },
+  intersubject_registration: { title: "Intersubject registration (to a template, volume or surface)", group: null, step: ["method", "volume_or_surface", "template", "resolution", "warp_type", "interpolation", "cost_function"] },
+  resting_state_feature: { title: "Resting-state fMRI feature (one row per measure)", group: null, step: ["measure", "band_hz", "reho_neighbourhood", "reho_measure"] },
+  software: { title: "Software (one row per package)", group: null, key: "name", add: "add package", step: ["version_as_stated", "used_for"] },
 };
+// The four cards added 2026-11-11 have the label's own fields (merge_labels.ROW_LABEL_FIELDS), not a
+// schema step's. software is keyed by package name instead of applies_to, one row per package.
+const KEY_HINTS = { name: "package as named, e.g. FSL" };
+const CARD_HINTS = { resting_state_feature: { applies_to: "the measure, e.g. ALFF", band_hz: "as stated, e.g. 0.01-0.08 Hz" },
+  software: { version_as_stated: "exactly as written, blank if none", used_for: "the paper's words" },
+  intersubject_registration: { volume_or_surface: "volume / surface / both", template: "as named, e.g. MNI152" } };
 for (const [key, rc] of Object.entries(ROW_CARDS)) {
-  CARDS[key] = { title: rc.title, multi: true, group: rc.group, fields: [
-    ["applies_to", "text"], ["state", "select", ROW_STATES], ...rc.step.map(f => [f, "text", null, "as stated"]),
+  const keyField = rc.key || "applies_to";
+  const hint = f => (CARD_HINTS[key] || {})[f] || "as stated";
+  CARDS[key] = { title: rc.title, multi: true, group: rc.group, keyField, addLabel: rc.add || "add stream", fields: [
+    [keyField, "text", null, KEY_HINTS[keyField] || (CARD_HINTS[key] || {})[keyField]],
+    ["state", "select", ROW_STATES], ...rc.step.map(f => [f, "text", null, hint(f)]),
     ["quote", "quote"], ["notes", "area"]] };
 }
 const HINTS = { width: "as stated, e.g. 8", width_measure: "FWHM / sigma / …", space: "volume / surface / …",
@@ -390,7 +411,7 @@ function build(data) {
     card.append(holder);
     if (spec.multi) {
       const add = document.createElement("button");
-      add.className = "small"; add.textContent = "add stream";
+      add.className = "small"; add.textContent = spec.addLabel || "add stream";
       add.onclick = () => { holder.append(streamEl(key, null, holder.children.length)); saveDraft(); };
       const r = document.createElement("div"); r.className = "btnrow"; r.append(add);
       card.append(r);
@@ -422,11 +443,13 @@ function problems(d) {
   if (filled(d.motion) && !d.motion.state) p.push("motion: fields filled but no state");
   for (const key of Object.keys(CARDS).filter(k => CARDS[k].multi)) {
     const seen = new Set();
+    const col = CARDS[key].keyField || "applies_to";
     d[key].forEach((r, i) => {
       if (filled(r) && !r.state) p.push(`${key} row ${i + 1}: fields filled but no state`);
-      if (r.state && !r.applies_to) p.push(`${key} row ${i + 1}: applies_to is empty`);
-      if (r.state && seen.has(r.applies_to)) p.push(`${key}: applies_to "${r.applies_to}" appears twice`);
-      if (r.state) seen.add(r.applies_to);
+      // software: a row naming no package only as "none named" (not_reported)
+      if (r.state && !r[col] && !(col === "name" && r.state === "not_reported")) p.push(`${key} row ${i + 1}: ${col} is empty`);
+      if (r.state && seen.has(r[col])) p.push(`${key}: ${col} "${r[col]}" appears twice`);
+      if (r.state) seen.add(r[col]);
     });
   }
   return p;
