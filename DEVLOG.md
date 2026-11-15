@@ -5244,3 +5244,28 @@ Commits here: `185a0cb`, then this entry.
   - **Still to do:** 16 papers to re-run with `--corpus` once the limit allows (about $13).
 
 Commits here: `bf05d8b`, `4873f67`, `d411763`, `fe1f0e5`, `80f0c63`, `26058e3`, then this entry.
+
+## 2026-11-15 — Fable 5.2 arms; model on every call; labeling rulings 6-10
+
+- `a71f6b7` (committed 2026-11-14, logged here) — `adapt_request` drops temperature/top_p/top_k and
+  turns a forced tool choice into "auto" for Opus 5.5 and Fable 5.2.
+- **Fable 5.2 arms, not committed** (`docs/findings/prompt_audit_fable52.md` and `.patch`, untracked).
+  - B = a71f6b7 + an `AESPA_EFFORT` switch; C = B + the audit's prompt patch. Effort medium, Anthropic
+    API, every tested_lit folder as `--corpus`. 24 papers, then a second draw of 3. $104.42 metered
+    ($82.59 + $8.91 + $12.92). Records in `extractor_mvp/results/fable_arms_bc*` (gitignored).
+  - Against the existing labels (counts): motion method state Sonnet v3 2 agree / 8 disagree, B 8 / 2,
+    C 8 / 2; smoothing and filtering near-equal across arms; B and C identical on every label set.
+  - The run-1 B/C deferral split on chen_2015 and poldrack_2015 did not reproduce in run 2;
+    agtzidis_2020 C deferred nothing in both runs, B deferred in both.
+- `ab6fd45` — `CallMeter` records `model_requested` and `model_response` on every call. On Bedrock
+  Converse LiteLLM copies the requested name into the response, so there it confirms nothing.
+- `c5b1bc9` — C-PAC 0.4.0 rechecked: the pre-1.0 development line (PR #564), never a tag or release.
+- `e0ba260` — standing rulings 6-10 for the remaining COBIDAS rows, from the author's answers D1-D5
+  (deferral, physiological regressors, inference from stated steps, statistical-map smoothing, one row
+  per variant), in `merge_labels.ROW_RULINGS` and the labeler; the untracked workbook's README too.
+  Ruling 8 (inference allowed) is the opposite of the extraction prompts' current rule; no prompt is
+  changed here.
+- **Checks:** the model test fails without `ab6fd45`'s change; the rulings sync test fails with the
+  labeler reverted. Root 332, extractor_mvp 1123 (2 live skipped). pre-commit clean on the second pass.
+
+Commits here: `ab6fd45`, `c5b1bc9`, `e0ba260`, then this entry.
