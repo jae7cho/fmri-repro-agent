@@ -571,12 +571,40 @@ _FIELD_SPECS: list[tuple[str, str, str, Any, Any]] = [
 INSTRUCTOR_MODE = "tools"
 
 
+#: Model ids that reject every sampling parameter and a forced tool choice with a 400 (2026-11-14,
+#: for the one-paper model comparison): Claude Opus 5.5 and Claude Fable 5.2. Matched as a substring
+#: of the LiteLLM model id, so "bedrock/us.anthropic.claude-opus-5-5" matches. Every other model's
+#: request is unchanged.
+NO_SAMPLING_MODELS = ("claude-opus-5-5", "claude-fable-5-2")
+
+
+def adapt_request(kwargs: dict[str, Any]) -> dict[str, Any]:
+    """The request as the model accepts it. For :data:`NO_SAMPLING_MODELS`: no ``temperature``, and a
+    forced ``tool_choice`` (instructor's tool-calling mode names its one tool) becomes ``"auto"``, so
+    the model may answer without the tool and instructor's reask counts it as a parse error. Other
+    models: ``kwargs`` returned as given."""
+    model = str(kwargs.get("model") or "")
+    if not any(m in model for m in NO_SAMPLING_MODELS):
+        return kwargs
+    out = {k: v for k, v in kwargs.items() if k not in ("temperature", "top_p", "top_k")}
+    if out.get("tool_choice") not in (None, "auto", "none"):
+        out["tool_choice"] = "auto"
+    return out
+
+
+def adapted_completion(*args: Any, **kwargs: Any) -> Any:
+    """``litellm.completion`` with :func:`adapt_request` applied; looked up at call time, so a test's
+    patch of ``litellm.completion`` still catches it."""
+    import litellm
+
+    return litellm.completion(*args, **adapt_request(kwargs))
+
+
 def build_client() -> Any:
     """Instructor-wrapped LiteLLM client in tool-calling mode (:data:`INSTRUCTOR_MODE`)."""
     import instructor
-    from litellm import completion
 
-    return instructor.from_litellm(completion, mode=instructor.Mode.TOOLS)
+    return instructor.from_litellm(adapted_completion, mode=instructor.Mode.TOOLS)
 
 
 def _missing_pf(field_id: str, t: Any, reason: str) -> ProvenancedField:

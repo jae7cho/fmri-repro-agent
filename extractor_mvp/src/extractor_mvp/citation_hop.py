@@ -994,8 +994,10 @@ class CallMeter:
             label = f"first:{name or 'unlabelled'}"
         else:
             label = self.label
+        from extractor_mvp.extractor import adapt_request
+
         t0 = time.perf_counter()
-        resp = completion(*args, **kwargs)
+        resp = completion(*args, **adapt_request(kwargs))
         usage = getattr(resp, "usage", None)
         try:
             cost: float | None = float(completion_cost(completion_response=resp))
