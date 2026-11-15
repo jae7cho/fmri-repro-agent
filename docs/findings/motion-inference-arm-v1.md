@@ -66,6 +66,16 @@ with vanderwal's conditional fill not firing and oconnor's missing.
   states a version the project never released under that tag. Nothing is added to the KB timeline (a
   dated note in `kb/pipelines/cpac.yaml` records the check), the vintage fill is not re-run, and
   oconnor stays `none` under neither basis. The gap is the paper's version string, not the timeline.
+  **Rechecked 2026-11-15** (prompted by a third-party claim that "C-PAC 0.4.0" was a legacy release):
+  "0.4.0" was the name of the development line that shipped as v1.0.0, used by name but never a
+  release. `CPAC/info.py` reads 0.3.9 `.dev` at `177b64e12e` (2015-10-05) and 1.0.0 at `e6373f3a7d`
+  (2016-10-03, "Incremented version to 1.0.0."), the merge commit of PR #564 "0.4.0 development into
+  Master" (merged 2016-10-03); no commit in between changes the file, so no build ever reported 0.4.0 from
+  it. Users ran it under that name: issue #540 "Error from C-PAC 0.4.0 run on CentOS 7.2" (2016-07-11) and
+  issue #498 "... in 0.4.0 dev" (2015-10-16). The PyPI package `cpac` 0.4.0 (uploaded 2022-02-01) is a
+  different artifact, the CLI wrapper for C-PAC containers, published five years after oconnor_2017.
+  Sayable: oconnor reports a version no tag or release carries; it names the pre-1.0 development line,
+  so it does not pin the code. Not sayable: "a version C-PAC never released" without "under a tag".
 - **Every pipeline-basis fill was a diagnostic**, because every paper whose base pipeline resolves had
   a `described_only` motion extraction; the one arm-proper fill came from a package on a `missing`
   field. The contract conflation F1 names is the common case on this corpus, not the exception.
