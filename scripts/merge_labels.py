@@ -154,7 +154,8 @@ ROW_SHEETS: dict[str, tuple[str, ...]] = {
 }
 
 #: The standing rulings for these rows, as the labeler's help panel and the workbook's README state
-#: them (the author's list of 2026-11-11).
+#: them (the author's list of 2026-11-11; 6-10 added 2026-11-15 from the author's answers D1-D5,
+#: docs/findings/prompt_audit_fable52.md).
 ROW_RULINGS: tuple[str, ...] = (
     "A confound that is computed or made available (framewise displacement, DVARS, motion "
     "parameters, CompCor components) is not applied unless the paper says it was regressed out.",
@@ -164,6 +165,11 @@ ROW_RULINGS: tuple[str, ...] = (
     '"Co-registered to correct for head motion" is motion correction, not coregistration.',
     "Dummy volumes discarded by the scanner and dummy volumes discarded in preprocessing both count "
     "for T1 stabilization (nonsteadystate_removal); say which in notes.",
+    'A step the paper hands to a cited paper or pipeline ("as described in [51]", "preprocessed with the CCS pipeline") is deferred for what the paper does not state itself; name the citation in notes. Once the cited source is read, label its value; if it does not state it either, not_reported. (2026-11-15)',
+    'Physiological regressors are labelled only when the paper lists them anywhere, denoising sections included; a paper that never mentions physiological recordings leaves physio_regressors blank, not "none". (2026-11-15)',
+    'A value may be inferred from other steps the paper states, or from their stated order (segmentation performed because white-matter and CSF signals were extracted; smoothing in template space because normalization precedes it). Label it and write "inferred from" and the source in notes. (2026-11-15)',
+    "Smoothing of statistical or contrast maps is not spatial smoothing of the time series and is not labelled as smoothing. (2026-11-15)",
+    "When a step's settings differ across datasets, analyses or compared pipelines, label one row per variant with applies_to in the paper's words; the comparison between variants may be the main analysis. Use \"all\" only when one value holds for all of the paper's data. (2026-11-15)",
 )
 
 MOTION_FIELDS = ("state", "named_tool", "attribution", "quote", "notes")
