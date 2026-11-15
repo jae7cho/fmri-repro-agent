@@ -1009,6 +1009,11 @@ class CallMeter:
             {
                 "call": label,
                 "attempt": 1 + sum(1 for c in self.calls if c["call"] == label),
+                # 2026-11-15: the model asked for, and the model the response names. On the Anthropic
+                # API the second is the API's own field; LiteLLM's Bedrock Converse path copies the
+                # requested name into it, so there it confirms nothing.
+                "model_requested": kwargs.get("model"),
+                "model_response": getattr(resp, "model", None),
                 "wall_s": round(time.perf_counter() - t0, 3),
                 "input_tokens": getattr(usage, "prompt_tokens", None),
                 "output_tokens": getattr(usage, "completion_tokens", None),

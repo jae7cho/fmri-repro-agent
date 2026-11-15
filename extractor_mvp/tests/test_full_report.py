@@ -134,6 +134,28 @@ def test_the_meter_labels_a_first_hop_call_by_its_tool_and_counts_attempts() -> 
     assert totals["n_calls"] == 3 and totals["retries"] == 1
 
 
+def test_the_meter_records_the_model_asked_for_and_the_model_the_response_names(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import litellm
+
+    real = litellm.completion
+
+    def served_elsewhere(*a: Any, **k: Any) -> Any:
+        resp = real(*a, **k)
+        resp.model = "claude-sonnet-4-5-20250929"  # what a silently swapped model would report
+        return resp
+
+    monkeypatch.setattr(litellm, "completion", served_elsewhere)
+    meter = CallMeter()
+    meter.label = "R"
+    msgs = [{"role": "user", "content": "x"}]
+    meter.completion(model="anthropic/claude-fable-5-2", messages=msgs, mock_response="ok")
+    c = meter.calls[0]
+    assert c["model_requested"] == "anthropic/claude-fable-5-2"
+    assert c["model_response"] == "claude-sonnet-4-5-20250929"
+
+
 def test_the_cli_writes_the_run_record_beside_the_report(
     canned_batch: None, monkeypatch: pytest.MonkeyPatch, pdf: Path, tmp_path: Path, capsys: Any
 ) -> None:
