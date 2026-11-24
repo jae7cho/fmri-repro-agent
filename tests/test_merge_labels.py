@@ -510,14 +510,15 @@ def test_the_walk_list_is_the_19_corpus_papers_and_progress_starts_with_them() -
     assert len(walk) == 19 and walk == sorted(walk) and {"liu_2005", "tang_2025"} <= set(walk)
     if ml.SF_XLSX.exists():  # untracked from 2026-11-11: compared where it exists
         sf_ids = {r["paper_id"] for r in _rows(ml.SF_XLSX, "Smoothing") if r["paper_id"]}
-        assert walk == sorted(sf_ids)
+        assert set(walk) <= sf_ids  # 2026-11-24: later merges add papers beyond the walk list
     progress = ml.read_progress(ml.PROGRESS_CSV)
-    assert [r["paper_id"] for r in progress] == walk
+    assert [r["paper_id"] for r in progress][: len(walk)] == walk
     assert list(progress[0]) == list(ml.PROGRESS_HEAD)
 
 
 def test_appends_row_sheets_and_updates_progress(tmp_path, capsys) -> None:
     _workbooks(tmp_path)
+    before = {r["paper_id"]: r for r in ml.read_progress(tmp_path / "progress.csv")}
     m_before, s_before = (
         (tmp_path / "motion.xlsx").read_bytes(),
         (tmp_path / "sf.xlsx").read_bytes(),
@@ -541,21 +542,19 @@ def test_appends_row_sheets_and_updates_progress(tmp_path, capsys) -> None:
     assert progress["rows_2099"]["scrub"] == "2" and progress["rows_2099"]["compcor"] == "1"
     assert progress["rows_2099"]["despike"] == ""
     assert progress["rows_2099"]["last_merged"] == "author alone, 2099-01-02"
-    assert len(progress) == 20  # the 19 on the walk list, untouched, and this one appended
-    assert all(
-        not any(v for k, v in r.items() if k != "paper_id")
-        for p, r in progress.items()
-        if p != "rows_2099"
-    )
+    # every row already there is untouched, and this one is appended
+    assert "rows_2099" not in before and len(progress) == len(before) + 1
+    assert all(r == before[p] for p, r in progress.items() if p != "rows_2099")
     assert "compcor 1, scrub 2" in capsys.readouterr().out
 
 
 def test_a_paper_on_the_walk_list_gets_its_own_progress_row_filled(tmp_path) -> None:
     _workbooks(tmp_path)
+    n_before = len(ml.read_progress(tmp_path / "progress.csv"))
     _export(tmp_path / "in", {**ROWS_DOC, "paper_id": "chen_2015"})
     assert _run(tmp_path)[0] == 0
     progress = ml.read_progress(tmp_path / "progress.csv")
-    assert len(progress) == 19
+    assert len(progress) == n_before  # filled in place, not appended
     assert next(r for r in progress if r["paper_id"] == "chen_2015")["scrub"] == "2"
 
 
