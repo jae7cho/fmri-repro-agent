@@ -121,6 +121,36 @@ EXCLUDED_D3_ROWS: tuple[str, ...] = (
 _ADDRESSING_STATUSES = frozenset({"EXTRACTED", "DEFERRED_TO_CITATION"})
 _UNTARGETED_REASON = "not_targeted_by_mvp"
 
+#: Intersubject registration's partial rule (the author's ruling of 2026-11-24, "over extracted
+#: fields"): per kind, the fields the extractor asks for. The row is partially reported when a kind
+#: states one of its fields and the paper does not state another (reason ``not_stated_in_text``).
+#: A field the extractor never targets (method, warp) or found but could not use or verify
+#: (``value_not_in_literal``, a quote failure) is not counted as unstated.
+INTERSUBJECT_FIELDS: dict[str, tuple[str, ...]] = {
+    "spatial_normalization": ("target_space", "resolution_mm"),
+    "surface_projection": ("surface_registration", "target_surface"),
+}
+_NOT_STATED_REASON = "not_stated_in_text"
+
+
+def intersubject_unstated(mapped: list[Any]) -> list[str]:
+    """The :data:`INTERSUBJECT_FIELDS` paths the paper does not state, in kinds that state another
+    of their fields; empty when the Intersubject registration row is not partially reported."""
+    out: list[str] = []
+    for kind, fields in INTERSUBJECT_FIELDS.items():
+        by_path = {r.path: r for r in mapped if r.group == kind}
+        here = [by_path[f"{kind}.{f}"] for f in fields if f"{kind}.{f}" in by_path]
+        if not any(_status(r) in _ADDRESSING_STATUSES for r in here):
+            continue
+        out += [
+            r.path
+            for r in here
+            if r.extraction_status == "MISSING_FROM_PAPER"
+            and _gap_base(r.left_missing_reason) == _NOT_STATED_REASON
+        ]
+    return out
+
+
 #: Base gap reasons meaning "the extractor LOOKED, found something, and could not verify it" — as
 #: opposed to "looked and found nothing". Ruled 2026-10-01
 #: (docs/design/DELTA_base_pipeline_diagnostic.md §4a): these make the Software row NOT covered, on
@@ -476,6 +506,17 @@ def assess_coverage(
                 # Reaching here means NO mapped field is EXTRACTED or DEFERRED_TO_CITATION, which
                 # is what makes the membership criterion on _UNVERIFIABLE_GAP_BASES self-enforcing.
                 covered, unverifiable = False, True
+            # 2026-11-24, the author's ruling: Intersubject registration can be partially reported,
+            # by the Software row's convention (partial: covered, not addressed). Only on a record
+            # carrying expanded steps (a ``.performed`` row, the rows-side twin of is_expanded), so
+            # a record written before schema 0.5.2 keeps its state and its rendered bytes.
+            if (
+                cr.row_id == "intersubject_registration"
+                and addressed
+                and any(r.path.endswith(".performed") for r in rows)
+                and intersubject_unstated(mapped)
+            ):
+                addressed, partial = False, True
         out.append(
             RowCoverage(
                 row=cr,

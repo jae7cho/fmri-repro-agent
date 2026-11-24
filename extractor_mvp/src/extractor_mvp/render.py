@@ -83,6 +83,7 @@ from extractor_mvp.cobidas import (
     DIVERGENCE_KINDS,
     RowCoverage,
     assess_coverage,
+    intersubject_unstated,
     is_expanded,
     kind_state,
     mapped_rows,
@@ -2059,9 +2060,12 @@ def to_cobidas_coverage(
         )
         lines.append("")
 
-    # 2. Conditional mandatory rows, unaddressed: honest gaps, not violations.
+    # 2. Conditional mandatory rows, unaddressed: honest gaps, not violations. A partially reported
+    # row (Intersubject registration, 2026-11-24) states the step was performed, so it is not here.
     conditional = [
-        rc for rc in coverage if rc.row.mandatory and not rc.row.unconditional and not rc.addressed
+        rc
+        for rc in coverage
+        if rc.row.mandatory and not rc.row.unconditional and not rc.addressed and not rc.partial
     ]
     if conditional:
         lines.append("### Not reported whether performed (mandatory if performed)")
@@ -2191,6 +2195,9 @@ def _expanded_rows_section(
             for r in mapped
             if verdicts.get(r.path) == "missed" and r.state != INFERRED_DEFAULT
         ]
+        if state == "partially_reported" and rc.row.row_id == "intersubject_registration":
+            # 2026-11-24: name what the partial state is missing, kind-prefixed like the row's values.
+            values.append("not stated: " + ", ".join(intersubject_unstated(mapped)))
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)

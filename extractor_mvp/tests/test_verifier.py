@@ -403,12 +403,24 @@ def test_a_flagged_row_counts_as_flagged_never_as_addressed_in_the_header() -> N
         "spatial": {"smoothing_performed": _ex("yes", _SMOOTH)},
     }
     _, _, plain = _run(verifier=VerifierExtraction(), **dict(kw))
-    _, _, flagged = _run(verifier=VerifierExtraction(fields=[wrong]), **dict(kw))
     assert "flagged" not in _header(plain)
     n = int(_header(plain).split("addressed ", 1)[1].split(" ", 1)[0])
-    assert f"addressed {n - 1} · flagged 1 · " in _header(flagged)
     nr = _header(plain).split("not reported ", 1)[1].split(" ", 1)[0]
+    # 2026-11-24: Intersubject registration states target_space without resolution_mm, so it is
+    # partially reported; flagged, it counts as flagged, neither partial nor addressed.
+    assert "partially reported 1 · " in _header(plain)
+    assert "not stated: spatial_normalization.resolution_mm" in plain
+    # a partial row states the step was performed: not listed as "not reported whether performed"
+    unreported = plain.split("### Not reported whether performed", 1)[1].split("###", 1)[0]
+    assert "- Volume censoring" in unreported and "Intersubject registration" not in unreported
+    _, _, flagged = _run(verifier=VerifierExtraction(fields=[wrong]), **dict(kw))
+    assert f"addressed {n} · flagged 1 · performed=no" in _header(flagged)
     assert f"not reported {nr}" in _header(flagged)  # the flagged row is not moved there either
+    # an addressed row (spatial smoothing, one field) flagged leaves the addressed count
+    smooth = FieldVerdict(field="spatial_smoothing.performed", verdict="wrong", relied_on=_SMOOTH)
+    _, _, flagged_addr = _run(verifier=VerifierExtraction(fields=[smooth]), **dict(kw))
+    assert f"addressed {n - 1} · flagged 1 · partially reported 1 · " in _header(flagged_addr)
+    assert f"not reported {nr}" in _header(flagged_addr)
     # an unresolved sentence is an unverified verdict: no effect, so not flagged
     unresolved = wrong.model_copy(update={"relied_on": "Not a sentence of the paper."})
     _, _, unverified = _run(verifier=VerifierExtraction(fields=[unresolved]), **dict(kw))

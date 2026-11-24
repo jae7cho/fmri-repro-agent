@@ -463,3 +463,78 @@ def test_every_gap_base_in_the_set_is_matched_by_gap_base():
         "not_stated_in_text",  # a claim about the paper
     ):
         assert excluded not in _UNVERIFIABLE_GAP_BASES, excluded
+
+
+# --- intersubject registration: the partial rule (the author's ruling of 2026-11-24) ----------
+
+
+def _isr(path: str, status: str, reason: str | None = None) -> FieldRow:
+    group = path.split(".", 1)[0]
+    return FieldRow(
+        path=path, group=group, state=status, extraction_status=status, left_missing_reason=reason
+    )
+
+
+_PERFORMED = _isr("spatial_smoothing.performed", "EXTRACTED")  # marks an expanded record
+
+
+def _isr_state(*rows: FieldRow) -> tuple[bool, bool, str]:
+    from extractor_mvp.cobidas import row_state
+
+    rc = _by_id(assess_coverage(list(rows), None))["intersubject_registration"]
+    return rc.addressed, rc.partial, row_state(rc, list(rows))
+
+
+def test_intersubject_partial_when_a_kind_states_one_field_and_not_another() -> None:
+    rows = (
+        _PERFORMED,
+        _isr("spatial_normalization.target_space", "EXTRACTED"),
+        _isr("spatial_normalization.resolution_mm", "MISSING_FROM_PAPER", "not_stated_in_text"),
+    )
+    assert _isr_state(*rows) == (False, True, "partially_reported")
+    # the surface kind by the same rule
+    surface = (
+        _PERFORMED,
+        _isr("surface_projection.target_surface", "EXTRACTED"),
+        _isr("surface_projection.surface_registration", "MISSING_FROM_PAPER", "not_stated_in_text"),
+    )
+    assert _isr_state(*surface) == (False, True, "partially_reported")
+
+
+def test_intersubject_reported_when_every_asked_field_of_a_stated_kind_is_stated() -> None:
+    rows = (
+        _PERFORMED,
+        _isr("spatial_normalization.target_space", "EXTRACTED"),
+        _isr("spatial_normalization.resolution_mm", "DEFERRED_TO_CITATION", "deferred_to_citation"),
+        # an unstated kind with nothing stated does not make the row partial
+        _isr("surface_projection.target_surface", "MISSING_FROM_PAPER", "not_stated_in_text"),
+        _isr("surface_projection.surface_registration", "MISSING_FROM_PAPER", "not_stated_in_text"),
+        # fields the extractor never targets do not count
+        _isr("spatial_normalization.method", "MISSING_FROM_PAPER", "not_targeted_by_mvp"),
+        _isr("spatial_normalization.warp", "MISSING_FROM_PAPER", "not_targeted_by_mvp"),
+    )
+    assert _isr_state(*rows) == (True, False, "reported")
+
+
+def test_intersubject_not_partial_when_the_missing_field_was_found_but_not_usable() -> None:
+    for reason in (
+        "value_not_in_literal",
+        "value_unsupported_by_quote",
+        "extraction_quote_unresolved:span",
+        "extraction_quote_missing",
+    ):
+        rows = (
+            _PERFORMED,
+            _isr("spatial_normalization.target_space", "EXTRACTED"),
+            _isr("spatial_normalization.resolution_mm", "MISSING_FROM_PAPER", reason),
+        )
+        assert _isr_state(*rows) == (True, False, "reported"), reason
+
+
+def test_intersubject_partial_rule_skips_records_before_expanded_steps() -> None:
+    # no ``.performed`` row: a record written before schema 0.5.2 keeps "reported"
+    rows = (
+        _isr("spatial_normalization.target_space", "EXTRACTED"),
+        _isr("spatial_normalization.resolution_mm", "MISSING_FROM_PAPER", "not_stated_in_text"),
+    )
+    assert _isr_state(*rows) == (True, False, "reported")
