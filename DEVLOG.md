@@ -5269,3 +5269,39 @@ Commits here: `bf05d8b`, `4873f67`, `d411763`, `fe1f0e5`, `80f0c63`, `26058e3`, 
   labeler reverted. Root 332, extractor_mvp 1123 (2 live skipped). pre-commit clean on the second pass.
 
 Commits here: `ab6fd45`, `c5b1bc9`, `e0ba260`, then this entry.
+
+## 2026-11-24 — 17 papers labeled and merged; rulings 11-13; vocab-contract coverage
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- `8d3bd6f`:
+  - **Rulings 11-13** in `merge_labels.ROW_RULINGS` and the labeler:
+    - 11: global signal handling;
+    - 12: a parameter inferred from the named tool's convention;
+    - 13: a cited method paper names that step's method; the row is labeled and its notes say
+      "cited:".
+  - **Vocab contract** (`tests/kb_client/test_vocab_contract.py`): the payload unwrap now covers
+    Optional/Union fields and list items. A positive control showed four shared fields were not
+    reached before:
+    - nuisance_regression.tissue_regressors;
+    - scrub.criterion;
+    - temporal_filtering.filter_type;
+    - temporal_filtering.pass_type.
+    `test_contracts_cover_known_shared_fields` now pins all four.
+  - **Merge:** 17 papers drafted by the assistant and checked by the author, merged with
+    `--rater "assistant-drafted, author-checked"`; 17 appended, 0 refused. Rows appended:
+    - Labels: 17;
+    - Smoothing: 22;
+    - Filtering: 27;
+    - preproc rows: 360 across 16 cards.
+    The progress CSV is the only tracked output. The workbooks are gitignored and were read back
+    after the merge; none of the 17 papers is held out.
+  - **Sources settled from code or the published text, recorded in label notes:**
+    - marek_2022: the ABCD nuisance chain, partially_reported with a CONFLICT note.
+    - yang_2025: HCP slice timing, partially_reported with a CONFLICT note citing HCPpipelines;
+      XCP-D defaults from the KB's new `xcp_d.yaml` (fmri-defaults-kb `2be379b`).
+    - dimitrova_2002: registration method from Friston 1995.
+  - **Checks:** tests/kb_client 37 passed; KB 214 passed. pre-commit clean on the second pass.
+- **Not committed:** the 2026-11-15 Fable arms files, unchanged (see that entry).
+
+Commits here: `8d3bd6f`, then this entry.
