@@ -81,12 +81,13 @@ from fmri_repro.spec.provenance import (
 
 from extractor_mvp.cobidas import (
     DIVERGENCE_KINDS,
+    PARTIAL_FIELDS,
     RowCoverage,
     assess_coverage,
-    intersubject_unstated,
     is_expanded,
     kind_state,
     mapped_rows,
+    partial_unstated,
     row_state,
     software_mentions_for_row,
     validation_tag,
@@ -2195,9 +2196,12 @@ def _expanded_rows_section(
             for r in mapped
             if verdicts.get(r.path) == "missed" and r.state != INFERRED_DEFAULT
         ]
-        if state == "partially_reported" and rc.row.row_id == "intersubject_registration":
-            # 2026-11-24: name what the partial state is missing, kind-prefixed like the row's values.
-            values.append("not stated: " + ", ".join(intersubject_unstated(mapped)))
+        if state == "partially_reported" and rc.row.row_id in PARTIAL_FIELDS:
+            # 2026-11-24: name what the partial state is missing, in the row's own field names.
+            unstated = partial_unstated(rc.row.row_id, mapped)
+            if not prefixed:
+                unstated = [p.split(".", 1)[1] for p in unstated]
+            values.append("not stated: " + ", ".join(unstated))
         line = f"- {rc.row.d3_aspect} [{validation_tag(rc.row.row_id)}] — {_ROW_STATE_LABEL[state]}"
         if values:
             line += ": " + "; ".join(values)

@@ -538,3 +538,97 @@ def test_intersubject_partial_rule_skips_records_before_expanded_steps() -> None
         _isr("spatial_normalization.resolution_mm", "MISSING_FROM_PAPER", "not_stated_in_text"),
     )
     assert _isr_state(*rows) == (True, False, "reported")
+
+
+# --- slice time correction: the partial rule (the author's ruling of 2026-11-24) -------------
+
+
+def _stc_state(*rows: FieldRow) -> tuple[bool, bool, str]:
+    from extractor_mvp.cobidas import row_state
+
+    rc = _by_id(assess_coverage(list(rows), None))["slice_time_correction"]
+    return rc.addressed, rc.partial, row_state(rc, list(rows))
+
+
+def _stc(field: str, status: str, reason: str | None = None, value: object = None) -> FieldRow:
+    return FieldRow(
+        path=f"slice_time_correction.{field}",
+        group="slice_time_correction",
+        state=status,
+        extraction_status=status,
+        left_missing_reason=reason,
+        value=value,
+    )
+
+
+_NS = "not_stated_in_text"
+
+
+def test_slice_timing_partial_when_stated_without_reference_or_interpolation() -> None:
+    rows = (
+        _stc("performed", "EXTRACTED", value=True),
+        _stc("method", "EXTRACTED"),
+        _stc("reference", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation", "EXTRACTED"),
+    )
+    assert _stc_state(*rows) == (False, True, "partially_reported")
+    # performed alone states the step: both parameters unstated is partial too
+    alone = (
+        _stc("performed", "EXTRACTED", value=True),
+        _stc("reference", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation", "MISSING_FROM_PAPER", _NS),
+    )
+    assert _stc_state(*alone) == (False, True, "partially_reported")
+
+
+def test_slice_timing_reported_with_reference_and_interpolation() -> None:
+    rows = (
+        _stc("performed", "EXTRACTED", value=True),
+        _stc("reference", "EXTRACTED"),
+        _stc("interpolation", "DEFERRED_TO_CITATION", "deferred_to_citation"),
+        # other targeted fields do not decide it
+        _stc("method", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation_order", "MISSING_FROM_PAPER", _NS),
+    )
+    assert _stc_state(*rows) == (True, False, "reported")
+
+
+def test_slice_timing_performed_no_is_never_partial() -> None:
+    rows = (
+        _stc("performed", "EXTRACTED", value=False),
+        _stc("reference", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation", "MISSING_FROM_PAPER", _NS),
+    )
+    assert _stc_state(*rows) == (True, False, "performed_no")
+
+
+def test_slice_timing_not_stated_step_is_not_partial() -> None:
+    rows = (
+        _stc("performed", "MISSING_FROM_PAPER", _NS),
+        _stc("reference", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation", "MISSING_FROM_PAPER", _NS),
+    )
+    assert _stc_state(*rows) == (False, False, "not_reported")
+
+
+def test_slice_timing_step_state_reads_as_its_row() -> None:
+    # the row scorers read cobidas.kind_state over the step's fields; it must agree with row_state
+    from extractor_mvp.cobidas import kind_state, row_state
+
+    partial = [
+        _stc("performed", "EXTRACTED", value=True),
+        _stc("reference", "MISSING_FROM_PAPER", _NS),
+        _stc("interpolation", "EXTRACTED"),
+    ]
+    full = [
+        _stc("performed", "EXTRACTED", value=True),
+        _stc("reference", "EXTRACTED"),
+        _stc("interpolation", "EXTRACTED"),
+    ]
+    no = [_stc("performed", "EXTRACTED", value=False), _stc("reference", "MISSING_FROM_PAPER", _NS)]
+    for rows, want in ((partial, "partially_reported"), (full, "reported"), (no, "performed_no")):
+        rc = _by_id(assess_coverage(rows, None))["slice_time_correction"]
+        assert kind_state(rows) == row_state(rc, rows) == want
+    # a record before expanded steps (no performed row) keeps "reported"
+    old = [_stc("method", "EXTRACTED"), _stc("reference", "MISSING_FROM_PAPER", _NS)]
+    assert kind_state(old) == "reported"

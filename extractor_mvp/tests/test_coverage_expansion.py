@@ -243,7 +243,9 @@ def test_a_single_row_run_credits_only_that_row() -> None:
             temporal=TemporalVolumeExtraction(**payload) if call == "T" else None,
             spatial=SpatialExtraction(**payload) if call == "S" else None,
         )
-        addressed = {r for r, rc in _coverage(prep).items() if rc.addressed}
+        # credited: addressed, or partially reported (2026-11-24: slice timing stated with no
+        # reference slice or interpolation is partial, by the Software row's convention)
+        addressed = {r for r, rc in _coverage(prep).items() if rc.addressed or rc.partial}
         expected = {rid}
         if rid in ("gradient_distortion_correction", "distortion_correction"):
             expected = {"gradient_distortion_correction", "distortion_correction"}
@@ -1344,3 +1346,13 @@ def test_a_bare_other_is_unsupported_even_where_the_quote_says_other() -> None:
     assert coverage_value_supported("distortion_correction.method", [bare], quote) is None
     assert _term_supported("distortion_correction.method", bare, quote) is False
     assert _term_supported("distortion_correction.method", phrased, quote) is True
+
+
+def test_slice_timing_stated_alone_renders_partial_and_names_what_is_missing() -> None:
+    # 2026-11-24, the author's ruling: reference slice and interpolation decide the row
+    prep = _run(temporal=TemporalVolumeExtraction(stc_performed=_ex("yes", _S["stc"])))
+    out = render.to_cobidas_coverage(prep)
+    line = next(ln for ln in out.splitlines() if ln.startswith("- Slice time correction ["))
+    assert "— partially reported: performed = True; not stated: reference, interpolation" in line
+    unreported = out.split("### Not reported whether performed", 1)[1].split("###", 1)[0]
+    assert "Slice time correction" not in unreported

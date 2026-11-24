@@ -121,30 +121,54 @@ EXCLUDED_D3_ROWS: tuple[str, ...] = (
 _ADDRESSING_STATUSES = frozenset({"EXTRACTED", "DEFERRED_TO_CITATION"})
 _UNTARGETED_REASON = "not_targeted_by_mvp"
 
-#: Intersubject registration's partial rule (the author's ruling of 2026-11-24, "over extracted
-#: fields"): per kind, the fields the extractor asks for. The row is partially reported when a kind
-#: states one of its fields and the paper does not state another (reason ``not_stated_in_text``).
-#: A field the extractor never targets (method, warp) or found but could not use or verify
-#: (``value_not_in_literal``, a quote failure) is not counted as unstated.
-INTERSUBJECT_FIELDS: dict[str, tuple[str, ...]] = {
-    "spatial_normalization": ("target_space", "resolution_mm"),
-    "surface_projection": ("surface_registration", "target_surface"),
+#: Rows that can be partially reported, and the fields that decide it, per kind (the author's
+#: rulings of 2026-11-24). A row is partially reported when a kind is stated and one of its fields
+#: here is not (reason ``not_stated_in_text``). A field the extractor never targets, or found but
+#: could not use or verify (``value_not_in_literal``, a quote failure), is not counted as unstated.
+#: How a kind counts as stated differs by row (:data:`_PARTIAL_TRIGGER`):
+#:
+#: * ``intersubject_registration`` ("over extracted fields"): the kind states one of these fields
+#:   (target_space and resolution_mm; surface_registration and target_surface).
+#: * ``slice_time_correction`` ("reference + interpolation", COBIDAS's two parameters): the step is
+#:   stated (any of its fields reported), and not stated as not performed.
+PARTIAL_FIELDS: dict[str, dict[str, tuple[str, ...]]] = {
+    "intersubject_registration": {
+        "spatial_normalization": ("target_space", "resolution_mm"),
+        "surface_projection": ("surface_registration", "target_surface"),
+    },
+    "slice_time_correction": {"slice_time_correction": ("reference", "interpolation")},
+}
+_PARTIAL_TRIGGER: dict[str, str] = {
+    "intersubject_registration": "listed_field",
+    "slice_time_correction": "step",
 }
 _NOT_STATED_REASON = "not_stated_in_text"
 
 
-def intersubject_unstated(mapped: list[Any]) -> list[str]:
-    """The :data:`INTERSUBJECT_FIELDS` paths the paper does not state, in kinds that state another
-    of their fields; empty when the Intersubject registration row is not partially reported."""
+def _kind_stated(row_id: str, kind_rows: list[Any], listed: list[Any]) -> bool:
+    if _PARTIAL_TRIGGER[row_id] == "listed_field":
+        return any(_status(r) in _ADDRESSING_STATUSES for r in listed)
+    if any(
+        r.path.endswith(".performed") and _status(r) == "EXTRACTED" and r.value is False
+        for r in kind_rows
+    ):
+        return False  # performed: no is its own state, never partial
+    return any(_status(r) in _ADDRESSING_STATUSES for r in kind_rows)
+
+
+def partial_unstated(row_id: str, mapped: list[Any]) -> list[str]:
+    """The :data:`PARTIAL_FIELDS` paths of ``row_id`` the paper does not state, in kinds that are
+    stated; empty when the row is not partially reported (or has no partial rule)."""
     out: list[str] = []
-    for kind, fields in INTERSUBJECT_FIELDS.items():
-        by_path = {r.path: r for r in mapped if r.group == kind}
-        here = [by_path[f"{kind}.{f}"] for f in fields if f"{kind}.{f}" in by_path]
-        if not any(_status(r) in _ADDRESSING_STATUSES for r in here):
+    for kind, fields in PARTIAL_FIELDS.get(row_id, {}).items():
+        kind_rows = [r for r in mapped if r.group == kind]
+        by_path = {r.path: r for r in kind_rows}
+        listed = [by_path[f"{kind}.{f}"] for f in fields if f"{kind}.{f}" in by_path]
+        if not _kind_stated(row_id, kind_rows, listed):
             continue
         out += [
             r.path
-            for r in here
+            for r in listed
             if r.extraction_status == "MISSING_FROM_PAPER"
             and _gap_base(r.left_missing_reason) == _NOT_STATED_REASON
         ]
@@ -506,15 +530,15 @@ def assess_coverage(
                 # Reaching here means NO mapped field is EXTRACTED or DEFERRED_TO_CITATION, which
                 # is what makes the membership criterion on _UNVERIFIABLE_GAP_BASES self-enforcing.
                 covered, unverifiable = False, True
-            # 2026-11-24, the author's ruling: Intersubject registration can be partially reported,
-            # by the Software row's convention (partial: covered, not addressed). Only on a record
-            # carrying expanded steps (a ``.performed`` row, the rows-side twin of is_expanded), so
-            # a record written before schema 0.5.2 keeps its state and its rendered bytes.
+            # 2026-11-24, the author's rulings: the rows in PARTIAL_FIELDS can be partially
+            # reported, by the Software row's convention (partial: covered, not addressed). Only on
+            # a record carrying expanded steps (a ``.performed`` row, the rows-side twin of
+            # is_expanded), so a record written before schema 0.5.2 keeps its state and its bytes.
             if (
-                cr.row_id == "intersubject_registration"
+                cr.row_id in PARTIAL_FIELDS
                 and addressed
                 and any(r.path.endswith(".performed") for r in rows)
-                and intersubject_unstated(mapped)
+                and partial_unstated(cr.row_id, mapped)
             ):
                 addressed, partial = False, True
         out.append(
@@ -623,6 +647,17 @@ def kind_state(kind_rows: list[Any]) -> str:
     addressing = [r for r in kind_rows if _status(r) in _ADDRESSING_STATUSES]
     if negatives and all(r in negatives for r in addressing):
         return "performed_no"
+    # 2026-11-24: a step that is its own D.3 row with a partial rule (slice time correction) reads
+    # as that row does, so the step's state and the report's row state agree. Expanded records only.
+    kind = kind_rows[0].group
+    if (
+        addressing
+        and kind in PARTIAL_FIELDS
+        and all(r.group == kind for r in kind_rows)
+        and any(r.path.endswith(".performed") for r in kind_rows)
+        and partial_unstated(kind, kind_rows)
+    ):
+        return "partially_reported"
     if any(_status(r) == "EXTRACTED" for r in addressing):
         return "reported"
     if addressing:
