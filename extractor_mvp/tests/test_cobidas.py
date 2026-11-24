@@ -632,3 +632,75 @@ def test_slice_timing_step_state_reads_as_its_row() -> None:
     # a record before expanded steps (no performed row) keeps "reported"
     old = [_stc("method", "EXTRACTED"), _stc("reference", "MISSING_FROM_PAPER", _NS)]
     assert kind_state(old) == "reported"
+
+
+# --- coregistration: the partial rule (the author's ruling of 2026-11-24) --------------------
+
+
+def _co(field: str, status: str, reason: str | None = None, value: object = None) -> FieldRow:
+    return FieldRow(
+        path=f"coregistration.{field}",
+        group="coregistration",
+        state=status,
+        extraction_status=status,
+        left_missing_reason=reason,
+        value=value,
+    )
+
+
+def test_coregistration_partial_without_transform_or_cost_function() -> None:
+    from extractor_mvp.cobidas import kind_state, row_state
+
+    cases = [
+        # stated with a method, no transform or cost function (maheu_2011's shape): partial
+        (
+            [
+                _co("performed", "EXTRACTED", value=True),
+                _co("method", "EXTRACTED"),
+                _co("transform", "MISSING_FROM_PAPER", _NS),
+                _co("cost_function", "MISSING_FROM_PAPER", _NS),
+            ],
+            "partially_reported",
+        ),
+        # transform deferred, cost function stated; interpolation and method do not decide it
+        (
+            [
+                _co("performed", "EXTRACTED", value=True),
+                _co("transform", "DEFERRED_TO_CITATION", "deferred_to_citation"),
+                _co("cost_function", "EXTRACTED"),
+                _co("method", "MISSING_FROM_PAPER", _NS),
+                _co("interpolation", "MISSING_FROM_PAPER", _NS),
+            ],
+            "reported",
+        ),
+        # transform stated, cost function not (greene_2022's shape): partial
+        (
+            [
+                _co("performed", "EXTRACTED", value=True),
+                _co("transform", "EXTRACTED"),
+                _co("cost_function", "MISSING_FROM_PAPER", _NS),
+            ],
+            "partially_reported",
+        ),
+    ]
+    for rows, want in cases:
+        rc = _by_id(assess_coverage(rows, None))["coregistration"]
+        assert row_state(rc, rows) == kind_state(rows) == want, (want, rows)
+
+
+def test_a_row_reported_by_deferral_alone_stays_deferred_not_partial() -> None:
+    from extractor_mvp.cobidas import kind_state, row_state
+
+    for row_id, make, fields in (
+        ("coregistration", _co, ("method", "transform", "cost_function")),
+        ("slice_time_correction", _stc, ("method", "reference", "interpolation")),
+    ):
+        rows = [
+            make("performed", "MISSING_FROM_PAPER", _NS),
+            make(fields[0], "DEFERRED_TO_CITATION", "deferred_to_citation"),
+            make(fields[1], "MISSING_FROM_PAPER", _NS),
+            make(fields[2], "MISSING_FROM_PAPER", _NS),
+        ]
+        rc = _by_id(assess_coverage(rows, None))[row_id]
+        assert (rc.addressed, rc.partial) == (True, False), row_id
+        assert row_state(rc, rows) == kind_state(rows) == "deferred", row_id

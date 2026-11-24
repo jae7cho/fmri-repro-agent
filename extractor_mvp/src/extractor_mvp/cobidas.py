@@ -131,16 +131,20 @@ _UNTARGETED_REASON = "not_targeted_by_mvp"
 #:   (target_space and resolution_mm; surface_registration and target_surface).
 #: * ``slice_time_correction`` ("reference + interpolation", COBIDAS's two parameters): the step is
 #:   stated (any of its fields reported), and not stated as not performed.
+#: * ``coregistration`` ("transform + cost_function", COBIDAS's ask: degrees of freedom and cost
+#:   function): the step is stated, as for slice time correction.
 PARTIAL_FIELDS: dict[str, dict[str, tuple[str, ...]]] = {
     "intersubject_registration": {
         "spatial_normalization": ("target_space", "resolution_mm"),
         "surface_projection": ("surface_registration", "target_surface"),
     },
     "slice_time_correction": {"slice_time_correction": ("reference", "interpolation")},
+    "coregistration": {"coregistration": ("transform", "cost_function")},
 }
 _PARTIAL_TRIGGER: dict[str, str] = {
     "intersubject_registration": "listed_field",
     "slice_time_correction": "step",
+    "coregistration": "step",
 }
 _NOT_STATED_REASON = "not_stated_in_text"
 
@@ -537,6 +541,8 @@ def assess_coverage(
             if (
                 cr.row_id in PARTIAL_FIELDS
                 and addressed
+                # partial replaces "reported" only: a row reported by deferral alone stays deferred
+                and any(_status(r) == "EXTRACTED" for r in mapped)
                 and any(r.path.endswith(".performed") for r in rows)
                 and partial_unstated(cr.row_id, mapped)
             ):
@@ -651,7 +657,7 @@ def kind_state(kind_rows: list[Any]) -> str:
     # as that row does, so the step's state and the report's row state agree. Expanded records only.
     kind = kind_rows[0].group
     if (
-        addressing
+        any(_status(r) == "EXTRACTED" for r in addressing)  # a deferral-only step stays deferred
         and kind in PARTIAL_FIELDS
         and all(r.group == kind for r in kind_rows)
         and any(r.path.endswith(".performed") for r in kind_rows)
