@@ -154,7 +154,7 @@ ROW_SHEETS: dict[str, tuple[str, ...]] = {
 }
 
 #: The standing rulings for these rows, as the labeler's help panel and the workbook's README state
-#: them (the author's list of 2026-11-11; 6-10 added 2026-11-15 from the author's answers D1-D5,
+#: them (the author's list of 2026-11-11; 6-10 added 2026-11-15 from the author's answers D1-D5, 11-13 on 2026-11-19,
 #: docs/findings/prompt_audit_fable52.md).
 ROW_RULINGS: tuple[str, ...] = (
     "A confound that is computed or made available (framewise displacement, DVARS, motion "
@@ -170,6 +170,9 @@ ROW_RULINGS: tuple[str, ...] = (
     'A value may be inferred from other steps the paper states, or from their stated order (segmentation performed because white-matter and CSF signals were extracted; smoothing in template space because normalization precedes it). Label it and write "inferred from" and the source in notes. (2026-11-15)',
     "Smoothing of statistical or contrast maps is not spatial smoothing of the time series and is not labelled as smoothing. (2026-11-15)",
     "When a step's settings differ across datasets, analyses or compared pipelines, label one row per variant with applies_to in the paper's words; the comparison between variants may be the main analysis. Use \"all\" only when one value holds for all of the paper's data. (2026-11-15)",
+    "Global signal handling is labelled whenever the paper states it, in nuisance_regression: global signal regression as a regressor; global scaling (e.g., SPM proportional scaling) with method naming the scaling and notes saying it is scaling, not regression. (2026-11-19)",
+    'A parameter the paper leaves implicit may be inferred from the named software\'s convention together with the rest of the text (e.g., an SPM smoothing kernel given in mm is FWHM). Label it and write "inferred from" and the convention in notes. (2026-11-19)',
+    'A method paper cited for a step names that step\'s method: the step was run with it (e.g., Behzadi et al. 2007 cited for the white-matter and CSF signals is aCompCor). Label it and write "cited:" and the citation in notes. (2026-11-19)',
 )
 
 MOTION_FIELDS = ("state", "named_tool", "attribution", "quote", "notes")

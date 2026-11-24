@@ -9,7 +9,8 @@ Two layers, because the KB has two surfaces:
 1. **Data-level** (the primary check). Walk every ``kb/pipelines/*.yaml``,
    pick out values served at field paths whose spec type is
    ``ProvenancedField[Literal[...]]`` or
-   ``ProvenancedField[list[Literal[...]]]``, and assert each value is a
+   ``ProvenancedField[list[Literal[...]]]`` (each Literal possibly wrapped in
+   ``SpecifiedTerm[...]``, and the field possibly ``... | None``), and assert each value is a
    member of the spec literal. Catches drift even when the KB schema does
    not constrain vocab.
 2. **Schema-shape guard**. ``pipeline_registry.schema.json`` currently does
@@ -28,6 +29,7 @@ automatically, not just ``intensity_normalization.convention``.
 from __future__ import annotations
 
 import json
+import types
 import typing
 from collections.abc import Iterator
 from pathlib import Path
@@ -105,6 +107,13 @@ def _provenanced_payload(annotation: Any) -> Any | None:
     Uses Pydantic's generic metadata (``typing.get_args`` returns ``()`` on
     Pydantic v2 parameterized subclasses).
     """
+    # 2026-11-24: optional fields are typed ``ProvenancedField[X] | None``; unwrap the union to its
+    # single non-None member, or such fields (e.g. temporal_filtering.filter_type) go unchecked.
+    if typing.get_origin(annotation) in (typing.Union, types.UnionType):
+        members = [a for a in typing.get_args(annotation) if a is not type(None)]
+        if len(members) != 1:
+            return None
+        annotation = members[0]
     meta = getattr(annotation, "__pydantic_generic_metadata__", None)
     if not meta:
         return None
@@ -123,16 +132,25 @@ def _literal_members(payload: Any) -> tuple[str, tuple[Any, ...]] | None:
     # 0.5.0: the retyped literal_type fields are ProvenancedField[SpecifiedTerm[Literal[...]]];
     # peel the SpecifiedTerm wrapper to its inner Literal (the KB serves bare members, which land
     # in SpecifiedTerm.resolved), so the vocab contract still covers convention/target_surface/etc.
-    meta = getattr(payload, "__pydantic_generic_metadata__", None)
-    if meta and meta.get("origin") is SpecifiedTerm and meta.get("args"):
-        payload = meta["args"][0]
+    payload = _peel_specified_term(payload)
     if typing.get_origin(payload) is Literal:
         return ("scalar", typing.get_args(payload))
     if typing.get_origin(payload) is list:
         inner = typing.get_args(payload)
-        if inner and typing.get_origin(inner[0]) is Literal:
-            return ("list", typing.get_args(inner[0]))
+        # 2026-11-24: list items are SpecifiedTerm[Literal[...]] too (e.g. tissue_regressors,
+        # scrub.criterion); peel them as for scalars, or those lists go unchecked.
+        item = _peel_specified_term(inner[0]) if inner else None
+        if item is not None and typing.get_origin(item) is Literal:
+            return ("list", typing.get_args(item))
     return None
+
+
+def _peel_specified_term(payload: Any) -> Any:
+    """``SpecifiedTerm[X]`` -> ``X``; anything else unchanged."""
+    meta = getattr(payload, "__pydantic_generic_metadata__", None)
+    if meta and meta.get("origin") is SpecifiedTerm and meta.get("args"):
+        return meta["args"][0]
+    return payload
 
 
 def _build_contracts() -> dict[tuple[str, str], tuple[str, tuple[Any, ...]]]:
@@ -344,6 +362,12 @@ def test_contracts_cover_known_shared_fields() -> None:
         ("surface_projection", "target_surface"),
         ("spatial_normalization", "target_space"),
         ("temporal_standardization", "method"),
+        # 2026-11-24: list-of-SpecifiedTerm and optional fields, unchecked before (xcp_d.yaml and
+        # abcd_bids.yaml serve them).
+        ("nuisance_regression", "tissue_regressors"),
+        ("scrub", "criterion"),
+        ("temporal_filtering", "filter_type"),
+        ("temporal_filtering", "pass_type"),
     }
     missing = expected - set(CONTRACTS.keys())
     assert not missing, f"CONTRACTS missing expected vocab fields: {missing}"

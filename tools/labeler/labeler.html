@@ -163,6 +163,9 @@ button:disabled { opacity: .5; cursor: default; }
         <li>A value may be inferred from other steps the paper states, or from their stated order (segmentation performed because white-matter and CSF signals were extracted; smoothing in template space because normalization precedes it). Label it and write "inferred from" and the source in notes. (2026-11-15)</li>
         <li>Smoothing of statistical or contrast maps is not spatial smoothing of the time series and is not labelled as smoothing. (2026-11-15)</li>
         <li>When a step's settings differ across datasets, analyses or compared pipelines, label one row per variant with applies_to in the paper's words; the comparison between variants may be the main analysis. Use "all" only when one value holds for all of the paper's data. (2026-11-15)</li>
+        <li>Global signal handling is labelled whenever the paper states it, in nuisance_regression: global signal regression as a regressor; global scaling (e.g., SPM proportional scaling) with method naming the scaling and notes saying it is scaling, not regression. (2026-11-19)</li>
+        <li>A parameter the paper leaves implicit may be inferred from the named software's convention together with the rest of the text (e.g., an SPM smoothing kernel given in mm is FWHM). Label it and write "inferred from" and the convention in notes. (2026-11-19)</li>
+        <li>A method paper cited for a step names that step's method: the step was run with it (e.g., Behzadi et al. 2007 cited for the white-matter and CSF signals is aCompCor). Label it and write "cited:" and the citation in notes. (2026-11-19)</li>
       </ol>
       <h3>Four more rows (added 2026-11-11)</h3>
       <p style="margin:0 0 4px">These fields are the label's own, not one schema step's; values as stated, like the rest.</p>
