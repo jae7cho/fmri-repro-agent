@@ -5305,3 +5305,45 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
 - **Not committed:** the 2026-11-15 Fable arms files, unchanged (see that entry).
 
 Commits here: `8d3bd6f`, then this entry.
+
+## 2026-11-24 (2) — intersubject registration can be partially reported; merge_labels tests
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- `7d86388` — `tests/test_merge_labels.py`.
+  - **Why:** three tests required the progress CSV to hold exactly the 19 walk-list papers.
+    `8d3bd6f` appended 17 papers, so main failed them from that commit on. Before committing it, I
+    ran only `tests/kb_client`, not the root suite.
+  - **Now:** the CSV must start with the walk list; the smoothing workbook must contain it; a new
+    paper must add exactly one row; and every existing row must be left as it was.
+  - **Positive controls:** a walk-list paper appended instead of filled, and a merge that stamps
+    every row. Both fail the tests.
+- `a272fac` — the author's ruling of 2026-11-24 ("over extracted fields"), from the intersubject
+  registration disagreements in score_arms.
+  - **Rule:** `cobidas.INTERSUBJECT_FIELDS` lists the fields the extractor asks for, per kind:
+    target_space and resolution_mm for volume; surface_registration and target_surface for
+    surface. The row is partially reported when a kind states one of its fields and another is
+    `not_stated_in_text`.
+  - **Not counted as unstated:** fields the extractor never targets (method, warp), and values it
+    found but could not use (value_not_in_literal, value_unsupported_by_quote, quote failures).
+  - **Counting:** as for the Software row, a partial row is not addressed.
+  - **Scope:** only records with a `.performed` row. That check matched `is_expanded` on all 753
+    stored records.
+  - **Render:** the row line names what is missing ("not stated: ..."). A partial row is no longer
+    listed under "Not reported whether performed".
+  - **Gate:** five record sets re-rendered at `91c63aa` and with the change, then diffed:
+    - the 42 files from pre-0.5.2 records are identical;
+    - changed files differ only in the coverage header and the Intersubject line (papers changed:
+      B 11, S 10, batch_coverage_v1 9, corpus_full_v3 16).
+  - **score_arms re-run** (`results/arms_2026-11-15/scores_2026-11-24_partial`, gitignored): only
+    the intersubject reports changed. State agree / disagree:
+    - S: 1 / 9 → 7 / 3;
+    - B and C: 1 / 9 → 6 / 4.
+  - **Still disagreeing:**
+    - dimitrova_2002, li_2024 and schwartz_2018: template and resolution are stated, but the labels
+      also want method and warp, which the extractor never asks for;
+    - ladouceur_2023 (B, C): unverifiable.
+  - **Checks:** 6 mutations, each diff non-empty, all killed. Root 332, extractor_mvp 1127
+    (2 live skipped). pre-commit clean on the second pass.
+
+Commits here: `7d86388`, `a272fac`, then this entry.
