@@ -5446,3 +5446,55 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
   - root 332, extractor_mvp 1139 (2 live skipped); pre-commit clean.
 
 Commits here: `d7ee153`, `5692bb1`, then this entry.
+
+## 2026-11-24 (5) — nuisance regression reviewed; ruling 11 amended; the extraction error list
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- **Nuisance regression, from the stored arms (no model calls):**
+  - **No partial rule.** Every field set of up to three was tried on the 9 single-pipeline rows.
+    The best reach 6 of 9, and `method` alone does too, so the partial labels (CompCor without a
+    component count, an unstated motion model) are judgments no field captures. A rule would only
+    fit 9 rows.
+  - **Vocabulary gap:** `MotionExpansion` holds none, 6param, friston24 and volterra
+    (`src/fmri_repro/spec/preprocessing.py` line 1214), with nothing for six parameters plus their
+    first derivatives. li_2024 resolves to 6param in all arms. achuthan_2023 resolves to 6param in
+    S and stays unresolved in Fable. ladouceur_2023's 24-parameter model is 6param in S and fails
+    its quote check in B.
+  - **Mapping conflict:** bassett_2011 ("normalized globally") and dimitrova_2002 ("proportional
+    scaling") were labelled under nuisance regression by ruling 11. Every arm recorded them as
+    `intensity_normalization.convention`.
+- `f58e493` — the author's ruling of 2026-11-24 ("keep the step separate").
+  - **Ruling 11 now reads:** global signal regression is labelled in nuisance_regression; global
+    scaling is intensity normalization, so the nuisance row is labelled as if it were absent, with
+    the scaling and its quote in notes. It is changed in `merge_labels.ROW_RULINGS` and the labeler;
+    the sync test passes.
+  - **Untracked edits:**
+    - the workbook README is updated;
+    - bassett_2011 (reported) and dimitrova_2002 (partially_reported) are relabelled not_reported
+      in the gitignored workbook and in their `labels_2026-11` files;
+    - adjudication now reads "...; relabelled 2026-11-24 (ruling 11 amended)";
+    - no other row, held-out or not, labelled scaling on this card.
+  - **score_arms re-run** (`scores_2026-11-24_relabel`, gitignored): only the nuisance reports
+    changed. State agree / disagree:
+    - S: 5 / 5 → 7 / 4;
+    - B and C: 5 / 6 → 7 / 5.
+  - **Checks:** root 332, extractor_mvp 1139; pre-commit clean.
+- **The extraction error list** that the free checks of 2026-11-24 leave for one prompt and schema
+  change (a vintage event; the design comes to the author first):
+  1. a MotionExpansion member for six parameters plus first derivatives;
+  2. method and warp fields for intersubject registration (never targeted: all 753 stored records);
+  3. one row per dataset for multi-pipeline papers (glasser2016_nature, marek_2022, greene_2022);
+  4. method fields hold the technique, not the tool (CONN, clpipe, DCANBOLDproc, BioImage Suite;
+     freesurfer_recon given as a registration method);
+  5. no forced vocabulary term: keep the paper's words unresolved (Sonnet's 6param, bold_pct and
+     fieldmap_less);
+  6. rulings 8, 12 and 13 in the prompts: inference from stated order, a parameter from the tool's
+     convention, a cited method paper;
+  7. a step stated without detail counts as performed (hermans_2024 "denoised"; bakker_2012 and
+     dimitrova_2002 coregistration);
+  8. deferral to a pipeline's defaults (schwartz_2018 to CONN);
+  9. dimitrova_2002's template taken from its reference system; hermans_2024's 9 DOF recorded as
+     affine.
+
+Commits here: `f58e493`, then this entry.
