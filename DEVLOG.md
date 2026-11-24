@@ -5347,3 +5347,47 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
     (2 live skipped). pre-commit clean on the second pass.
 
 Commits here: `7d86388`, `a272fac`, then this entry.
+
+## 2026-11-24 (3) — slice timing can be partially reported
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- `7219629` — the author's ruling of 2026-11-24 ("reference + interpolation", the two parameters
+  COBIDAS asks for), from the slice timing disagreements in score_arms.
+  - **One table:** `cobidas.PARTIAL_FIELDS` holds the partial rule of each row and replaces
+    `INTERSUBJECT_FIELDS`. `partial_unstated(row_id, mapped)` replaces `intersubject_unstated`. The
+    intersubject rule is unchanged: a kind counts as stated by one of its listed fields.
+  - **The slice timing rule:**
+    - the step counts as stated when any of its fields is reported (extracted or deferred);
+    - it is then partially reported when reference or interpolation is `not_stated_in_text`;
+    - performed = no is never partial;
+    - only records with a `.performed` row are affected.
+  - **kind_state:** applies the same rule for a step that is its own D.3 row. The row scorers read
+    `kind_state` (`scripts/preproc_rows_scoring.py` line 223), and the first re-score, with the rule
+    in `row_state` only, moved nothing. The pinned scorer scripts are unchanged. Render calls
+    kind_state only for temporal filtering: re-rendering three record sets before and after this
+    step changed no report.
+  - **Render:** the row names what is missing ("not stated: reference, interpolation"). Kinds are
+    prefixed only on rows that span two kinds.
+  - **Gate:** five record sets re-rendered at `dc445df` and with the change, then diffed:
+    - the 42 files from pre-0.5.2 records are identical;
+    - changed files differ only in the coverage header and the slice timing line, and no
+      Intersubject line moved (papers changed: B 9, S 10, batch_coverage_v1 5, corpus_full_v3 11).
+  - **score_arms re-run** (`results/arms_2026-11-15/scores_2026-11-24_stc`, gitignored): only the
+    slice timing reports changed. State agree / disagree went from 4 / 7 to 10 / 1 in S, and from
+    5 / 6 to 11 / 0 in B and C. The one left in S is achuthan_2023 (label deferred, record
+    not_reported); B and C defer it.
+  - **Value mismatches left:**
+    - exact-string matching (a post-hoc scorer change): "before (as listed)" against "before";
+      "3dTshift (AFNI v16.2.07)" against afni_3dtshift; "CONN" against its long name;
+    - hermans_2024's order relative to motion correction is labelled as prose, so nothing can match
+      it;
+    - extraction misses: the method, where the paper names only the package (li_2024 SPM12,
+      maheu_2011 SPM99); the order relative to motion correction, inferred from the listing
+      (ruling 8, not yet in the prompts).
+  - **Checks:**
+    - 8 mutations, each diff non-empty, all killed;
+    - `test_a_single_row_run_credits_only_that_row` now counts a partial row as credited;
+    - root 332, extractor_mvp 1133 (2 live skipped); pre-commit clean.
+
+Commits here: `7219629`, then this entry.
