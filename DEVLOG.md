@@ -5391,3 +5391,58 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
     - root 332, extractor_mvp 1133 (2 live skipped); pre-commit clean.
 
 Commits here: `7219629`, then this entry.
+
+## 2026-11-24 (4) — coregistration can be partially reported; deferral-only rows; a post-hoc value column
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- `d7ee153` — the author's ruling of 2026-11-24 ("transform + cost_function", what COBIDAS asks for
+  coregistration).
+  - **The rule:** coregistration joins `cobidas.PARTIAL_FIELDS` with the "step" trigger. Once the
+    step is stated, the row is partially reported if the paper does not state the transform or the
+    cost function.
+  - **How it was chosen:** every subset of {transform, method, cost_function, interpolation} was
+    tried on the 10 single-pipeline rows. No set got Fable past 7, so the field set follows COBIDAS
+    rather than a fit to 10 rows.
+  - **Fix to `a272fac` and `7219629`:** a row reported only by deferral turned partial; it now stays
+    deferred. Partial replaces "reported" only, so a field the paper states (EXTRACTED) is now
+    required, in `assess_coverage` and in `kind_state`. The gate found one case: braun_2015's
+    Intersubject registration (batch_coverage_v1), which had read "partially reported" for a
+    deferred target_space and now reads "deferred". braun_2015 has no arm record, so no score was
+    affected. `test_performed_is_never_deferred_but_a_parameter_may_be` caught the coregistration
+    case.
+  - **Gate:** five record sets re-rendered at `b32f743` and with the change, then diffed:
+    - the 42 files from pre-0.5.2 records are identical;
+    - changed lines are the coverage header and the coregistration line, plus braun_2015's line.
+  - **score_arms re-run** (`results/arms_2026-11-15/scores_2026-11-24_coreg`, gitignored): only the
+    coregistration reports changed. State agree / disagree:
+    - S: 5 / 7 → 5 / 7 (glasser2016_nature turns partial: S did not record its transform);
+    - B: 6 / 6 → 9 / 3;
+    - C: 6 / 6 → 7 / 5.
+  - **Left for the prompt change:**
+    - bakker_2012 and dimitrova_2002: coregistration is stated, but every arm records it as not
+      stated;
+    - schwartz_2018: deferral to CONN's default pipeline missed in all arms;
+    - hermans_2024: 9 DOF recorded as affine.
+- `5692bb1` — `scripts/posthoc_value_containment.py`, the author's ruling of 2026-11-24 ("add a
+  second column"). **Not pre-registered.**
+  - **Why:** exact matching scored correct values as disagreements. For example, ladouceur_2023's
+    four coregistration values are right in every arm, and none agreed.
+  - **What it adds:** a disagreeing value agrees when the record's verbatim words or resolved term
+    is a whole-word phrase of the label, or the other way round. Numbers, yes/no fields and forms
+    under three characters are unchanged, and every value it turns into an agreement is listed.
+  - **What it leaves alone:** the pinned scorers, imported unchanged (their sha256 tests pass).
+    Their states, part matching and as-stated results stand.
+  - **Run on the three arms** (`posthoc_containment.md` in the scores folder), as stated → with
+    containment:
+    - S: 20 / 79 agree / disagree → 45 / 54;
+    - B: 25 / 88 → 52 / 61;
+    - C: 22 / 92 → 49 / 65.
+  - **Audit:** of B's 27 additions, 25 are right. The 2 false agreements are hermans_2024's prose
+    order label, which contains "before", and dimitrova_2002's template, where Talairach is only the
+    reference system. The column is an upper bound to audit, not a replacement.
+- **Checks:**
+  - 8 mutations (4 per commit), each diff non-empty, all killed;
+  - root 332, extractor_mvp 1139 (2 live skipped); pre-commit clean.
+
+Commits here: `d7ee153`, `5692bb1`, then this entry.
