@@ -876,9 +876,10 @@ def _verbatims(value: Any) -> list[str]:
 def described_only(value: Any) -> bool:
     """Fork A widened (the author, 2026-11-03): an EXTRACTED method value that names no tool -- the
     paper's own words ("corrected for motion"), resolved to no member of the step's tool list or
-    only to ``other``/``custom``. The motion arm's ``described_only``, for every tool-list step."""
+    only to ``other``/``custom``. The motion arm's ``described_only``, for every tool-list step.
+    A term whose member is the model's reading (``model_mapped``, schema 0.8.0) names its tool."""
     return not any(
-        getattr(t, "resolution", None) == "resolved"
+        getattr(t, "resolution", None) in ("resolved", "model_mapped")
         and str(getattr(t, "resolved", "")) not in _NOT_A_TOOL
         for t in _terms(value)
     )

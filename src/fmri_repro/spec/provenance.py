@@ -236,12 +236,63 @@ class AlternativeInference(BaseModel, Generic[T]):
     confidence: float = Field(ge=0.0, le=1.0)
 
 
+#: The statuses of an inference arm that carries a value (0.8.0; before, INFERRED_DEFAULT alone).
+INFERRED_STATUSES: frozenset[str] = frozenset(
+    {"INFERRED_DEFAULT", "INFERRED_FROM_TEXT", "INFERRED_FROM_CITATION"}
+)
+#: The basis each of the two 0.8.0 statuses must carry: what the value rests on is part of what
+#: the status says.
+_BASIS_OF_STATUS: dict[str, str] = {
+    "INFERRED_FROM_TEXT": "derived",
+    "INFERRED_FROM_CITATION": "prior_publication",
+}
+
+
 class InferredDefault(BaseModel, Generic[T]):
-    status: Literal["INFERRED_DEFAULT"] = "INFERRED_DEFAULT"
+    """A value the paper does not state for this field, and what it rests on.
+
+    ``status`` says which kind of inference it is (0.8.0, DESIGN_prompt_schema_2026-11 B6; until
+    then only the first existed, and the class keeps its name):
+
+    - ``INFERRED_DEFAULT``: a default. A tool's or pipeline's default for a version, a lab's habit,
+      a field convention, or the value a cited source states. Refused on a field whose FieldMeta
+      has ``inference_applicable=False``.
+    - ``INFERRED_FROM_TEXT`` (the author's ruling 8): the value follows from what this paper
+      states elsewhere, for example slice timing "before" motion correction from the stated order
+      of the steps. Its basis is ``derived``, whose ``source_field_ids`` name the fields it
+      follows from.
+    - ``INFERRED_FROM_CITATION`` (ruling 13): the paper cites the method's own paper for the step
+      (Behzadi 2007 for aCompCor). Its basis is ``prior_publication``.
+
+    The last two rest on the paper and not on a default, so every field may carry them: the
+    ``inference_applicable`` gate is for ``INFERRED_DEFAULT`` only.
+    """
+
+    status: Literal["INFERRED_DEFAULT", "INFERRED_FROM_TEXT", "INFERRED_FROM_CITATION"] = (
+        "INFERRED_DEFAULT"
+    )
     value: T
     basis: Basis
     confidence: float = Field(ge=0.0, le=1.0)
     alternative_inferences: list[AlternativeInference[T]]  # required; empty OK
+
+    @model_validator(mode="after")
+    def _status_matches_basis(self) -> InferredDefault[T]:
+        want = _BASIS_OF_STATUS.get(self.status)
+        if want is None:
+            return self
+        if self.basis.basis_type != want:
+            raise ValueError(f"{self.status} requires a {want} basis (got {self.basis.basis_type})")
+        # The two statuses pass the gates that refuse a default (``inference_applicable``, the KB
+        # source), so an alternative may not bring one in beside them: it rests on the same kind
+        # of basis as the value.
+        for alt in self.alternative_inferences:
+            if alt.basis.basis_type != want:
+                raise ValueError(
+                    f"{self.status}: an alternative requires a {want} basis too "
+                    f"(got {alt.basis.basis_type})"
+                )
+        return self
 
     @model_validator(mode="after")
     def _ceiling(self) -> InferredDefault[T]:
@@ -291,5 +342,8 @@ class ProvenancedField(BaseModel, Generic[T]):
                 "Configurator must not touch extracted values."
             )
         if ext in ("MISSING_FROM_PAPER", "DEFERRED_TO_CITATION") and inf == "NOT_APPLICABLE":
-            raise ValueError(f"{ext} requires INFERRED_DEFAULT or LEFT_MISSING.")
+            raise ValueError(
+                f"{ext} requires an inferred value ({', '.join(sorted(INFERRED_STATUSES))}) "
+                "or LEFT_MISSING."
+            )
         return self

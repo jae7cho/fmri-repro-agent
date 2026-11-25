@@ -98,11 +98,18 @@ class SpecifiedTerm(BaseModel, Generic[T]):  # noqa: UP046
       NOTE: folding ``no_match``/``ambiguous`` into one ``unrecognized`` discards a distinction — a mild
       irony in a change whose purpose is to stop discarding terms (the verbatim survives either way);
       revisit the fold if the resolver ever needs to explain WHY a term did not resolve.
+
+      ``model_mapped`` (0.8.0, DESIGN_prompt_schema_2026-11 C7): ``resolved`` holds the member the
+      extraction model read the paper's term as, and no alias of the field's table confirmed it.
+      The member stands; the term is an alias candidate that came from a paper. Nothing writes this
+      value until the prompts return the term and its member together.
     """
 
     verbatim: str | None = None
     resolved: T | None = None
-    resolution: Literal["resolved", "underspecified", "unrecognized"] = "unrecognized"
+    resolution: Literal["resolved", "underspecified", "unrecognized", "model_mapped"] = (
+        "unrecognized"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -932,6 +939,9 @@ DistortionMethod = Literal[
     "reverse_phase_encoding",
     "fieldmap",
     "gradient_nonlinearity_correction",  # 0.6.2 (2026-11-03, the author's ruling)
+    # 0.8.0 (C9, 2026-11-25): the family that uses no field map (registration-based correction).
+    # ``sdc_fieldmapless`` below is a program member of 0.6.0 and stays what it was.
+    "fieldmap_less",
     "topup",
     "fugue",
     "gradunwarp",
@@ -1029,8 +1039,10 @@ class Segmentation(BaseModel):
 # 5. Coregistration — COBIDAS function↔structure intra-subject coregistration
 CoregistrationTransform = Literal["rigid", "affine", "nonlinear"]
 CoregistrationMethod = Literal["flirt_bbr", "flirt", "spm_coreg", "bbregister", "ants", "other"]
+# 0.8.0 (C9, 2026-11-25): "other", which the extraction prompt has offered for this field without
+# the vocabulary holding it.
 CoregistrationCostFunction = Literal[
-    "correlation_ratio", "mutual_information", "boundary_based", "ssd"
+    "correlation_ratio", "mutual_information", "boundary_based", "ssd", "other"
 ]
 CoregistrationInterpolation = Literal["linear", "spline", "sinc", "other"]
 
@@ -1109,8 +1121,10 @@ class SpatialNormalization(BaseModel):
     kind: Literal["spatial_normalization"] = "spatial_normalization"
     target_space: ProvenancedField[SpecifiedTerm[TargetSpace]]
     resolution_mm: ProvenancedField[float]
-    method: ProvenancedField[SpatialNormalizationMethod]
-    warp: ProvenancedField[WarpType]
+    # 0.8.0 (B2, 2026-11-25): the two closed Literals retyped to SpecifiedTerm[X], the 0.5.0
+    # pattern, so a tool or a transform class the vocabulary lacks keeps the paper's words.
+    method: ProvenancedField[SpecifiedTerm[SpatialNormalizationMethod]]
+    warp: ProvenancedField[SpecifiedTerm[WarpType]]
     transform_type: ProvenancedField[str]
     interpolation: ProvenancedField[SpatialNormalizationInterpolation]
     regularization: ProvenancedField[str]
@@ -1211,7 +1225,8 @@ class CompCor(BaseModel):
 
 
 # 9c. NuisanceRegression — COBIDAS artifact + structured noise removal (sibling)
-MotionExpansion = Literal["none", "6param", "friston24", "volterra"]
+# 0.8.0 (B1, 2026-11-25): "12param", the six parameters and their first derivatives.
+MotionExpansion = Literal["none", "6param", "12param", "friston24", "volterra"]
 TissueRegressor = Literal["whole_brain", "gray_matter", "white_matter", "ventricles"]
 PhysioRegressor = Literal["retroicor", "rvt", "none"]
 Detrend = Literal["linear", "quadratic", "none"]
@@ -1293,7 +1308,10 @@ class Despike(BaseModel):
 
 
 # 10b. Scrub — COBIDAS volume censoring (sibling, late)
-ScrubCriterion = Literal["fd_power", "fd_jenkinson", "dvars", "bold_pct"]
+# 0.8.0 (C9, 2026-11-25): "global_signal", a threshold on the change of the whole-brain average
+# signal (schwartz_2018: "> 3 standard deviations of average signal"). "bold_pct" is a percentage
+# BOLD change and had been forced onto it.
+ScrubCriterion = Literal["fd_power", "fd_jenkinson", "dvars", "bold_pct", "global_signal"]
 ScrubRemediation = Literal["censor", "interpolate"]
 ScrubInterpolationMethod = Literal["spline", "spectral", "other"]
 # 2026-10-28: D.3 asks the censoring software/method; the tool field this class lacked.
@@ -1310,7 +1328,14 @@ class Scrub(BaseModel):
     method: ProvenancedField[SpecifiedTerm[ScrubMethod]] | None = None
     # 0.6.0 (2026-10-29, DESIGN_report_v2.md §1b): a list -- papers list more than one.
     criterion: ProvenancedField[list[SpecifiedTerm[ScrubCriterion]]]
-    threshold: ProvenancedField[float]
+    # 0.8.0 (C9, 2026-11-25): a list of thresholds, where one number had served every criterion
+    # (schwartz_2018 states 3 SD for the average signal and 0.5 mm for FD; 3.0 was kept and 0.5
+    # lost). The list can hold a threshold for each criterion. Nothing checks it against
+    # ``criterion``: a position does not say which criterion a number belongs to, also when the
+    # two lists have the same length. A document written before 0.8.0 holds one number whatever
+    # the criteria, and so does the extraction until its prompt asks for more. The unit stays in
+    # the quote, as before.
+    threshold: ProvenancedField[list[float]]
     remediation: ProvenancedField[SpecifiedTerm[ScrubRemediation]]
     interpolation_method: ProvenancedField[SpecifiedTerm[ScrubInterpolationMethod]]
 
@@ -1588,7 +1613,7 @@ PreprocStep = Annotated[
 # ships (``to_json`` dumps it), so the version stamp lives here — not on the ad-hoc batch
 # wrapper (which detaches the moment the inner object is lifted out). StudySpec's pinned
 # ``schema_version`` is asserted equal to this by the current versioned root.
-SCHEMA_VERSION = "0.7.4"
+SCHEMA_VERSION = "0.8.0"
 
 
 class MigrationInfo(BaseModel):
@@ -1652,7 +1677,7 @@ class Preprocessing(BaseModel):
         :class:`ReplicationSpec` level.
     """
 
-    schema_version: Literal["0.7.4"] = "0.7.4"
+    schema_version: Literal["0.8.0"] = "0.8.0"
     written_under: str | None = None  # None on input -> normalized to schema_version below
     written_under_inferred: bool = False
     migration: MigrationInfo | None = None

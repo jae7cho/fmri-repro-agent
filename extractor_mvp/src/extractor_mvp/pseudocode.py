@@ -85,6 +85,10 @@ def _literal(value: Any) -> str:
         and value
         and all(isinstance(v, (int, float)) for v in value)
     ):
+        if len(value) == 1:
+            # schema 0.8.0: a list of one number (a scrub threshold) reads as the number, which is
+            # what a record written before the field became a list showed
+            return _literal(value[0])
         return "[" + ", ".join(_literal(v) for v in value) + "]"
     if isinstance(value, (list, tuple)):
         text = ", ".join(str(getattr(v, "verbatim", v)) for v in value)

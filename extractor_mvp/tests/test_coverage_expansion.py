@@ -767,7 +767,7 @@ def test_a_number_is_checked_on_the_repaired_text_when_the_span_was_repaired() -
     )
     pf = _field(prep, "scrub", "threshold")
     assert pf.extraction.status == "EXTRACTED", pf.inference
-    assert pf.extraction.value == 0.25
+    assert pf.extraction.value == [0.25]  # schema 0.8.0: a list of one
     assert pf.extraction.spans[0].repairs == [">→4"]
     # and a number that is NOT in the repaired quote still fails: the switch reads the quote, it
     # does not loosen the check

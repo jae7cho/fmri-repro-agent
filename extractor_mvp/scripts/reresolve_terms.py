@@ -57,8 +57,16 @@ def _reresolve_value(
     items = value if isinstance(value, list) else [value]
     # "other (phrase)" was stored as resolved other with only the phrase kept; the phrase alone
     # cannot show the resolver that the model said "other", so it is left as stored.
+    # kept as stored: "other" (the model's own statement), and a member that is the model's
+    # reading of the term (``model_mapped``, schema 0.8.0), also where today's table gives the
+    # words a member: the audit lists that disagreement, and what to do with it is not this
+    # script's to decide. A term marked model_mapped that holds no member is an unresolved term
+    # like any other, here and in the audit.
     kept = [
-        not isinstance(it, dict) or "verbatim" not in it or it.get("resolved") == "other"
+        not isinstance(it, dict)
+        or "verbatim" not in it
+        or it.get("resolved") == "other"
+        or (it.get("resolution") == "model_mapped" and it.get("resolved") is not None)
         for it in items
     ]
     words = [

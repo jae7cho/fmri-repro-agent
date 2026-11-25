@@ -42,12 +42,15 @@ def _resolved(dotted: str, verbatim: str) -> str | None:
         ("friston24", "friston24"),
         ("volterra", "friston24"),  # item 3, 2026-10-28
         ("none", "none"),
-        # derivatives without squares: no member fits until 12param (schema 0.8.0); words kept
-        ("six motion parameters and their first-order derivatives", None),
-        ("6 parameters and their first order derivatives", None),
-        ("the 6 realignment parameters and their temporal derivatives", None),
-        ("12 parameters (6 motion parameters and their derivatives)", None),
-        ("R and R\u00b4 (12 motion related regressors)", None),
+        # derivatives without squares: 12param since schema 0.8.0 (2026-11-25). Until then no
+        # member fitted and these kept their words.
+        ("six motion parameters and their first-order derivatives", "12param"),
+        ("6 parameters and their first order derivatives", "12param"),
+        ("the 6 realignment parameters and their temporal derivatives", "12param"),
+        ("12 parameters (6 motion parameters and their derivatives)", "12param"),
+        ("R and R\u00b4 (12 motion related regressors)", "12param"),
+        ("12param", "12param"),
+        # no count is stated, so no member is claimed
         ("motion parameters and their derivatives", None),
         ("24-regressor model of motion", None),
     ],

@@ -36,11 +36,13 @@ resolver located.
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from extractor_mvp.coverage_fields import (
     COVERAGE_BAND_FIELDS,
     COVERAGE_BOOL_FIELDS,
     COVERAGE_LIST_FIELDS,
+    COVERAGE_NUMBER_LIST_FIELDS,
     COVERAGE_NUMERIC_FIELDS,
     COVERAGE_SUPPORT_TABLES,
     COVERAGE_TEXT_FIELDS,
@@ -282,6 +284,11 @@ def literal_value_supported(
 ) -> bool:
     """Ruling 1 for one Literal field. See the module docstring for which aliases count."""
     table, underspecified = SUPPORT_TABLES[dotted]
+    if resolution == "model_mapped":
+        # schema 0.8.0 (C7): the member is the model's reading of the term and no alias of the
+        # table confirmed it, so the member's aliases prove nothing here. The paper's words must
+        # be in the quote, as for a term the table does not know.
+        return phrase_in_quote(_alias_text(verbatim), quote)
     if resolved is not None and resolved in table:
         candidates = [resolved, *table[resolved]]
     elif resolved is not None:
@@ -354,6 +361,9 @@ def _term_supported(dotted: str, item: object, quote: str) -> bool:
         # 2026-11-03 (the author's ruling): "other" carries the paper's phrase and is checked
         # against it; a bare "other" names nothing the quote could hold
         return str(verbatim).strip().lower() != "other" and phrase_in_quote(str(verbatim), quote)
+    if resolution == "model_mapped":
+        # schema 0.8.0 (C7): as in literal_value_supported, the paper's words and nothing else
+        return phrase_in_quote(str(verbatim), quote)
     if resolved is not None and resolved in table:
         candidates = [str(resolved), *table[resolved]]
     elif resolved is not None:
@@ -402,6 +412,14 @@ def coverage_value_supported(dotted: str, value: object, quote: str) -> bool | N
     if dotted in COVERAGE_NUMERIC_FIELDS:
         try:
             return number_in_quote(float(value), quote)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return False
+    if dotted in COVERAGE_NUMBER_LIST_FIELDS:
+        # schema 0.8.0 (the scrub thresholds): every number of the list digit-exact in the quote.
+        # A record written before 0.8.0 and read without migration holds the one number.
+        numbers: list[Any] = list(value) if isinstance(value, (list, tuple)) else [value]
+        try:
+            return bool(numbers) and all(number_in_quote(float(n), quote) for n in numbers)
         except (TypeError, ValueError):
             return False
     # 2026-11-09 (the author's item 2): text, list and term fields are matched literally only for

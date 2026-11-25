@@ -10,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from fmri_repro.spec.provenance import (
+    INFERRED_STATUSES,
     AlternativeInference,
     Deferral,
     DeferredToCitation,
@@ -21,6 +22,7 @@ from fmri_repro.spec.provenance import (
     LeftMissing,
     MissingFromPaper,
     NotApplicable,
+    PriorPublicationBasis,
     ProvenancedField,
     Span,
     VersionDefaultBasis,
@@ -113,7 +115,11 @@ def test_illegal_missing_plus_not_applicable() -> None:
             extraction=MissingFromPaper(searched_terms=["TE"], sections_searched=["Methods"]),
             inference=NotApplicable(),
         )
-    assert "MISSING_FROM_PAPER requires INFERRED_DEFAULT or LEFT_MISSING" in str(excinfo.value)
+    # 0.8.0: the message names the three inferred statuses
+    assert (
+        "MISSING_FROM_PAPER requires an inferred value (INFERRED_DEFAULT, INFERRED_FROM_CITATION, "
+        "INFERRED_FROM_TEXT) or LEFT_MISSING" in str(excinfo.value)
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -375,7 +381,7 @@ def test_deferred_plus_not_applicable_rejected() -> None:
         )
     msg = str(excinfo.value)
     assert "DEFERRED_TO_CITATION" in msg
-    assert "INFERRED_DEFAULT or LEFT_MISSING" in msg
+    assert "INFERRED_DEFAULT, INFERRED_FROM_CITATION, INFERRED_FROM_TEXT) or LEFT_MISSING" in msg
 
 
 # ---------------------------------------------------------------------------
@@ -457,3 +463,172 @@ def test_normalize_applies_to() -> None:
     assert normalize_applies_to("The Parts I\u2013II") == "parts i-ii"
     assert normalize_applies_to("ALFF & fALFF.") == "alff and falff"
     assert normalize_applies_to("  task - fMRI ") == "task-fmri"
+
+
+# ---------------------------------------------------------------------------
+# 0.8.0: two more inference statuses (DESIGN_prompt_schema_2026-11 B6; rulings 8 and 13)
+# ---------------------------------------------------------------------------
+_FROM_TEXT = DerivedBasis(source_field_ids=["step_order"], note="slice timing listed first")
+_FROM_CITATION = PriorPublicationBasis(citation="Behzadi et al. 2007", note="the CompCor paper")
+
+
+def _missing_arm() -> MissingFromPaper:
+    return MissingFromPaper(searched_terms=[], sections_searched=["Methods"])
+
+
+def _deferred_arm() -> DeferredToCitation:
+    return DeferredToCitation(
+        deferrals=[_deferral()], searched_terms=[], sections_searched=["Methods"]
+    )
+
+
+def test_the_inference_statuses_are_these_three() -> None:
+    import typing
+
+    field = InferredDefault.model_fields["status"]
+    assert set(typing.get_args(field.annotation)) == INFERRED_STATUSES
+    assert INFERRED_STATUSES == {
+        "INFERRED_DEFAULT",
+        "INFERRED_FROM_TEXT",
+        "INFERRED_FROM_CITATION",
+    }
+    assert field.default == "INFERRED_DEFAULT"  # a 0.7.4 writer's value, unchanged
+
+
+@pytest.mark.parametrize(
+    ("status", "basis", "ceiling"),
+    [
+        ("INFERRED_FROM_TEXT", _FROM_TEXT, 0.70),
+        ("INFERRED_FROM_CITATION", _FROM_CITATION, 0.60),
+    ],
+)
+def test_a_new_status_is_accepted_with_its_basis_on_a_missing_or_deferred_field(
+    status: str, basis: object, ceiling: float
+) -> None:
+    for extraction in (_missing_arm(), _deferred_arm()):
+        pf = ProvenancedField[str](
+            field_id="relative_to_motion_correction",
+            extraction=extraction,
+            inference=InferredDefault[str](
+                status=status,
+                value="before",
+                basis=basis,
+                confidence=ceiling,
+                alternative_inferences=[],
+            ),
+        )
+        assert pf.inference.status == status
+        again = ProvenancedField[str].model_validate_json(pf.model_dump_json())
+        assert again == pf and again.inference.status == status
+    # the ceiling of the basis holds for the new status as for a default
+    with pytest.raises(ValidationError, match="ceiling"):
+        InferredDefault[str](
+            status=status,
+            value="before",
+            basis=basis,
+            confidence=ceiling + 0.01,
+            alternative_inferences=[],
+        )
+
+
+def test_each_new_status_requires_its_own_basis() -> None:
+    with pytest.raises(ValidationError, match="INFERRED_FROM_TEXT requires a derived basis"):
+        InferredDefault[str](
+            status="INFERRED_FROM_TEXT",
+            value="before",
+            basis=_FROM_CITATION,
+            confidence=0.5,
+            alternative_inferences=[],
+        )
+    with pytest.raises(
+        ValidationError, match="INFERRED_FROM_CITATION requires a prior_publication basis"
+    ):
+        InferredDefault[str](
+            status="INFERRED_FROM_CITATION",
+            value="a",
+            basis=_FROM_TEXT,
+            confidence=0.5,
+            alternative_inferences=[],
+        )
+    # a default keeps every basis it could have before 0.8.0, these two included
+    for basis in (_FROM_TEXT, _FROM_CITATION, VersionDefaultBasis(tool="fMRIPrep", version="23")):
+        inferred = InferredDefault[str](
+            value="x", basis=basis, confidence=0.4, alternative_inferences=[]
+        )
+        assert inferred.status == "INFERRED_DEFAULT"
+
+
+def test_an_alternative_of_a_new_status_rests_on_the_same_kind_of_basis() -> None:
+    """The two statuses pass the gates that refuse a default (``inference_applicable``, the KB
+    source), so an alternative may not bring a default in beside them."""
+    a_default = AlternativeInference[str](
+        value="after", basis=VersionDefaultBasis(tool="fMRIPrep", version="23"), confidence=0.9
+    )
+    with pytest.raises(ValidationError, match="an alternative requires a derived basis too"):
+        InferredDefault[str](
+            status="INFERRED_FROM_TEXT",
+            value="before",
+            basis=_FROM_TEXT,
+            confidence=0.5,
+            alternative_inferences=[a_default],
+        )
+    from_text = AlternativeInference[str](value="after", basis=_FROM_TEXT, confidence=0.4)
+    with pytest.raises(
+        ValidationError, match="an alternative requires a prior_publication basis too"
+    ):
+        InferredDefault[str](
+            status="INFERRED_FROM_CITATION",
+            value="a",
+            basis=_FROM_CITATION,
+            confidence=0.5,
+            alternative_inferences=[from_text],
+        )
+    # an alternative on the same kind of basis is kept
+    kept = InferredDefault[str](
+        status="INFERRED_FROM_TEXT",
+        value="before",
+        basis=_FROM_TEXT,
+        confidence=0.5,
+        alternative_inferences=[from_text],
+    )
+    assert kept.alternative_inferences == [from_text]
+    # control: a default takes alternatives on any basis, as before 0.8.0
+    default = InferredDefault[str](
+        value="x", basis=_FROM_TEXT, confidence=0.4, alternative_inferences=[a_default]
+    )
+    assert default.status == "INFERRED_DEFAULT" and default.alternative_inferences == [a_default]
+
+
+def test_a_stated_value_takes_no_inference_of_any_status() -> None:
+    for status, basis in (
+        ("INFERRED_FROM_TEXT", _FROM_TEXT),
+        ("INFERRED_FROM_CITATION", _FROM_CITATION),
+    ):
+        with pytest.raises(ValidationError, match="requires inference=NOT_APPLICABLE"):
+            ProvenancedField[str](
+                field_id="f",
+                extraction=Extracted[str](value="after", spans=[_span()], confidence=0.9),
+                inference=InferredDefault[str](
+                    status=status,
+                    value="before",
+                    basis=basis,
+                    confidence=0.5,
+                    alternative_inferences=[],
+                ),
+            )
+
+
+def test_an_unknown_inference_status_is_refused() -> None:
+    payload = {
+        "field_id": "f",
+        "extraction": _missing_arm().model_dump(),
+        "inference": {
+            "status": "INFERRED_FROM_MODEL",
+            "value": "before",
+            "basis": _FROM_TEXT.model_dump(),
+            "confidence": 0.5,
+            "alternative_inferences": [],
+        },
+    }
+    with pytest.raises(ValidationError, match="INFERRED_FROM_MODEL"):
+        ProvenancedField[str].model_validate(payload)

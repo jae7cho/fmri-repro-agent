@@ -280,6 +280,14 @@ def _row_from_field(
 ) -> FieldRow:
     ext = pf.extraction
     inf = pf.inference
+    if inf.status in ("INFERRED_FROM_TEXT", "INFERRED_FROM_CITATION"):
+        # Schema 0.8.0 holds the two statuses; the pass that writes them and the way a report
+        # shows them are DESIGN_prompt_schema_2026-11 D5. Until then a record that carries one is
+        # refused here. Without this it was shown as "unspecified", the value dropped; through
+        # the branches written for INFERRED_DEFAULT it would be labelled a KB default.
+        raise NotImplementedError(
+            f"{path}: {inf.status} has no display yet (DESIGN_prompt_schema_2026-11 D5)"
+        )
     row = FieldRow(
         path=path,
         group=group,

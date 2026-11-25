@@ -7,14 +7,18 @@ Run it after every extraction run, before scoring. For the 39 vocabulary fields 
 1. **The table self-check.** Every alias, given as the wording, must resolve to its own member.
    D1 found 15 of 448 that did not; ``tests/test_resolver_d2b.py`` holds the same check as a test.
 2. **Every stored wording** with the member today's resolver gives it and the papers it occurs
-   in. A wording that resolves differently from one paper to the next has one row per member.
+   in. A wording that resolves differently from one paper to the next has one row per member,
+   and a row of its own where the member is the model's and not the table's (below).
    Flags: ``token`` (a bare member token, so the model's mapping and not the paper's words),
    ``partial`` (resolved through an alias that covers only part of the wording), ``by rule`` (a
    field rule chose the member, not an alias alone), ``completed`` (a list item that borrowed the
    head noun of the next item), ``sent elsewhere`` (a member token a dated ruling, or the detrend
    field's highest-order rule, resolves to another member), ``stale`` (the stored member differs
-   from today's). A term stored as ``other`` keeps that member: its "other (phrase)" wrapper is
-   not in the record. The detrend field is resolved as the extractor resolves it: the term, then
+   from today's), ``the model's member`` (schema 0.8.0: the stored member is the model's reading
+   of the words, ``model_mapped``, and the table resolves them to nothing; the row is an alias
+   candidate) and ``the model read`` (the table resolves such words to another member). A term
+   stored as ``other`` that is not ``model_mapped`` keeps that member: its "other (phrase)"
+   wrapper is not in the record. The detrend field is resolved as the extractor resolves it: the term, then
    the highest order its quote names, for a value the coverage call extracted (a part of a varied
    value and a value the checking pass supplied do not go through that step).
 3. **Unresolved wordings by how often they recur across papers.** A wording that recurs is the
@@ -23,7 +27,8 @@ Run it after every extraction run, before scoring. For the 39 vocabulary fields 
 4. **The token trace.** How many values are bare tokens and, for each, whether an alias of its
    member is in the quote the model gave: ``in quote`` (and no alias of a member the record does
    not also hold for that field), ``competing`` (with such an alias), ``not in quote`` (a
-   wording the table lacks, an inference, or a forced token). The member is the one today's
+   wording the table lacks, an inference, or a forced token; also a member that has no alias,
+   unless the quote is as a whole the wording its rule reads). The member is the one today's
    resolver gives the token; the record's members are the stored ones and today's. The quote is
    read as the resolver reads a value: the longer alias wins, and the field's rules apply. On the
    detrend field the highest-order rule decides: a lower order named beside the token's is no
@@ -53,7 +58,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from extractor_mvp import extractor as ex
 from extractor_mvp.coverage_extractor import _DETREND_ORDER, detrend_highest_order
-from extractor_mvp.coverage_fields import COVERAGE_SPECS, TERM_RULES, rule_hits, rules_name
+from extractor_mvp.coverage_fields import (
+    COVERAGE_SPECS,
+    TERM_RULES,
+    rule_hits,
+    rules_name,
+    rules_resolve,
+)
 from extractor_mvp.synonym_resolver import (
     SYNONYMS_BY_FIELD,
     _alias_regex,
@@ -280,16 +291,17 @@ def iter_values(record: dict[str, Any], paper: str) -> Iterator[Value]:
 def members_in_quote(field: Field, quote: str, value_context: float | None) -> set[str]:
     """The members the quote names, read as the resolver reads a value: an alias inside a longer
     alias of another member does not count, a member the field's rules block on this text is
-    dropped, and a member the rules require or find named (an SPM release) is added."""
+    dropped, and a member the rules require or find named (an SPM release) is added.
+
+    A member with no alias is not found this way. The ones schema 0.8.0 adds (12param,
+    global_signal, the method's fieldmap_less) are resolved by a rule that reads a whole wording:
+    their bare token counts as in the quote only when the quote is, as a whole, such a wording,
+    and like ``other`` as not in the quote otherwise."""
     named = set(members_named(quote, field.synonyms, value_context))
     rules = TERM_RULES.get(field.dotted)
     if rules:
         named -= {m for m in named if any(rule_hits(p, quote) for p in rules.block.get(m, ()))}
-        named |= {
-            m
-            for m, patterns in rules.require_all.items()
-            if all(rule_hits(p, quote) for p in patterns)
-        }
+        named |= set(rules_resolve(field.dotted, quote)[:1])  # the one the resolver would take
         named |= rules_name(field.dotted, quote)
     return named
 
@@ -310,8 +322,15 @@ def whole_alias(field: Field, member: str, wording: str) -> bool:
 @dataclasses.dataclass
 class Audit:
     records: int = 0
-    #: (dotted, wording, member today) -> {"papers", "resolution", "flags", "stale"}
+    #: (dotted, wording, member today) -> {"papers", "resolution", "flags", "stale", "model"}
     wordings: dict[tuple[str, str, str | None], dict[str, Any]] = dataclasses.field(
+        default_factory=dict
+    )
+    #: (dotted, wording, the model's member) -> the same row, for a ``model_mapped`` term whose
+    #: words the table resolves to nothing. Kept apart from ``wordings``: the same words can stand
+    #: under the same member without the model in another paper (a stored "other (phrase)", a
+    #: list item the table completes), and that row has flags of its own.
+    model_wordings: dict[tuple[str, str, str | None], dict[str, Any]] = dataclasses.field(
         default_factory=dict
     )
     #: dotted -> Counter of trace categories, non-held-out
@@ -349,10 +368,20 @@ def audit(dirs: list[Path]) -> Audit:
                 ):
                     member, resolution = resolved_now, resolution_now
                     stored = it.get("resolved")
-                    if stored == "other" and word != "other":
+                    mapped = it.get("resolution") == "model_mapped" and stored is not None
+                    if stored == "other" and word != "other" and not mapped:
                         # "other (phrase)" is stored as the phrase alone; the extractor resolved
                         # it to other, and the phrase cannot be resolved again without its wrapper
                         member, resolution = "other", "resolved"
+                    # schema 0.8.0 (C7): the stored member is the model's reading of the words.
+                    # The record is not stale for that, and reresolve_terms keeps it. Where the
+                    # table resolves the words to nothing, the row stands under the model's
+                    # member, an alias candidate; where it resolves them to another member, the
+                    # row stands under the table's and says what the model read. Its words are
+                    # the paper's, so it is not an "other (phrase)" term whose wrapper is lost.
+                    by_model = mapped and resolved_now is None
+                    if by_model:
+                        member, resolution = str(stored), "model_mapped"
                     is_token = word in v.field.members
                     category = None
                     if is_token:
@@ -381,18 +410,24 @@ def audit(dirs: list[Path]) -> Audit:
                             a.held_out[category] += 1
                         continue
                     alone = resolve(v.field, [word], v.value_context, v.rule_quote)[0][0]
-                    row = a.wordings.setdefault(
+                    # One row would take its flags from whichever paper was read first (the
+                    # fifth review), so the model's member has a table of its own.
+                    rows = a.model_wordings if by_model else a.wordings
+                    row = rows.setdefault(
                         (v.field.dotted, word, member),
                         {
                             "papers": set(),
                             "resolution": resolution,
-                            "flags": flags(v.field, word, member, alone),
+                            "flags": ["the model's member"]
+                            if by_model
+                            else flags(v.field, word, member, alone),
                             "stale": set(),
+                            "model": set(),
                         },
                     )
                     row["papers"].add(v.paper)
                     if stored != member:
-                        row["stale"].add(str(stored))
+                        row["model" if mapped else "stale"].add(str(stored))
                     a.trace[v.field.dotted]["values"] += 1
                     if category:
                         a.trace[v.field.dotted][category] += 1
@@ -429,7 +464,9 @@ def render(a: Audit, dirs: list[Path], quotes: bool = False) -> str:
     rules = ", ".join(sorted(TERM_RULES)) or "none"
     lines += [f"Fields with term rules: {rules}.", "", "## 2. Stored wordings, by field", ""]
     by_field: dict[str, list[tuple[str, str | None, dict[str, Any]]]] = defaultdict(list)
-    for (dotted, wording, member), row in a.wordings.items():
+    # the table's rows, then the model's: the sort below is stable, so where the same words stand
+    # under the same member in as many papers, the table's row comes first (more papers come first)
+    for (dotted, wording, member), row in [*a.wordings.items(), *a.model_wordings.items()]:
         by_field[dotted].append((wording, member, row))
     for dotted in sorted(by_field):
         lines += [
@@ -444,6 +481,8 @@ def render(a: Audit, dirs: list[Path], quotes: bool = False) -> str:
             notes = list(row["flags"])
             if row["stale"]:
                 notes.append("stale: stored " + ", ".join(sorted(row["stale"])))
+            if row["model"]:
+                notes.append("the model read " + ", ".join(sorted(row["model"])))
             shown = member if member is not None else f"({row['resolution']})"
             lines.append(
                 f"| {_cell(wording)} | {shown} | {len(row['papers'])} | {'; '.join(notes)} |"
@@ -468,6 +507,9 @@ def render(a: Audit, dirs: list[Path], quotes: bool = False) -> str:
         "",
         "A token value is a bare member token in the slot for the paper's words. For each, is an",
         "alias of its member in the quote the model gave? `values` counts list items one by one.",
+        "A member with no alias has none to find: `other`, and the members a whole-wording rule",
+        "resolves (`12param`, `global_signal`, the method's `fieldmap_less`). The token of one of",
+        "these counts as in quote only when the quote is, as a whole, the wording its rule reads.",
         "",
         "| field | values | tokens | in quote | competing | not in quote |",
         "|---|---|---|---|---|---|",

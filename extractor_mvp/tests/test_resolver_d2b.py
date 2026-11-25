@@ -15,7 +15,6 @@ import pytest
 from extractor_mvp import extractor as ex
 from extractor_mvp.coverage_fields import (
     COVERAGE_SPECS,
-    OTHER_OFFERED_WITHOUT_MEMBER,
     SHARED_VOCABULARY_FIELDS,
     TERM_RULES,
     names_no_member,
@@ -316,7 +315,7 @@ def test_text_artifacts_no_longer_hide_a_term() -> None:
     [
         # U+2010 and U+2011: the hyphens a PDF text layer prints
         ("distortion_correction.source", "fieldmap\u2010less", ["fieldmap_less"]),
-        ("distortion_correction.method", "fieldmap\u2010less", [None]),
+        ("distortion_correction.method", "fieldmap\u2010less", ["fieldmap_less"]),  # schema 0.8.0
         ("distortion_correction.method", "fieldmap\u2011free", [None]),
         ("brain_extraction.method", "HD\u2010BET", [None]),
         ("coregistration.method", "FLIRT\u2010BBR", ["flirt_bbr"]),
@@ -372,15 +371,23 @@ def test_an_article_is_not_joined_to_a_number() -> None:
 @pytest.mark.parametrize(
     ("dotted", "raw", "want"),
     [
-        # the opposite method, through "fieldmap"
-        ("distortion_correction.method", "fieldmap-less", [None]),
-        ("distortion_correction.method", "field map-less", [None]),
+        # the opposite method, through "fieldmap". Since schema 0.8.0 the method field holds the
+        # family (fieldmap_less) and its longer alias wins; the block is for the forms no alias
+        # holds
+        ("distortion_correction.method", "fieldmap-less", ["fieldmap_less"]),
+        ("distortion_correction.method", "field map-less", ["fieldmap_less"]),
         ("distortion_correction.method", "fieldmap-free", [None]),
+        ("distortion_correction.method", "field map-free", [None]),
         (
             "distortion_correction.method",
             "\ufb01eldmap-less",
+            ["fieldmap_less"],
+        ),  # the table reads repaired text
+        (
+            "distortion_correction.method",
+            "\ufb01eldmap-free",
             [None],
-        ),  # the rule reads repaired text
+        ),  # ... and so does the rule
         ("distortion_correction.method", "field map", ["fieldmap"]),  # control
         ("distortion_correction.source", "fieldmap-free", [None]),
         ("distortion_correction.source", "field map", ["susceptibility_fieldmap"]),  # control
@@ -423,8 +430,9 @@ def test_a_wrong_member_is_blocked_and_the_words_are_kept(
         ("the 6 realignment parameters derived by MCFLIRT", "6param"),
         # no derivative is stated, so this is not the 24-parameter model; the squares block 6param
         ("six motion parameters derived from MCFLIRT and their squares", None),
-        # controls: the rules of 2026-11-24 still hold
-        ("six motion parameters and their temporal derivatives", None),
+        # controls: the rules of 2026-11-24 still hold (a derivative without squares is 12param
+        # since schema 0.8.0; before, no member fitted and the words were kept)
+        ("six motion parameters and their temporal derivatives", "12param"),
         ("six parameters, their derivatives and squares", "friston24"),
         ("6 motion parameters and their backward differences", None),
         ("motion parameters after temporal differencing, six in all", None),
@@ -607,16 +615,19 @@ def test_other_keeps_its_phrase_whatever_introduces_it(dotted: str, raw: str, ph
     assert (term.resolved, term.verbatim) == ("other", phrase)
 
 
-def test_other_where_the_prompt_offers_it_and_the_vocabulary_has_no_such_member() -> None:
-    # the cost function's prompt line offers "other"; the Literal has none until schema 0.8.0
-    assert "other" not in typing.get_args(_SPEC["coregistration.cost_function"].literal_type)
-    assert OTHER_OFFERED_WITHOUT_MEMBER == {"coregistration.cost_function"}
+def test_other_on_the_cost_function_is_a_member_since_schema_0_8_0() -> None:
+    """The prompt line offered "other" before the vocabulary held it. D2b kept "other (phrase)"
+    unresolved there, so that no alias inside the phrase could claim a member; the member (C9)
+    replaces that stopgap, and the phrase is kept as the paper's words."""
+    assert "other" in typing.get_args(_SPEC["coregistration.cost_function"].literal_type)
     raw = "other (normalized correlation, not mutual information)"
     (term,) = _terms("coregistration.cost_function", raw)
-    assert (term.resolved, term.resolution, term.verbatim) == (None, "unrecognized", raw)
+    assert (term.resolved, term.resolution) == ("other", "resolved")
+    assert term.verbatim == "normalized correlation, not mutual information"
     assert _one("coregistration.cost_function", "mutual information") == "mutual_information"
-    assert _one("coregistration.cost_function", "other") is None
-    # a field whose prompt line does not offer "other" resolves the phrase as before
+    assert _one("coregistration.cost_function", "other") == "other"
+    # a field with no member "other" resolves the phrase through its table, as before
+    assert "other" not in typing.get_args(_SPEC["slice_time_correction.reference"].literal_type)
     assert _one("slice_time_correction.reference", "other: TR/2") == "specific_time"
 
 
@@ -643,8 +654,16 @@ def test_other_is_a_word_of_its_own() -> None:
         ("coregistration.method", "FLIRT BBR, then FLIRT", None),
         ("slice_time_correction.reference", "middle slice, then slice 17", None),
         # "derivat" covers the spellings papers use and leaves "derived" alone
-        ("nuisance_regression.motion_expansion", "six motion parameters and their derivates", None),
-        ("nuisance_regression.motion_expansion", "six parameters and their first derivs", None),
+        (
+            "nuisance_regression.motion_expansion",
+            "six motion parameters and their derivates",
+            "12param",
+        ),
+        (
+            "nuisance_regression.motion_expansion",
+            "six parameters and their first derivs",
+            "12param",
+        ),
         (
             "nuisance_regression.motion_expansion",
             "six motion parameters, their derivates and squares",
@@ -690,7 +709,11 @@ def test_other_is_a_word_of_its_own() -> None:
         # only the repaired reading holds the block's words: a Unicode hyphen at a line break
         ("spatial_smoothing.space", "native cortical\u2010\nsurface", None),
         # "deriv" as a word of its own, with and without its "s"
-        ("nuisance_regression.motion_expansion", "six motion parameters and their deriv", None),
+        (
+            "nuisance_regression.motion_expansion",
+            "six motion parameters and their deriv",
+            "12param",
+        ),
     ],
 )
 def test_wordings_the_review_added(dotted: str, raw: str, want: str | None) -> None:
@@ -786,8 +809,8 @@ def test_the_shared_vocabulary_fields_are_the_extractor_s() -> None:
     [
         ("brain_extraction.method", "optiBET", True),  # no alias occurs
         # a member's alias occurs and a rule blocks it: no claim is made, whether the field holds
-        # the member the words mean (native_surface) or not (the method families)
-        ("distortion_correction.method", "fieldmap-less", False),
+        # the member the words mean (native_surface) or not
+        ("distortion_correction.method", "fieldmap-free", False),
         ("distortion_correction.source", "fieldmap-free", False),
         ("spatial_smoothing.space", "individual cortical surface", False),
         # a member's own token, in another case or with a space for the underscore
@@ -803,7 +826,8 @@ def test_the_shared_vocabulary_fields_are_the_extractor_s() -> None:
         ("compcor.variant", "A", False),
         ("compcor.variant", "a principal components approach", True),
         # "other" where the field holds no such member is a word like any other
-        ("coregistration.cost_function", "other", True),
+        ("slice_time_correction.reference", "other", True),
+        ("coregistration.cost_function", "Other", False),  # a member since schema 0.8.0
         # the punctuation a value may come wrapped in
         ("brain_extraction.method", "(Other)", False),
         ("brain_extraction.method", "[other]", False),
@@ -865,7 +889,9 @@ def test_every_member_is_a_key_of_its_table_except_other_on_the_shared_fields() 
 def test_every_hyphen_the_repair_lists_is_read_as_a_hyphen(ch: str) -> None:
     assert repair_text(f"fieldmap{ch}less") == "fieldmap-less"
     assert _one("distortion_correction.source", f"fieldmap{ch}less") == "fieldmap_less"
-    assert _resolved("distortion_correction.method", f"fieldmap{ch}less") == [None]
+    assert _resolved("distortion_correction.method", f"fieldmap{ch}less") == ["fieldmap_less"]
+    # the block reads the repaired text: no alias holds "-free", and fieldmap may not take it
+    assert _resolved("distortion_correction.method", f"fieldmap{ch}free") == [None]
     assert rule_hits(TERM_RULES["brain_extraction.method"].block["bet"][0], f"HD{ch}BET")
 
 

@@ -1,8 +1,9 @@
-"""Versioned root for the ReplicationSpec — the single live ``StudySpec`` root (currently stamps 0.7.4).
+"""Versioned root for the ReplicationSpec — the single live ``StudySpec`` root (currently stamps 0.8.0).
 
-This module is the sole live root. Both additive-patch bumps and the one structural bump so far are
-applied IN PLACE (see :mod:`fmri_repro.spec.migrations`), the module keeping its name and its
-``Literal`` being bumped, rather than forking a ``v0_4_1.py`` / ``v0_5_0.py``:
+This module is the sole live root. The additive bumps and the structural ones are applied IN PLACE
+(:mod:`fmri_repro.spec.migrations` lists every hop, through 0.7.4 -> 0.8.0, which is structural), the
+module keeping its name and its ``Literal`` being bumped, rather than forking a ``v0_4_1.py`` /
+``v0_5_0.py``. The first two hops, as examples of each kind:
 
 - 0.4.0 -> 0.4.1 (additive): the ``study_specific`` ``TargetSpace`` value; pure re-stamp hop.
 - 0.4.1 -> 0.5.0 (STRUCTURAL): the five ``literal_type`` fields (``target_space``, ``target_surface``,
@@ -42,7 +43,7 @@ from fmri_repro.spec.core import ReplicationSpec, RunMeta, StudyAnalysis
 
 
 class StudySpec(BaseModel):
-    schema_version: Literal["0.7.4"] = "0.7.4"
+    schema_version: Literal["0.8.0"] = "0.8.0"
     run: RunMeta
     specs: list[ReplicationSpec] = Field(min_length=1)
     study_analysis: StudyAnalysis | None = None

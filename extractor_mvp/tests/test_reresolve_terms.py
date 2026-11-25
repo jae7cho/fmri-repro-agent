@@ -52,7 +52,9 @@ def test_variants_and_lists_are_re_resolved() -> None:
     )
     reresolve_record(rec)
     var = rec["preprocessing"]["steps"][0]["motion_expansion"]["extraction"]["variants"][0]
-    assert var["value"]["resolved"] is None and var["value"]["verbatim"].startswith("six motion")
+    # six and derivatives: unresolved under the 2026-11-24 rules, 12param since schema 0.8.0
+    assert var["value"]["resolved"] == "12param"
+    assert var["value"]["verbatim"].startswith("six motion")
 
 
 def test_a_stored_other_and_an_unchanged_term_are_left_as_stored() -> None:
@@ -142,7 +144,7 @@ def test_show_lists_each_changed_term_and_counts_a_held_out_paper(tmp_path, caps
     out = capsys.readouterr().out
     # the per-field counts are those of the papers that are not held out
     assert "nuisance_regression.motion_expansion: 1 terms changed" in out
-    assert f"paper_a | nuisance_regression.motion_expansion | {words!r}: 6param -> None" in out
+    assert f"paper_a | nuisance_regression.motion_expansion | {words!r}: 6param -> 12param" in out
     assert "liu_2005" not in out.lower()
     # one number for the held-out papers: no field of theirs, in the counts or in the list
     assert "held-out papers: 2 terms changed (counted, never listed by field)" in out
@@ -162,7 +164,7 @@ def test_show_lists_each_changed_term_and_counts_a_held_out_paper(tmp_path, caps
     copy = json.loads((tmp_path / "out" / "papers" / "B_liu_2005.json").read_text())
     assert (
         copy["preprocessing"]["steps"][0]["motion_expansion"]["extraction"]["value"]["resolved"]
-        is None
+        == "12param"
     )
 
 

@@ -71,7 +71,8 @@ def test_a_missing_field_is_filled_when_the_value_passes_the_checks() -> None:
         TEXT,
     )
     ext = _step(prep, "scrub").threshold.extraction
-    assert ext.status == "EXTRACTED" and ext.checker_supplied and ext.value == 0.9
+    # schema 0.8.0: the threshold is a list; one number is read into it
+    assert ext.status == "EXTRACTED" and ext.checker_supplied and ext.value == [0.9]
     assert log[0]["outcome"] == "filled"
 
 
@@ -150,8 +151,8 @@ def test_a_verdict_naming_per_part_values_creates_parts() -> None:
     assert log[0]["outcome"] == "filled" and log[0]["parts"] is not None
     assert ext.status == "VARIED"
     assert [(v.applies_to, v.value, v.checker_supplied) for v in ext.variants] == [
-        ("Task data", 0.9, True),
-        ("rest data", 0.2, True),
+        ("Task data", [0.9], True),
+        ("rest data", [0.2], True),
     ]
 
 

@@ -65,7 +65,9 @@ from extractor_mvp.synonym_resolver import (
     repair_text,
 )
 
-ValueKind = Literal["term", "term_list", "number", "int", "bool", "text", "band"]
+#: ``number_list`` (schema 0.8.0, 2026-11-25): the scrub thresholds, a list. One number is read
+#: into it (extractor._process_field).
+ValueKind = Literal["term", "term_list", "number", "number_list", "int", "bool", "text", "band"]
 
 #: The thirteen kinds of the eleven uncovered rows (cobidas.COBIDAS_D3_ROWS), by call.
 CALL_T_KINDS: tuple[str, ...] = (
@@ -169,6 +171,13 @@ SCRUB_CRITERION: dict[str, list[str]] = {
     "fd_jenkinson": ["Jenkinson", "RMS displacement", "relative RMS", "root mean square"],
     "dvars": ["DVARS"],
     "bold_pct": ["percent BOLD", "percentage BOLD", "% BOLD", "BOLD change"],
+    # schema 0.8.0 (C9, 2026-11-25): a threshold on the whole-brain average signal. schwartz_2018
+    # writes "> 3 standard deviations of average signal"; the token bold_pct had been forced onto it.
+    # The member has no alias. As aliases, "global signal" also stood in "global signal regression"
+    # and in a description of DVARS, and "average signal" in a tissue's average and in
+    # "signal-to-noise" (the reviews of the step that added the member). It is reached by its
+    # token and by a rule that reads a whole item with its threshold (TERM_RULES).
+    "global_signal": [],
 }
 SCRUB_REMEDIATION: dict[str, list[str]] = {
     "censor": [
@@ -227,6 +236,12 @@ MOTION_EXPANSION: dict[str, list[str]] = {
         "Volterra",
     ],
     "volterra": [],
+    # schema 0.8.0 (B1, 2026-11-25): the six parameters and their first derivatives. The member has
+    # no alias. As aliases, "12 motion" and "12 parameters" also took "12 motion parameters and
+    # their derivatives" (24 regressors) and tied with friston24 in "24 regressors (12 motion
+    # parameters and their squares)" (the reviews of the step). It is reached by its token and by
+    # a rule that reads the whole wording (TERM_RULES).
+    "12param": [],
 }
 
 
@@ -236,7 +251,9 @@ class TermRules:
     resolver audit). A value whose meaning turns on a count or a modifier is not left to substring
     aliases: "6 parameters and their derivatives" is not the six-parameter model.
 
-    - ``require_all``: a member resolved when every pattern occurs in the term (case-insensitive).
+    - ``require_all``: a member resolved when every pattern occurs in the term (case-insensitive)
+      and none of the member's own ``block`` patterns does. The first such member, in the order
+      written, is taken.
     - ``block``: a member the alias table may not return when any of its patterns occurs; the term
       is then kept unresolved, in the paper's words.
     - ``exact_overrides``: an exact member token resolved elsewhere by a dated ruling.
@@ -257,8 +274,16 @@ class TermRules:
 #: with derivatives, squares or a count of 12 or 24 resolved to 6param through "6 parameters"):
 #: six parameters with derivatives and squares (or quadratic terms) is friston24, the project's
 #: convention; any derivative, square, quadratic, expansion or regressor count blocks 6param, so
-#: a wording no member fits keeps its words (12param is schema 0.8.0, DESIGN_prompt_schema_2026-11
-#: B1). The exact token "volterra" stays friston24 (item 3, 2026-10-28).
+#: a wording no member fits keeps its words. The exact token "volterra" stays friston24 (item 3,
+#: 2026-10-28). Schema 0.8.0 (2026-11-25, DESIGN_prompt_schema_2026-11 B1) added 12param, the
+#: scrub criterion global_signal and fieldmap_less on the distortion method (C9). Each is resolved
+#: by one pattern that must match the WHOLE wording (``_TWELVE_PARAM_WORDING``,
+#: ``_GLOBAL_SIGNAL_ITEM``, ``_FIELDMAP_LESS_ITEM``), as an SPM release is, and has no alias. The first
+#: build of the step used two loose patterns ("six" and a derivative, anywhere) with a block list,
+#: and aliases for the scrub criterion; its review found a wrong member on both sides of every
+#: list it tried ("six motion parameters and the global signal derivative", "six motion
+#: parameters w/o derivatives", "motion parameters and their derivatives; FWHM 6 mm", "global
+#: signal regression"). A wording that says anything more keeps its words, a citation included.
 #:
 #: D2b (2026-11-25): the wrong-member matches of the D1 sweep that both of its verifiers confirmed
 #: (DESIGN_prompt_schema_2026-11 A6; results/d1_token_audit_2026-11-24/REPORT.md). Each is a block:
@@ -300,6 +325,82 @@ class TermRules:
 #:   whether it should is put to the author.
 _FIELDMAP_FREE = r"field[\s_-]*map[\s_-]*(?:less|free)"
 _DERIVATIVE = r"derivat|\bderivs?\b"
+#: schema 0.8.0 (2026-11-25): the members it adds with no alias of their own (12param,
+#: global_signal, and fieldmap_less on the method) are each resolved by ONE pattern that must
+#: match the whole wording.
+#: Every piece is a closed list, nothing may stand before or after the wording but quotes, a
+#: bracket and a full stop, and every repetition is possessive, so a wording that does not match
+#: is refused in one pass. Two earlier builds of the step read more (a loose rule with a block
+#: list, then trailers and a reading in running text); each review found wrong members in what
+#: they added, and inputs on which the pattern backtracked for seconds.
+_WORDING_OPENS = r"\A[\s\"'(\[]*+"
+_WORDING_CLOSES = r"[\s\"')\].]*+\Z"
+#: B1: the count six, the motion nouns, a connective, the derivative ("the 6 realignment
+#: parameters and their temporal derivatives", "6 motion parameters + 6 derivatives"). The noun
+#: "parameters" may stand alone ("6 parameters and their first order derivatives"); "regressors"
+#: and "estimates" need a motion word, since six regressors may be six of anything. "and" may
+#: join two motion words ("translation and rotation parameters") and is not one itself.
+_MOTION_WORD = (
+    r"(?:rigid[\s-]?body|head[\s-]?motion|head|motion|movement|realignment|"
+    r"translation(?:al)?s?|rotation(?:al)?s?)"
+)
+_SIX_AND_DERIVATIVES = (
+    r"(?:the\s++)?+(?:6|six)[\s-]++"
+    rf"(?:{_MOTION_WORD}[\s-]++(?:(?:and\s++)?+{_MOTION_WORD}[\s-]++){{0,3}}+"
+    r"(?:parameters?|params?|regressors?|estimates?)"
+    r"|parameters?|params?)"
+    r"(?:\s++of\s++(?:head\s++)?+(?:motion|movement))?+"
+    # a comma, a plus sign or a connective word: "six motion parameter derivatives" is the
+    # derivatives alone
+    r"(?:\s*+,\s*+(?:and\s++)?+|\s*+\+\s*+|\s*+&\s*+"
+    r"|\s++(?:and|plus|with|as\s++well\s++as|together\s++with|along\s++with)\s++)"
+    r"(?:(?:their|its|the)\s++)?+(?:(?:6|six)\s++)?+"
+    # the longer form first: a possessive repetition does not come back to try it
+    r"(?:(?:first[\s-]order|1st[\s-]order|first|1st|temporal|time)[\s-]++){0,2}+"
+    r"(?:derivatives?|derivates?|derivations?|derivs?\.?)"
+    r"(?:\s++(?:terms?|regressors?|of\s++each))?+"
+)
+#: The count of twelve written out: with a motion word ("12 motion related regressors", "twelve
+#: realignment parameters"), or as the model's name ("12 parameters", "12-parameter motion
+#: model", "12P"). Power's notation may stand before it ("R and R' (12 motion related
+#: regressors)", power_2014).
+_TWELVE_COUNT = (
+    r"(?:R\s++and\s++R\s*+['\u2032\u00b4\u2019]\s*+\(\s*+)?+(?:the\s++)?+(?:12|twelve)[\s-]++"
+    r"(?:(?:(?:head[\s-]?)?motion(?:[\s-]related)?|realignment|movement)[\s-]++"
+    r"(?:parameters?|regressors?)"
+    r"|parameters?(?:\s++(?:motion\s++)?+model)?+)"
+    r"|12P"
+)
+#: "12 parameters (6 motion parameters and their derivatives)": the count, then the six in brackets.
+_TWELVE_WRAP = r"(?:(?:12|twelve)\s++parameters\s*+\(\s*+)?+"
+_TWELVE_PARAM_WORDING = (
+    rf"{_WORDING_OPENS}(?:{_TWELVE_WRAP}{_SIX_AND_DERIVATIVES}|{_TWELVE_COUNT}){_WORDING_CLOSES}"
+)
+#: C9: a threshold on the whole-brain signal, read on a whole item of the criterion list: the
+#: threshold in standard deviations, before the signal or after it ("> 3 standard deviations of
+#: average signal", schwartz_2018; "global signal > 3 SD", "global signal 3 SD"). The signal named
+#: alone is not read: "global signal" also stands for the regression step and in a description
+#: of DVARS, and a list cut can leave it behind ("DVARS, the global signal"). A qualifier that
+#: the list splitter cuts OFF the item is not seen ("> 3 SD of the average signal, within the
+#: white-matter mask"): that holds for every member of a list field, alias or rule.
+_SD_THRESHOLD = r"\d++(?:\.\d++)?+\s*+(?:SDs?|s\.d\.|standard\s++deviations?)"
+_WHOLE_BRAIN_SIGNAL = r"(?:the\s++)?+(?:whole[\s-]brain\s++)?+(?:global|average)\s++signal"
+_GLOBAL_SIGNAL_ITEM = (
+    rf"{_WORDING_OPENS}(?:"
+    rf"(?:[<>\u2265\u2264]=?+\s*+)?+{_SD_THRESHOLD}\s++(?:of|in|from)\s++{_WHOLE_BRAIN_SIGNAL}"
+    rf"|{_WHOLE_BRAIN_SIGNAL}\s*+(?:[<>\u2265\u2264]=?+\s*+)?+{_SD_THRESHOLD}"
+    rf"){_WORDING_CLOSES}"
+)
+#: C9: a fieldmap-less correction on the METHOD field, read on a whole item of the list:
+#: "fieldmap-less" in any spelling of its two joints ("field map-less", "fieldmapless",
+#: "Fieldmap_Less"), with at most the registration it runs on or the word for the step after it
+#: ("fieldmap-less SyN", "field map-less SyN-SDC", "fieldmap-less distortion correction").
+_FIELDMAP_LESS_ITEM = (
+    rf"{_WORDING_OPENS}field[\s_-]?+map[\s_-]?+less"
+    r"(?:\s++(?:SyN(?:[\s-]SDC)?+|\(\s*+SyN\s*+\)|SDC|(?:susceptibility\s++)?+distortion\s++correction"
+    r"|correction|approach|method))?+"
+    rf"{_WORDING_CLOSES}"
+)
 _SPM_RELEASE = r"(?<![a-z0-9])spm(?:99|2|5|8|12|25)b?(?![a-z0-9])"
 _SPM_RELEASE_ALONE = rf"\A\W*(?:the\s+)?{_SPM_RELEASE}(?:\s+(?:software|package))?\W*\Z"
 _SPM_NUMBERED = r"(?<![a-z0-9])spm\d{1,2}[a-z]?(?![a-z0-9])"
@@ -313,7 +414,12 @@ def _spm_member(member: str) -> TermRules:
 
 TERM_RULES: dict[str, TermRules] = {
     "nuisance_regression.motion_expansion": TermRules(
-        require_all={"friston24": (r"\b(?:6|six)\b", _DERIVATIVE, r"squar|quadrat")},
+        require_all={
+            "friston24": (r"\b(?:6|six)\b", _DERIVATIVE, r"squar|quadrat"),
+            # schema 0.8.0 (B1): the whole wording is the six and their derivatives, or the count
+            # of twelve. Six with derivatives AND squares never matches it, and is friston24.
+            "12param": (_TWELVE_PARAM_WORDING,),
+        },
         block={
             "6param": (
                 _DERIVATIVE,
@@ -323,11 +429,15 @@ TERM_RULES: dict[str, TermRules] = {
                 r"expan",
                 r"\b(?:12|18|24|36)\b",
                 r"\bR\s*['\u2032\u00b4]",
-            )
+            ),
         },
         exact_overrides={"volterra": "friston24"},
     ),
-    "distortion_correction.method": TermRules(block={"fieldmap": (_FIELDMAP_FREE,)}),
+    "scrub.criterion": TermRules(require_all={"global_signal": (_GLOBAL_SIGNAL_ITEM,)}),
+    "distortion_correction.method": TermRules(
+        require_all={"fieldmap_less": (_FIELDMAP_LESS_ITEM,)},
+        block={"fieldmap": (_FIELDMAP_FREE,)},
+    ),
     "distortion_correction.source": TermRules(block={"susceptibility_fieldmap": (_FIELDMAP_FREE,)}),
     "brain_extraction.method": TermRules(block={"bet": (r"\bhd[\s_-]*bet\b",)}),
     "nuisance_regression.method": _spm_member("spm"),
@@ -347,12 +457,6 @@ TERM_RULES: dict[str, TermRules] = {
         }
     ),
 }
-
-#: D2b (2026-11-25): fields whose prompt line offers "other" while the vocabulary has no such
-#: member. There the model's "other (phrase)" says that no member fits, so no alias inside the
-#: phrase may claim one ("other (normalized correlation, not mutual information)" had resolved to
-#: mutual_information). The cost function gets the member in schema 0.8.0 (C9), and leaves this set.
-OTHER_OFFERED_WITHOUT_MEMBER: frozenset[str] = frozenset({"coregistration.cost_function"})
 
 #: D2b (2026-11-25): a term of a LIST field that holds a list separator of its own and is one term
 #: all the same, as a regular expression (case-insensitive). The list splitter keeps it whole
@@ -456,6 +560,10 @@ COREG_COST: dict[str, list[str]] = {
     # boundary_based (no schema change).
     "boundary_based": ["bbr", "boundary-based", "boundary based", "boundary-based registration"],
     "ssd": ["sum of squared differences", "least squares", "SSD"],
+    # schema 0.8.0 (C9, 2026-11-25): the prompt line has offered "other" all along. Until the
+    # member existed, D2b kept "other (phrase)" unresolved here so that no alias inside the phrase
+    # could claim a member; now it is the member, with the phrase as the paper's words.
+    "other": [],
 }
 DISTORTION_SOURCE: dict[str, list[str]] = {
     "susceptibility_fieldmap": [
@@ -509,13 +617,26 @@ DISTORTION_METHOD: dict[str, list[str]] = {
         "gradient nonlinearities",
         "gradient nonlinearity distortions",
     ],
+    # schema 0.8.0 (C9, 2026-11-25): the family that uses no field map. The member has no alias
+    # on this field. The source field's four aliases were tried here, and each review of the step
+    # showed a wrong member for one: "SyN-based" also met SyN used for normalization ("fieldmap
+    # unwarping followed by SyN-based registration" lost its fieldmap); "fieldmapless" swallowed
+    # a fieldmap named beside it, by the resolver's older prefix rule; and the two hyphenated
+    # spellings also read "field map less than ideal", since a separator is a separator to the
+    # alias table. It is reached by its token and by a rule that reads a whole item (TERM_RULES).
+    # The block on fieldmap stays, for every "-less" and "-free" form inside a longer wording.
+    "fieldmap_less": [],
     "other": [],
 }
 #: The families the extractor may resolve a method to (2026-11-03). The schema's DistortionMethod also
 #: keeps the five program members so a 0.6.0 document stays valid; a new extraction never resolves to
 #: them, so a program name returned as the method stays unrecognized (and its quote must hold it).
 DistortionFamily = Literal[
-    "reverse_phase_encoding", "fieldmap", "gradient_nonlinearity_correction", "other"
+    "reverse_phase_encoding",
+    "fieldmap",
+    "gradient_nonlinearity_correction",
+    "fieldmap_less",  # schema 0.8.0 (C9, 2026-11-25)
+    "other",
 ]
 #: The program (2026-11-03): the members the 0.6.0 method table held.
 DISTORTION_TOOL: dict[str, list[str]] = {
@@ -630,6 +751,8 @@ def _spec(
         t = list[SpecifiedTerm[literal_type]]
     elif value_kind == "number":
         t = float
+    elif value_kind == "number_list":
+        t = list[float]
     elif value_kind == "int":
         t = int
     elif value_kind == "bool":
@@ -687,7 +810,10 @@ CALL_T_SPECS: tuple[CoverageFieldSpec, ...] = (
     _spec(
         "T", "scrub_criterion", "scrub", "criterion", "term_list", ScrubCriterion, SCRUB_CRITERION
     ),
-    _spec("T", "scrub_threshold", "scrub", "threshold", "number"),
+    # schema 0.8.0 (C9): a list of thresholds. The attribute and the prompt line are as they
+    # were: the model is asked for "the threshold number as written", and one number is read,
+    # into a one-item list
+    _spec("T", "scrub_threshold", "scrub", "threshold", "number_list"),
     _spec(
         "T",
         "scrub_remediation",
@@ -1186,6 +1312,10 @@ COVERAGE_SUPPORT_TABLES: dict[str, tuple[dict[str, list[str]], list[str] | None]
 COVERAGE_NUMERIC_FIELDS: frozenset[str] = frozenset(
     s.dotted for s in COVERAGE_SPECS if s.value_kind in ("number", "int")
 )
+#: Each number of the list digit-exact in the quote (schema 0.8.0).
+COVERAGE_NUMBER_LIST_FIELDS: frozenset[str] = frozenset(
+    s.dotted for s in COVERAGE_SPECS if s.value_kind == "number_list"
+)
 COVERAGE_TEXT_FIELDS: frozenset[str] = frozenset(
     s.dotted for s in COVERAGE_SPECS if s.value_kind == "text"
 )
@@ -1257,6 +1387,41 @@ FAMILY_NAMES: dict[str, tuple[str, ...]] = {
     "compcor.variant": ("CompCor",),
     "spatial_normalization.target_space": ("Montreal Neurological Institute", "ICBM", "ICBM152"),
 }
+#: schema 0.8.0 (2026-11-25): the words of the two whole-wording rules, read for the report's
+#: note only (B11). 12param and global_signal have no alias, so a term that says more than their
+#: rule allows holds no name of theirs ("12 realignment parameters (Power et al., 2014)", "six
+#: regressors and their derivatives (no GSR)", "average signal change"). Each entry is a word of
+#: the rule's own closed lists: the derivative (a plural is read with its singular), the count of
+#: twelve with each motion word or as the model's name, the average signal. A term that holds one
+#: is about a member the vocabulary holds, and the note stays off it. Resolution is untouched;
+#: unlike a family name, an entry may itself be a whole wording the rule resolves ("12P").
+_TWELVE_HEADS = ("motion", "head motion", "headmotion", "realignment", "movement", "parameter")
+RULE_WORDS: dict[str, tuple[str, ...]] = {
+    "nuisance_regression.motion_expansion": (
+        "derivative",
+        "derivate",
+        "derivation",
+        "deriv",
+        *(f"{count} {word}" for count in ("12", "twelve") for word in _TWELVE_HEADS),
+        "12P",
+    ),
+    "scrub.criterion": ("average signal",),
+}
+
+
+def rules_resolve(dotted: str, words: str) -> list[str]:
+    """The members the field's ``require_all`` rules resolve these words to, in the rules' order:
+    every pattern of the member occurs, and none of the member's own ``block`` patterns does (a
+    rule may not hand over what a block refuses). The resolver takes the first."""
+    rules = TERM_RULES.get(dotted)
+    if not rules:
+        return []
+    return [
+        member
+        for member, patterns in rules.require_all.items()
+        if all(rule_hits(p, words) for p in patterns)
+        and not any(rule_hits(p, words) for p in rules.block.get(member, ()))
+    ]
 
 
 def rules_name(dotted: str, words: str) -> set[str]:
@@ -1274,7 +1439,8 @@ def rules_name(dotted: str, words: str) -> set[str]:
 def names_no_member(dotted: str, words: str) -> bool:
     """True when nothing of today's vocabulary occurs in these words (B11): the field has a table,
     and the words hold no alias, no member token, no wording a field rule resolves or names, no
-    family term and no family name (:data:`FAMILY_NAMES`).
+    family term, no family name (:data:`FAMILY_NAMES`) and no word of a whole-wording rule
+    (:data:`RULE_WORDS`).
 
     False for a field with no table. False whenever a member is named, even when the words stay
     unresolved: two members named ("FLIRT and bbregister": ambiguous), a member a rule blocks
@@ -1303,14 +1469,15 @@ def names_no_member(dotted: str, words: str) -> bool:
         ]
         for member, aliases in synonyms.items()
     }
-    rules = TERM_RULES.get(dotted)
-    if rules and any(
-        all(rule_hits(p, words) for p in patterns) for patterns in rules.require_all.values()
-    ):
+    if rules_resolve(dotted, words):
         return False
     if rules_name(dotted, words):
         return False
-    if members_named(words, {**names, "(family)": list(FAMILY_NAMES.get(dotted, ()))}):
+    known = {
+        "(family)": list(FAMILY_NAMES.get(dotted, ())),
+        "(rule)": list(RULE_WORDS.get(dotted, ())),
+    }
+    if members_named(words, {**names, **known}):
         return False
     lowered = repair_text(words).lower()
     return not any(u.lower() in lowered for u in underspecified or [])

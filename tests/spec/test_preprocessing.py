@@ -77,6 +77,7 @@ from fmri_repro.spec.provenance import (
     DateInferredVersionBasis,
     Deferral,
     DeferredToCitation,
+    DerivedBasis,
     Extracted,
     FieldConventionBasis,
     InferredDefault,
@@ -84,6 +85,7 @@ from fmri_repro.spec.provenance import (
     LeftMissing,
     MissingFromPaper,
     NotApplicable,
+    PriorPublicationBasis,
     ProvenancedField,
     Span,
     VersionDefaultBasis,
@@ -305,7 +307,7 @@ def _despike() -> Despike:
 def _scrub() -> Scrub:
     return Scrub(
         criterion=_pf_extracted_term_list("criterion", ["fd_power"], pp_mod.ScrubCriterion),
-        threshold=_pf_extracted("threshold", 0.2, float),
+        threshold=_pf_extracted("threshold", [0.2], list[float]),  # 0.8.0: a list
         remediation=_pf_extracted_term("remediation", "censor", pp_mod.ScrubRemediation),
         interpolation_method=_pf_missing("interpolation_method", str),
     )
@@ -1641,10 +1643,10 @@ def test_v0_3_0_step_invariant_fires_on_field_id_mismatch() -> None:
 
 
 def test_v0_3_0_version_and_frozen_predecessors() -> None:
-    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.7.4) is the live root.
+    # Predecessors are demoted to version constants; the 0.4.x line (currently 0.8.0) is the live root.
     from fmri_repro.spec import v0_1_0, v0_2_0
 
-    assert CurrentStudySpec.model_fields["schema_version"].default == "0.7.4"
+    assert CurrentStudySpec.model_fields["schema_version"].default == "0.8.0"
     assert v0_1_0.SCHEMA_VERSION == "0.1.0"
     assert v0_2_0.SCHEMA_VERSION == "0.2.0"
 
@@ -1654,12 +1656,12 @@ def test_v0_3_0_native_preprocessing_stamp() -> None:
         applies_to=[_bold_ref()], base_pipeline=NotApplicable(), steps=[_brain_extraction()]
     )
     # A natively-written document: schema_version == written_under, no migration record.
-    assert prep.schema_version == "0.7.4"
-    assert prep.written_under == "0.7.4"
+    assert prep.schema_version == "0.8.0"
+    assert prep.written_under == "0.8.0"
     assert prep.written_under_inferred is False
     assert prep.migration is None
     # written_under survives a round-trip (normalized from None on input).
-    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.7.4"
+    assert Preprocessing.model_validate_json(prep.model_dump_json()).written_under == "0.8.0"
 
 
 def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
@@ -1667,7 +1669,7 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
     # (that is a native document, not a migrated one) -> rejected.
     with pytest.raises(ValidationError, match="written_under == schema_version"):
         Preprocessing(
-            written_under="0.7.4",
+            written_under="0.8.0",
             migration=pp_mod.MigrationInfo(migrated_from="0.2.0", migrator_version="x"),
             applies_to=[_bold_ref()],
             base_pipeline=NotApplicable(),
@@ -1677,3 +1679,184 @@ def test_v0_3_0_migration_record_requires_divergent_written_under() -> None:
 
 # Silence ruff: keep the unused import alive (it's a tested module).
 _ = pp_mod
+
+
+# ---------------------------------------------------------------------------
+# 0.8.0 (2026-11-25, DESIGN_prompt_schema_2026-11 D3)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("literal", "member"),
+    [
+        (pp_mod.MotionExpansion, "12param"),
+        (pp_mod.ScrubCriterion, "global_signal"),
+        (pp_mod.DistortionMethod, "fieldmap_less"),
+        (pp_mod.CoregistrationCostFunction, "other"),
+    ],
+)
+def test_0_8_0_adds_one_member_to_each_of_four_vocabularies(literal: Any, member: str) -> None:
+    import typing
+
+    assert member in typing.get_args(literal)
+    term = SpecifiedTerm[literal](verbatim=member, resolved=member, resolution="resolved")
+    assert term.resolved == member
+    with pytest.raises(ValidationError):
+        SpecifiedTerm[literal](verbatim="x", resolved="not_a_member", resolution="resolved")
+
+
+def test_0_8_0_keeps_every_member_a_0_7_4_document_could_hold() -> None:
+    """Additive: no member was renamed or removed."""
+    import typing
+
+    assert {"none", "6param", "friston24", "volterra"} <= set(
+        typing.get_args(pp_mod.MotionExpansion)
+    )
+    assert {"fd_power", "fd_jenkinson", "dvars", "bold_pct"} <= set(
+        typing.get_args(pp_mod.ScrubCriterion)
+    )
+    assert {
+        "reverse_phase_encoding",
+        "fieldmap",
+        "gradient_nonlinearity_correction",
+        "topup",
+        "fugue",
+        "gradunwarp",
+        "sdc_fieldmapless",
+        "other",
+    } <= set(typing.get_args(pp_mod.DistortionMethod))
+    assert {"correlation_ratio", "mutual_information", "boundary_based", "ssd"} <= set(
+        typing.get_args(pp_mod.CoregistrationCostFunction)
+    )
+
+
+def test_spatial_normalization_method_and_warp_are_specified_terms() -> None:
+    """B2: a tool or a transform class the vocabulary lacks keeps the paper's words."""
+    base = json.loads(_spatial_normalization().model_dump_json())
+    base["method"] = json.loads(
+        _pf_extracted_term("method", "ants", pp_mod.SpatialNormalizationMethod).model_dump_json()
+    )
+    unmapped = SpecifiedTerm(verbatim="a 9-parameter transform", resolved=None)
+    base["warp"] = json.loads(
+        _pf_extracted("warp", unmapped, SpecifiedTerm[pp_mod.WarpType]).model_dump_json()
+    )
+    sn = SpatialNormalization.model_validate(base)
+    assert sn.method.extraction.value.resolved == "ants"
+    assert sn.warp.extraction.value.verbatim == "a 9-parameter transform"
+    assert sn.warp.extraction.value.resolved is None
+    # the 0.7.4 shape, a bare member, is refused: old documents come through the migration
+    for field_name, bare in (("method", "ants"), ("warp", "nonlinear")):
+        payload = json.loads(json.dumps(base))
+        payload[field_name]["extraction"]["value"] = bare
+        with pytest.raises(ValidationError):
+            SpatialNormalization.model_validate(payload)
+    # a member the Literal lacks is refused inside the term too
+    payload = json.loads(json.dumps(base))
+    payload["method"]["extraction"]["value"]["resolved"] = "flirt"
+    with pytest.raises(ValidationError):
+        SpatialNormalization.model_validate(payload)
+
+
+def test_scrub_threshold_is_a_list_of_thresholds() -> None:
+    """C9: schwartz_2018 states 3 SD of the average signal and 0.5 mm of displacement."""
+    payload = json.loads(_scrub().model_dump_json())
+    payload["criterion"] = json.loads(
+        _pf_extracted_term_list(
+            "criterion", ["global_signal", "fd_power"], pp_mod.ScrubCriterion
+        ).model_dump_json()
+    )
+    payload["threshold"] = json.loads(
+        _pf_extracted("threshold", [3.0, 0.5], list[float]).model_dump_json()
+    )
+    scrub = Scrub.model_validate(payload)
+    assert scrub.threshold.extraction.value == [3.0, 0.5]
+    assert [t.resolved for t in scrub.criterion.extraction.value] == ["global_signal", "fd_power"]
+    # the lists need not have one length: a 0.7.4 document holds one number whatever the criteria
+    payload["threshold"]["extraction"]["value"] = [3.0]
+    assert Scrub.model_validate(payload).threshold.extraction.value == [3.0]
+    # the 0.7.4 shape, a bare number, is refused
+    payload["threshold"]["extraction"]["value"] = 3.0
+    with pytest.raises(ValidationError):
+        Scrub.model_validate(payload)
+
+
+def test_specified_term_resolution_takes_model_mapped() -> None:
+    """C7: the member is the extraction model's reading of the term, unconfirmed by a table."""
+    import typing
+
+    term = SpecifiedTerm[pp_mod.CoregistrationInterpolation](
+        verbatim="Lanczos interpolation", resolved="sinc", resolution="model_mapped"
+    )
+    again = SpecifiedTerm[pp_mod.CoregistrationInterpolation].model_validate_json(
+        term.model_dump_json()
+    )
+    assert again == term and again.resolution == "model_mapped"
+    values = typing.get_args(SpecifiedTerm.model_fields["resolution"].annotation)
+    assert values == ("resolved", "underspecified", "unrecognized", "model_mapped")
+    assert SpecifiedTerm().resolution == "unrecognized"  # the default, as before
+    with pytest.raises(ValidationError):
+        SpecifiedTerm(verbatim="x", resolution="guessed")
+
+
+_INFERRED_FROM_THE_PAPER = [
+    ("INFERRED_FROM_TEXT", DerivedBasis(source_field_ids=["step_order"], note="stated order"), 0.7),
+    ("INFERRED_FROM_CITATION", PriorPublicationBasis(citation="Behzadi et al. 2007"), 0.6),
+]
+
+
+@pytest.mark.parametrize(("step_class", "field_name", "value", "field_type"), _NON_FLAGGED_CASES)
+@pytest.mark.parametrize(("status", "basis", "confidence"), _INFERRED_FROM_THE_PAPER)
+def test_an_inference_from_the_paper_is_allowed_on_a_non_flagged_field(
+    step_class: type[BaseModel],
+    field_name: str,
+    value: Any,
+    field_type: Any,
+    status: str,
+    basis: Any,
+    confidence: float,
+) -> None:
+    """The inference_applicable gate is for INFERRED_DEFAULT only (B6): the same fields that
+    refuse a default (test_inferred_default_on_non_flagged_field_rejected) take a value that
+    follows from the paper's own text or from the method paper it cites."""
+    builders: dict[type[BaseModel], Callable[[], BaseModel]] = {
+        DistortionCorrection: _distortion_correction,
+        Coregistration: _coregistration,
+        ICADenoise: _ica_denoise,
+        NuisanceRegression: _nuisance_regression,
+        Despike: _despike,
+        Scrub: _scrub,
+        SpatialSmoothing: _spatial_smoothing,
+        CompCor: _compcor,
+    }
+    payload = json.loads(builders[step_class]().model_dump_json())
+    inferred = json.loads(
+        _pf_inferred(
+            field_name, value, field_type, basis=basis, confidence=confidence
+        ).model_dump_json()
+    )
+    inferred["inference"]["status"] = status
+    payload[field_name] = inferred
+    step = step_class.model_validate(payload)
+    assert getattr(step, field_name).inference.status == status
+
+
+def test_a_kb_sourced_field_takes_an_inference_from_the_text_without_a_kb_source() -> None:
+    """``inference_requires_kb_source`` (ruling 1, 2026-11-05) binds a default. A value that
+    follows from the paper's text has no KB entry to name."""
+    assert COREGISTRATION_FIELD_META["transform"].inference_requires_kb_source
+    payload = json.loads(_coregistration().model_dump_json())
+    inferred = json.loads(
+        _pf_inferred(
+            "transform",
+            _term("rigid"),
+            SpecifiedTerm[pp_mod.CoregistrationTransform],
+            basis=DerivedBasis(source_field_ids=["cost_function"], note="stated cost function"),
+            confidence=0.7,
+        ).model_dump_json()
+    )
+    payload["transform"] = inferred
+    with pytest.raises(ValidationError, match="sourced KB entry"):
+        Coregistration.model_validate(payload)  # as a default it needs the KB source
+    inferred["inference"]["status"] = "INFERRED_FROM_TEXT"
+    step = Coregistration.model_validate(payload)
+    assert step.transform.inference.status == "INFERRED_FROM_TEXT"

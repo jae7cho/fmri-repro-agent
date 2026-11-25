@@ -88,8 +88,8 @@ def test_migrate_fills_new_nuisance_fields_and_stamps():
 
 
 def test_migrate_current_doc_is_passthrough():
-    out = parse_any_version(migrate_to_current({"schema_version": "0.7.4", **_native_min()}))
-    assert out.schema_version == "0.7.4"
+    out = parse_any_version(migrate_to_current({"schema_version": "0.8.0", **_native_min()}))
+    assert out.schema_version == "0.8.0"
     assert out.migration is None  # a native/current doc is not marked migrated
 
 
@@ -119,11 +119,11 @@ def test_migrate_0_3_0_to_current_restamps():
     out = migrate_to_current(src)
 
     assert src == original  # read-only: input never mutated
-    assert out["schema_version"] == "0.7.4"
+    assert out["schema_version"] == "0.8.0"
     assert out["written_under"] == "0.3.0"  # a 0.3.0-stamped source is observed, not inferred
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.3.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.7.4/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.3.0->0.8.0/v1"
     # No nuisance-field mutation: the sentinel reason from _missing (not the migrator's
     # "field_not_in_schema_version") survives, proving the setdefault backfill did not fire.
     nuis = next(s for s in out["steps"] if s["kind"] == "nuisance_regression")
@@ -140,13 +140,13 @@ def test_migrate_0_4_0_to_current_restamps():
     original = copy.deepcopy(src)
     out = migrate_to_current(src)
     assert src == original  # read-only
-    assert out["schema_version"] == "0.7.4"
+    assert out["schema_version"] == "0.8.0"
     assert out["written_under"] == "0.4.0"
     assert out["written_under_inferred"] is False
     assert out["migration"]["migrated_from"] == "0.4.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.7.4/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.0->0.8.0/v1"
     # parses cleanly under the current model
-    assert parse_any_version(src).schema_version == "0.7.4"
+    assert parse_any_version(src).schema_version == "0.8.0"
 
 
 def _extracted_member(member: str) -> dict[str, Any]:
@@ -244,8 +244,8 @@ def test_migrate_0_4_1_to_0_5_0_lifts_all_five_retyped_fields_and_carries_false_
     }
     # the MISSING temporal method carries forward with NO value (false-missing, structurally retyped)
     assert "value" not in out["steps"][3]["method"]["extraction"]
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.4.1->0.8.0/v1"
 
     # the whole doc round-trips cleanly under the current model, verbatim preserved on every arm
     prep = parse_any_version(src)
@@ -277,7 +277,7 @@ def _native_min() -> dict[str, Any]:
 def test_parse_any_version_migrates_and_parses():
     prep = parse_any_version(_v020_doc_with_nuisance())
     assert isinstance(prep, Preprocessing)
-    assert prep.schema_version == "0.7.4"
+    assert prep.schema_version == "0.8.0"
     assert prep.written_under == "0.2.0" and prep.written_under_inferred is True
     assert prep.migration is not None and prep.migration.migrated_from == "0.2.0"
     nr = next(s for s in prep.steps if s.kind == "nuisance_regression")
@@ -346,7 +346,7 @@ def test_a_0_6_0_doc_with_tool_names_in_the_distortion_method_restamps_unchanged
     src = {"schema_version": "0.6.0", **_native_min(), "steps": [step]}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"]  # no doc transform
-    assert out["schema_version"] == "0.7.4" and out["written_under"] == "0.6.0"
+    assert out["schema_version"] == "0.8.0" and out["written_under"] == "0.6.0"
     dc = parse_any_version(src).steps[0]
     assert dc.method.extraction.value[0].resolved == "topup" and dc.tool is None
 
@@ -356,7 +356,7 @@ def test_a_0_6_1_doc_restamps_unchanged_to_0_6_2():
     src = {"schema_version": "0.6.1", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.1"
-    assert out["schema_version"] == "0.7.4"
+    assert out["schema_version"] == "0.8.0"
 
 
 def test_a_0_6_2_doc_restamps_unchanged_to_0_6_3_without_pass_type():
@@ -364,8 +364,8 @@ def test_a_0_6_2_doc_restamps_unchanged_to_0_6_3_without_pass_type():
     src = {"schema_version": "0.6.2", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.2"
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.2->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.2->0.8.0/v1"
     prep = parse_any_version(src)
     tf = [s for s in prep.steps if s.kind == "temporal_filtering"]
     assert all(s.pass_type is None for s in tf)
@@ -377,8 +377,8 @@ def test_a_0_6_3_doc_restamps_unchanged_to_0_7_0_every_value_applying_to_all():
     src = {"schema_version": "0.6.3", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.6.3"
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.3->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.6.3->0.8.0/v1"
     prep = parse_any_version(src)
     assert prep.step_order_parts is None
     for step in prep.steps:
@@ -392,7 +392,7 @@ def test_a_0_7_0_doc_restamps_unchanged_to_0_7_1() -> None:
     src = {"schema_version": "0.7.0", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.7.0"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.0->0.7.4/v1"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.0->0.8.0/v1"
     span = {"start": 0, "end": 4, "text": "text"}
     part = {"kinds": ["scrub", "despike"], "applies_to": "Part III", "spans": [span]}
     prep = parse_any_version({**src, "step_order_source": "by_part", "step_order_parts": [part]})
@@ -404,8 +404,8 @@ def test_a_0_7_1_doc_restamps_unchanged_to_0_7_2() -> None:
     src = {"schema_version": "0.7.1", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.7.1"
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.1->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.1->0.8.0/v1"
 
 
 def test_a_0_7_2_doc_restamps_unchanged_to_0_7_3() -> None:
@@ -413,8 +413,8 @@ def test_a_0_7_2_doc_restamps_unchanged_to_0_7_3() -> None:
     src = {"schema_version": "0.7.2", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.7.2"
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.2->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.2->0.8.0/v1"
 
 
 def test_a_0_7_3_doc_restamps_unchanged_to_0_7_4() -> None:
@@ -422,5 +422,259 @@ def test_a_0_7_3_doc_restamps_unchanged_to_0_7_4() -> None:
     src = {"schema_version": "0.7.3", **_native_min()}
     out = migrate_to_current(src)
     assert out["steps"] == src["steps"] and out["written_under"] == "0.7.3"
-    assert out["schema_version"] == "0.7.4"
-    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.3->0.7.4/v1"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.3->0.8.0/v1"
+
+
+# --- 0.7.4 -> 0.8.0 (2026-11-25, DESIGN_prompt_schema_2026-11 D3) -----------------------------
+
+
+def _term_dict(member: str) -> dict[str, Any]:
+    return {"verbatim": member, "resolved": member, "resolution": "resolved"}
+
+
+def _varied(field_id: str, *parts: tuple[Any, str]) -> dict[str, Any]:
+    """A 0.7.x VARIED field: one (value, applies_to) pair per part of the data."""
+    return {
+        "field_id": field_id,
+        "extraction": {
+            "status": "VARIED",
+            "variants": [
+                {
+                    "value": value,
+                    "spans": [{"start": i, "end": i + 4, "text": "text"}],
+                    "applies_to": applies_to,
+                    "confidence": 0.9,
+                }
+                for i, (value, applies_to) in enumerate(parts)
+            ],
+        },
+        "inference": {"status": "NOT_APPLICABLE"},
+    }
+
+
+def _spatial_normalization_074(method: dict[str, Any], warp: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "kind": "spatial_normalization",
+        "target_space": {
+            "field_id": "target_space",
+            **_extracted_member("MNI152NLin6Asym"),
+            "extraction": {
+                **_extracted_member("MNI152NLin6Asym")["extraction"],
+                "value": _term_dict("MNI152NLin6Asym"),
+            },
+        },
+        "resolution_mm": _missing("resolution_mm"),
+        "method": method,
+        "warp": warp,
+        "transform_type": _missing("transform_type"),
+        "interpolation": _missing("interpolation"),
+        "regularization": _missing("regularization"),
+    }
+
+
+def _scrub_074(threshold: dict[str, Any]) -> dict[str, Any]:
+    criterion = {
+        "field_id": "criterion",
+        **_extracted_member("fd_power"),
+    }
+    criterion["extraction"] = {
+        **criterion["extraction"],
+        "value": [_term_dict("fd_power"), _term_dict("dvars")],
+    }
+    return {
+        "kind": "scrub",
+        "criterion": criterion,
+        "threshold": threshold,
+        "remediation": _missing("remediation"),
+        "interpolation_method": _missing("interpolation_method"),
+    }
+
+
+def test_a_0_7_4_doc_restamps_to_0_8_0_and_keeps_steps_the_hop_does_not_name() -> None:
+    """0.7.4 -> 0.8.0: the two transforms touch spatial_normalization and scrub only."""
+    src = {"schema_version": "0.7.4", **_native_min()}
+    original = copy.deepcopy(src)
+    out = migrate_to_current(src)
+    assert src == original
+    assert out["steps"] == src["steps"] and out["written_under"] == "0.7.4"
+    assert out["schema_version"] == "0.8.0"
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.7.4->0.8.0/v1"
+
+
+def test_0_8_0_lifts_spatial_normalization_method_and_warp_to_specified_terms() -> None:
+    """B2: a bare member becomes a SpecifiedTerm on the extracted arm and on each part of a varied
+    value. A field with no value, and a field that is a term already, are left as they are."""
+    method = {"field_id": "method", **_extracted_member("fnirt")}
+    warp = _varied("warp", ("affine", "dataset A"), ("nonlinear", "dataset B"))
+    src = {
+        "schema_version": "0.7.4",
+        **_native_min(),
+        "steps": [_spatial_normalization_074(method, warp)],
+    }
+    original = copy.deepcopy(src)
+    out = migrate_to_current(src)
+    assert src == original  # read-only
+    step = out["steps"][0]
+    assert step["method"]["extraction"]["value"] == _term_dict("fnirt")
+    assert [v["value"] for v in step["warp"]["extraction"]["variants"]] == [
+        _term_dict("affine"),
+        _term_dict("nonlinear"),
+    ]
+    assert step["target_space"] == src["steps"][0]["target_space"]  # a term since 0.5.0
+    assert step["resolution_mm"] == _missing("resolution_mm")
+    sn = parse_any_version(src).steps[0]
+    assert sn.method.extraction.value.resolved == "fnirt"
+    assert [v.value.resolved for v in sn.warp.extraction.variants] == ["affine", "nonlinear"]
+    # the 0.7.4 run records: the extractor never targeted the two fields, so nothing is lifted
+    untargeted = _spatial_normalization_074(_missing("method"), _missing("warp"))
+    out = migrate_to_current({"schema_version": "0.7.4", **_native_min(), "steps": [untargeted]})
+    assert out["steps"][0]["method"] == _missing("method")
+    assert out["steps"][0]["warp"] == _missing("warp")
+
+
+def test_0_8_0_makes_the_scrub_threshold_a_list() -> None:
+    """C9: the threshold is a list. A stored number becomes a one-item list; the criteria
+    beside it are untouched, so two criteria and one number stay two and one."""
+    threshold = {"field_id": "threshold", **_extracted_member("0.5")}
+    threshold["extraction"]["value"] = 0.5
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(threshold)]}
+    original = copy.deepcopy(src)
+    out = migrate_to_current(src)
+    assert src == original
+    step = out["steps"][0]
+    assert step["threshold"]["extraction"]["value"] == [0.5]
+    assert step["criterion"] == src["steps"][0]["criterion"]
+    scrub = parse_any_version(src).steps[0]
+    assert scrub.threshold.extraction.value == [0.5]
+    assert [t.resolved for t in scrub.criterion.extraction.value] == ["fd_power", "dvars"]
+    # a missing threshold keeps no value
+    out = migrate_to_current(
+        {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(_missing("threshold"))]}
+    )
+    assert out["steps"][0]["threshold"] == _missing("threshold")
+
+
+def test_0_8_0_lifts_each_part_of_a_varied_threshold_and_keeps_a_part_with_no_value() -> None:
+    varied = _varied("threshold", (0.9, "task fMRI"), (0.2, "resting-state fMRI"))
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(varied)]}
+    out = migrate_to_current(src)
+    assert [v["value"] for v in out["steps"][0]["threshold"]["extraction"]["variants"]] == [
+        [0.9],
+        [0.2],
+    ]
+    scrub = parse_any_version(src).steps[0]
+    assert [v.value for v in scrub.threshold.extraction.variants] == [[0.9], [0.2]]
+    # the compared-models entry holds no value, and still holds none
+    compared = _varied("threshold", (None, "varied across compared models"))
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(compared)]}
+    out = migrate_to_current(src)
+    assert out["steps"][0]["threshold"]["extraction"]["variants"][0]["value"] is None
+    assert parse_any_version(src).steps[0].threshold.extraction.variants[0].value is None
+
+
+def test_the_0_8_0_hop_runs_after_the_earlier_ones_on_an_older_document() -> None:
+    """A 0.5.1 scrub step: the criterion is a bare member (lifted in 0.5.2, listed in 0.6.0) and
+    the threshold a number (listed in 0.8.0)."""
+    threshold = {"field_id": "threshold", **_extracted_member("0.3")}
+    threshold["extraction"]["value"] = 0.3
+    step = {
+        "kind": "scrub",
+        "criterion": {"field_id": "criterion", **_extracted_member("fd_power")},
+        "threshold": threshold,
+        "remediation": _missing("remediation"),
+        "interpolation_method": _missing("interpolation_method"),
+    }
+    src = {"schema_version": "0.5.1", **_native_min(), "steps": [step]}
+    out = migrate_to_current(src)
+    assert out["steps"][0]["criterion"]["extraction"]["value"] == [_term_dict("fd_power")]
+    assert out["steps"][0]["threshold"]["extraction"]["value"] == [0.3]
+    assert out["migration"]["migrator_version"] == "spec.migrations/0.5.1->0.8.0/v1"
+    assert parse_any_version(src).steps[0].threshold.extraction.value == [0.3]
+
+
+def test_migrating_a_0_8_0_document_changes_nothing() -> None:
+    """A current document is returned as it is (migrate_to_current copies it and stops), so its
+    list is not wrapped again and its term not lifted again."""
+    threshold = {"field_id": "threshold", **_extracted_member("0.5")}
+    threshold["extraction"]["value"] = [3.0, 0.5]
+    method = {"field_id": "method", **_extracted_member("fnirt")}
+    method["extraction"]["value"] = _term_dict("fnirt")
+    steps = [_scrub_074(threshold), _spatial_normalization_074(method, _missing("warp"))]
+    src = {"schema_version": "0.8.0", **_native_min(), "steps": steps}
+    assert migrate_to_current(src) == src
+    assert parse_any_version(src).steps[0].threshold.extraction.value == [3.0, 0.5]
+
+
+def test_a_0_7_4_document_that_already_holds_the_0_8_0_shapes_is_read_as_it_is() -> None:
+    """A re-check or a promotion run by 0.8.0 code writes a list threshold into a stored record
+    whose stamp is older. The lifts leave a list, and a term, as they are."""
+    threshold = {"field_id": "threshold", **_extracted_member("0.5")}
+    threshold["extraction"]["value"] = [3.0, 0.5]
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(threshold)]}
+    assert migrate_to_current(src)["steps"][0]["threshold"]["extraction"]["value"] == [3.0, 0.5]
+    assert parse_any_version(src).steps[0].threshold.extraction.value == [3.0, 0.5]
+    varied = _varied("threshold", ([0.9], "task fMRI"), (0.2, "resting-state fMRI"))
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [_scrub_074(varied)]}
+    out = migrate_to_current(src)
+    assert [v["value"] for v in out["steps"][0]["threshold"]["extraction"]["variants"]] == [
+        [0.9],
+        [0.2],
+    ]
+    method = {"field_id": "method", **_extracted_member("fnirt")}
+    method["extraction"]["value"] = _term_dict("fnirt")
+    step = _spatial_normalization_074(method, _missing("warp"))
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [step]}
+    assert migrate_to_current(src)["steps"][0]["method"]["extraction"]["value"] == _term_dict(
+        "fnirt"
+    )
+
+
+def test_0_8_0_keeps_the_part_of_a_varied_method_that_holds_no_value() -> None:
+    """The compared-models entry of a varied value holds none (0.7.0), and is the only part then.
+    The term lift must not make a term of it."""
+    compared = _varied("method", (None, "varied across compared models"))
+    step = _spatial_normalization_074(compared, _missing("warp"))
+    src = {"schema_version": "0.7.4", **_native_min(), "steps": [step]}
+    out = migrate_to_current(src)
+    assert out["steps"][0]["method"]["extraction"]["variants"][0]["value"] is None
+    assert parse_any_version(src).steps[0].method.extraction.variants[0].value is None
+
+
+@pytest.mark.parametrize(
+    "status", ["INFERRED_DEFAULT", "INFERRED_FROM_TEXT", "INFERRED_FROM_CITATION"]
+)
+def test_the_lift_helpers_cover_every_inferred_status(status: str) -> None:
+    """No 0.7.4 document holds the two statuses 0.8.0 adds; a later structural hop will meet them,
+    and the helpers lift an inferred value and its alternatives whatever the status."""
+    from fmri_repro.spec.migrations import _lift_to_list, _lift_to_specified_term
+
+    def field(value: Any, alternative: Any) -> dict[str, Any]:
+        return {
+            "extraction": {"status": "MISSING_FROM_PAPER"},
+            "inference": {
+                "status": status,
+                "value": value,
+                "alternative_inferences": [{"value": alternative}],
+            },
+        }
+
+    listed = field(0.5, 0.2)
+    _lift_to_list(listed)
+    assert listed["inference"]["value"] == [0.5]
+    assert listed["inference"]["alternative_inferences"][0]["value"] == [0.2]
+    termed = field("ants", "fnirt")
+    _lift_to_specified_term(termed)
+    assert termed["inference"]["value"] == _term_dict("ants")
+    assert termed["inference"]["alternative_inferences"][0]["value"] == _term_dict("fnirt")
+    # a second pass changes nothing: a list is not wrapped again, a term not lifted again
+    _lift_to_list(listed)
+    _lift_to_specified_term(termed)
+    assert listed["inference"]["value"] == [0.5]
+    assert listed["inference"]["alternative_inferences"][0]["value"] == [0.2]
+    assert termed["inference"]["value"] == _term_dict("ants")
+    # an arm with no value is left alone
+    left = {"extraction": {"status": "MISSING_FROM_PAPER"}, "inference": {"status": "LEFT_MISSING"}}
+    _lift_to_list(left)
+    _lift_to_specified_term(left)
+    assert left["inference"] == {"status": "LEFT_MISSING"}

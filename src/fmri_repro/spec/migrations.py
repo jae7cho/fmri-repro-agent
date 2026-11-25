@@ -44,7 +44,12 @@ import json
 from typing import Any
 
 from fmri_repro.spec.preprocessing import SCHEMA_VERSION, Preprocessing
-from fmri_repro.spec.provenance import LeftMissing, MissingFromPaper, ProvenancedField
+from fmri_repro.spec.provenance import (
+    INFERRED_STATUSES,
+    LeftMissing,
+    MissingFromPaper,
+    ProvenancedField,
+)
 
 MIGRATION_FLOOR = "0.2.0"
 # Invalid as an intensity-normalization convention value from 0.2.0 on; its presence there
@@ -71,20 +76,38 @@ _LISTED_IN_0_6_0: dict[str, tuple[str, ...]] = {
 
 
 def _lift_to_list(field: Any) -> None:
-    """In place: wrap a scalar value in a one-item list on whichever arm carries a value."""
+    """In place: wrap a scalar value in a one-item list on whichever arm carries a value: an
+    extracted value, each part of a varied one (0.7.0; a part with no value, the compared-models
+    entry, keeps none), an inferred value and its alternatives."""
     if not isinstance(field, dict):
         return
     ext = field.get("extraction")
     if isinstance(ext, dict) and ext.get("status") == "EXTRACTED":
         if not isinstance(ext.get("value"), list):
             ext["value"] = [ext.get("value")]
+    if isinstance(ext, dict) and ext.get("status") == "VARIED":
+        for variant in ext.get("variants") or []:
+            if isinstance(variant, dict) and variant.get("value") is not None:
+                if not isinstance(variant["value"], list):
+                    variant["value"] = [variant["value"]]
     inf = field.get("inference")
-    if isinstance(inf, dict) and inf.get("status") == "INFERRED_DEFAULT":
+    if isinstance(inf, dict) and inf.get("status") in INFERRED_STATUSES:
         if not isinstance(inf.get("value"), list):
             inf["value"] = [inf.get("value")]
         for alt in inf.get("alternative_inferences") or []:
             if isinstance(alt, dict) and not isinstance(alt.get("value"), list):
                 alt["value"] = [alt.get("value")]
+
+
+# 0.7.4 -> 0.8.0 (STRUCTURAL; 2026-11-25, DESIGN_prompt_schema_2026-11 D3). Kind -> fields.
+#: Retyped from a bare Literal member to SpecifiedTerm[X] (B2).
+_RETYPED_IN_0_8_0: dict[str, tuple[str, ...]] = {
+    "spatial_normalization": ("method", "warp"),
+}
+#: One number became a list of thresholds (C9).
+_LISTED_IN_0_8_0: dict[str, tuple[str, ...]] = {
+    "scrub": ("threshold",),
+}
 
 
 _RETYPED_IN_0_5_2: dict[str, tuple[str, ...]] = {
@@ -175,18 +198,24 @@ def _lift_value(v: Any) -> Any:
 
 def _lift_to_specified_term(field: Any) -> None:
     """In place: rewrite a retyped field's bare-member value into the ``SpecifiedTerm`` struct,
-    on whichever provenance arm carries a value (Extracted / InferredDefault + its alternatives).
+    on whichever provenance arm carries a value (Extracted, each part of a Varied, an inferred
+    value and its alternatives).
 
     A field carrying NO value (MissingFromPaper / DeferredToCitation / LeftMissing) is left
     untouched — there is nothing to lift, which is exactly why a historical false-missing cannot
-    be repaired here (see the hop comment in :func:`migrate_to_current`)."""
+    be repaired here (see the hop comment in :func:`migrate_to_current`). So is a part of a varied
+    value that holds none (the compared-models entry, 0.7.0)."""
     if not isinstance(field, dict):
         return
     ext = field.get("extraction")
     if isinstance(ext, dict) and ext.get("status") == "EXTRACTED":
         ext["value"] = _lift_value(ext.get("value"))
+    if isinstance(ext, dict) and ext.get("status") == "VARIED":
+        for variant in ext.get("variants") or []:
+            if isinstance(variant, dict) and variant.get("value") is not None:
+                variant["value"] = _lift_value(variant["value"])
     inf = field.get("inference")
-    if isinstance(inf, dict) and inf.get("status") == "INFERRED_DEFAULT":
+    if isinstance(inf, dict) and inf.get("status") in INFERRED_STATUSES:
         inf["value"] = _lift_value(inf.get("value"))
         for alt in inf.get("alternative_inferences") or []:
             if isinstance(alt, dict):
@@ -322,7 +351,33 @@ def migrate_to_current(doc: dict[str, Any]) -> dict[str, Any]:
     # found no local PDF and no Europe PMC full text for the cited source. A 0.7.3 document's
     # deferrals parse with it False.
     #
-    # The re-stamp hops and the two transforms fall through to the single stamp write below;
+    # 0.7.4 -> 0.8.0 (STRUCTURAL; 2026-11-25, DESIGN_prompt_schema_2026-11 D3, the author's rulings
+    # C1, C7 and C9). Two transforms:
+    #   - SpatialNormalization.method and .warp retype from a bare Literal member to SpecifiedTerm
+    #     (B2). The extractor has never targeted either field, so a stored run record carries them
+    #     without a value and the lift finds nothing; a hand-built document's bare member lifts
+    #     losslessly, as in 0.5.0.
+    #   - Scrub.threshold becomes a list of thresholds (C9). A stored number becomes
+    #     a one-item list on the extracted arm and on each part of a varied value (the helper
+    #     lifts an inferred value too; no document holds one here, the field refusing a default).
+    #     Where the step lists several criteria the document never said which one the number
+    #     belonged to, and the migrated document does not say so either.
+    # The rest of 0.8.0 is additive and needs no transform: the members 12param (MotionExpansion),
+    # global_signal (ScrubCriterion), fieldmap_less (DistortionMethod) and other
+    # (CoregistrationCostFunction); the resolution value model_mapped on SpecifiedTerm; the
+    # inference statuses INFERRED_FROM_TEXT and INFERRED_FROM_CITATION. A 0.7.4 document carries
+    # none of them.
+    if _version_tuple(source) < _version_tuple("0.8.0"):
+        for step in out.get("steps", []):
+            if not isinstance(step, dict):
+                continue
+            kind = step.get("kind", "")
+            for fid in _RETYPED_IN_0_8_0.get(kind, ()):
+                _lift_to_specified_term(step.get(fid))
+            for fid in _LISTED_IN_0_8_0.get(kind, ()):
+                _lift_to_list(step.get(fid))
+
+    # The re-stamp hops and the transforms fall through to the single stamp write below;
     # migrator_version is f-string-generated from SCHEMA_VERSION.
     out["schema_version"] = SCHEMA_VERSION
     out["written_under"] = source

@@ -52,6 +52,7 @@ from fmri_repro.spec.preprocessing import (
     Segmentation,
     SliceTimeCorrection,
     SpatialNormalization,
+    SpatialNormalizationMethod,
     SpatialSmoothing,
     SpecifiedTerm,
     SurfaceProjection,
@@ -61,6 +62,7 @@ from fmri_repro.spec.preprocessing import (
     TemporalFiltering,
     TemporalStandardization,
     TemporalStandardizationMethod,
+    WarpType,
 )
 from fmri_repro.spec.provenance import (
     APPLIES_TO_ALL,
@@ -83,11 +85,11 @@ from pydantic import BaseModel, Field, model_validator
 
 from extractor_mvp.coverage_fields import (
     COMPOUND_TERMS,
-    OTHER_OFFERED_WITHOUT_MEMBER,
     SPECS_BY_KIND,
     TERM_RULES,
     rule_hits,
     rules_name,
+    rules_resolve,
 )
 from extractor_mvp.extraction_result import FieldExtractionResult, StepFieldResult
 from extractor_mvp.motion_guard import (
@@ -728,6 +730,21 @@ def _process_field(
                     None,
                 )
             value = number
+        elif value_kind == "number_list":
+            # schema 0.8.0 (the scrub thresholds): the field is a list, and the prompt line still
+            # asks for one number, so one number is read, exactly as before. A first build split
+            # the string on commas and "and"; its review found a citation year and a count of
+            # volumes stored as thresholds ("0.5 mm (Power et al., 2012)", "0.5 mm, 5 contiguous
+            # volumes"), each of them in the quote. Several numbers need a format the prompt
+            # states (DESIGN_prompt_schema_2026-11 D4).
+            number = _parse_number(fe.value, integer=False)
+            if number is None:
+                return (
+                    _missing_pf(field_id, t, "value_not_numeric"),
+                    ExtractionDiagnostic(dotted, "value_not_numeric", fe.value, fe.verbatim_quote),
+                    None,
+                )
+            value = [float(number)]
         elif value_kind == "band":
             band = _parse_band(fe.value)
             if band is None:
@@ -1271,11 +1288,6 @@ def _resolve_term(
     phrase = _other_phrase(verbatim)
     if phrase is not None and "other" in members:
         return SpecifiedTerm(verbatim=phrase, resolved="other", resolution="resolved")
-    if phrase is not None and dotted in OTHER_OFFERED_WITHOUT_MEMBER:
-        # D2b (2026-11-25): the prompt line offers "other" and the vocabulary has no such member
-        # (the coregistration cost function, until schema 0.8.0). The model has said that no member
-        # fits, so an alias inside the phrase must not claim one.
-        return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
     # 2026-11-24 (the resolver audit): an exact member token is that member, before any alias of
     # another member can claim it, unless a dated ruling sends it elsewhere; then the field's
     # count and modifier rules (TERM_RULES), then the alias table.
@@ -1283,10 +1295,9 @@ def _resolve_term(
     if verbatim in members:
         target = rules.exact_overrides.get(verbatim, verbatim) if rules else verbatim
         return SpecifiedTerm(verbatim=verbatim, resolved=target, resolution="resolved")
-    if rules:
-        for member, patterns in rules.require_all.items():
-            if all(rule_hits(p, verbatim) for p in patterns):
-                return SpecifiedTerm(verbatim=verbatim, resolved=member, resolution="resolved")
+    by_rule = rules_resolve(dotted or "", verbatim)
+    if by_rule:
+        return SpecifiedTerm(verbatim=verbatim, resolved=by_rule[0], resolution="resolved")
     if synonyms is not None:
         syns, under = synonyms
         res = resolve_to_literal(verbatim, syns, under, None)
@@ -1701,8 +1712,9 @@ def _assemble(
     spatial = SpatialNormalization(
         target_space=pf["target_space"],
         resolution_mm=pf["resolution_mm"],
-        method=_missing_pf("method", str, untargeted),
-        warp=_missing_pf("warp", str, untargeted),
+        # schema 0.8.0: the two fields are terms now; no call asks for them yet
+        method=_missing_pf("method", SpecifiedTerm[SpatialNormalizationMethod], untargeted),
+        warp=_missing_pf("warp", SpecifiedTerm[WarpType], untargeted),
         transform_type=_missing_pf("transform_type", str, untargeted),
         interpolation=_missing_pf("interpolation", str, untargeted),
         regularization=_missing_pf("regularization", str, untargeted),

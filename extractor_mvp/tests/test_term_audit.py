@@ -294,7 +294,7 @@ def test_wordings_are_listed_with_today_s_member_and_their_flags(tmp_path: Path)
         "paper_c",
         _step(
             "nuisance_regression",
-            # stored by an older resolver; today the words keep no member
+            # stored by an older resolver as 6param; today the rule gives 12param (schema 0.8.0)
             motion_expansion=(
                 _term("6 parameters and their first order derivatives", "6param"),
                 nothing,
@@ -344,8 +344,8 @@ def test_wordings_are_listed_with_today_s_member_and_their_flags(tmp_path: Path)
     # "partial": the alias covers part of the wording; a whole alias carries no flag
     assert a.wordings[("brain_extraction.method", "FSL BET v5", "bet")]["flags"] == ["partial"]
     assert a.wordings[("brain_extraction.method", "BET", "bet")]["flags"] == []
-    stale = a.wordings[(field, "6 parameters and their first order derivatives", None)]
-    assert stale["stale"] == {"6param"}
+    stale = a.wordings[(field, "6 parameters and their first order derivatives", "12param")]
+    assert stale["stale"] == {"6param"} and stale["flags"] == ["by rule"]
     assert a.wordings[(field, "volterra", "friston24")]["flags"] == ["token", "sent elsewhere"]
     by_rule = "six parameters, their derivatives and squares"
     assert a.wordings[(field, by_rule, "friston24")]["flags"] == ["by rule"]
@@ -515,6 +515,116 @@ def test_a_list_item_that_borrowed_its_head_noun_is_flagged(tmp_path: Path) -> N
     assert a.wordings[(field, "white", "white_matter")]["flags"] == ["completed"]
     assert a.wordings[(field, "white", "white_matter")]["papers"] == {"paper_a"}
     assert a.wordings[(field, "white", None)]["papers"] == {"paper_b"}
+
+
+def test_a_member_the_model_mapped_is_not_called_stale(tmp_path: Path) -> None:
+    """Schema 0.8.0 (C7): ``model_mapped`` marks a member that is the model's reading of the
+    words. The table does not confirm it, and the record is not out of date for that: the audit
+    lists the words under the model's member, as an alias candidate. reresolve_terms keeps such a
+    term as stored, and the audit said "stale" about the same term (the second review)."""
+    mapped = {
+        "verbatim": "normalised cross-information",
+        "resolved": "mutual_information",
+        "resolution": "model_mapped",
+    }
+    _write(tmp_path, "paper_a", _step("coregistration", cost_function=(mapped, [])))
+    # control: the same words stored as a table resolution are out of date
+    _write(
+        tmp_path,
+        "paper_b",
+        _step("coregistration", cost_function=(_term("normalised cross-entropy", "ssd"), [])),
+    )
+    a = ta.audit([tmp_path])
+    field = "coregistration.cost_function"
+    row = a.model_wordings[(field, "normalised cross-information", "mutual_information")]
+    assert row["flags"] == ["the model's member"] and row["stale"] == set()
+    assert row["resolution"] == "model_mapped"
+    assert (field, "normalised cross-information", "mutual_information") not in a.wordings
+    assert a.wordings[(field, "normalised cross-entropy", None)]["stale"] == {"ssd"}
+    text = ta.render(a, [tmp_path])
+    assert "| normalised cross-information | mutual_information | 1 | the model's member |" in text
+    # the trace says what it cannot find
+    assert "A member with no alias has none to find: `other`, and the members" in text
+    # Where the table resolves the words itself, the row stands under the table's member. A
+    # model's member that differs is named, and is not "stale": reresolve_terms keeps it, so that
+    # word would never clear. One that agrees leaves no mark.
+    other = tmp_path / "other"
+    differs = {"verbatim": "mutual information", "resolved": "ssd", "resolution": "model_mapped"}
+    agrees = {"verbatim": "BBR", "resolved": "boundary_based", "resolution": "model_mapped"}
+    nothing = {"verbatim": "zzz", "resolved": None, "resolution": "model_mapped"}
+    _write(other, "paper_c", _step("coregistration", cost_function=(differs, [])))
+    _write(other, "paper_d", _step("coregistration", cost_function=(agrees, [])))
+    _write(other, "paper_e", _step("coregistration", cost_function=(nothing, [])))
+    b = ta.audit([other])
+    row = b.wordings[(field, "mutual information", "mutual_information")]
+    assert row["model"] == {"ssd"} and row["stale"] == set() and row["flags"] == []
+    confirmed = b.wordings[(field, "BBR", "boundary_based")]
+    assert confirmed["model"] == set() and confirmed["stale"] == set()
+    # a term marked model_mapped that holds no member is an unresolved term like any other
+    assert b.wordings[(field, "zzz", None)]["resolution"] == "unrecognized"
+    assert "| mutual information | mutual_information | 1 | the model read ssd |" in ta.render(
+        b, [other]
+    )
+    # A member the model mapped to "other" is the model's reading of the paper's words too, not
+    # an "other (phrase)" term whose wrapper is lost: where the table resolves the words, the
+    # row stands under the table's member (the fourth review).
+    third = tmp_path / "third"
+    as_other = {"verbatim": "BBR", "resolved": "other", "resolution": "model_mapped"}
+    phrase = {"verbatim": "normalised cross-entropy", "resolved": "other", "resolution": "resolved"}
+    _write(third, "paper_f", _step("coregistration", cost_function=(as_other, [])))
+    _write(third, "paper_g", _step("coregistration", cost_function=(phrase, [])))
+    c = ta.audit([third])
+    assert c.wordings[(field, "BBR", "boundary_based")]["model"] == {"other"}
+    # control: an "other (phrase)" term the table did not write stays under other
+    assert (field, "normalised cross-entropy", "other") in c.wordings
+    assert c.model_wordings == {}
+
+
+def test_the_model_s_member_is_a_row_of_its_own(tmp_path: Path) -> None:
+    """Two papers hold the same words under the same member. In one the member is the model's
+    (``model_mapped``, and the table resolves the words to nothing); in the other the extractor
+    or the table reached it. As one row, the flags were those of whichever paper was read first
+    (the fifth review): the model's mapping went unflagged, or a table reading was called the
+    model's and lost its own flag. Both orders are run."""
+    field = "distortion_correction.method"
+    nothing: list[dict[str, Any]] = []
+    words = "fieldmap-less susceptibility"
+    for mapped_paper, plain_paper in (("paper_a", "paper_b"), ("paper_b", "paper_a")):
+        root = tmp_path / f"{mapped_paper}_holds_the_model_s"
+        # an "other (phrase)" term, and the same words the model mapped to other
+        as_other = {
+            "verbatim": "in-house unwarping",
+            "resolved": "other",
+            "resolution": "model_mapped",
+        }
+        phrase = _term("in-house unwarping", "other")
+        _write(root / "o", mapped_paper, _step("distortion_correction", method=(as_other, nothing)))
+        _write(root / "o", plain_paper, _step("distortion_correction", method=(phrase, nothing)))
+        a = ta.audit([root / "o"])
+        key = (field, "in-house unwarping", "other")
+        assert a.model_wordings[key]["papers"] == {mapped_paper}
+        assert a.model_wordings[key]["flags"] == ["the model's member"]
+        assert a.wordings[key]["papers"] == {plain_paper} and a.wordings[key]["flags"] == []
+        text = ta.render(a, [root / "o"])
+        by_model_row = "| in-house unwarping | other | 1 | the model's member |"
+        by_table_row = "| in-house unwarping | other | 1 |  |"
+        # both rows, the table's first (one paper each), whichever paper was read first
+        assert text.index(by_table_row) < text.index(by_model_row)
+        # a list item the table completes, and the same words the model mapped
+        by_model = {"verbatim": words, "resolved": "fieldmap_less", "resolution": "model_mapped"}
+        completed = [_term(words, None), _term("fieldmap distortion correction", "fieldmap")]
+        _write(root / "l", mapped_paper, _step("distortion_correction", method=(by_model, nothing)))
+        _write(root / "l", plain_paper, _step("distortion_correction", method=(completed, nothing)))
+        b = ta.audit([root / "l"])
+        key = (field, words, "fieldmap_less")
+        assert b.model_wordings[key]["papers"] == {mapped_paper}
+        assert b.model_wordings[key]["flags"] == ["the model's member"]
+        assert b.model_wordings[key]["stale"] == set()
+        assert b.wordings[key]["papers"] == {plain_paper}
+        assert b.wordings[key]["flags"] == ["completed"] and b.wordings[key]["stale"] == {"None"}
+        text = ta.render(b, [root / "l"])
+        assert f"| {words} | fieldmap_less | 1 | the model's member |" in text
+        assert f"| {words} | fieldmap_less | 1 | completed; stale: stored None |" in text
 
 
 def test_the_command_writes_the_report(tmp_path: Path) -> None:
