@@ -6,6 +6,10 @@ extraction error list (DEVLOG.md, entry 2026-11-24 (5)). Part C lists the decisi
 author. Part D is the build order, the checks and the run. No prompt, schema, hash pin or code has
 been changed for this note, and no model call has been made.
 
+**Since then:** D1 and D1b (2026-11-24) and D2b (2026-11-25) are done; Part D says what each
+found or built. D1 was read-only; D1b and D2b changed code, scripts and tests. No prompt, schema
+or hash pin has changed, and no model call has been made.
+
 The change is one vintage event. Every prompt it touches is re-pinned together, so the run after
 it measures one prompt set, not a sequence of them.
 
@@ -17,6 +21,19 @@ it measures one prompt set, not a sequence of them.
 > inference arm. The audit patch's text cleanups are folded in, its effort switch left out.
 > C6: "why does it cost so much? no run yet". No run is planned; the cost breakdown and the
 > savings options are in C6.
+
+**2026-11-25, by the author, on the three decisions D1 left (C7 to C9):**
+
+> "C7 ok, C8 ok, C9 ok. start D2b"
+
+- **C7:** the recommendation stands. The model returns the paper's term and the member it reads
+  the term as, and the alias table checks that member. It is built in D3 (schema) and D4
+  (prompts).
+- **C8:** the main text wins over a supplement's generated summary (B13, in D4).
+- **C9:** every addition is accepted. Two of its items gave two options and no recommendation,
+  and stay open: "N3" as an alias of `n4` (keep or remove), and smoothing_approach (defined in the
+  prompt, or left to the inference pass). They are listed again under C10.
+- **D2b** is built (Part D). What it leaves for the author is C10 to C14.
 
 ## Part A: facts, read-only, at HEAD `0d9122c`
 
@@ -547,7 +564,7 @@ extraction arm (the realignment and KB default fills use it). The proposal:
       the 5 missing) about $42, the 45-paper corpus about $65;
     - without them, about $58 and $90.
 
-### Put to the author after D1 (2026-11-24); not ruled
+### Put to the author after D1 (2026-11-24); ruled 2026-11-25 ("C7 ok, C8 ok, C9 ok")
 
 - **C7. What the model returns for a vocabulary field.**
   - The facts (A6): today the model returns the member's token and the paper's term is not
@@ -590,6 +607,62 @@ extraction arm (the realignment and KB default fills use it). The proposal:
       the inference pass (B6).
   - Inference pass (B6): the three mechanical groups listed there.
 
+### Put to the author after D2b (2026-11-25); not ruled
+
+Each fact below was run on 2026-11-25 under HEAD `f59372b` and under the D2b working tree with the
+old-against-new resolver comparison of Part D; "both" means the two give the same result.
+
+- **C10. The two items of C9 that had no recommendation.**
+  - "N3" as an alias of `n4` (both: "N3" → `n4`). Recommendation: remove it. N3 is a different
+    algorithm, and under C3 a method field is the tool, so the alias marks a wrong member
+    resolved. The term then stays in the paper's words until an `n3` member is added.
+  - smoothing_approach. Recommendation: the inference pass (B6). A paper that states a kernel
+    size does not state the approach, and C4 put inference in the inference arm.
+- **C11. "or" between two list items.**
+  - Both: "FD > 0.2 mm or DVARS > 5%" is one item that names two members and stays unresolved.
+  - HEAD resolved "FD > 0.2 mm/TR or DVARS > 5%" to `fd_power` and `dvars` only because the slash
+    of "mm/TR" cut the item. D2b holds a unit ratio whole, so that wording is unresolved too.
+  - Recommendation: make "or" a separator for scrub.criterion alone. There it joins two criteria
+    that are both applied; in a tool or method list it joins alternatives of which one was used.
+- **C12. "SPM" as a bare alias, and the release list.**
+  - Both: "CONN toolbox (SPM)" → `spm` and "CAT12 (SPM)" → `spm_segment`. The alias matches
+    "SPM" wherever it stands as a word, so a toolbox that runs on SPM becomes SPM's own tool.
+  - A release is stricter since D2b: it resolves only as the whole wording. So "run in SPM 12"
+    resolves (the alias reads "SPM") and "run in SPM12" does not.
+  - Recommendation: give the bare alias the release's two rules (resolve as the whole wording,
+    name the member elsewhere), together with C7. Once the model returns the paper's term and its
+    member, a term the table does not resolve keeps the model's member, so the stricter table
+    costs no value and stops the toolbox case.
+  - The release list is 99, 2, 5, 8, 12 and 25, each with or without "b". "SPM96" and its
+    neighbours name the member and do not resolve. Add them (94 to 97), or leave the list as it is.
+- **C13. Terms the vocabulary holds under another wording.** Each is a yes or no.
+  - Alias candidates from stored records: "24-regressor model of motion" (`friston24`; the table
+    holds the plural "24 regressors") and "ICBM 152 Nonlinear Asymmetrical template version 2009c"
+    (MNI152NLin2009cAsym). Section 3 of the audit lists the rest by recurrence.
+  - Family names. D2b keeps the report's note off "fs_LR", "MSM", "CompCor", "Montreal
+    Neurological Institute" and "ICBM" (`coverage_fields.FAMILY_NAMES`, read for the note only).
+    They could become underspecified terms of their tables, as "MNI" is; that changes their
+    resolution status from unrecognized to underspecified.
+  - What may follow a mesh density. "fsaverage 6" resolves; "fsaverage 6 surface" stays
+    unresolved, because a word after the number may be what it counts ("fsaverage 6 mm"). A short
+    list of nouns (surface, space, template, mesh) could be allowed to follow.
+  - The wrong-member matches of the D1 sweep that D2b did not take (both, unchanged):
+    "non-rigid" → `rigid`; "MNI152 2009c symmetric" → MNI152NLin2009cAsym; "fsaverage_sym" →
+    `fsaverage`; "FD-RMS" → `fd_power`; "Fourier basis set (SPM)" → `ideal_fft`; "SynthSeg
+    (FreeSurfer 7)" → `freesurfer_recon_all`; "MSM folding-based registration" →
+    `freesurfer_recon`; "realignment was performed after slice timing correction" → `after`.
+- **C14. Three behaviours found while building, left as they are.**
+  - Negation is not read. Both: "white matter and not the gray matter" → `white_matter` and
+    `gray_matter`; "ROBEX (not BET)" → `bet`. D2b only stops a negated first item from borrowing
+    a head noun. With C7 the model's member is checked against the term, which covers most of it.
+  - The detrend rule of 2026-10-28 has two edges. It raises `none`: the value "none" with the
+    quote "No linear detrending was applied" becomes `linear`. And it is not applied to a value
+    the checking pass supplies, because `checker_promotion.promote` runs after it.
+    Recommendation: leave `none` alone in the rule, and apply the rule inside `promote`.
+  - The 2026-06 collapse still drops a shorter member named apart from its longer form:
+    "fsaverage, then fsaverage5" reads as `fsaverage5` alone. The whole-word rule and the
+    longer-alias rule now cover the case it was written for.
+
 ## Part D: build order, checks and the run
 
 - **D1. Done 2026-11-24, read-only (A6).** B5's two unknowns are traced. The trace was widened to
@@ -601,34 +674,105 @@ extraction arm (the realignment and KB default fills use it). The proposal:
   - `scripts/reresolve_terms.py`, with its tests.
   - On the 2026-11-15 arms, the re-resolve changes motion expansion and optiBET values and no
     score. The as-stated scorers do not see a corrected member whose words differ from the label.
-- **D2b. B11, B12 and the table faults of A6.** Code and tests; no prompt, no model call. Not
-  started.
-  - B11's marker and B12's `scripts/term_audit.py`, with the two checks D1 added.
-  - **The 15 aliases:** when one member's matched alias contains another's as whole words, the
-    longer one wins ("middle slice" over "slice", "FLIRT BBR" over "FLIRT", "fieldmap-less" over
-    "fieldmap", "fsaverage 5" over "fsaverage"). This widens the containment rule at
-    EX/synonym_resolver.py:254-274, whose comment keeps such a pair ambiguous on purpose, so it
-    is the author's call. "blip-up/blip-down" is kept whole by the splitter.
-  - **Versioned SPM names resolve again:** "SPM99", "SPM2", "SPM5", "SPM8", "SPM12" and "SPM25"
-    as aliases of each SPM member, a closed set, with cases in `tests/test_resolver_audit.py`. A
-    general rule that lets digits follow an alias would send "fsaverage4" back to `fsaverage`,
-    which the whole-word rule had stopped.
-  - **The resolver reads the repaired text** the quote check already uses
-    (`normalize_with_offset_map`, EX/span_resolver.py:169), so a ligature or a split number
-    ("B 0", "32 k") no longer hides a term. That covers 6 of A6's cases.
-  - **TERM_RULES blocks** for the wrong-member matches of A6 that both verifiers confirmed, each
-    with its test:
+- **D2b. B11, B12 and the table faults of A6. Built 2026-11-25** (code and tests; no prompt, no
+  model call; the author's go-ahead is in section 0). Three review rounds and a mutation gate
+  shaped it. Where the build differs from the plan of 2026-11-24, the item says so.
+  - **The longer alias wins** (`synonym_resolver.members_named`). An occurrence of an alias inside
+    a longer occurrence of another member's alias does not count. All 15 aliases resolve to
+    their own member; the self-check is a test (`tests/test_resolver_d2b.py`) and section 1 of
+    the audit. An occurrence elsewhere still counts: "FLIRT, then FLIRT BBR" stays ambiguous.
+    - Limit, added after review: an alias that ends in a digit wins only when its number ends the
+      phrase. "fsaverage 6" is `fsaverage6`; "fsaverage 6 mm FWHM", "fsaverage 6 millimetre
+      kernel", "fsaverage 5 subjects" and "fsaverage 6 surface" stay ambiguous, as at HEAD. With
+      no limit the first three had resolved to the mesh, and no list of units can be closed.
+    - With it: a digit-final alias is not matched before a decimal part or a thousands group
+      ("fsaverage 5.3", "mode value of 1,000,000").
+  - **SPM releases, differing from the plan.** The plan made the six releases aliases of each
+    SPM member. As aliases they resolved "CONN toolbox (SPM12)", "DPARSF (SPM8)" and "CAT12
+    (SPM12)" to SPM's own tool. A block list of toolboxes was tried, and the second review found
+    six names it missed. Built instead as two field rules on the five SPM members:
+    - a listed release that is the whole wording resolves ("SPM12", "the SPM99b software"). The
+      list is the plan's six, each with or without the "b" of a beta, which the stored quotes of
+      maheu_2011 ("SPM99b") and silchenko_2023 ("SPM12b") print;
+    - "SPM" with a number inside a longer wording, or with a number the list lacks, names the
+      member and does not resolve to it (`TermRules.named_by`). Another member cannot take the
+      term ("SPM12 in MATLAB" was `custom`), the token trace finds the release in a quote, and
+      the report makes no vocabulary claim about the term.
+    - The bare alias "SPM" is unchanged (C12).
+  - **Text repair, differing from the plan.** The resolver reads repaired text
+    (`synonym_resolver.repair_text`): span_resolver's character table, five Unicode hyphens and
+    six invisible characters, one character at a time. It is not `normalize_with_offset_map`,
+    whose NFKD fold joins a trademark sign or a superscript to the tool name and whose
+    split-measurement rule joins an article to a number ("a 24 parameter model"). A word split at
+    a line break is rejoined only when the first reading names no member. The stored words are
+    never changed.
+    - "B 0" and "32 k fs_LR" went in as aliases from the papers that print them (hagler_2019,
+      marek_2022). A general tolerance for a split token matched FAST's "-n 3" as "N3".
+  - **TERM_RULES blocks**, as planned, each with its test:
     - `fieldmap` (method) and `susceptibility_fieldmap` (source) on "-less" and "-free" forms;
     - `bet` on "HD-BET";
     - `specific_slice` on "slice acquisition range";
-    - `template_surface` on a native, subject's or individual "cortical surface";
-    - `6param` on "differ".
-    - The rest of REPORT.md's list goes in as the author accepts each one.
-  - **The list splitter:** nested parentheses, a "/" or "," inside a number or unit, and a
-    coordination with a shared head noun ("anatomical and temporal CompCor").
-  - **The "other" rule:** "other - X" and "other, X" forms.
-  - **Gate:** `scripts/reresolve_terms.py` on the five record sets, every changed value listed;
-    the table self-check passes.
+    - `template_surface` on a native, subject's, participant's, individual or own "cortical
+      surface";
+    - `6param` on "differenc" (the plan said "differ").
+    - Found on the way: the 2026-11-24 pattern "deriv" also matched "derived". It is now
+      "derivat" or "deriv(s)" as a word. "six motion parameters derived from the realignment"
+      resolves to `6param` (HEAD: unresolved), and "six motion parameters derived from MCFLIRT
+      and their squares" no longer resolves to `friston24`.
+  - **The list splitter:**
+    - nested parentheses are one piece;
+    - a comma or a slash between two digits does not separate, and a unit ratio ("mm/TR") is one
+      token;
+    - an "and" joined by a hyphen is part of a name ("Realign-and-Unwarp");
+    - an alias that holds a separator ("blip-up/blip-down", "ICA+FIX") and the compound "Realign
+      and Unwarp" are kept whole;
+    - a coordination that shares its head noun is completed ("white and gray matter",
+      "anatomical and temporal CompCor"), under three conditions that each keep a wrong member
+      out: the next item resolved, the borrowed words alone name no member, and the item holds no
+      negation word.
+    - Holding the unit ratio ends an accident (C11).
+  - **The "other" rule:** "other - X", "other, X" and a phrase with balanced parentheses of its
+    own. Where the prompt offers "other" and the vocabulary holds no such member (the
+    coregistration cost function, until C9's member), "other (phrase)" stays unresolved and no
+    alias inside the phrase can claim a member.
+  - **B11, narrower than written.** The note "not in AESPA's vocabulary" is in the report and the
+    pseudo-code, and absent from the draft the checking pass is sent. It is printed only where
+    no part of the term is a name the field's vocabulary knows
+    (`coverage_fields.names_no_member`). An unresolved term that names two members, a blocked
+    alias, a family term or name, a member token in another case, or an SPM release beside a
+    toolbox is shown as before, without the note, because the claim would not be certain there.
+    An inferred value is never marked.
+    - On arm S the note is on 49 of the 63 unresolved terms; on arm B, 52 of 67.
+    - The note is about the term. It is also on a term whose method the vocabulary holds under
+      another wording ("24-regressor model of motion"); the audit lists each as an alias
+      candidate (C13).
+  - **B12.** `scripts/term_audit.py`: the table self-check, every stored wording with its member
+    and flags, unresolved wordings by recurrence, the token trace, and held-out counts.
+    `scripts/reresolve_terms.py` now covers the four shared fields and lists each change with
+    `--show`; its per-field counts leave out held-out papers, which get one total.
+    - Both resolve the detrend field as the extractor does: the term, then the highest order its
+      quote names (2026-10-28), for a value the coverage call extracted. The 2026-11-24 script
+      ran the first step only and wrote ciric_2017's "linear, quadratic" back unresolved. The
+      DEVLOG entry of 2026-11-25 corrects the entry of 2026-11-24 (6) on this.
+  - **Gates, run on 2026-11-25, HEAD `f59372b` against the working tree:**
+    - Table self-check: 451 aliases, 0 that do not resolve to their own member.
+    - Stored wordings: 1 of 322 resolves differently ("32 k fs_LR" → `fsLR_32k`).
+    - The 17,920 wordings the three reviews probed: 16,204 resolve the same, 979 gain a member
+      and 308 split into other items with the same members. 429 lose or change a member, and
+      each is attributed to a rule named above.
+    - `reresolve_terms.py` on six record sets (1,944 terms): it differs from HEAD's script in 3
+      terms, all ciric_2017's detrend value. Held-out papers: 0 terms changed.
+    - Re-render of five record sets: every changed line is the old line plus the note;
+      batch_v7_full is identical; no held-out file changed.
+    - The checking pass's draft (`verifier.compact_draft`): 148 of 148 byte-identical.
+    - Mutation: 193 single-change mutants on a scratch copy, each diff shown non-empty before
+      its run. 192 were killed; the one that survived (a space before the punctuation that ends
+      a phrase) got a test and is killed on rerun.
+    - Reviews: three rounds of read-only agents (13, 8 and 8), each finding re-checked by a
+      second agent that had to reproduce it. They confirmed 38, 22 and 10 findings; all are
+      fixed or, where the fix is the author's call, listed under C10 to C14.
+    - Suites: extractor_mvp 1448 passed (2 live skipped), root 332; pre-commit clean on the
+      second pass. Each planned commit passes on its own in a scratch export of HEAD.
 - **D2. Code that changes no prompt:**
   - B1's alias order and B5's table fixes, with tests;
   - the re-render gate on the five record sets used on 2026-11-24 (old records identical, every
