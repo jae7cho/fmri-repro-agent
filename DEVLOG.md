@@ -5634,3 +5634,139 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
   changed, so no mutation was run.
 
 Commits here: `56c421e`, `128969b`, then this entry.
+
+## 2026-11-25 (2) — D2b of the prompt and schema design: the table faults fixed, the report's note, the standing audit
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- **The author's rulings (2026-11-25):** "C7 ok, C8 ok, C9 ok. start D2b".
+  - C7 (the model returns the paper's term and the member it reads it as; the alias table checks
+    the member) and C8 (the main text wins over a supplement's generated summary) are built in D3
+    and D4.
+  - Two items of C9 had two options and no recommendation, and stay open as C10.
+- **What D2b is:** code, scripts and tests. No prompt, schema or hash pin changed, and the project
+  code made no model call. No stored record was rewritten.
+- `50c8d3c` — the resolver.
+  - **The longer alias wins.** An alias inside a longer alias of another member does not count
+    ("slice" inside "middle slice", "FLIRT" inside "FLIRT BBR", "fieldmap" inside
+    "fieldmap-less"). The 15 aliases D1 found resolve to their own member. The self-check is a
+    test: 451 aliases, 0 fail (448 at D1, plus the three below).
+  - **Text repair, for matching only:** span_resolver's character table, five Unicode hyphens
+    and six invisible characters; a word split at a line break is rejoined when the first
+    reading names no member. The stored words are never changed.
+  - **Three aliases from the papers that print them:** "B 0" (hagler_2019 and four more, whose
+    text layers split "B0"), "32 k fs_LR" (marek_2022), "ICA+FIX" (glasser2016_nature).
+  - **Blocks** (`TERM_RULES`): `fieldmap` and `susceptibility_fieldmap` on "-less" and "-free"
+    forms; `bet` on "HD-BET"; `specific_slice` on "slice acquisition range"; `template_surface`
+    on a subject's own "cortical surface"; `6param` on "differenc".
+  - **The list splitter:** nested parentheses; a comma or slash between two digits; a unit ratio
+    ("mm/TR") as one token; an "and" joined by a hyphen; an alias that holds a separator
+    ("blip-up/blip-down") kept whole; a coordination that shares its head noun completed ("white
+    and gray matter").
+  - **The "other" rule:** "other - X", "other, X", and a phrase with parentheses of its own.
+    Where the prompt offers "other" and the vocabulary has no such member (the coregistration
+    cost function), the value stays unresolved and no alias inside the phrase can claim a member.
+- `73ae243` — B11. The note "not in AESPA's vocabulary" in the report and the pseudo-code, and
+  absent from the draft the checking pass is sent.
+  - On arm S it is on 49 of the 63 unresolved terms; on arm B, 52 of 67; on corpus_full_v3, 61
+    of 90. Held-out papers: 3 unresolved terms, 0 marked (counts only).
+- `b332fef` — B12. `scripts/term_audit.py`: the table self-check, every stored wording with its
+  member and flags, unresolved wordings by recurrence, the token trace, held-out counts.
+  `scripts/reresolve_terms.py` covers the four shared fields, lists each change with `--show`,
+  and keeps held-out papers out of its per-field counts (one total for them).
+  - On arm S the audit counts 407 values and 323 bare tokens, as D1 did: 215 with an alias of
+    their member in the quote, 11 with a competing member beside it, 97 with none.
+- `2469939` — the design: the rulings in section 0, D2b as built in Part D, and C10-C14.
+- **Where the build differs from the plan of 2026-11-24:**
+  - **SPM releases are two field rules, not aliases.** As aliases they resolved "CONN toolbox
+    (SPM12)", "DPARSF (SPM8)" and "CAT12 (SPM12)" to SPM's own tool, and a block list of
+    toolboxes could not be closed (the second review found six names the first list missed).
+    - A listed release resolves as the whole wording ("SPM12"; with the "b" of a beta, which
+      maheu_2011 and silchenko_2023 print as "SPM99b" and "SPM12b").
+    - Inside a longer wording it names the SPM member and does not resolve: "SPM12 in MATLAB"
+      was `custom` and is now unresolved, and the token trace finds a release in a quote.
+  - **A digit-final alias wins only when its number ends the phrase.** "fsaverage 6" is
+    `fsaverage6`. "fsaverage 6 mm FWHM", "fsaverage 6 millimetre kernel" and "fsaverage 6
+    surface" stay unresolved, as before D2b; with no limit the first two had resolved to the mesh.
+  - **B11 is narrower than written.** The note is printed only where no part of the term is a
+    name the field's vocabulary knows. An ambiguous term, a blocked alias, a family name
+    ("fs_LR", "MSM", "CompCor"), a member token in another case and an inferred value are not
+    marked.
+  - **The repair is not `normalize_with_offset_map`.** Its NFKD fold joined "™" and superscripts
+    to tool names, and its split-measurement rule joined an article to a number.
+  - The tests are in `tests/test_resolver_d2b.py` (247), not in `tests/test_resolver_audit.py`.
+- **Corrections to earlier entries:**
+  - **Entry 2026-11-24 (6), the detrend field.** It says "cubic" → quadratic and "linear,
+    quadratic" → quadratic "were stored by older resolvers; today's code does not produce them",
+    and that the re-resolve leaves "ciric_2017's stale" value unresolved. Both statements are
+    wrong, and the error was the audit's.
+    - Today's extractor produces both members: the highest-order rule of 2026-10-28
+      (`coverage_extractor._apply_detrend_highest_order`) runs after the term is resolved. 19
+      stored values carry them (15 and 4).
+    - The audit and `reresolve_terms.py` (`9b09f18`) re-ran `_resolve_term` alone. The script
+      therefore wrote ciric_2017's "linear, quadratic" back unresolved; `S_rr/papers/
+      ciric_2017.json` holds that one wrong term. The re-score of that day is unaffected ("no
+      score changed" included it).
+    - Both scripts now apply the rule (`coverage_extractor.detrend_highest_order`), to a value
+      the coverage call extracted. On the six record sets below the new script differs from
+      `9b09f18`'s in 3 terms, all ciric_2017's detrend value.
+  - **Entry 2026-11-24 (6), the motion rules.** "Any derivative ... blocks 6param" was written
+    as the pattern "deriv", which also matched "derived". So "six motion parameters derived from
+    the realignment" stayed unresolved, and "six motion parameters derived from MCFLIRT and
+    their squares" resolved to `friston24`. No stored wording showed it. The pattern is now
+    "derivat", or "deriv(s)" as a word.
+  - **Today's first entry** says the fix for versioned SPM names "is in D2b" and the design then
+    listed them as aliases. They are the two rules above.
+- **Gates (HEAD `f59372b` against the tree that was committed):**
+  - stored wordings: 1 of 322 resolves differently ("32 k fs_LR" → `fsLR_32k`);
+  - the 17,920 wordings the three reviews probed: 16,204 the same, 979 gain a member, 308 split
+    into other items with the same members, 429 lose or change a member. Each of the 429 is
+    attributed to a rule above; the largest groups are an SPM release beside another member
+    (247) and the block on `template_surface` (37);
+  - `reresolve_terms.py` on six record sets (arms S, B and C of 2026-11-15, corpus_full_v3,
+    batch_coverage_v1, batch_v7_full; 1,944 terms): 3 terms differ from the `9b09f18` script, as
+    above. Held-out papers: 0 terms changed;
+  - re-render of five record sets: every changed line is the old line plus the note;
+    batch_v7_full is identical; no held-out file changed;
+  - the checking pass's draft (`verifier.compact_draft`): 148 of 148 byte-identical;
+  - mutation: 193 single-change mutants on a scratch copy, each diff non-empty before its run.
+    192 killed; the survivor (a space before the punctuation that ends a phrase) got a test and
+    is killed on rerun;
+  - each of the three code commits passes the extractor_mvp suite on its own in a scratch export
+    of HEAD (1412, 1421 and 1446 passed there). The committed source and scripts are
+    byte-identical to the ones the gates ran on; the one change after them added two test rows.
+- **Reviews:** three rounds, each finding re-checked by a second agent that had to reproduce it.
+  They confirmed 38, 22 and 10 findings. Among them:
+  - round 1: NFKD hid tool names; Unicode hyphens bypassed the blocks; the SPM aliases resolved
+    toolboxes; the note marked ambiguous terms;
+  - round 2: the detrend rule missing from both scripts; `--show` revealing which fields of a
+    held-out paper changed, by subtraction from the per-field counts; the toolbox blocks too
+    narrow;
+  - round 3: "fsaverage 6 millimeter" still read as the mesh; family names marked as outside the
+    vocabulary; the detrend rule applied to values the checking pass supplied, which the
+    extractor does not do.
+- **Put to the author (not ruled), in the design:**
+  - C10: "N3" as an alias of `n4` (recommended: remove); smoothing_approach (recommended: the
+    inference pass);
+  - C11: "or" as a list separator. "FD > 0.2 mm/TR or DVARS > 5%" resolved before only because
+    the slash cut it; recommended for scrub.criterion alone;
+  - C12: the bare alias "SPM" still resolves "CONN toolbox (SPM)" to `spm`; and whether the
+    release list gains SPM94 to SPM97;
+  - C13: alias candidates from stored records, the family names, what may follow a mesh
+    density, and the D1 sweep findings D2b did not take;
+  - C14: the detrend rule raises `none` and skips checker-supplied values; negation is not read;
+    the 2026-06 collapse.
+- **Method and limits:**
+  - 29 Claude Code subagents in three workflows (13, 8 and 8): session usage, not an extraction
+    run. Their transcripts show no write under the repository, no git write, no network call,
+    and no read of results (beyond one allowed script), labels, ground truth, tested_lit, this
+    log or a held-out file;
+  - the reviewers' wordings are constructed, and "realistic" is a verifier's judgment;
+  - the gates compare resolution on wordings at hand and on stored records. No extraction was
+    run, so the effect on new model output is not measured;
+  - gate scripts and outputs: `extractor_mvp/results/d2b_gates_2026-11-25/` (gitignored). The
+    rendered reports and re-resolved copies the gates made are not kept there, since they hold
+    held-out text.
+- **Checks:** root 332, extractor_mvp 1448 (2 live skipped); pre-commit clean on the second pass.
+
+Commits here: `50c8d3c`, `73ae243`, `b332fef`, `2469939`, then this entry.
