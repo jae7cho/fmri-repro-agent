@@ -84,8 +84,49 @@ NUMERIC_FIELDS: frozenset[str] = frozenset(
 #: general stemmer.
 _SUFFIXES: tuple[str, ...] = ("ation", "ment", "ing", "ies", "ied", "ed", "es", "ly", "s")
 _MIN_STEM = 4
-_NUMBER = re.compile(r"\d+(?:\.\d+)?")
-_THOUSANDS = re.compile(r"(?<=\d),(?=\d{3}\b)")
+
+#: One number, read the same way wherever a number is read (2026-11-25): in the quote
+#: (:func:`number_in_quote`) and in the model's value (``extractor._parse_number``,
+#: ``extractor._parse_band``). Before, the two readers disagreed. The value reader deleted every
+#: comma ("0,5" was 5.0, "0.5,3" was 0.53) and the quote reader read each side of a comma as a whole
+#: number, so the wrong 5.0 was found in "FD > 0,5 mm" and stored. The quote reader also had no
+#: number that begins with its decimal point: a correct 0.5 was not found in "FD > .5 mm".
+#:
+#: The alternatives, in the order they are tried at one place in the text:
+#:
+#: - ``grouped``: thousands. One to three digits that do not begin with 0, then one or more groups
+#:   of exactly three digits, each after a comma ("1,000", "10,000", "1,234,567", "1,000.5"). A
+#:   group that begins with 0 may also follow the comma after one space or line break ("1, 000"):
+#:   such a group is not a number of its own. Any other group after a space is a second number
+#:   ("n = 253, 123 females", "Neuroimage 84, 320-341": the stored quotes that are not held out
+#:   hold five such forms, and each is a pair).
+#: - ``point``: digits, a decimal point, digits ("0.5", "40.25"). It takes no comma after it:
+#:   "0.5,3" is two numbers, as "0.5, 3" is.
+#: - ``comma``: digits, a comma, digits, where the comma is not a thousands mark: a decimal comma
+#:   ("0,5", "0,25", "3,5"; and "0,125", since a number that begins with 0 has no thousands groups).
+#:   A number holds one decimal mark, so three or more parts joined by commas are a list, each part
+#:   read on its own ("[49,54,55]"), and so is a part that holds a decimal point ("0,0.1").
+#: - ``whole``: digits ("3rd" is 3, "3mm" is 3).
+#: - ``dot``: a dot and digits, with no digit before the dot (".5" is 0.5), only where a number can
+#:   begin: at the start of the text, or after a space, an opening bracket, a comparison or equals
+#:   sign, or a dash ("FD > .5 mm", ">.5mm", "(.01-.1 Hz)"). After a letter, a digit or a closing
+#:   bracket the dot ends a sentence or belongs to a name ("were removed.12 The",
+#:   "j.neuroimage.2005.02.018"), and the digits after it are a whole number, as they were before.
+#:
+#: Two readings stay open by construction: "3,125" (exactly three digits after the comma) is 3125
+#: even where a paper means 3.125, and a pair written with no space ("[13,14]") is the decimal 13.14.
+_NUMBER = re.compile(
+    r"""
+      (?P<grouped>[1-9]\d{0,2}(?:,\d{3}|,\s0\d{2})+(?!\d)(?:\.\d+)?)
+    | (?P<point>\d+\.\d+)
+    | (?P<comma>(?<!\d,)\d+,\d+(?!\d)(?![.,]\d))
+    | (?P<whole>\d+)
+    | (?P<dot>(?<![^\s(\[{<>=\u2264\u2265\u2248~\u00b1\u2212\u2013\u2014-])\.\d+)
+    """,
+    re.VERBOSE,
+)
+_GROUP_MARK = re.compile(r"[,\s]")
+_LEADING_SIGN = re.compile(r"\s*(-?)")
 
 
 def tokens(s: str) -> list[str]:
@@ -195,16 +236,39 @@ def normalize_number_words(s: str) -> str:
     return _NUMBER_WORD.sub(lambda m: str(NUMBER_WORDS[m.group(1).lower()]), s)
 
 
+def _number_value(m: re.Match[str]) -> float:
+    token = m.group(0)
+    if m.lastgroup == "grouped":
+        token = _GROUP_MARK.sub("", token)
+    elif m.lastgroup == "comma":
+        token = token.replace(",", ".")
+    return float(token)
+
+
+def read_numbers(text: str) -> list[float]:
+    """Every number of the text, in order, as :data:`_NUMBER` reads it. No sign is read: "-0.5" is
+    0.5 here, as it was before."""
+    return [_number_value(m) for m in _NUMBER.finditer(text)]
+
+
+def leading_number(text: str) -> float | None:
+    """The number the text begins with, after an optional minus sign ("0.5 mm" is 0.5, "3rd" is 3,
+    "0,5" is 0.5, "1,000" is 1000, ".5 mm" is 0.5); ``None`` when the text begins with no number.
+    The value reader's half of :data:`_NUMBER`."""
+    sign = _LEADING_SIGN.match(text)
+    assert sign is not None  # the pattern matches the empty string
+    m = _NUMBER.match(text, sign.end())
+    if m is None:
+        return None
+    return -_number_value(m) if sign.group(1) else _number_value(m)
+
+
 def number_in_quote(value: float, quote: str) -> bool:
     """True iff a number in the quote equals the value exactly (ruling 2). Thousands separators are
-    read as part of the number, and number words as their digits (2026-11-09); no tolerance."""
-    for tok in _NUMBER.findall(_THOUSANDS.sub("", normalize_number_words(quote))):
-        try:
-            if float(tok) == value:
-                return True
-        except ValueError:
-            continue
-    return False
+    read as part of the number, and number words as their digits (2026-11-09); no tolerance. A
+    comma between digits and a number that begins with its decimal point are read as
+    :data:`_NUMBER` says (2026-11-25), which is how the value was read."""
+    return value in read_numbers(normalize_number_words(quote))
 
 
 def _alias_text(alias: str) -> str:

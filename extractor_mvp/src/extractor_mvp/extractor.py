@@ -101,7 +101,9 @@ from extractor_mvp.quote_support import (
     coverage_value_supported,
     free_text_supported,
     is_operation_word_only,
+    leading_number,
     locate_phrase,
+    read_numbers,
     step_value_supported,
 )
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
@@ -1100,40 +1102,55 @@ def _parse_yes_no(raw: object) -> bool | None:
     return None
 
 
-_LEADING_NUMBER = re.compile(r"^\s*(-?\d+(?:[.,]\d+)?)")
-
-
 def _parse_number(raw: object, *, integer: bool) -> float | int | None:
     """A number from the model's string: the whole string, else its leading number (``3rd`` ->
-    3, ``0.5 mm`` -> 0.5). An integer field refuses a fractional value."""
-    text = str(raw).strip().replace(",", "")
+    3, ``0.5 mm`` -> 0.5). An integer field refuses a fractional value.
+
+    2026-11-25: the leading number is read by ``quote_support.leading_number``, the reading the
+    quote check gives the same characters in the quote: "1,000" is 1000, "0,5" is 0.5, "0.5,3" is
+    0.5 as "0.5, 3" is (one number is kept), ".5 mm" is 0.5. Before, every comma was deleted
+    first: "0,5" was 5.0, which the quote "FD > 0,5 mm" supported, and "0.5,3" was 0.53.
+    """
+    text = str(raw).strip()
     try:
         number = float(text)
     except ValueError:
-        m = _LEADING_NUMBER.match(text)
-        if m is None:
+        leading = leading_number(text)
+        if leading is None:
             return None
-        number = float(m.group(1).replace(",", "."))
+        number = leading
     if integer:
         return int(number) if number.is_integer() else None
     return number
 
 
-_BAND_NUMBER = re.compile(r"\d+(?:\.\d+)?|\.\d+")
+#: The range mark of a band string: a hyphen that is not directly followed by a letter. A hyphen
+#: followed by a letter joins a word or a unit to what stands before it ("high-pass", "cut-off",
+#: "rest-fMRI", "128-s", "0.1-Hz") and separates no two edges. The unit is therefore no longer
+#: removed from the string first: that step changed no reading (the old reader gives the same
+#: band with and without it on every stored band string), and here it would turn "0.1-Hz" into
+#: "0.1-", a high-pass.
+_BAND_MARK = re.compile(r"-(?![^\W\d_])")
 
 
 def _parse_band(raw: object) -> tuple[float | None, float | None] | None:
     """A frequency band "low-high" in Hz (report v2 §1a): "0.01-0.1" -> (0.01, 0.1); a high-pass
-    "0.01-" -> (0.01, None); a low-pass "-0.1" -> (None, 0.1). ``None`` when it is not a band."""
+    "0.01-" -> (0.01, None); a low-pass "-0.1" -> (None, 0.1). ``None`` when it is not a band.
+    Each edge is the first number of its side, read as ``quote_support.read_numbers`` reads it
+    (2026-11-25): "0,01-0,1" -> (0.01, 0.1), where each edge was read as 0 before.
+
+    The two sides are parted at the range mark (``_BAND_MARK``, 2026-11-25), not at the first
+    hyphen of the string. Before, the checking pass's "high-pass with a 50 s cutoff period (0.02
+    Hz)" was parted inside "high-pass" and read as the low-pass (None, 50.0), which its quote
+    supported: six stored values, bassett_2011 and hermans_2024. It holds no range mark and is
+    no band now ("value_not_numeric"); "band-pass 0.01-0.1 Hz" is (0.01, 0.1)."""
     text = str(raw).strip().replace("\u2013", "-").replace("\u2014", "-").replace(" to ", "-")
-    for unit in ("hz", "Hz", "HZ"):
-        text = text.replace(unit, "")
-    if "-" not in text:
+    mark = _BAND_MARK.search(text)
+    if mark is None:
         return None
-    low_s, _, high_s = text.partition("-")
-    low_m, high_m = _BAND_NUMBER.search(low_s), _BAND_NUMBER.search(high_s)
-    low = float(low_m.group(0)) if low_m else None
-    high = float(high_m.group(0)) if high_m else None
+    low_s, high_s = text[: mark.start()], text[mark.end() :]
+    low = next(iter(read_numbers(low_s)), None)
+    high = next(iter(read_numbers(high_s)), None)
     if low is None and high is None:
         return None
     if low is not None and high is not None and low >= high:
