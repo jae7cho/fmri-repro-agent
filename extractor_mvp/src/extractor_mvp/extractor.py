@@ -81,7 +81,7 @@ from fmri_repro.spec.provenance import (
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field, model_validator
 
-from extractor_mvp.coverage_fields import SPECS_BY_KIND
+from extractor_mvp.coverage_fields import SPECS_BY_KIND, TERM_RULES
 from extractor_mvp.extraction_result import FieldExtractionResult, StepFieldResult
 from extractor_mvp.motion_guard import (
     MOTION_VALUE_ROUTED_FALLBACK,
@@ -729,7 +729,7 @@ def _process_field(
                 )
             value = band
         elif value_kind == "term":
-            value = _resolve_term(str(fe.value), literal_type, synonyms)
+            value = _resolve_term(str(fe.value), literal_type, synonyms, dotted)
         elif value_kind == "term_list":
             items = _split_terms(str(fe.value))
             if not items:
@@ -740,7 +740,7 @@ def _process_field(
                     ),
                     None,
                 )
-            value = [_resolve_term(item, literal_type, synonyms) for item in items]
+            value = [_resolve_term(item, literal_type, synonyms, dotted) for item in items]
         else:  # "text": the paper's words, kept whole
             value = str(fe.value).strip()
     elif literal_type is not None:
@@ -1161,6 +1161,7 @@ def _resolve_term(
     verbatim: str,
     literal_type: Any,
     synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+    dotted: str | None = None,
 ) -> SpecifiedTerm:
     """The 0.5.0 recording rule for a coverage-call term: the paper's words always kept; resolved
     through the field's own table when one is given, else by exact membership. "other (phrase)"
@@ -1171,10 +1172,30 @@ def _resolve_term(
         phrase = (other.group("p") or other.group("q") or "").strip()
         if phrase:
             return SpecifiedTerm(verbatim=phrase, resolved="other", resolution="resolved")
+    # 2026-11-24 (the resolver audit): an exact member token is that member, before any alias of
+    # another member can claim it, unless a dated ruling sends it elsewhere; then the field's
+    # count and modifier rules (TERM_RULES), then the alias table.
+    rules = TERM_RULES.get(dotted or "")
+    members = typing.get_args(literal_type)
+    if verbatim in members:
+        target = rules.exact_overrides.get(verbatim, verbatim) if rules else verbatim
+        return SpecifiedTerm(verbatim=verbatim, resolved=target, resolution="resolved")
+    if rules:
+        for member, patterns in rules.require_all.items():
+            if all(re.search(p, verbatim, re.IGNORECASE) for p in patterns):
+                return SpecifiedTerm(verbatim=verbatim, resolved=member, resolution="resolved")
     if synonyms is not None:
         syns, under = synonyms
         res = resolve_to_literal(verbatim, syns, under, None)
-        if res.status == "resolved":
+        blocked = bool(
+            rules
+            and res.status == "resolved"
+            and any(
+                re.search(p, verbatim, re.IGNORECASE)
+                for p in rules.block.get(res.resolved or "", ())
+            )
+        )
+        if res.status == "resolved" and not blocked:
             return SpecifiedTerm(verbatim=verbatim, resolved=res.resolved, resolution="resolved")
         if verbatim in typing.get_args(literal_type):
             return SpecifiedTerm(verbatim=verbatim, resolved=verbatim, resolution="resolved")

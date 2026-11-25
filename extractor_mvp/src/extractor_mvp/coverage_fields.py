@@ -210,6 +210,49 @@ MOTION_EXPANSION: dict[str, list[str]] = {
     ],
     "volterra": [],
 }
+
+
+@dataclasses.dataclass(frozen=True)
+class TermRules:
+    """Field rules applied before and after the alias table (2026-11-24, the author's ruling on the
+    resolver audit). A value whose meaning turns on a count or a modifier is not left to substring
+    aliases: "6 parameters and their derivatives" is not the six-parameter model.
+
+    - ``require_all``: a member resolved when every pattern occurs in the term (case-insensitive).
+    - ``block``: a member the alias table may not return when any of its patterns occurs; the term
+      is then kept unresolved, in the paper's words.
+    - ``exact_overrides``: an exact member token resolved elsewhere by a dated ruling.
+    """
+
+    require_all: dict[str, tuple[str, ...]] = dataclasses.field(default_factory=dict)
+    block: dict[str, tuple[str, ...]] = dataclasses.field(default_factory=dict)
+    exact_overrides: dict[str, str] = dataclasses.field(default_factory=dict)
+
+
+#: Keyed on the dotted path. Motion expansion (the audit of 2026-11-24 found ten stored wordings
+#: with derivatives, squares or a count of 12 or 24 resolved to 6param through "6 parameters"):
+#: six parameters with derivatives and squares (or quadratic terms) is friston24, the project's
+#: convention; any derivative, square, quadratic, expansion or regressor count blocks 6param, so
+#: a wording no member fits keeps its words (12param is schema 0.8.0, DESIGN_prompt_schema_2026-11
+#: B1). The exact token "volterra" stays friston24 (item 3, 2026-10-28).
+TERM_RULES: dict[str, TermRules] = {
+    "nuisance_regression.motion_expansion": TermRules(
+        require_all={"friston24": (r"\b(?:6|six)\b", r"deriv", r"squar|quadrat")},
+        block={
+            "6param": (
+                r"deriv",
+                r"squar",
+                r"quadrat",
+                r"expan",
+                r"\b(?:12|18|24|36)\b",
+                r"\bR\s*['\u2032\u00b4]",
+            )
+        },
+        exact_overrides={"volterra": "friston24"},
+    ),
+}
+
+
 TISSUE_REGRESSOR: dict[str, list[str]] = {
     "whole_brain": ["global signal", "whole brain", "whole-brain", "GSR", "global mean", "global"],
     "gray_matter": ["gray matter", "grey matter", "GM"],

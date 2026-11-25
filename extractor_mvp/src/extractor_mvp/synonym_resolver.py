@@ -16,6 +16,7 @@ when the caller passes ``value_context == VALUE`` (e.g. ``"mode@1000"`` fires fo
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from typing import Literal
 
@@ -206,10 +207,18 @@ def _fold_separators(s: str) -> str:
     return " ".join(s.replace("_", " ").replace("-", " ").split())
 
 
+def _phrase_in(alias_folded: str, raw_folded: str) -> bool:
+    """The alias as whole words of the raw text (2026-11-24, the author's ruling on the resolver
+    audit): "optiBET" no longer resolves through the alias "BET". A boundary is any character that
+    is not a letter or a digit, or the end of the text; a plural "s" after the alias is allowed
+    ("grayordinates" for the alias "grayordinate")."""
+    return bool(re.search(rf"(?<![a-z0-9]){re.escape(alias_folded)}s?(?![a-z0-9])", raw_folded))
+
+
 def _alias_matches(alias: str, raw_lower: str, value_context: float | None) -> bool:
     """``term@VALUE`` matches only when value_context == VALUE; plain ``term``
-    matches whenever it is a case-insensitive substring of the raw text, with underscore,
-    hyphen and space read as the same separator on both sides."""
+    matches whenever it occurs as whole words of the raw text, case-insensitively, with
+    underscore, hyphen and space read as the same separator on both sides."""
     raw_folded = _fold_separators(raw_lower)
     if "@" in alias:
         term, _, val = alias.rpartition("@")
@@ -220,8 +229,8 @@ def _alias_matches(alias: str, raw_lower: str, value_context: float | None) -> b
                 return False
         except ValueError:
             return False
-        return _fold_separators(term.lower()) in raw_folded
-    return _fold_separators(alias.lower()) in raw_folded
+        return _phrase_in(_fold_separators(term.lower()), raw_folded)
+    return _phrase_in(_fold_separators(alias.lower()), raw_folded)
 
 
 def resolve_to_literal(
