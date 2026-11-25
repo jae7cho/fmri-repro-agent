@@ -92,6 +92,7 @@ from extractor_mvp.cobidas import (
     software_mentions_for_row,
     validation_tag,
 )
+from extractor_mvp.coverage_fields import names_no_member
 from extractor_mvp.methods_finder import MethodsSlice
 
 # Display-state tokens. ``BASE_NOT_APPLICABLE`` is the from-scratch base_pipeline
@@ -413,25 +414,61 @@ def to_json(preprocessing: Preprocessing) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _fmt_specified_term(v: SpecifiedTerm) -> str:
+#: B11 (DESIGN_prompt_schema_2026-11; built 2026-11-25): said beside a term read in the paper (an
+#: extracted value, or a part of a varied one) that stayed unresolved and holds no name the
+#: field's vocabulary knows (coverage_fields.names_no_member). The words are the paper's, which is
+#: what a reader reproducing the step needs. The note tells them that AESPA holds no value for
+#: the term, so no KB default, inference or pipeline setting was filled for it. An unresolved term
+#: that does hold such a name (two members, a blocked alias, a family term, an SPM release beside
+#: a toolbox) is shown as before B11, in quotes and without the note: the claim would not be
+#: certain there. An inferred value is never marked, in the report or in the pseudo-code.
+NOT_IN_VOCABULARY = "not in AESPA's vocabulary"
+
+
+def unmatched_terms(path: str, value: Any) -> list[str]:
+    """The paper's words of every unresolved term in ``value`` that holds no name of today's
+    vocabulary (coverage_fields.names_no_member), each once, in order. Never a family term ("MNI"),
+    a term that names two members (it is ambiguous, and both are in the vocabulary), a term whose
+    one alias a field rule blocks, a member token in another case, or a field with no alias table
+    (the motion phrase, which the resolution call reads)."""
+    items = value if isinstance(value, (list, tuple)) else [value]
+    words = [
+        str(v.verbatim)
+        for v in items
+        if isinstance(v, SpecifiedTerm)
+        and v.resolved is None
+        and v.verbatim
+        and names_no_member(path, str(v.verbatim))
+    ]
+    return list(dict.fromkeys(words))
+
+
+def _fmt_specified_term(v: SpecifiedTerm, path: str | None = None) -> str:
     """Render a 0.5.0 ``SpecifiedTerm``: the resolved member when there is one, always
     showing the paper's verbatim words when they differ; the verbatim term alone when
-    unresolved (0.5.0 records it rather than discarding it to a false-missing)."""
+    unresolved (0.5.0 records it rather than discarding it to a false-missing), with
+    :data:`NOT_IN_VOCABULARY` beside it when ``path`` is given and the vocabulary of that field
+    holds no member for the words (B11). Without a path nothing is marked: the draft the checking
+    pass reads is rendered that way, and is unchanged by B11."""
     if v.resolved is not None:
         if v.verbatim and str(v.verbatim) != str(v.resolved):
             return f'{v.resolved} (paper: "{v.verbatim}")'
         return str(v.resolved)
-    return f'"{v.verbatim}"' if v.verbatim else "(term not recorded)"
+    if not v.verbatim:
+        return "(term not recorded)"
+    if path is not None and unmatched_terms(path, v):
+        return f'"{v.verbatim}" ({NOT_IN_VOCABULARY})'
+    return f'"{v.verbatim}"'
 
 
-def _fmt_value(value: Any) -> str:
+def _fmt_value(value: Any, path: str | None = None) -> str:
     if isinstance(value, PipelineRef):
         return str(value.name)
     if isinstance(value, SpecifiedTerm):
-        return _fmt_specified_term(value)
+        return _fmt_specified_term(value, path)
     if isinstance(value, (list, tuple)):
         return ", ".join(
-            _fmt_specified_term(v) if isinstance(v, SpecifiedTerm) else str(v) for v in value
+            _fmt_specified_term(v, path) if isinstance(v, SpecifiedTerm) else str(v) for v in value
         )
     return str(value)
 
@@ -958,12 +995,12 @@ def variant_key(path: str, applies_to: str) -> str:
     return f"{path}[{applies_to}]"
 
 
-def _variant_value(row: FieldRow, v: VariantRow) -> str:
+def _variant_value(row: FieldRow, v: VariantRow, mark_unmatched: bool = True) -> str:
     if v.value is None:
         return "no single value"
     if row.path.endswith(".performed") and isinstance(v.value, bool):
         return "performed" if v.value else "not performed"
-    return _fmt_row_value(_ValueOnly(row.path, v.value))
+    return _fmt_row_value(_ValueOnly(row.path, v.value), mark_unmatched)
 
 
 @dataclass
@@ -2258,14 +2295,18 @@ def _deferred_mention(m: Any) -> str:
     return f"{m.name} deferred to {', '.join(m.deferred_to)}; version not reported in this paper"
 
 
-def _fmt_row_value(row: Any) -> str:
+def _fmt_row_value(row: Any, mark_unmatched: bool = True) -> str:
     """A row's value: a band field (``*_band_hz``) in the one band format, everything else as
     :func:`_fmt_value`. 2026-11-02, the author's queued fix: the step section and the rows section
     showed the same band two ways ("0.02, 0.1" and "0.02-0.1 Hz" with an en dash); every
     surface now goes here."""
-    if str(getattr(row, "path", "")).endswith("_band_hz"):
+    path = str(getattr(row, "path", ""))
+    if path.endswith("_band_hz"):
         return _fmt_band(row.value)
-    return _fmt_value(row.value)
+    # B11's note is for a term read in the paper: an extracted value or a part of a varied one
+    # (a part comes here as a _ValueOnly, which has no state). An inferred value is never marked.
+    from_paper = getattr(row, "state", None) in (None, EXTRACTED)
+    return _fmt_value(row.value, path if mark_unmatched and from_paper else None)
 
 
 def _fmt_band(value: Any) -> str:

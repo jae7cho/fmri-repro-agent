@@ -165,6 +165,9 @@ class VerifierExtraction(BaseModel):
 
 
 def _fmt(value: Any) -> str:
+    """A value as the checking pass reads it. B11's "not in AESPA's vocabulary" note is for the
+    report's reader and is left out here (no field path is passed, so nothing is marked): what the
+    model is sent is unchanged by it."""
     from extractor_mvp.render import _fmt_value
 
     return _fmt_value(value)
@@ -239,7 +242,8 @@ def _variant_draft_lines(r: Any) -> list[str]:
         quote = json_safe(" ".join(v.span_text.split()))
         reason = "" if v.verified else "the words for the part are not in the quote"
         out.append(
-            f"{variant_key(r.path, v.applies_to)} | extracted | {_variant_value(r, v)} | "
+            f"{variant_key(r.path, v.applies_to)} | extracted | "
+            f"{_variant_value(r, v, mark_unmatched=False)} | "
             f'quote: "{quote}" | reason: {reason}'
         )
     return out

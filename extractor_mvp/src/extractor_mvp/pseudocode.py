@@ -5,7 +5,9 @@ One line per step in execution order: the record's step order, which is the pape
 one (``step_order_source``), else template order with a comment saying so. Function-call syntax with
 named arguments; every argument carries a tag:
 
-* ``[E]`` quote-backed: the paper's value, extracted with a resolved quote;
+* ``[E]`` quote-backed: the paper's value, extracted with a resolved quote. ``[E: not in AESPA's
+  vocabulary]`` when no vocabulary member fits the paper's term (B11, 2026-11-25): the words are the
+  paper's, and nothing downstream (a KB default, an inference) was filled for them;
 * ``[D]`` the KB default of the resolved tool or pipeline, with its source;
 * ``[M]`` a model inference, unconfirmed: the resolution call's model-only answers and values the
   checking pass supplied (``rechecks.checker_supplied``);
@@ -29,11 +31,13 @@ from extractor_mvp.render import (
     DEFERRED_TO_CITATION,
     EXTRACTED,
     INFERRED_DEFAULT,
+    NOT_IN_VOCABULARY,
     VARIED,
     FieldRow,
     _fmt_value,
     flatten,
     to_cobidas_coverage,
+    unmatched_terms,
 )
 
 TAGS: dict[str, str] = {
@@ -162,6 +166,24 @@ def _kb_verification(resolution: dict[str, Any] | None) -> str | None:
         return None
 
 
+def _unmatched_detail(path: str, values: list[Any]) -> str | None:
+    """B11 (2026-11-25): the bracket note of an argument that holds a term for which the vocabulary
+    has no member, in the report's words (render.NOT_IN_VOCABULARY). ``values`` are the argument's
+    values: one, or one per part of a varied field. When every term is unmatched the note stands
+    alone; otherwise it names the unmatched ones, quoted as the argument quotes them."""
+    words: list[str] = []
+    terms = 0
+    for value in values:
+        terms += len(value) if isinstance(value, (list, tuple)) else 1
+        words += [w for w in unmatched_terms(path, value) if w not in words]
+    if not words:
+        return None
+    if len(words) == terms:
+        return NOT_IN_VOCABULARY
+    named = ", ".join(_literal(w).replace("[", "(").replace("]", ")") for w in words)
+    return f"{named} {NOT_IN_VOCABULARY}"
+
+
 def _row_arg(
     row: FieldRow,
     name: str,
@@ -178,7 +200,13 @@ def _row_arg(
         )
     if row.state == EXTRACTED:
         tag = CHECKER_TAG[0] if row.checker_supplied else "E"
-        return _Arg(name, _literal(row.value), tag, f"«{clip(row.span_text)}»")
+        return _Arg(
+            name,
+            _literal(row.value),
+            tag,
+            f"«{clip(row.span_text)}»",
+            _unmatched_detail(row.path, [row.value]),
+        )
     if row.state == VARIED:
         # one block for the whole paper: every part's value, the paper's words for each part
         variants = row.variants or []
@@ -187,7 +215,13 @@ def _row_arg(
                 name, '"varied across compared models"', "E", f"«{clip(variants[0].span_text)}»"
             )
         text = ", ".join(f"{_clean(v.applies_to)}: {_literal(v.value)}" for v in variants)
-        return _Arg(name, f"varies({text})", "E", f"«{clip(variants[0].span_text)}»")
+        return _Arg(
+            name,
+            f"varies({text})",
+            "E",
+            f"«{clip(variants[0].span_text)}»",
+            _unmatched_detail(row.path, [v.value for v in variants]),
+        )
     if row.state == INFERRED_DEFAULT:
         note = getattr(row.basis, "note", None) or getattr(row.basis, "citation", None)
         if row.basis_type == "prior_publication":
@@ -362,7 +396,13 @@ def _part_tables(
             if all(v is None for v in views):
                 continue
             cells = [
-                "?" if v is None else _clean(_literal(v.value)).replace("|", "/") for v in views
+                "?"
+                if v is None
+                else (
+                    _clean(_literal(v.value))
+                    + (f" ({note})" if (note := _unmatched_detail(v.path, [v.value])) else "")
+                ).replace("|", "/")  # the value and its note: a "|" in either would add a column
+                for v in views
             ]
             body.append("# | " + " | ".join([_clean(words), *cells]) + " |")
         lines += ["#", f"# {kind}", "# | " + " | ".join(head) + " |", "# |" + "---|" * len(head)]
