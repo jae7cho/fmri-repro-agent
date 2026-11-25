@@ -6,9 +6,10 @@ extraction error list (DEVLOG.md, entry 2026-11-24 (5)). Part C lists the decisi
 author. Part D is the build order, the checks and the run. No prompt, schema, hash pin or code has
 been changed for this note, and no model call has been made.
 
-**Since then:** D1 and D1b (2026-11-24) and D2b (2026-11-25) are done; Part D says what each
-found or built. D1 was read-only; D1b and D2b changed code, scripts and tests. No prompt, schema
-or hash pin has changed, and no model call has been made.
+**Since then:** D1 and D1b (2026-11-24), D2b and D3 (2026-11-25) are done; Part D says what each
+found or built. D1 was read-only; D1b and D2b changed code, scripts and tests, and D3 the schema
+as well (0.8.0). No prompt, request schema or hash pin has changed, and no model call has been
+made.
 
 The change is one vintage event. Every prompt it touches is re-pinned together, so the run after
 it measures one prompt set, not a sequence of them.
@@ -34,6 +35,23 @@ it measures one prompt set, not a sequence of them.
   and stay open: "N3" as an alias of `n4` (keep or remove), and smoothing_approach (defined in the
   prompt, or left to the inference pass). They are listed again under C10.
 - **D2b** is built (Part D). What it leaves for the author is C10 to C14.
+
+**2026-11-25, by the author, on the five decisions D2b left (C10 to C14):**
+
+> "C10 ok, C11 ok, C12 ok, C13 ok, C14 ok. start D3"
+
+- **C10:** "N3" leaves the aliases of `n4`. smoothing_approach goes to the inference pass (D5).
+- **C11:** "or" separates the items of scrub.criterion, and of no other list field.
+- **C12:** the bare alias "SPM" takes the release's two rules (it resolves as the whole wording
+  and names the member elsewhere), built together with C7 in D4. The release list had two
+  options and no recommendation; it stays 99, 2, 5, 8, 12 and 25 until a paper prints another.
+- **C13:** every item is accepted: the two alias candidates, the family names as underspecified
+  terms of their tables, the nouns that may follow a mesh density, and rules for the eight
+  matches of the D1 sweep that D2b did not take.
+- **C14:** the detrend rule leaves `none` alone and is applied inside
+  `checker_promotion.promote`. Negation and the 2026-06 collapse stay as they are.
+- The table and code items among these are step D2c in Part D, not started. **D3** (schema
+  0.8.0) is built (Part D).
 
 ## Part A: facts, read-only, at HEAD `0d9122c`
 
@@ -607,7 +625,7 @@ extraction arm (the realignment and KB default fills use it). The proposal:
       the inference pass (B6).
   - Inference pass (B6): the three mechanical groups listed there.
 
-### Put to the author after D2b (2026-11-25); not ruled
+### Put to the author after D2b (2026-11-25); ruled the same day ("C10 ok ... C14 ok")
 
 Each fact below was run on 2026-11-25 under HEAD `f59372b` and under the D2b working tree with the
 old-against-new resolver comparison of Part D; "both" means the two give the same result.
@@ -778,11 +796,182 @@ old-against-new resolver comparison of Part D; "both" means the two give the sam
   - the re-render gate on the five record sets used on 2026-11-24 (old records identical, every
     change attributed).
   - A table fix may change stored records' resolved values on re-read; every such change is listed.
-- **D3. Schema:**
-  - B1's member and B2's retype, with the migration hops and tests;
-  - C7's term-and-member return and C9's members, where ruled in;
-  - `scripts/export_schema.py` for the new version;
-  - the version pins in tests/spec.
+- **D2c. The table and code items of C10 to C14. Not started** (it waits for the author's
+  go-ahead; no prompt and no schema change):
+  - C10: "N3" leaves the aliases of `n4`.
+  - C11: "or" separates the items of scrub.criterion.
+  - C13: the two alias candidates; the five family names as underspecified terms of their
+    tables; the nouns that may follow a mesh density; rules for the eight matches of the D1 sweep.
+  - C14: the detrend rule leaves `none` alone and is applied inside `checker_promotion.promote`.
+  - Found by the reviews of D3 in code that D3 does not change (HEAD and D3 give the same
+    result). Each is a yes or no for the author:
+    - the friston24 rule reads neither a negation nor "least squares": "six motion parameters and
+      their derivatives but not their squares" and "... estimated by ordinary least squares"
+      resolve to `friston24`;
+    - a misspelt derivative lets the 6param alias through: "six motion parameters and their
+      derivitives" and "... their temporal gradients" resolve to `6param`;
+    - "no fieldmap" and "without a field map" resolve to `fieldmap`, and the "-free" forms stay
+      unresolved; `fieldmap_less` now exists for both;
+    - on the source field the aliases of `fieldmap_less` read more than they should: the 2026-06
+      collapse (C14) lets "fieldmapless" swallow a fieldmap named beside it ("fieldmap
+      (fieldmapless SyN as fallback)" is `fieldmap_less` alone), and "field map less than ideal"
+      is `fieldmap_less`, since a hyphen and a space are one separator to the alias table;
+    - the list splitter cuts a qualifier off an item, and no alias or rule sees it: "DVARS, within
+      the white-matter mask" is `dvars`, and "signal/noise" is two items. "plus" between two
+      criteria does not separate them (C11 covers "or"). On a word followed by a long run of
+      spaces the splitter is quadratic (`extractor._TERM_SPLIT`: 6 s at 20,000 spaces, 1.5 s at
+      10,000), under both trees;
+    - the pseudo-code prints "none" for a KB-inferred term that has a member and no words
+      (`kernel_type=none [D]` beside a field table that shows `gaussian`);
+    - `extractor._apply_resolved_citations` writes a citation-resolved default through
+      `model_copy`, past the `inference_applicable` gate; the record then fails to parse;
+    - `migrate_to_current` writes the stamp it read into `written_under`, also on a document that
+      was saved after an earlier migration and states its origin (no stored record is one: 0 of
+      1,014 hold a migration record); it accepts a stamp above the current version and re-stamps
+      it; a NaN threshold parses and does not survive a JSON round trip; an extracted list may be
+      empty, as the 0.6.0 list fields may.
+  - Left unresolved by D3 on purpose, also for the author:
+    - "motion parameters and their derivatives", with no count, since B1's rule asks for the six;
+    - six with derivatives followed by anything, a citation or "(12 regressors)" included;
+    - first or backward differences in place of derivatives, and "6P" as the count;
+    - "six regressors and their derivatives", with no motion word;
+    - the global signal named with no threshold, or with a threshold that is not in standard
+      deviations ("global signal", "global signal z-score > 3");
+    - a fieldmap-less wording followed by anything outside its short list ("fieldmap-less
+      SyN-based SDC"), "fieldmap-free", and "SyN-based" alone on the method field.
+- **D3. Schema 0.8.0. Built 2026-11-25** (models, migration, extractor code and tests; no prompt
+  text, no request schema and no model call; the go-ahead is in section 0). It was built three
+  times, each rebuild after a review, and reviewed six times. Where the build differs from the
+  plan, the item says so. No member it adds has an alias: each alias that was tried gave a wrong
+  member somewhere, and each is now one closed pattern on the whole wording.
+  - **One structural bump, 0.7.4 → 0.8.0** (C1). B1 planned a patch bump to 0.7.5 for its member;
+    the member rides the same hop. Stored records are not rewritten: `parse_any_version` lifts
+    them on read.
+  - **B1, `12param`, differing from the plan.** The plan's rule was two patterns anywhere in the
+    wording ("six" and a derivative). Built that way, with a block list and two aliases, it gave
+    a wrong member on both sides of every list the first review tried ("six motion parameters
+    and the global signal derivative", "... w/o derivatives", "motion parameters and their
+    derivatives; FWHM 6 mm"). A second build let a count or a citation follow the wording and
+    read the member in running text; its review found wrong members in each addition, and
+    wordings on which the pattern backtracked for seconds. Built at last as one closed pattern
+    that must match the whole wording, as an SPM release is
+    (`coverage_fields._TWELVE_PARAM_WORDING`). The member has no alias.
+    - It reads the count six, motion nouns, a connective and the derivative ("the 6 realignment
+      parameters and their temporal derivatives", "6 motion parameters + 6 derivatives"), or the
+      count of twelve written out ("12 motion related regressors", "12 parameters", "12P").
+    - Nothing may follow it, and only a quote or a bracket may stand before it.
+    - "Regressors" and "estimates" need a motion word; "parameters" may stand alone.
+    - Every repetition in the pattern is possessive, so a wording that does not match is refused
+      in one pass: 2 ms at 20,000 characters, and four times that at four times the length. On
+      6.4 million wordings generated from its own lists it agrees with its backtracking twin.
+    - Six with derivatives and squares stays `friston24`, by the rule of 2026-11-24.
+  - **B2, method and warp of spatial normalization** retype to `SpecifiedTerm[...]`. The hop lifts
+    a bare member as 0.5.0 did. No stored record holds a value there, since no call asks for
+    either field; the targeting, the assembly and the prompt lines of B2 are D4.
+  - **C9, the scrub thresholds, differing from the plan's wording.** `Scrub.threshold` keeps its
+    name and becomes `list[float]`. The hop wraps a stored number in a one-item list, on the
+    extracted arm and on each part of a varied value.
+    - Nothing checks the list against `criterion`: a position does not say which criterion a
+      number belongs to.
+    - The extractor still reads one number, as before, into a one-item list. A first build split
+      the model's string on commas and "and"; it stored a citation year and a count of volumes as
+      thresholds ("0.5 mm (Power et al., 2012)"), each of them in the quote. Several thresholds
+      need a format the prompt states, which is D4.
+    - The quote check wants every number of a list in the quote. A one-item list is shown as the
+      number, so reports, pseudo-code and the checking pass's draft of stored records read as
+      before. The pinned scorers are unchanged: they compare a list of numbers as a sorted
+      multiset.
+  - **C9, the members:**
+    - `global_signal` (ScrubCriterion), differing from the plan. As aliases, "global signal" also
+      stood in "global signal regression" and in a description of DVARS, and "average signal" in
+      a tissue's average. Read as a bare item it was still left behind by a list cut ("DVARS,
+      the global signal"). Built as one closed pattern on a whole item
+      (`_GLOBAL_SIGNAL_ITEM`): the signal with a threshold in standard deviations beside it ("> 3
+      standard deviations of average signal", "global signal > 3 SD"). The member has no alias;
+    - `fieldmap_less` (DistortionMethod), differing from the plan. The source field's four
+      aliases were tried on this field, and each gave a wrong member: "SyN-based" also met SyN
+      used for normalization, "fieldmapless" swallowed a fieldmap named beside it, and the
+      hyphenated spellings also read "field map less than ideal". Built as one closed pattern on
+      a whole item (`_FIELDMAP_LESS_ITEM`): "fieldmap-less" in any spelling of its joints, with
+      at most the registration it runs on or the word for the step ("fieldmap-less SyN",
+      "fieldmap-less distortion correction"). The member has no alias on this field;
+    - `other` (CoregistrationCostFunction). The D2b stopgap for "other (phrase)" on that field
+      is removed.
+  - **The report's note and the audit, for a member with no alias.**
+    - The note "not in AESPA's vocabulary" is kept off a term that holds a word of one of the two
+      rules (`coverage_fields.RULE_WORDS`: a derivative, the count of twelve, "average signal"):
+      the term is about a member the vocabulary holds. Seven stored terms lose the note this way
+      ("motion parameters and their derivatives" among them). The note stays lexical, so "global
+      mean intensity > 3 SD" carries it, and the audit lists the wording as an alias candidate.
+    - The audit's token trace asks whether an alias of the member is in the quote. A bare token
+      of `12param` or `global_signal` counts as in quote only when the quote is, as a whole, the
+      wording its rule reads; the audit's text says so.
+  - **C7, schema part:** `SpecifiedTerm.resolution` gains `model_mapped`. Nothing writes it until
+    the prompts return the term and its member together (D4). Four readers take it already:
+    - the quote check reads such a term by the paper's words alone;
+    - the citation hop counts it as a named tool;
+    - `reresolve_terms.py` keeps it as stored;
+    - the audit lists it under the model's member, as an alias candidate, and does not call the
+      record stale. Such a row is a row of its own: the same words under the same member,
+      reached by the table in another paper, keep their own flags. Where the table resolves the
+      words to another member, the audit lists the term under the table's member and says what
+      the model read.
+  - **B6, the two statuses, differing from the plan's wording.** `INFERRED_FROM_TEXT` and
+    `INFERRED_FROM_CITATION` are values of the status of the existing inference class, which
+    keeps its name (`InferredDefault`). Two new classes would have added about 300 KB to the
+    exported schema, and the design called the statuses additive enum values.
+    - `INFERRED_FROM_TEXT` requires a `derived` basis and `INFERRED_FROM_CITATION` a
+      `prior_publication` basis, and so does each of their alternatives.
+    - The `inference_applicable` gate and the KB-source gate stay for `INFERRED_DEFAULT`, so
+      every field may carry the two new statuses.
+    - Nothing writes them yet. Until D5 builds their display, `render.flatten` refuses a record
+      that carries one. Before that guard such a field was shown as "unspecified", the value
+      dropped.
+  - **What D4 and D5 take over.** The reviews listed the readers that do not yet know the new
+    values. Nothing writes the values, so none of these runs today:
+    - `model_mapped` (D4): the report, the pseudo-code and the checking pass's draft show the
+      member as they show a table-resolved one; the detrend rule rebuilds such a term as
+      resolved.
+    - the two statuses (D5): `kb_client.fill_dependent_defaults` and
+      `extractor._apply_resolved_citations` replace such an arm with a default;
+      `kb_client._get_pipeline_ref`, `certain_version` and `motion_inference._base_pipeline_ref`
+      read a base pipeline held by `INFERRED_FROM_CITATION` as none; `batch._tally` counts such a
+      field in no bucket; `render`, `pseudocode` (the tags D and C) and
+      `verifier.compact_draft` branch on `INFERRED_DEFAULT` alone.
+  - **Gates, run on 2026-11-25, `7df91eb` against the working tree.** They were first run
+    against `9d5ddc6`. The commit between the two (the number reading) changes none of the
+    1,613 files the gates compare, and the numbers below are those of the rerun.
+    - Request schemas of the seven calls and the eight prompt hashes: byte-identical.
+    - The checking pass's draft (`verifier.compact_draft`): 148 of 148 byte-identical. 25 of the
+      148 records hold a scrub threshold.
+    - Every wording at hand (19,594: the stored wordings, the D1 probes and the rows of the D2b
+      reviews): 70 resolve differently, each from unresolved to a new member (`12param` 34,
+      `fieldmap_less` 19, `other` 16, `global_signal` 1).
+    - `reresolve_terms.py` on six record sets (1,944 terms): 22 terms change, 20 to `12param`
+      (achuthan_2023, ciric_2017, li_2024, power_2014) and 2 to `global_signal`
+      (schwartz_2018). Held-out papers: 0 terms changed.
+    - Every stored record read through `parse_any_version` (1,031 files): 1,009 parse under
+      both trees and 5 fail under both. The migrated documents differ by the stamp, the
+      migration note and 149 thresholds that became one-item lists, and by nothing else.
+    - Re-render of five record sets: 40 lines change in 9 reports and their pseudo-code, each
+      the old line with the note taken off. No held-out file changed.
+    - The 18 scorers on arms S, B and C: each of the 54 reports identical. On corpus_full_v3,
+      17 of the 18 stop under both trees on a record file with no preprocessing block (2 of its
+      40 files).
+    - `term_audit.py` on the six sets: 26 lines differ. Seven wordings are now "by rule" and
+      their stored member stale, scrub.criterion is listed among the fields with rules, and the
+      trace says what it cannot find. The aliases checked stay 451.
+    - Mutation: six runs on a scratch copy of both trees, each mutant's diff shown non-empty
+      before its run. The first four left 15, 5, 7 and 3 survivors (of 109, 159, 155 and 183
+      mutants); each was then killed by a new test, or the code it stood in was rewritten or
+      taken out. The last two killed 203 of 203 and 212 of 212. Two comments were reworded
+      after the last run, and no code.
+    - Reviews: six rounds of read-only agents, each finding re-checked by a second agent that
+      had to reproduce it: 42 of 47 confirmed, then 31 of 40, 16 of 21, 5 of 5, 2 of 3 and 1 of 1
+      (a comment). All are fixed or, where the fix is the author's call, listed under D2c.
+    - Suites: extractor_mvp 1,901 passed (2 live skipped), root 375; pre-commit clean on the
+      second pass. The code commit passes on its own in a scratch export of `7df91eb` (1,899 and
+      372 passed; the tests that read untracked files skip there, as in CI).
 - **D4. Prompts:**
   - B2-B9 and B10's cleanups in one commit, with B13 and the prompt lines of C7 and C9 where
     ruled in;
