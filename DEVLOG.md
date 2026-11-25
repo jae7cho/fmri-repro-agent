@@ -5770,3 +5770,140 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
 - **Checks:** root 332, extractor_mvp 1448 (2 live skipped); pre-commit clean on the second pass.
 
 Commits here: `50c8d3c`, `73ae243`, `b332fef`, `2469939`, then this entry.
+
+## 2026-11-25 (3) — D3 of the prompt and schema design: schema 0.8.0
+
+- **The author's rulings (2026-11-25):** "C10 ok, C11 ok, C12 ok, C13 ok, C14 ok. start D3".
+  - The table and code items of C10 to C14 are step D2c of the design, not started.
+  - C12's rule for the bare alias "SPM" is built with C7 in D4.
+- **What D3 is:** the models, one migration hop, extractor code, two scripts and tests. No prompt
+  text, request schema or hash pin changed, and the project code made no model call. No stored
+  record was rewritten: `parse_any_version` lifts an older document when it is read.
+- `8c413ef` — schema 0.8.0, one structural bump from 0.7.4.
+  - **Three members, each with no alias:** `12param` (motion expansion), `global_signal` (scrub
+    criterion) and `fieldmap_less` (distortion method). Each resolves by its token or by one
+    closed pattern that must match the whole wording (`coverage_fields._TWELVE_PARAM_WORDING`,
+    `_GLOBAL_SIGNAL_ITEM`, `_FIELDMAP_LESS_ITEM`).
+    - `12param`: the count six, motion nouns, a connective and the derivative ("the 6 realignment
+      parameters and their temporal derivatives"), or the count of twelve written out ("12 motion
+      related regressors", "12P"). Six with derivatives and squares stays `friston24`.
+    - `global_signal`: the signal with a threshold in standard deviations beside it ("> 3
+      standard deviations of average signal").
+    - `fieldmap_less`: "fieldmap-less" in any spelling of its joints, with at most the
+      registration it runs on or the word for the step ("fieldmap-less SyN").
+  - **`other`** on the coregistration cost function. The D2b stopgap for "other (phrase)" on that
+    field is removed.
+  - **The scrub thresholds are a list** (`Scrub.threshold: list[float]`). The hop wraps a stored
+    number in a one-item list. The extractor still reads one number, and a one-item list is shown
+    as the number.
+  - **Method and warp of spatial normalization are terms** (`SpecifiedTerm`). No call asks for
+    either field yet.
+  - **`model_mapped`**, a resolution value for a member the model read from the paper's words
+    (C7). Nothing writes it until D4. Four readers take it already: the quote check, the citation
+    hop, `reresolve_terms.py` and `term_audit.py`.
+  - **`INFERRED_FROM_TEXT` and `INFERRED_FROM_CITATION`**, two values of the status of
+    `InferredDefault` (B6), each bound to its kind of basis. Nothing writes them until D5, and
+    `render.flatten` refuses a record that carries one.
+  - The exported schema (`schema/study_spec-0.8.0.schema.json`), the two examples re-stamped, the
+    version pins in tests/spec.
+- `fc41355` — the design: the rulings on C10 to C14 in section 0, D3 as built and D2c in Part D.
+  It was committed before `8c413ef`, so for one commit the design describes code that is not in
+  the tree. It changes one file, and both suites pass at it as they do at `7df91eb` (root 329 and
+  extractor_mvp 1653 in a scratch export).
+- **Where the build differs from the plan of 2026-11-24:**
+  - **One bump.** B1 planned a patch bump to 0.7.5 for `12param`; the member rides the 0.8.0 hop.
+  - **Closed patterns, not aliases.** B1's rule was two patterns anywhere in the wording, and C9's
+    members were to be aliases. Each form that was built gave a wrong member in review: "six
+    motion parameters and the global signal derivative" was `12param`, "global signal
+    regression" was a scrub criterion, "field map less than ideal" was `fieldmap_less`, and
+    "SyN-based" met SyN used for normalization. D3 was built three times. Every repetition in the
+    three patterns is possessive, so a wording that does not match is refused in one pass (2 ms at
+    20,000 characters); the second build's patterns backtracked for seconds.
+  - **One threshold is read, not several.** A first build split the model's string on commas and
+    "and". It stored a citation year and a count of volumes as thresholds ("0.5 mm (Power et al.,
+    2012)"), each of them in the quote. Several thresholds need a format the prompt states (D4).
+  - **The two statuses are values, not classes.** Two classes would have added about 300 KB to
+    the exported schema, and the design called them additive enum values.
+  - **The report's note** ("not in AESPA's vocabulary") is kept off a term that holds a word of
+    one of the two rules (`coverage_fields.RULE_WORDS`). Seven stored terms lose the note.
+- **Gates (`7df91eb` against the tree that was committed).** Two comments were reworded after
+  the last capture, and no code; the audit was run again and its report is the same.
+  - The gates were first run against `9d5ddc6`. `7df91eb` (the number reading, built in another
+    session) was committed while D3 was under review. Both commits were exported and captured
+    again: the two give the same content for each of the 1,613 files the gates compare.
+  - request schemas of the seven calls and the eight prompt hashes: byte-identical;
+  - the checking pass's draft (`verifier.compact_draft`): 148 of 148 byte-identical;
+  - every wording at hand (19,594): 70 resolve differently, each from unresolved to a new member
+    (`12param` 34, `fieldmap_less` 19, `other` 16, `global_signal` 1);
+  - `reresolve_terms.py` on six record sets (1,944 terms): 22 terms change, 20 to `12param`
+    (achuthan_2023, ciric_2017, li_2024, power_2014) and 2 to `global_signal` (schwartz_2018).
+    Held-out papers: 0 terms changed;
+  - every stored record read through `parse_any_version` (1,031 files): 1,009 parse under both
+    trees and 5 fail under both. The migrated documents differ by the stamp, the migration note
+    and 149 thresholds that became one-item lists;
+  - re-render of five record sets: 40 lines change in 9 reports and their pseudo-code, each the
+    old line with the note taken off. No held-out file changed;
+  - the 18 scorers on arms S, B and C: each of the 54 reports identical. On corpus_full_v3, 17 of
+    the 18 stop under both trees on a record file with no preprocessing block;
+  - `term_audit.py` on the six sets: 26 lines differ (seven wordings now resolved by a rule,
+    scrub.criterion among the fields with rules, a note in the trace);
+  - mutation: six runs on a scratch copy of both trees, each mutant's diff non-empty before its
+    run. The first four left 15, 5, 7 and 3 survivors (of 109, 159, 155 and 183 mutants); each
+    was then killed by a new test, or the code it stood in was rewritten or taken out. The last
+    two killed 203 of 203 and 212 of 212;
+  - both suites pass in a scratch export of `8c413ef` (root 372 and extractor_mvp 1899; the
+    tests that read untracked files skip there, as in CI). Its 26 files are the ones the last
+    mutation run used, but for the two comments.
+- **Reviews:** six rounds, each finding re-checked by a second agent that had to reproduce it.
+  They confirmed 42 of 47, 31 of 40, 16 of 21, 5 of 5, 2 of 3 and 1 of 1 findings. Among them:
+  - round 1: the two-pattern rule and its aliases gave a wrong member on both sides of a list;
+    the aliases "global signal" and "average signal" took nuisance regressors, a description of
+    DVARS and a tissue's average; the list reader stored a citation year as a threshold; the
+    report showed the two new statuses as "unspecified";
+  - round 2: patterns that backtracked for seconds to minutes; trailers that let arbitrary text
+    follow the wording; a rejoined line wrap that glued a word onto "derivatives";
+  - round 3: the alias "fieldmapless" under the 2026-06 collapse; "and" counted as a motion word;
+    the note's words narrower than the rules;
+  - round 4: "field map less than ideal" read as fieldmap-less; `reresolve_terms.py` keeping a
+    term marked `model_mapped` that held no member; the audit reading a model's `other` as an
+    "other (phrase)" term;
+  - round 5: in the audit, a model's member and a table's member for the same words shared one
+    row, and the row's flags were those of whichever paper was read first;
+  - round 6: a comment that claimed more about the order of those two rows than the sort gives.
+- **Put to the author (not ruled), in the design under D2c:**
+  - found in code D3 does not change: the friston24 rule reads no negation; a misspelt derivative
+    lets the `6param` alias through; "no fieldmap" resolves to `fieldmap`; the source field's
+    aliases of `fieldmap_less` read "field map less than ideal"; the list splitter cuts a
+    qualifier off an item and is quadratic on a long run of spaces (6 s at 20,000);
+    `_apply_resolved_citations` writes past the `inference_applicable` gate;
+    `migrate_to_current` overwrites `written_under` on a document that already states its origin;
+  - left unresolved by D3 on purpose: "motion parameters and their derivatives" with no count;
+    six with derivatives followed by anything, a citation included; first differences and "6P";
+    the global signal with no threshold in standard deviations; "fieldmap-free" and "SyN-based"
+    on the method field.
+- **Method and limits:**
+  - 44 Claude Code subagents in seven workflows (8 to map the code D3 touches, then 12, 10, 6, 4,
+    2 and 2 for the six review rounds): session usage, not an extraction run. Their transcripts
+    hold 1,465 tool calls and 93,418 lines of output. File-tool writes went to the scratch folder
+    only. The git commands are diff, show, log and status, and `ls-files` twice in the mapping.
+    No call reached the network; the copies into scratch were local. No line of output comes
+    from results, labels, ground truth, tested_lit, this log or a held-out file. Two ground-truth
+    file names and this log's name were shown as names, in a commit's file list and in a listing
+    of the repository root;
+  - one allowed test file, `tests/test_render.py`, holds a test that reads the stored chen_2015
+    record of batch_v6_full, and two agents of round 1 ran that file. Held-out ids occur in the
+    agents' scratch only as the names of six records they made up, to check that the audit counts
+    such a record and shows nothing of it;
+  - the reviewers' wordings are constructed, and "realistic" is a verifier's judgment;
+  - the gates compare resolution on wordings at hand and on stored records. No extraction was
+    run, so the effect on new model output is not measured;
+  - the three rules are narrow by design. A wording they leave unresolved keeps its words, and
+    the audit lists it; the cases known today are in D2c;
+  - nothing writes `model_mapped` or the two statuses yet. The readers that do not know them are
+    listed in the design, for D4 and D5;
+  - gate scripts and outputs: `extractor_mvp/results/d3_gates_2026-11-25/` (gitignored). The
+    rendered reports, re-resolved copies and migrated documents the gates made are not kept
+    there, since they hold held-out text.
+- **Checks:** root 375, extractor_mvp 1901 (2 live skipped); pre-commit clean on the second pass.
+
+Commits here: `fc41355`, `8c413ef`, then this entry.
