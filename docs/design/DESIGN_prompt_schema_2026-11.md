@@ -111,8 +111,9 @@ Read-only; the project code made no model call. Scripts, inputs and every list a
 excluded by file name throughout. Every resolver result here was re-run with that folder's
 `resolve_cli.py`, which calls `_resolve_term` and `resolve_to_literal`. The coders, finders,
 verifiers and critic named below were Claude Code subagents (40, in one workflow): session usage,
-not an extraction run. They read the alias tables, the prompts and pre-extracted quotes of
-non-held-out papers, and nothing else.
+not an extraction run. Their transcripts show reads of the resolver's source and its test file,
+the prompts, the spec, the labelling rulings, this document and pre-extracted quotes of
+non-held-out papers, and of nothing else in the repository (REPORT.md, section 4).
 
 - **Both tokens are the model's, as the prompt instructs.**
   - `_SHARED_RULES`: "Typed fields: use the canonical value when the paper's term maps to one"
@@ -216,9 +217,10 @@ non-held-out papers, and nothing else.
   not taken from the corpus. They reported 60, and all 60 reproduce. Two verifiers judged each
   one. 52 hold under the field's definition and the dated rulings. For 18 of those, the second
   verifier also judged that a paper would word it so and the model would return it in that field
-  (2 of the 18 repeat the 15 above). A critic then found 45 more failing probes in code paths
-  the finders had not tried; all 45 reproduce. A wording that only stays unresolved was not
-  counted, since that is the designed behaviour (B12). By cause, with examples:
+  (2 of the 18 repeat the 15 above). A critic then found 45 more failing probes that the finders
+  had not tried, 28 of them in the list splitter and the "other" rule; all 45 reproduce. A
+  wording that only stays unresolved was not counted, since that is the designed behaviour (B12).
+  By cause, with examples:
   - **a one-word alias inside a longer term:**
     - "0.5 of slice acquisition range" (fMRIPrep's boilerplate) → `specific_slice`, through
       "slice";
