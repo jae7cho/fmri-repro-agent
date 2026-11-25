@@ -5559,3 +5559,78 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
   - pre-commit clean on the second pass, after a mypy fix and an escaped character in a test.
 
 Commits here: `ed97a8d`, `9b09f18`, `1f8737f`, then this entry.
+
+## 2026-11-25 — D1 of the prompt and schema design: every stored token traced, every alias table checked
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- **What ran (2026-11-24, read-only):** D1 of `docs/design/DESIGN_prompt_schema_2026-11.md`. No
+  prompt, schema, pin or code changed, and the project code made no model call. The two cases D1
+  was to trace turned out to be instances, so the trace was widened to every stored token and
+  every alias table.
+- `56c421e` — the design gains section A6 (the facts), B13, decisions C7-C9 (put to the author,
+  not ruled) and a longer D2b.
+- `128969b` — two wording corrections to A6: what the agents read, and where the critic's 45
+  probes fall. No number changed.
+- **The two tokens of B5:**
+  - both are the model's, as `_SHARED_RULES` instructs ("use the canonical value when the paper's
+    term maps to one", coverage_extractor.py:102-105). The returned string is stored as
+    `verbatim`, so for a mapped value the paper's term is only in the quote;
+  - bold_pct (schwartz_2018) is forced: the quote states a threshold on the average signal, not
+    percent BOLD change;
+  - fieldmap_less (ladouceur_2023) is not forced. The supplement says "Fieldmap-less" and the
+    main text describes field maps; the label follows the main text (the author's decision of
+    2026-11-19). hermans_2024 has the same conflict. No prompt carries that rule.
+- **Tokens, not words:** arm S holds 407 vocabulary values, 323 of them bare member tokens, and
+  the alias tables resolved 20 of the 83 given in words (B: 277 of 360, and 14 of 81; C: 282 of
+  365, and 13 of 83).
+- **Table self-check:** 15 of 448 aliases do not resolve to their own member: slice timing
+  reference 6, coregistration method 3, distortion source 2, distortion method 2, target surface
+  2. "middle slice" is ambiguous because "slice" is another member's alias. All 15 predate
+  `ed97a8d`; before it there were 16.
+- **Token trace** (arms S, B and C of 2026-11-15, 24 papers): 564 distinct (paper, field, token,
+  quote) cases. Code settles 370. The other 194 were coded twice by independent agents, with 18
+  disagreements adjudicated by a third.
+
+  | | S | B | C |
+  |---|---|---|---|
+  | Token values | 313 | 272 | 272 |
+  | A term in the quote that the tables resolve | 218 | 219 | 218 |
+  | A term in the quote that the tables do not resolve | 17 | 12 | 14 |
+  | Described without a term (an order word, a stated band) | 13 | 11 | 14 |
+  | Inferred (nothing said, listing order, a convention, a tool's default) | 55 | 30 | 25 |
+  | Unsupported or contradicted by the quote | 10 | 0 | 1 |
+
+- **Sweep of constructed wordings** (written from how papers and tool boilerplates word each
+  step, not from the corpus): 1,839 probed over the 39 fields; 60 reported as sent to the wrong
+  member, and all 60 reproduce. 52 hold under the field definitions and the dated rulings; a
+  second verifier judged 18 of those realistic. A critic added 45 more failing probes, 28 of
+  them in the list splitter and the "other" rule; all 45 reproduce.
+- **Corrections to earlier entries:**
+  - entry (5), item 5, lists fieldmap_less as a forced vocabulary term. It is a conflict between
+    the main text and the supplement (B13), not a forced term;
+  - entry (6) says the whole-word rule changes only optiBET on the stored pairs. That holds: the
+    322 stored (field, wording) pairs of this scan (`results/**/papers/*.json` and
+    `*.record.json`; entry (6) counted 304 under `results/*/papers`) change in the same 13
+    places. But the rule also stops versioned SPM names ("SPM12", "SPM8", "SPM5", "SPM99") from
+    resolving, which no stored wording shows because the model wrote tokens. The fix is in D2b;
+  - two of the 194 codings were corrected by hand: the case file had listed their quote spans in
+    stored order, which differs from text order in 20 of the 55 multi-span cases.
+- **Put to the author (not ruled):**
+  - C7: what the model returns for a vocabulary field. Recommended: the paper's term and the
+    member, with the alias table as a check on the member;
+  - C8: the main text wins over a supplement's generated summary (B13);
+  - C9: smaller schema, table, prompt and inference additions, each a yes or no.
+- **Method and limits:**
+  - 40 Claude Code subagents in one workflow: session usage, not an extraction run. Their
+    transcripts show reads of the allow-listed source files and the scratch files only, no git,
+    no network, and no write under the repository;
+  - held-out papers were excluded by file name where every input was built, and no data file of
+    the audit names one;
+  - the sweep's wordings are constructed, and "realistic" is a verifier's judgment;
+  - outputs, scripts and every list: `extractor_mvp/results/d1_token_audit_2026-11-24/`
+    (gitignored).
+- **Checks:** root 332, extractor_mvp 1167 (2 live skipped); pre-commit clean twice. No code
+  changed, so no mutation was run.
+
+Commits here: `56c421e`, `128969b`, then this entry.
