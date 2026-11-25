@@ -501,6 +501,24 @@ _DETREND_ORDER: tuple[str, ...] = ("none", "linear", "quadratic")
 DETREND_HIGHEST_ORDER = "detrend_highest_order_named"
 
 
+def detrend_highest_order(resolved: str | None, quote: str) -> str | None:
+    """The detrend member after the highest-order rule: the highest order the quote names, when
+    that is above ``resolved`` or nothing was resolved; else ``resolved`` as it is. A function of
+    the member and the quote alone, so the scripts that re-resolve stored records apply the same
+    rule (D2b, 2026-11-25: they had re-run only ``_resolve_term`` and un-resolved these values)."""
+    named = [
+        member
+        for member in _DETREND_ORDER
+        if any(phrase_in_quote(alias, quote) for alias in DETREND.get(member, ()))
+    ]
+    if not named:
+        return resolved
+    highest = max(named, key=_DETREND_ORDER.index)
+    if resolved is not None and _DETREND_ORDER.index(resolved) >= _DETREND_ORDER.index(highest):
+        return resolved
+    return highest
+
+
 def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
     """``nuisance_regression.detrend``: when the located quote names a higher order than the value
     resolved to ("linear or quadratic trends" with value "linear"), the resolved member becomes the
@@ -510,16 +528,9 @@ def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
         return
     term = pf.extraction.value
     quote = " ".join(s.text for s in pf.extraction.spans)
-    named = [
-        member
-        for member in _DETREND_ORDER
-        if any(phrase_in_quote(alias, quote) for alias in DETREND.get(member, ()))
-    ]
-    if not named:
-        return
-    highest = max(named, key=_DETREND_ORDER.index)
     current = getattr(term, "resolved", None)
-    if current is not None and _DETREND_ORDER.index(current) >= _DETREND_ORDER.index(highest):
+    highest = detrend_highest_order(current, quote)
+    if highest is None or highest == current:
         return
     out.fields["nuisance_regression"]["detrend"] = _extracted_pf(
         "detrend",

@@ -16,9 +16,12 @@ when the caller passes ``value_context == VALUE`` (e.g. ``"mode@1000"`` fires fo
 
 from __future__ import annotations
 
+import functools
 import re
 from dataclasses import dataclass
 from typing import Literal
+
+from extractor_mvp.span_resolver import _EXPLICIT_NORMALIZATIONS, _hyphenation_drop_indices
 
 ResolveStatus = Literal["resolved", "underspecified", "ambiguous", "no_match"]
 
@@ -133,7 +136,15 @@ TARGET_SURFACE_SYNONYMS: dict[str, list[str]] = {
     "fsaverage": ["fsaverage", "fsaverage template"],
     "fsaverage5": ["fsaverage5", "fsaverage 5", "fsaverge5"],  # observed typo (Chen p4)
     "fsaverage6": ["fsaverage6", "fsaverage 6"],
-    "fsLR_32k": ["32k_fs_LR", "fs_LR 32k", "fsLR 32k", "32k grayordinates", "fs_LR_32k"],
+    "fsLR_32k": [
+        "32k_fs_LR",
+        "fs_LR 32k",
+        "fsLR 32k",
+        "32k grayordinates",
+        "fs_LR_32k",
+        # D2b (2026-11-25): marek_2022's text layer prints the token split, "32 k fs_LR"
+        "32 k fs_LR",
+    ],
     "fsLR_164k": ["164k_fs_LR", "fs_LR 164k", "fsLR 164k", "fs_LR_164k"],
 }
 
@@ -207,30 +218,184 @@ def _fold_separators(s: str) -> str:
     return " ".join(s.replace("_", " ").replace("-", " ").split())
 
 
-def _phrase_in(alias_folded: str, raw_folded: str) -> bool:
+#: Hyphens a PDF text layer prints in place of "-" (U+2010 hyphen, U+2011 non-breaking hyphen,
+#: U+2012 figure dash, U+FE63 small hyphen-minus, U+FF0D full-width hyphen-minus). The en dash, the
+#: em dash and the minus sign are in span_resolver's table already.
+_HYPHENS = "\u2010\u2011\u2012\ufe63\uff0d"
+#: Characters with no width, dropped: the soft hyphen, the zero-width space, non-joiner and joiner,
+#: the word joiner and the byte-order mark. "field\u00admap" is "fieldmap" to a reader.
+_INVISIBLE = "\u00ad\u200b\u200c\u200d\u2060\ufeff"
+
+
+def repair_text(raw: str) -> str:
+    """The text as a reader sees it, for MATCHING only (D2b, 2026-11-25; the stored words are never
+    changed). The D1 token trace found paper terms hidden from the alias tables by a ligature and
+    by dashes; the review of this change added the Unicode hyphens and the invisible characters,
+    which let "fieldmap\u2010less" and "HD\u2010BET" past the rules written for them.
+
+    One character at a time, by an explicit table: span_resolver's (ligatures, the en and em dash,
+    the minus sign, curly quotes, the no-break space, the multiplication sign) and the hyphens of
+    :data:`_HYPHENS`; the characters of :data:`_INVISIBLE` are dropped. Nothing else is folded:
+
+    - no NFKD. It turns a trademark sign or a footnote superscript into letters or digits joined to
+      the word before it ("MATLAB(TM)" as one word, "BET1"), which hides the alias;
+    - not span_resolver's split-measurement rule. It joins an article to a number ("a 24 parameter
+      model" becomes "a24 parameter model"). Both are harmless where the quote and the text are
+      normalized alike, and not here, where only this side is.
+    """
+    out: list[str] = []
+    for ch in raw:
+        if ch in _INVISIBLE:
+            continue
+        if ch in _HYPHENS:
+            out.append("-")
+        else:
+            out.append(_EXPLICIT_NORMALIZATIONS.get(ch, ch))
+    return "".join(out)
+
+
+def _rejoin_line_wraps(text: str) -> str:
+    """``text`` with a word that a line break split at a hyphen put back together ("Butter-",
+    newline, "worth"). Used only as a second reading, when the first names no member: a real
+    compound split at the same place ("rigid-", newline, "body") must keep its hyphen."""
+    drops = _hyphenation_drop_indices(text)
+    return "".join(ch for i, ch in enumerate(text) if i not in drops)
+
+
+@functools.lru_cache(maxsize=4096)
+def _alias_regex(alias_folded: str) -> re.Pattern[str]:
     """The alias as whole words of the raw text (2026-11-24, the author's ruling on the resolver
     audit): "optiBET" no longer resolves through the alias "BET". A boundary is any character that
     is not a letter or a digit, or the end of the text; a plural "s" after the alias is allowed
-    ("grayordinates" for the alias "grayordinate")."""
-    return bool(re.search(rf"(?<![a-z0-9]){re.escape(alias_folded)}s?(?![a-z0-9])", raw_folded))
+    ("grayordinates" for the alias "grayordinate"). Spaces are tolerated around a slash the alias
+    holds ("blip up / blip down", D2b). No other whitespace is tolerated: a token the text layer
+    split ("B 0", "32 k fs_LR") is an alias of its own, taken from the paper that prints it.
+
+    An alias that ends in a digit names a whole number (D2b): no decimal part or thousands group
+    may follow it. "fsaverage 5.3" holds the number 5.3 (a FreeSurfer release), not the mesh
+    density 5, and "mode value of 1,000,000" is not the alias "mode value of 1,000". A citation
+    number set against such an alias ("SPM12,23") leaves it unmatched too, which costs a member
+    and never gives a wrong one."""
+    body = re.escape(alias_folded).replace("/", r"\s*/\s*")
+    whole_number = r"(?![.,]\d)" if alias_folded[-1:].isdigit() else ""
+    return re.compile(rf"(?<![a-z0-9]){body}s?(?![a-z0-9]){whole_number}")
+
+
+def _phrase_in(alias_folded: str, raw_folded: str) -> bool:
+    """Whether the alias occurs as whole words of the raw text (see :func:`_alias_regex`)."""
+    return bool(_alias_regex(alias_folded).search(raw_folded))
+
+
+def _alias_term(alias: str, value_context: float | None) -> str | None:
+    """The folded term an alias searches for, or None when its ``@VALUE`` gate does not pass:
+    ``term@VALUE`` counts only when value_context == VALUE."""
+    if "@" not in alias:
+        return _fold_separators(alias.lower())
+    term, _, val = alias.rpartition("@")
+    if value_context is None:
+        return None
+    try:
+        if float(val) != float(value_context):
+            return None
+    except ValueError:
+        return None
+    return _fold_separators(term.lower())
 
 
 def _alias_matches(alias: str, raw_lower: str, value_context: float | None) -> bool:
     """``term@VALUE`` matches only when value_context == VALUE; plain ``term``
     matches whenever it occurs as whole words of the raw text, case-insensitively, with
     underscore, hyphen and space read as the same separator on both sides."""
-    raw_folded = _fold_separators(raw_lower)
-    if "@" in alias:
-        term, _, val = alias.rpartition("@")
-        if value_context is None:
-            return False
-        try:
-            if float(val) != float(value_context):
-                return False
-        except ValueError:
-            return False
-        return _phrase_in(_fold_separators(term.lower()), raw_folded)
-    return _phrase_in(_fold_separators(alias.lower()), raw_folded)
+    term = _alias_term(alias, value_context)
+    return term is not None and _phrase_in(term, _fold_separators(raw_lower))
+
+
+def members_named(
+    raw: str, synonyms: dict[str, list[str]], value_context: float | None = None
+) -> dict[str, str]:
+    """member -> the first of its aliases that the text names, before any tie is settled.
+
+    D2b (2026-11-25, the author's go-ahead on the D1 table self-check): the longer alias wins. An
+    occurrence that lies inside a longer occurrence of ANOTHER member's alias does not count, so
+    "slice" inside "middle slice", "FLIRT" inside "FLIRT BBR" and "fieldmap" inside
+    "fieldmap-less" no longer make the paper's term ambiguous. Fifteen aliases could not resolve to
+    their own member before this. An occurrence elsewhere in the text still counts: "FLIRT, then
+    FLIRT BBR" names both members and stays ambiguous.
+
+    One limit, found by the reviews of this change: an alias that ends in a digit wins only when
+    its number ends the phrase (nothing follows it, or closing or list punctuation). "fsaverage
+    6" is the mesh fsaverage6; in "fsaverage 6 mm FWHM", "fsaverage 6 millimetre kernel" and
+    "fsaverage 5 subjects" the number belongs to what follows, and no list of units can be
+    closed. There both members stay named and the term stays ambiguous, as it was before D2b.
+    "fsaverage 6 surface" is such a case too and stays unresolved.
+
+    The text is read as :func:`repair_text` gives it. When that reading names no member and a line
+    break split a word at a hyphen, the rejoined text is read instead."""
+    repaired = repair_text(str(raw))
+    named = _members_named(_fold_separators(repaired.lower()), synonyms, value_context)
+    if not named and "\n" in repaired:
+        rejoined = _rejoin_line_wraps(repaired)
+        if rejoined != repaired:
+            named = _members_named(_fold_separators(rejoined.lower()), synonyms, value_context)
+
+    # Token-prefix containment collapse (2026-06, kept as it was): drop member A when its matched
+    # alias is a strict prefix-substring of member B's matched alias AND the char in B's alias
+    # immediately following the A-substring is alphanumeric (so "fsaverage" beside "fsaverage5"
+    # collapses to the more specific 5). Until D2b this rule deliberately left "foo" inside
+    # "foo bar" ambiguous; the positional rule now settles that case when the shorter alias
+    # occurs only inside the longer one.
+    def next_char_alnum(alias_a: str, alias_b: str) -> bool:
+        j = alias_b.index(alias_a) + len(alias_a)
+        return j < len(alias_b) and alias_b[j].isalnum()
+
+    drops = {
+        a
+        for a, alias_a in named.items()
+        if any(
+            b != a
+            and alias_a.lower() != alias_b.lower()
+            and alias_a.lower() in alias_b.lower()
+            and next_char_alnum(alias_a.lower(), alias_b.lower())
+            for b, alias_b in named.items()
+        )
+    }
+    return {k: v for k, v in named.items() if k not in drops}
+
+
+#: What may follow an alias that ends in a digit for its number to end the phrase: nothing, or
+#: closing and list punctuation. A word after the number may be what it counts.
+_PHRASE_ENDS = re.compile(r"""\s*(?:\Z|[)\],;:.!?"'])""")
+
+
+def _members_named(
+    raw_folded: str, synonyms: dict[str, list[str]], value_context: float | None
+) -> dict[str, str]:
+    # Every whole-word occurrence of every alias, per member, in table order. ``wins``: whether
+    # the occurrence takes precedence over a shorter alias of another member inside it.
+    found: dict[str, list[tuple[str, int, int, bool]]] = {}
+    for member, aliases in synonyms.items():
+        for alias in aliases:
+            term = _alias_term(alias, value_context)
+            if term is None:
+                continue
+            for m in _alias_regex(term).finditer(raw_folded):
+                wins = not term[-1:].isdigit() or bool(_PHRASE_ENDS.match(raw_folded, m.end()))
+                found.setdefault(member, []).append((alias, m.start(), m.end(), wins))
+
+    def shadowed(member: str, start: int, end: int) -> bool:
+        return any(
+            other != member and wins and s <= start and end <= e and (e - s) > (end - start)
+            for other, occurrences in found.items()
+            for _alias, s, e, wins in occurrences
+        )
+
+    named: dict[str, str] = {}
+    for member, occurrences in found.items():
+        for alias, start, end, _wins in occurrences:
+            if not shadowed(member, start, end):
+                named[member] = alias
+                break
+    return named
 
 
 def resolve_to_literal(
@@ -242,36 +407,8 @@ def resolve_to_literal(
     """Resolve a free-text term to a unique canonical member, or flag why not."""
     if raw is None or not str(raw).strip():
         return SynonymResolution(None, "no_match", None)
-    raw_lower = str(raw).lower()
-
-    matched: dict[str, str] = {}
-    for member, aliases in synonyms.items():
-        for alias in aliases:
-            if _alias_matches(alias, raw_lower, value_context):
-                matched[member] = alias
-                break
-
-    # Token-prefix containment collapse: drop member A when its matched alias is a
-    # strict prefix-substring of member B's matched alias AND the char in B's alias
-    # immediately following the A-substring is alphanumeric (so "fsaverage" inside
-    # "fsaverage5" collapses to the more specific 5, but "foo" inside "foo bar"
-    # stays — the next char is a space, so both remain and the result is ambiguous).
-    def _next_char_alnum(alias_a: str, alias_b: str) -> bool:
-        j = alias_b.index(alias_a) + len(alias_a)
-        return j < len(alias_b) and alias_b[j].isalnum()
-
-    drops = {
-        a
-        for a, alias_a in matched.items()
-        if any(
-            b != a
-            and alias_a.lower() != alias_b.lower()
-            and alias_a.lower() in alias_b.lower()
-            and _next_char_alnum(alias_a.lower(), alias_b.lower())
-            for b, alias_b in matched.items()
-        )
-    }
-    matched = {k: v for k, v in matched.items() if k not in drops}
+    raw_lower = repair_text(str(raw)).lower()
+    matched = members_named(str(raw), synonyms, value_context)
 
     if len(matched) == 1:
         member, alias = next(iter(matched.items()))

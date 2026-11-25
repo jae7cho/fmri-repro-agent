@@ -81,7 +81,14 @@ from fmri_repro.spec.provenance import (
 from fmri_repro.spec.refs import AcquisitionEntities, AcquisitionRef
 from pydantic import BaseModel, Field, model_validator
 
-from extractor_mvp.coverage_fields import SPECS_BY_KIND, TERM_RULES
+from extractor_mvp.coverage_fields import (
+    COMPOUND_TERMS,
+    OTHER_OFFERED_WITHOUT_MEMBER,
+    SPECS_BY_KIND,
+    TERM_RULES,
+    rule_hits,
+    rules_name,
+)
 from extractor_mvp.extraction_result import FieldExtractionResult, StepFieldResult
 from extractor_mvp.motion_guard import (
     MOTION_VALUE_ROUTED_FALLBACK,
@@ -731,7 +738,7 @@ def _process_field(
         elif value_kind == "term":
             value = _resolve_term(str(fe.value), literal_type, synonyms, dotted)
         elif value_kind == "term_list":
-            items = _split_terms(str(fe.value))
+            items = _split_terms(str(fe.value), _keep_whole(dotted, synonyms))
             if not items:
                 return (
                     _missing_pf(field_id, t, "value_not_in_literal"),
@@ -740,7 +747,7 @@ def _process_field(
                     ),
                     None,
                 )
-            value = [_resolve_term(item, literal_type, synonyms, dotted) for item in items]
+            value = _resolve_term_list(items, literal_type, synonyms, dotted)
         else:  # "text": the paper's words, kept whole
             value = str(fe.value).strip()
     elif literal_type is not None:
@@ -1134,27 +1141,103 @@ def _parse_band(raw: object) -> tuple[float | None, float | None] | None:
     return (low, high)
 
 
-_TERM_SPLIT = re.compile(r"\s*(?:,|;|/|\band\b|\+)\s*")
+#: The separators of a list value: a comma, a semicolon, a slash, "and", a plus sign. Narrowed by
+#: D2b (2026-11-25), after the D1 sweep found single terms cut in two:
+#: - a comma between two digits is a decimal or a thousands mark ("FD > 0,5 mm", "10,000"), and a
+#:   slash between two digits is a fraction ("DVARS > 1/2");
+#: - an "and" joined by a hyphen on either side is part of a name ("Realign-and-Unwarp").
+_TERM_SPLIT = re.compile(r"\s*(?:(?<!\d),|,(?!\d)|;|(?<!\d)/|/(?!\d)|(?<![\w-])and(?![\w-])|\+)\s*")
+#: A unit and what it is counted per is one token, not two list items ("FD > 0.2 mm/TR",
+#: "DVARS > 0.5 %BOLD/s"). Held before the split (D2b).
+_UNIT_RATIO = re.compile(
+    r"(?:(?<![A-Za-z])(?:mm|cm|voxels?|degrees?|deg)|%\s*BOLD|%|\u00b0)\s*/\s*"
+    r"(?:TR|s|sec|seconds?|ms|min|volumes?|vols?|frames?|scans?|time\s*points?)\b",
+    re.IGNORECASE,
+)
 
 
 _PAREN = re.compile(r"\([^()]*\)")
 #: "other (the paper's phrase)" or "other: the paper's phrase" (2026-11-03, the author's ruling on
-#: the distortion method: "other" must carry the paper's phrase and is checked against it).
-_OTHER_WITH_PHRASE = re.compile(r"^other\s*(?:\((?P<p>[^()]+)\)|:\s*(?P<q>.+))\s*$", re.IGNORECASE)
+#: the distortion method: "other" must carry the paper's phrase and is checked against it). D2b
+#: (2026-11-25): the phrase may hold parentheses of its own, when they balance ("other (unwarping
+#: (FUGUE))"), and a comma or a spaced dash introduces it as a colon does ("other - CONN toolbox").
+#: Before, such a value went to the alias table, where an alias inside the phrase claimed its
+#: member. A hyphen with no space before it is part of a word ("other-direction phase encoding").
+_OTHER_IN_PARENTHESES = re.compile(r"^other\s*\((?P<p>.+)\)\s*$", re.IGNORECASE | re.DOTALL)
+_OTHER_INTRODUCED = re.compile(
+    r"^other(?:\s*[:,]|\s+[-\u2013\u2014])\s*(?P<q>.+?)\s*$", re.IGNORECASE | re.DOTALL
+)
+_HELD = re.compile(r"\x00(\d+)\x00")
 
 
-def _split_terms(raw: str) -> list[str]:
+def _other_phrase(value: str) -> str | None:
+    """The paper's phrase of an "other ..." value, or None when the value is not of that form."""
+    text = value.strip()
+    in_parentheses = _OTHER_IN_PARENTHESES.match(text)
+    if in_parentheses:
+        phrase = in_parentheses.group("p")
+        depth = 0
+        for ch in phrase:
+            depth += (ch == "(") - (ch == ")")
+            if depth < 0:
+                break
+        if depth == 0:  # one outer pair: "other (a) (b)" and "other (a (b)" are not of this form
+            return str(phrase).strip() or None
+        return None
+    introduced = _OTHER_INTRODUCED.match(text)
+    return introduced.group("q").strip() or None if introduced else None
+
+
+def _keep_whole(
+    dotted: str, synonyms: tuple[dict[str, list[str]], list[str] | None] | None
+) -> tuple[str, ...]:
+    """The terms of a list field that the splitter must not cut (D2b, 2026-11-25), as regular
+    expressions: the field's aliases that hold a separator of their own ("blip-up/blip-down",
+    "ICA+FIX"), the longest first, and its compound terms (coverage_fields.COMPOUND_TERMS)."""
+    aliases = sorted(
+        {a for group in (synonyms[0] if synonyms else {}).values() for a in group},
+        key=len,
+        reverse=True,
+    )
+    patterns = []
+    for alias in aliases:
+        if not _TERM_SPLIT.search(alias):
+            continue
+        body = re.escape(alias).replace(r"\ ", r"\s+")
+        for sep in ("/", r"\+", ",", ";"):
+            body = body.replace(sep, rf"\s*{sep}\s*")
+        patterns.append(body)
+    return (*patterns, *COMPOUND_TERMS.get(dotted, ()))
+
+
+def _split_terms(raw: str, keep_whole: tuple[str, ...] = ()) -> list[str]:
     """A comma/and-separated list value into its items, empty items dropped. A parenthesised
-    phrase is one piece ("other (unwarping and resampling)" is not split at its "and")."""
+    phrase is one piece ("other (unwarping and resampling)" is not split at its "and"), nested
+    parentheses included; so are a unit ratio and every ``keep_whole`` term (D2b, 2026-11-25)."""
     held: list[str] = []
 
     def hold(m: re.Match[str]) -> str:
         held.append(m.group(0))
         return f"\x00{len(held) - 1}\x00"
 
-    masked = _PAREN.sub(hold, raw)
-    items = [item.strip() for item in _TERM_SPLIT.split(masked) if item.strip()]
-    return [re.sub(r"\x00(\d+)\x00", lambda m: held[int(m.group(1))], it) for it in items]
+    masked = raw.replace("\x00", "")  # the placeholder's own character never reaches a held span
+    for pattern in keep_whole:
+        masked = re.sub(pattern, hold, masked, flags=re.IGNORECASE)
+    masked = _UNIT_RATIO.sub(hold, masked)
+    while True:  # innermost pair first, then the pair around it
+        masked, n = _PAREN.subn(hold, masked)
+        if not n:
+            break
+
+    def restore(text: str) -> str:
+        # one pass per level of nesting; the bound keeps a malformed value from looping for ever
+        for _ in range(len(held) + 1):
+            if not _HELD.search(text):
+                break
+            text = _HELD.sub(lambda m: held[int(m.group(1))], text)
+        return text
+
+    return [restore(item.strip()) for item in _TERM_SPLIT.split(masked) if item.strip()]
 
 
 def _resolve_term(
@@ -1167,22 +1250,25 @@ def _resolve_term(
     through the field's own table when one is given, else by exact membership. "other (phrase)"
     resolves to ``other`` with the phrase as the verbatim (2026-11-03), so its support check reads
     the paper's words."""
-    other = _OTHER_WITH_PHRASE.match(verbatim.strip())
-    if other and "other" in typing.get_args(literal_type):
-        phrase = (other.group("p") or other.group("q") or "").strip()
-        if phrase:
-            return SpecifiedTerm(verbatim=phrase, resolved="other", resolution="resolved")
+    members = typing.get_args(literal_type)
+    phrase = _other_phrase(verbatim)
+    if phrase is not None and "other" in members:
+        return SpecifiedTerm(verbatim=phrase, resolved="other", resolution="resolved")
+    if phrase is not None and dotted in OTHER_OFFERED_WITHOUT_MEMBER:
+        # D2b (2026-11-25): the prompt line offers "other" and the vocabulary has no such member
+        # (the coregistration cost function, until schema 0.8.0). The model has said that no member
+        # fits, so an alias inside the phrase must not claim one.
+        return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
     # 2026-11-24 (the resolver audit): an exact member token is that member, before any alias of
     # another member can claim it, unless a dated ruling sends it elsewhere; then the field's
     # count and modifier rules (TERM_RULES), then the alias table.
     rules = TERM_RULES.get(dotted or "")
-    members = typing.get_args(literal_type)
     if verbatim in members:
         target = rules.exact_overrides.get(verbatim, verbatim) if rules else verbatim
         return SpecifiedTerm(verbatim=verbatim, resolved=target, resolution="resolved")
     if rules:
         for member, patterns in rules.require_all.items():
-            if all(re.search(p, verbatim, re.IGNORECASE) for p in patterns):
+            if all(rule_hits(p, verbatim) for p in patterns):
                 return SpecifiedTerm(verbatim=verbatim, resolved=member, resolution="resolved")
     if synonyms is not None:
         syns, under = synonyms
@@ -1190,21 +1276,62 @@ def _resolve_term(
         blocked = bool(
             rules
             and res.status == "resolved"
-            and any(
-                re.search(p, verbatim, re.IGNORECASE)
-                for p in rules.block.get(res.resolved or "", ())
-            )
+            and any(rule_hits(p, verbatim) for p in rules.block.get(res.resolved or "", ()))
         )
+        # D2b (2026-11-25): a member the rules find named in the term (an SPM release) stands
+        # beside the member the table returned, so the term names two and keeps its words
+        if res.status == "resolved" and rules_name(dotted or "", verbatim) - {res.resolved}:
+            blocked = True
         if res.status == "resolved" and not blocked:
             return SpecifiedTerm(verbatim=verbatim, resolved=res.resolved, resolution="resolved")
-        if verbatim in typing.get_args(literal_type):
-            return SpecifiedTerm(verbatim=verbatim, resolved=verbatim, resolution="resolved")
         if res.status == "underspecified":
             return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="underspecified")
         return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
-    if verbatim in typing.get_args(literal_type):
-        return SpecifiedTerm(verbatim=verbatim, resolved=verbatim, resolution="resolved")
     return SpecifiedTerm(verbatim=verbatim, resolved=None, resolution="unrecognized")
+
+
+#: A first item that rules something out is not completed with the next item's noun ("excluding
+#: white and gray matter" must not record white matter as a regressor).
+_NEGATED = re.compile(r"\b(?:no|not|non|without|excluding|except|neither|nor)\b", re.IGNORECASE)
+
+
+def _resolve_term_list(
+    items: list[str],
+    literal_type: Any,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+    dotted: str | None = None,
+) -> list[SpecifiedTerm]:
+    """Each item of a list value resolved alone, then a coordination that shares its head noun
+    completed (D2b, 2026-11-25). "anatomical and temporal CompCor" splits into "anatomical" and
+    "temporal CompCor", and "white and gray matter" into "white" and "gray matter": the first item
+    has lost the noun it shares with the second and resolved to nothing.
+
+    An unresolved item is tried again with the last word, then the last two words, of the next
+    item. Three conditions, each of which keeps a wrong member out: the next item resolved (the
+    noun belongs to a term the vocabulary knows); the borrowed words alone name no member (else
+    "in-house and FSL topup" would make "in-house" topup); the item does not rule anything out
+    (:data:`_NEGATED`). The member is recorded; the item's words stay as the paper wrote them."""
+    terms = [_resolve_term(item, literal_type, synonyms, dotted) for item in items]
+    for i in range(len(terms) - 1):
+        if terms[i].resolved is not None or terms[i + 1].resolved is None:
+            continue
+        own = items[i].strip()  # a suspended hyphen ("gradient- and ...") is a separator anyway
+        if not own or _NEGATED.search(own):
+            continue
+        nxt = items[i + 1].split()
+        for k in (1, 2):
+            if len(nxt) <= k:
+                break
+            head = " ".join(nxt[-k:])
+            if _resolve_term(head, literal_type, synonyms, dotted).resolved is not None:
+                continue
+            completed = _resolve_term(f"{own} {head}", literal_type, synonyms, dotted)
+            if completed.resolved is not None:
+                terms[i] = SpecifiedTerm(
+                    verbatim=terms[i].verbatim, resolved=completed.resolved, resolution="resolved"
+                )
+                break
+    return terms
 
 
 def _step_not_performed_pf(field_id: str, t: Any) -> ProvenancedField:

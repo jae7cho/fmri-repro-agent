@@ -16,6 +16,7 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import json
+import re
 from typing import Any, Literal
 
 from fmri_repro.spec.preprocessing import (
@@ -54,6 +55,14 @@ from fmri_repro.spec.preprocessing import (
     TemporalPassType,
     TissueClass,
     TissueRegressor,
+)
+
+from extractor_mvp.synonym_resolver import (
+    SYNONYMS_BY_FIELD,
+    _fold_separators,
+    _rejoin_line_wraps,
+    members_named,
+    repair_text,
 )
 
 ValueKind = Literal["term", "term_list", "number", "int", "bool", "text", "band"]
@@ -99,8 +108,9 @@ class CoverageFieldSpec:
 
 
 # ---------------------------------------------------------------------------
-# Alias tables: canonical member -> the forms a paper writes. Substring-matched on the model's
-# value by synonym_resolver.resolve_to_literal; token-run matched on the quote by
+# Alias tables: canonical member -> the forms a paper writes. Matched as whole words on the
+# model's value by synonym_resolver.resolve_to_literal (2026-11-24), the longer alias winning
+# where one holds another (D2b, 2026-11-25); token-run matched on the quote by
 # quote_support.phrase_in_quote (an alias is taken whole, never split).
 # ---------------------------------------------------------------------------
 
@@ -113,7 +123,12 @@ _INTERPOLATION_OTHER = {**_INTERPOLATION, "other": []}
 
 STC_METHOD: dict[str, list[str]] = {
     "fsl_slicetimer": ["slicetimer", "FSL slice timing", "FSL slicetimer"],
-    "spm_slice_timing": ["SPM slice timing", "SPM slice-timing", "spm_slice_timing", "SPM"],
+    "spm_slice_timing": [
+        "SPM slice timing",
+        "SPM slice-timing",
+        "spm_slice_timing",
+        "SPM",
+    ],
     "afni_3dtshift": ["3dTshift", "AFNI 3dTshift"],
     "other": [],
 }
@@ -174,7 +189,10 @@ SCRUB_INTERPOLATION: dict[str, list[str]] = {
     "other": [],
 }
 ICA_METHOD: dict[str, list[str]] = {
-    "fix": ["FIX", "ICA-FIX", "FSL FIX", "ICA FIX"],
+    # D2b (2026-11-25): "ICA+FIX" is HCP's own name (glasser2016_nature: "the ICA+FIX pipeline"). The
+    # list splitter cut it at "+", leaving an unresolved "ICA" beside fix; an alias that holds a
+    # separator is now kept whole (extractor._split_terms).
+    "fix": ["FIX", "ICA-FIX", "FSL FIX", "ICA FIX", "ICA+FIX"],
     "aroma": ["AROMA", "ICA-AROMA", "ICA AROMA"],
 }
 COMPCOR_VARIANT: dict[str, list[str]] = {
@@ -222,11 +240,17 @@ class TermRules:
     - ``block``: a member the alias table may not return when any of its patterns occurs; the term
       is then kept unresolved, in the paper's words.
     - ``exact_overrides``: an exact member token resolved elsewhere by a dated ruling.
+    - ``named_by`` (D2b, 2026-11-25): a member the term names when any of its patterns occurs,
+      without the term resolving to it. The alias table may then not return ANOTHER member (the
+      term names two), a quote that holds the pattern holds the member (the token trace), and the
+      report does not say the term is outside the vocabulary. The member itself still needs an
+      alias or a ``require_all`` rule to be resolved.
     """
 
     require_all: dict[str, tuple[str, ...]] = dataclasses.field(default_factory=dict)
     block: dict[str, tuple[str, ...]] = dataclasses.field(default_factory=dict)
     exact_overrides: dict[str, str] = dataclasses.field(default_factory=dict)
+    named_by: dict[str, tuple[str, ...]] = dataclasses.field(default_factory=dict)
 
 
 #: Keyed on the dotted path. Motion expansion (the audit of 2026-11-24 found ten stored wordings
@@ -235,12 +259,65 @@ class TermRules:
 #: convention; any derivative, square, quadratic, expansion or regressor count blocks 6param, so
 #: a wording no member fits keeps its words (12param is schema 0.8.0, DESIGN_prompt_schema_2026-11
 #: B1). The exact token "volterra" stays friston24 (item 3, 2026-10-28).
+#:
+#: D2b (2026-11-25): the wrong-member matches of the D1 sweep that both of its verifiers confirmed
+#: (DESIGN_prompt_schema_2026-11 A6; results/d1_token_audit_2026-11-24/REPORT.md). Each is a block:
+#: the alias table may not return the member, and the paper's words are kept. None adds an alias.
+#:
+#: - motion expansion: "six motion parameters and their first differences" resolved to 6param,
+#:   because the block list named derivatives and not differences. The same day the two patterns
+#:   were narrowed from "deriv" and "differ": "six motion parameters derived from the realignment"
+#:   and "... for the different runs" are the six-parameter model, and the rule of 2026-11-24 had
+#:   kept them unresolved (no stored wording showed it). "derivat" covers derivative, derivate and
+#:   derivation and leaves "derived" alone;
+#: - distortion method and source: "fieldmap-less" and "fieldmap-free" resolved to fieldmap (the
+#:   opposite method) and to susceptibility_fieldmap through "fieldmap";
+#: - brain extraction: "HD-BET" resolved to bet (a hyphen is a word boundary, so the whole-word rule
+#:   that stopped "optiBET" did not stop it);
+#: - slice timing reference: fMRIPrep's "0.5 of slice acquisition range" resolved to specific_slice
+#:   through "slice"; it states a time;
+#: - smoothing space: "native cortical surface", "the subject's cortical surface" and "individual
+#:   cortical surface" resolved to template_surface through "cortical surface" (sims_2021 and
+#:   smith_2013 word a subject's own surface this way).
+#: - the SPM members and an SPM release written as one word. The whole-word rule of 2026-11-24
+#:   stopped such a release from resolving through "SPM"; the stored quotes print SPM99 and SPM99b
+#:   (maheu_2011, dimitrova_2002), SPM5 (shen_2013), SPM8 (gordon_2014, greene_2022), SPM12
+#:   (agtzidis_2020 and others) and SPM12b (silchenko_2023). A release written apart ("SPM 12",
+#:   "SPM-8") holds "SPM" as a word of its own and resolves through that alias, as it always has.
+#:   Two rules:
+#:   - a listed release that is the whole wording is that member ("SPM12", "the SPM99b
+#:     software"). The list is closed: 99, 2, 5, 8, 12 and 25, each with or without the "b" of a
+#:     beta;
+#:   - "SPM" with a number inside a longer wording, or with a number the list lacks ("SPM96"),
+#:     NAMES the member and does not resolve to it. As a plain alias it would resolve, and "CONN
+#:     toolbox (SPM12)", "DPARSF (SPM8)" or "CAT12 (SPM12)" would become SPM's own tool for the
+#:     step, which a toolbox that runs on SPM is not (C3); a list of such toolboxes to block
+#:     cannot be closed (the review of this change found six names the first list missed). Naming
+#:     keeps another member from taking the term ("SPM12 in MATLAB" is not custom), lets the token
+#:     trace find the release in a quote, and keeps the report from calling the term outside the
+#:     vocabulary.
+#:   The bare alias "SPM" is as it was: "CONN toolbox (SPM)" still resolves to the SPM member, and
+#:   whether it should is put to the author.
+_FIELDMAP_FREE = r"field[\s_-]*map[\s_-]*(?:less|free)"
+_DERIVATIVE = r"derivat|\bderivs?\b"
+_SPM_RELEASE = r"(?<![a-z0-9])spm(?:99|2|5|8|12|25)b?(?![a-z0-9])"
+_SPM_RELEASE_ALONE = rf"\A\W*(?:the\s+)?{_SPM_RELEASE}(?:\s+(?:software|package))?\W*\Z"
+_SPM_NUMBERED = r"(?<![a-z0-9])spm\d{1,2}[a-z]?(?![a-z0-9])"
+
+
+def _spm_member(member: str) -> TermRules:
+    return TermRules(
+        require_all={member: (_SPM_RELEASE_ALONE,)}, named_by={member: (_SPM_NUMBERED,)}
+    )
+
+
 TERM_RULES: dict[str, TermRules] = {
     "nuisance_regression.motion_expansion": TermRules(
-        require_all={"friston24": (r"\b(?:6|six)\b", r"deriv", r"squar|quadrat")},
+        require_all={"friston24": (r"\b(?:6|six)\b", _DERIVATIVE, r"squar|quadrat")},
         block={
             "6param": (
-                r"deriv",
+                _DERIVATIVE,
+                r"differenc",
                 r"squar",
                 r"quadrat",
                 r"expan",
@@ -250,6 +327,41 @@ TERM_RULES: dict[str, TermRules] = {
         },
         exact_overrides={"volterra": "friston24"},
     ),
+    "distortion_correction.method": TermRules(block={"fieldmap": (_FIELDMAP_FREE,)}),
+    "distortion_correction.source": TermRules(block={"susceptibility_fieldmap": (_FIELDMAP_FREE,)}),
+    "brain_extraction.method": TermRules(block={"bet": (r"\bhd[\s_-]*bet\b",)}),
+    "nuisance_regression.method": _spm_member("spm"),
+    "segmentation.method": _spm_member("spm_segment"),
+    "slice_time_correction.method": _spm_member("spm_slice_timing"),
+    "coregistration.method": _spm_member("spm_coreg"),
+    "spatial_smoothing.method": _spm_member("spm_smooth"),
+    "slice_time_correction.reference": TermRules(
+        block={"specific_slice": (r"slice[\s-]*acquisition[\s-]*range",)}
+    ),
+    "spatial_smoothing.space": TermRules(
+        block={
+            "template_surface": (
+                r"\b(?:native|fsnative|individual|own|subjects?(?:'s?)?|participants?(?:'s?)?)\b"
+                r"[^,;.]{0,30}cortical[\s-]+surface",
+            )
+        }
+    ),
+}
+
+#: D2b (2026-11-25): fields whose prompt line offers "other" while the vocabulary has no such
+#: member. There the model's "other (phrase)" says that no member fits, so no alias inside the
+#: phrase may claim one ("other (normalized correlation, not mutual information)" had resolved to
+#: mutual_information). The cost function gets the member in schema 0.8.0 (C9), and leaves this set.
+OTHER_OFFERED_WITHOUT_MEMBER: frozenset[str] = frozenset({"coregistration.cost_function"})
+
+#: D2b (2026-11-25): a term of a LIST field that holds a list separator of its own and is one term
+#: all the same, as a regular expression (case-insensitive). The list splitter keeps it whole
+#: (extractor._split_terms). The aliases of the field that hold a separator ("blip-up/blip-down",
+#: "ICA+FIX") are kept whole without being listed here. SPM's tool is "Realign & Unwarp";
+#: achuthan_2023 and mueller_2021 write "realigned and unwarped".
+COMPOUND_TERMS: dict[str, tuple[str, ...]] = {
+    "distortion_correction.tool": (r"realign\w*\s+and\s+unwarp\w*",),
+    "distortion_correction.method": (r"realign\w*\s+and\s+unwarp\w*",),
 }
 
 
@@ -352,6 +464,8 @@ DISTORTION_SOURCE: dict[str, list[str]] = {
         "field-map",
         "susceptibility",
         "B0",
+        # D2b (2026-11-25): hagler_2019's text layer prints the token split, "B 0 distortions"
+        "B 0",
         "phase difference",
         "spin echo",
         # item 3 (2026-10-28): "magnetic field inhomogeneit*" -- both word forms, and the bare
@@ -1091,3 +1205,112 @@ SPECS_BY_KIND: dict[str, tuple[CoverageFieldSpec, ...]] = {
 COVERAGE_BAND_FIELDS: frozenset[str] = frozenset(
     s.dotted for s in COVERAGE_SPECS if s.value_kind == "band"
 )
+
+
+# ---------------------------------------------------------------------------
+# The vocabulary as a whole: 35 coverage fields and the 4 fields of the shared call (D2b, 2026-11-25)
+# ---------------------------------------------------------------------------
+
+#: The four vocabulary fields of the shared call: dotted path -> the bare field id that keys
+#: ``synonym_resolver.SYNONYMS_BY_FIELD``. ``extractor._FIELD_SPECS`` holds the same pairs;
+#: tests/test_resolver_d2b.py checks that the two agree.
+SHARED_VOCABULARY_FIELDS: dict[str, str] = {
+    "spatial_normalization.target_space": "target_space",
+    "surface_projection.surface_registration": "surface_registration",
+    "surface_projection.target_surface": "target_surface",
+    "intensity_normalization.convention": "convention",
+}
+
+
+def vocabulary_table(dotted: str) -> tuple[dict[str, list[str]], list[str] | None] | None:
+    """The alias table and the family (underspecified) list of a vocabulary field, or None for a
+    field that has no table: a number, free text, the motion phrase (read by the resolution call),
+    temporal_standardization.method (exact members only)."""
+    if dotted in COVERAGE_SUPPORT_TABLES:
+        synonyms, underspecified = COVERAGE_SUPPORT_TABLES[dotted]
+        return (synonyms, underspecified) if synonyms else None
+    field_id = SHARED_VOCABULARY_FIELDS.get(dotted)
+    return SYNONYMS_BY_FIELD.get(field_id) if field_id else None
+
+
+def rule_hits(pattern: str, words: str) -> bool:
+    """Whether a TERM_RULES pattern occurs in the words: as written, as repaired (a ligature, a
+    Unicode hyphen, a soft hyphen inside a word), or with a word that a line break split put back
+    together ("deriva-", newline, "tives"). These are the readings the alias table matches on."""
+    repaired = repair_text(words)
+    return any(
+        re.search(pattern, text, re.IGNORECASE)
+        for text in (words, repaired, _rejoin_line_wraps(repaired))
+    )
+
+
+#: Names of a FAMILY whose members the vocabulary holds, read for the report's note only (B11).
+#: A term that holds one says which family and not which member ("fs_LR" with no density, "MSM"
+#: with no variant, "CompCor" with no kind), so the report does not call it outside the
+#: vocabulary. Resolution is untouched: the term stays unresolved, in the paper's words. The
+#: tables hold such terms for one field only ("MNI" and its kin, as underspecified terms of the
+#: target space); whether these join them, which changes their resolution status, is put to the
+#: author.
+FAMILY_NAMES: dict[str, tuple[str, ...]] = {
+    "surface_projection.target_surface": ("fsLR", "fs_LR"),
+    "surface_projection.surface_registration": ("MSM",),
+    "compcor.variant": ("CompCor",),
+    "spatial_normalization.target_space": ("Montreal Neurological Institute", "ICBM", "ICBM152"),
+}
+
+
+def rules_name(dotted: str, words: str) -> set[str]:
+    """The members the field's ``named_by`` rules find in the words (an SPM release)."""
+    rules = TERM_RULES.get(dotted)
+    if not rules:
+        return set()
+    return {
+        member
+        for member, patterns in rules.named_by.items()
+        if any(rule_hits(p, words) for p in patterns)
+    }
+
+
+def names_no_member(dotted: str, words: str) -> bool:
+    """True when nothing of today's vocabulary occurs in these words (B11): the field has a table,
+    and the words hold no alias, no member token, no wording a field rule resolves or names, no
+    family term and no family name (:data:`FAMILY_NAMES`).
+
+    False for a field with no table. False whenever a member is named, even when the words stay
+    unresolved: two members named ("FLIRT and bbregister": ambiguous), a member a rule blocks
+    ("native cortical surface" names template_surface's alias, and the field holds native_surface),
+    a member token in another case ("Friston24", "Native Volume"), a release inside a longer
+    wording ("CONN toolbox (SPM12)"), a record an older resolver left unresolved. The report makes
+    a claim about the vocabulary, so it is made only where no part of the words is a name the
+    vocabulary knows. An alias gated on a value ("grand mean@10000") counts whatever the value is.
+
+    A member's own token counts inside a longer wording as an alias does, with two exceptions that
+    count only as the whole wording: the catch-all "other" and a one-letter token (CompCor's "a"),
+    which are ordinary words inside a sentence ("ROBEX and other tools", "a custom method")."""
+    table = vocabulary_table(dotted)
+    if table is None:
+        return False
+    synonyms, underspecified = table
+    # every member is a key of its table, except "other" on the four shared fields
+    members = {*synonyms, *(["other"] if dotted in SHARED_VOCABULARY_FIELDS else [])}
+    whole = _fold_separators(repair_text(words).lower()).strip(" .,;:()[]\"'")
+    if whole in {_fold_separators(m.lower()) for m in members}:
+        return False
+    names = {
+        member: [
+            *(a.rpartition("@")[0] if "@" in a else a for a in aliases),
+            *([member] if member != "other" and len(member) > 1 else []),
+        ]
+        for member, aliases in synonyms.items()
+    }
+    rules = TERM_RULES.get(dotted)
+    if rules and any(
+        all(rule_hits(p, words) for p in patterns) for patterns in rules.require_all.values()
+    ):
+        return False
+    if rules_name(dotted, words):
+        return False
+    if members_named(words, {**names, "(family)": list(FAMILY_NAMES.get(dotted, ()))}):
+        return False
+    lowered = repair_text(words).lower()
+    return not any(u.lower() in lowered for u in underspecified or [])

@@ -180,10 +180,29 @@ def test_no_match_and_empty():
     assert resolve_to_literal(None, TARGET_SPACE_SYNONYMS).status == "no_match"
 
 
-def test_ambiguous_when_two_members_claim_term():
+def test_the_longer_alias_wins_and_a_separate_mention_stays_ambiguous():
+    # Until D2b (2026-11-25) "foo bar baz" was ambiguous here on purpose: "foo" (a) and "foo bar"
+    # (b) both matched. Fifteen aliases of the real tables could not resolve to their own member
+    # for that reason ("middle slice" against "slice"), so an occurrence that lies inside a longer
+    # occurrence of another member's alias no longer counts.
     syn = {"member_a": ["foo"], "member_b": ["foo bar"]}
-    # "foo bar" contains both "foo" (a) and "foo bar" (b) -> ambiguous
-    assert resolve_to_literal("foo bar baz", syn).status == "ambiguous"
+    r = resolve_to_literal("foo bar baz", syn)
+    assert (r.status, r.resolved, r.matched_alias) == ("resolved", "member_b", "foo bar")
+    # the shorter alias on its own elsewhere in the text is a second mention: still ambiguous
+    assert resolve_to_literal("foo, then foo bar", syn).status == "ambiguous"
+    assert resolve_to_literal("foo baz", syn).resolved == "member_a"
+    # the longer alias first and the shorter one on its own afterwards: still two mentions
+    assert resolve_to_literal("foo bar, then foo", syn).status == "ambiguous"
+    # a member's own longer alias does not shadow its shorter one: the first alias is reported
+    own = resolve_to_literal("foo bar", {"member_a": ["foo", "foo bar"]})
+    assert (own.resolved, own.matched_alias) == ("member_a", "foo")
+    # the same alias under two members shadows neither, and does not hand the term to a third
+    twice = {"member_a": ["foo"], "member_b": ["foo"], "member_c": ["bar"]}
+    assert resolve_to_literal("foo bar", twice).status == "ambiguous"
+    # two members whose aliases do not contain one another stay ambiguous
+    assert resolve_to_literal("foo qux", {"member_a": ["foo"], "member_c": ["qux"]}).status == (
+        "ambiguous"
+    )
 
 
 # --- Tier-2 additions: target_surface typo + token-prefix containment collapse,
