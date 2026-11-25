@@ -104,6 +104,149 @@ framing from `_SHARED_RULES`, `_OUTPUT_STATUS`, EXTRACTION_PROMPT, VARIANT_RULES
 VERIFIER_PROMPT, condenses one list, and adds an `AESPA_EFFORT` switch. Arm C (B + the patch) and
 arm B were identical on every label set (DEVLOG.md, 2026-11-15).
 
+### A6. D1: where the vocabulary values come from (2026-11-24, at HEAD `0c8c700`)
+
+Read-only; the project code made no model call. Scripts, inputs and every list are in
+`extractor_mvp/results/d1_token_audit_2026-11-24/` (gitignored; REPORT.md). Held-out papers are
+excluded by file name throughout. Every resolver result here was re-run with that folder's
+`resolve_cli.py`, which calls `_resolve_term` and `resolve_to_literal`. The coders, finders,
+verifiers and critic named below were Claude Code subagents (40, in one workflow): session usage,
+not an extraction run. They read the alias tables, the prompts and pre-extracted quotes of
+non-held-out papers, and nothing else.
+
+- **Both tokens are the model's, as the prompt instructs.**
+  - `_SHARED_RULES`: "Typed fields: use the canonical value when the paper's term maps to one"
+    (EX/coverage_extractor.py:102-105). Code stores the returned string as `verbatim`
+    (EX/extractor.py:732, 743, 1180-1182). For a mapped value the paper's term is only in the
+    quote, although the 0.5.0 rule reads "the paper's words always kept" (EX/extractor.py:1166).
+  - **bold_pct is forced** (schwartz_2018, scrub criterion; arm S and `corpus_full_v3`). The quote
+    reads "> 3 standard deviations of average signal or >.5mm framewise displacement"; the label
+    reads "global signal change > 3 SD, or framewise displacement". The quote's own words resolve
+    to no member, which is correct. Two gaps show: no criterion member for a global-signal
+    threshold, and `threshold` holds one number (3.0 kept, 0.5 lost).
+  - **fieldmap_less is not forced** (ladouceur_2023, distortion source; arms S, B and C). The
+    supplement says '"Fieldmap-less" distortion correction was performed'; the main text says
+    field maps were acquired "for correction of field distortions". The label follows the main
+    text, the author's decision of 2026-11-19 for hermans_2024, recorded in the label notes only.
+    hermans_2024 has the same shape in every arm: `performed` is no, quoting the supplement's
+    "Susceptibility distortion correction (SDC) was omitted". No prompt carries the rule (B13).
+- **Most values are tokens, so the alias tables have met few real wordings.**
+
+  | Arm (24 papers) | Vocabulary values | Bare member token | In words | Words a table resolved |
+  |---|---|---|---|---|
+  | S | 407 | 323 | 83 | 20 |
+  | B | 360 | 277 | 81 | 14 |
+  | C | 365 | 282 | 83 | 13 |
+
+  D1b's audit re-resolved stored wordings, so it could not see a wording the model had replaced
+  by its token.
+- **15 of 448 aliases do not resolve to their own member** (each alias given as the wording):
+  - slice_time_correction.reference, 6: "first slice", "middle slice", "central slice",
+    "centre slice", "center slice", "middle of the TR". `specific_slice` has the alias "slice" and
+    `middle` has "middle", so two members match and the value stays unresolved;
+  - coregistration.method, 3: "FLIRT BBR", "FLIRT with BBR", "FLIRT (BBR)" (`flirt` has "FLIRT");
+  - distortion_correction.source, 2: "fieldmap-less", "field map-less"
+    (`susceptibility_fieldmap` has "fieldmap" and "field map"); ambiguous since `86cba81`, the
+    commit that added them;
+  - surface_projection.target_surface, 2: "fsaverage 5", "fsaverage 6" (`fsaverage`'s alias; the
+    containment rule at EX/synonym_resolver.py:254-274 drops the shorter alias only when a letter
+    or digit follows it);
+  - distortion_correction.method, 2: "blip-up/blip-down", "blip up/blip down". The list splitter
+    cuts at "/" (EX/extractor.py:1137) before any alias is tried.
+  - All 15 predate `ed97a8d`. Before it there were 16: the whole-word rule fixed "infinite impulse
+    response", which had matched `fir`'s alias inside "infinite".
+  - On distortion_correction.method the same word goes to the opposite member: "fieldmap-less"
+    resolves to `fieldmap`.
+- **`ed97a8d` cost the versioned tool names.** "SPM12", "SPM8", "SPM5" and "SPM99" resolved to the
+  SPM members by substring. As whole words they resolve to nothing. No stored value moved: the 322
+  stored wordings change in the same 13 places D1b reported. The quotes of maheu_2011, shen_2013
+  and agtzidis_2020 name SPM this way.
+- **Token trace: how each stored token is supported by its own quote.** A case is one (paper,
+  field, token, quote) in arms S, B and C: 564 cases. Code settles 370: an alias of the token's
+  member is in the quote, and no alias of a member the record did not also return. Two
+  independent coders coded the other 194 from the quote and the field's definition; a third
+  settled 18 disagreements; two codings were corrected afterwards, because the case file had
+  listed their spans out of text order.
+
+  | How the quote supports the token | S | B | C |
+  |---|---|---|---|
+  | An alias of the member is in the quote, none competing (code) | 202 | 195 | 191 |
+  | A term names it, and that term resolves to the member | 16 | 24 | 27 |
+  | A term names it, and that term does not resolve | 17 | 12 | 14 |
+  | Described in other words (an order word, a stated band) | 13 | 11 | 14 |
+  | Inferred: nothing is said | 21 | 10 | 8 |
+  | Inferred: the order in which steps are listed | 12 | 7 | 9 |
+  | Inferred: a convention (a named model, a bare "detrending") | 10 | 10 | 5 |
+  | Inferred: a tool's default, or other outside knowledge | 12 | 3 | 3 |
+  | Unsupported by the quote | 6 | 0 | 1 |
+  | Contradicted by the quote | 4 | 0 | 0 |
+  | Total | 313 | 272 | 272 |
+
+  - **Named, not resolving (30 distinct cases):**
+    - 6 are text artifacts that the quote check's repair removes and the resolver never sees:
+      the "ﬁ" ligature in "ﬁeld map" (poldrack_2015), "B 0" (hagler_2019), "32 k fs_LR"
+      (marek_2022). On the repaired text the resolver returns the member for all 6;
+    - 2 the repair does not fix: a fused "phaseencode" (hagler_2019) and a term split across two
+      spans;
+    - 4 are the versioned SPM names above, and 2 are "Fieldmap-less";
+    - 13 are wordings the tables lack: six for motion expansion ("6 motion estimates", "six head
+      movement components", "six motion-related signals"), "gradient nonlinearity" on the method
+      field (only the plural is an alias), "prior to confound regression", "customized", "remove",
+      "grand 4D mean normalization to 10,000";
+    - 3 are `other` for a tool or design outside the list (BioImage Suite, a Gaussian filter),
+      which no alias can return.
+  - **Inferred from nothing said (33 distinct):** `fixed_kernel` from a stated kernel size (17,
+    in every arm). In arm S only: physio `none` (11) and motion `none` (3) from a regressor list
+    that omits them, and `custom` (2) where no tool is named.
+  - **Inferred from listing order (18):** slice timing before motion correction (6), filtering
+    before or after regression (10), smoothing in template space (2). These are ruling 8's cases.
+  - **Inferred from a convention (19):** 16 are ciric_2017's tissue regressors, read off "9
+    regressors" or "36P"; 2 are `linear` for a bare "detrending".
+  - **Unsupported or contradicted (11 distinct: arm S 10, B 0, C 1).** In arm S:
+    - smoothing space `native_surface` where the quote names fsaverage, the grayordinate standard
+      space or the 32k fs_LR surface (chen_2015, glasser2016_nature, poldrack_2015), or only
+      "surface data" (marek_2022);
+    - stc reference `first` for "the start of each volume" (power_2014);
+    - `band_pass` with no filter in the quote (chen_2015), `other` as a scrub and a smoothing
+      method with no tool named (ciric_2017), `bbregister` from a T1w-to-T2w sentence
+      (glasser2016_nature), and bold_pct.
+    - In arm C: surface registration `freesurfer_recon` with no tool in the quote (marek_2022).
+- **Sweep: constructed wordings sent to the wrong member.** Seven finders probed 1,839 wordings
+  over the 39 fields, written from how methods sections and tool boilerplates word each step and
+  not taken from the corpus. They reported 60, and all 60 reproduce. Two verifiers judged each
+  one. 52 hold under the field's definition and the dated rulings. For 18 of those, the second
+  verifier also judged that a paper would word it so and the model would return it in that field
+  (2 of the 18 repeat the 15 above). A critic then found 45 more failing probes in code paths
+  the finders had not tried; all 45 reproduce. A wording that only stays unresolved was not
+  counted, since that is the designed behaviour (B12). By cause, with examples:
+  - **a one-word alias inside a longer term:**
+    - "0.5 of slice acquisition range" (fMRIPrep's boilerplate) → `specific_slice`, through
+      "slice";
+    - "native cortical surface" and "subject's cortical surface" → `template_surface`, through
+      "cortical surface";
+    - "HD-BET" → `bet`; "fieldmap-free" → `fieldmap`; "non-rigid" → `rigid`;
+    - "MNI152 2009c symmetric" → MNI152NLin2009cAsym; "fsaverage_sym" → `fsaverage`;
+    - "FD-RMS" → `fd_power`; "Fourier basis set (SPM)" → `ideal_fft`;
+    - "SynthSeg (FreeSurfer 7)" → `freesurfer_recon_all`; "MSM folding-based registration" →
+      `freesurfer_recon`;
+  - **an order word that ignores its subject:** "realignment was performed after slice timing
+    correction" → `after`, where the field means slice timing relative to motion correction;
+  - **a gap in today's TERM_RULES:** "six motion parameters and their first differences" →
+    `6param` (the block list has "deriv", not "differ");
+  - **an alias that names another tool:** "N3" is an alias of `n4` (EX/coverage_fields.py:433);
+  - **the list splitter** (EX/extractor.py:1137-1157):
+    - "ICA+FIX" → an unresolved "ICA" beside `fix`; "anatomical and temporal CompCor" loses `a`;
+    - "SPM Realign and Unwarp" becomes two unresolved items;
+    - "FD > 0.2 mm/TR" and a decimal comma split inside a number;
+    - only the innermost of nested parentheses is protected (:1140), so "other (nonlinear
+      registration to the T1w (SyN), without a field map)" yields `fieldmap`;
+  - **the "other" rule** (EX/extractor.py:1143, 1170-1174):
+    - only "other (X)" and "other: X" are recognised, so "other - CONN toolbox (SPM-based)" →
+      `spm`;
+    - coregistration_cost_function's prompt line offers "other" (EX/coverage_extractor.py:298) and
+      the field has no such member, so "other (normalized correlation, not mutual information)" →
+      `mutual_information`.
+
 ## Part B: proposed change
 
 Each item names what changes, where, and what decides it. "Prompt" means a re-pin; "schema" means a
@@ -193,8 +336,19 @@ tool and fixes the labels. The alternative is a new technique field. Either way:
     - TERM_RULES for motion expansion (B1).
   - **After the fix:** 13 of the 304 pairs change, every one as intended (5 to friston24, 7 to
     unresolved, optiBET unresolved).
-- **Still to trace (D1):** whether bold_pct and fieldmap_less came from the model's token or the
-  table.
+- **Traced (D1, 2026-11-24; A6):**
+  - Both came from the model's token. bold_pct is forced, the case this sentence is written for.
+    fieldmap_less is not forced; it is B13's case and leaves this item.
+  - **The sentence leaves open what comes back for a value the paper does name.**
+    - If the token (as now): the paper's term is still not recorded, and a forced token cannot be
+      told from a named one.
+    - If the words: the alias tables do the mapping. On the stored arms they carry the first two
+      rows of A6's table (S 218, B 219, C 218 of 313, 272, 272). They lose the member of a value
+      named in words they lack and of a value described without a term (S 30, B 23, C 28), and
+      they bring in the faults of A6: the 15 aliases, the versioned SPM names, the wrong-member
+      matches. No stored record shows those faults, because the model wrote tokens.
+  - C7 puts a third shape to the author: the model returns the paper's term and its member, and
+    code checks one against the other.
 
 ### B6. Rulings 8, 12 and 13: inference goes in the inference arm (prompt + code; decision C4)
 
@@ -226,6 +380,18 @@ extraction arm (the realignment and KB default fills use it). The proposal:
 - **Scoring:** the scorers compare labels to the extraction arm. Labels whose notes say
   "inferred from" or "cited:" would be compared to the inference arm. That is a post-hoc scorer
   addition, reported in its own column like the containment column (C4).
+- **What the stored arms hold today (D1; A6):** inferences sit in the extraction arm as extracted
+  values: S 55, B 30, C 25 token values. Three groups are mechanical enough for the inference
+  pass, each a yes or no for the author (C9):
+  - order (ruling 8): slice timing relative to motion correction, filtering relative to
+    regression, smoothing space; 18 distinct cases. The first and third are already listed above;
+  - smoothing approach: `fixed_kernel` when a kernel FWHM is stated and no iteration wording is
+    present; 17 cases;
+  - a table of named confound models (9P, 24P, 36P) that gives the tissue regressors; 16 cases,
+    all ciric_2017.
+  - The rest are not inferences a rule should make: `none` from a regressor list that omits the
+    regressor (arm S, 14), `linear` for a bare "detrending" (2). The prompt lines that offer
+    `none` need "only when the text says so" (C9).
 
 ### B7. A step stated without detail counts as performed (prompt)
 
@@ -283,6 +449,25 @@ extraction arm (the realignment and KB default fills use it). The proposal:
   signal to add a member and its KB entry, as a dated change with tests. Aliases are not guessed
   ahead of the papers.
 - **Privacy:** held-out papers are counted, never shown.
+- **Added by D1 (A6):** two code checks join the audit.
+  - **Table self-check:** every alias, given as the wording, resolves to its own member. This is
+    a test; it fails today on 15 aliases.
+  - **Token trace of a record set:** how many values are bare tokens, and for each whether an
+    alias of its member is in its quote. Spans are put in text order first; stored order differs
+    from text order in 20 of the 55 multi-span cases of D1.
+
+### B13. The main text and the supplement disagree (prompt; decision C8)
+
+- **Now:** no prompt ranks the two. For distortion correction every arm quotes the supplement's
+  pipeline-generated summary: "SDC was omitted" for hermans_2024 and "Fieldmap-less" for
+  ladouceur_2023. Both labels follow the main text (the author's decision of 2026-11-19).
+- **Proposal:**
+  - one sentence in the extraction prompts and CHECKING_RULES (EX/prompt_rules.py:33): "When the
+    main text and a supplement's automatically generated pipeline description disagree about a
+    step, report what the main text states, and quote the main text."
+  - a span already records where it came from (`span_in_supplement`, EX/batch.py:318-326), so the
+    report can mark a value quoted only from the supplement. No schema change.
+- **Untouched:** a supplement that adds detail the main text does not state.
 
 ### Prompts re-pinned
 
@@ -294,6 +479,9 @@ extraction arm (the realignment and KB default fills use it). The proposal:
 - **Not touched:**
   - MOTION_METHOD_PROMPT (frozen by the motion probe);
   - the hop, release, software, gate and resolution prompts.
+- **If C7 to C9 are ruled in,** they change text inside the prompts already listed and add none
+  to the list: `_SHARED_RULES` and EXTRACTION_PROMPT (C7, B13), the field lines of calls T and S
+  (C9), CHECKING_RULES (B13).
 
 ## Part C: decisions for the author
 
@@ -357,16 +545,88 @@ extraction arm (the realignment and KB default fills use it). The proposal:
       the 5 missing) about $42, the 45-paper corpus about $65;
     - without them, about $58 and $90.
 
+### Put to the author after D1 (2026-11-24); not ruled
+
+- **C7. What the model returns for a vocabulary field.**
+  - The facts (A6): today the model returns the member's token and the paper's term is not
+    recorded. B5's sentence leaves open which of the two comes back. If it is the words, the
+    alias tables do a mapping they have so far done for 20 of arm S's 407 values.
+  - Recommendation: both. The model returns the paper's term, copied from the quote, and the
+    member it reads that term as (or none). `SpecifiedTerm.verbatim` then holds the paper's term
+    for every value, which is what the 0.5.0 rule says it holds. The alias table checks the
+    model's member instead of choosing it:
+    - the table resolves the term to the same member: resolved, as now;
+    - the table has no alias for the term: the model's member stands, marked as the model's
+      mapping, and B12 lists the term as an alias candidate that came from a paper;
+    - the table resolves the term to another member: the value is kept in the paper's words,
+      flagged for the checking pass and listed by B12;
+    - a member returned with no term from the quote is refused. That stops an inference from
+      silence (physio `none`).
+  - Cost: one more string per vocabulary value in calls T and S and the shared call (additive,
+    in 0.8.0 with B1, B2 and B6), one more value of `resolution`, and the same re-pin.
+  - Alternative A: B5 as written, with D2b's table fixes. A value the paper describes in words
+    no alias holds loses its member until an alias is added.
+  - Alternative B: keep today's contract and add only the rule against forced tokens. The
+    paper's term stays unrecorded.
+- **C8. The main text against the supplement (B13).**
+  - Recommendation: the main text wins when the two disagree, as labelled since 2026-11-19.
+  - Alternative: record both as variants, one per source.
+- **C9. Smaller additions D1 points to.** Each is a separate yes or no.
+  - Schema, in 0.8.0:
+    - a scrub criterion member for a global-signal threshold (schwartz_2018);
+    - one threshold per criterion, where today one number serves a list of criteria;
+    - a fieldmap-less member on distortion_correction.method. Without it, D2b's block keeps
+      "fieldmap-less" in the paper's words there;
+    - `other` on coregistration cost function, which the prompt line already offers. The
+      alternative is to drop "other" from the prompt line.
+  - Table: "N3" as an alias of `n4`. Keep it (one family of methods) or remove it (a different
+    algorithm, the one FreeSurfer's nu_correct runs).
+  - Prompt, calls T and S:
+    - `none` for physio regressors, motion expansion and detrend "only when the text says none
+      was used";
+    - smoothing_approach, either defined ("fixed_kernel: a kernel of a stated FWHM") or left to
+      the inference pass (B6).
+  - Inference pass (B6): the three mechanical groups listed there.
+
 ## Part D: build order, checks and the run
 
-- **D1. Trace B5's two unknowns** (bold_pct, fieldmap_less) in the stored records and alias tables.
-  Read-only.
+- **D1. Done 2026-11-24, read-only (A6).** B5's two unknowns are traced. The trace was widened to
+  every stored token and every alias table, because the two cases turned out to be instances: the
+  model writes tokens throughout, and "fieldmap-less" is one of 15 aliases that cannot resolve.
+  It leaves three decisions with the author (C7 to C9) and a longer D2b.
 - **D1b. Done 2026-11-24:**
   - the resolver fixes of B1 and B5, with `tests/test_resolver_audit.py`;
   - `scripts/reresolve_terms.py`, with its tests.
   - On the 2026-11-15 arms, the re-resolve changes motion expansion and optiBET values and no
     score. The as-stated scorers do not see a corrected member whose words differ from the label.
-- **D2b. B11 and B12** (the unmatched-term marker, the standing term audit).
+- **D2b. B11, B12 and the table faults of A6.** Code and tests; no prompt, no model call. Not
+  started.
+  - B11's marker and B12's `scripts/term_audit.py`, with the two checks D1 added.
+  - **The 15 aliases:** when one member's matched alias contains another's as whole words, the
+    longer one wins ("middle slice" over "slice", "FLIRT BBR" over "FLIRT", "fieldmap-less" over
+    "fieldmap", "fsaverage 5" over "fsaverage"). This widens the containment rule at
+    EX/synonym_resolver.py:254-274, whose comment keeps such a pair ambiguous on purpose, so it
+    is the author's call. "blip-up/blip-down" is kept whole by the splitter.
+  - **Versioned SPM names resolve again:** "SPM99", "SPM2", "SPM5", "SPM8", "SPM12" and "SPM25"
+    as aliases of each SPM member, a closed set, with cases in `tests/test_resolver_audit.py`. A
+    general rule that lets digits follow an alias would send "fsaverage4" back to `fsaverage`,
+    which the whole-word rule had stopped.
+  - **The resolver reads the repaired text** the quote check already uses
+    (`normalize_with_offset_map`, EX/span_resolver.py:169), so a ligature or a split number
+    ("B 0", "32 k") no longer hides a term. That covers 6 of A6's cases.
+  - **TERM_RULES blocks** for the wrong-member matches of A6 that both verifiers confirmed, each
+    with its test:
+    - `fieldmap` (method) and `susceptibility_fieldmap` (source) on "-less" and "-free" forms;
+    - `bet` on "HD-BET";
+    - `specific_slice` on "slice acquisition range";
+    - `template_surface` on a native, subject's or individual "cortical surface";
+    - `6param` on "differ".
+    - The rest of REPORT.md's list goes in as the author accepts each one.
+  - **The list splitter:** nested parentheses, a "/" or "," inside a number or unit, and a
+    coordination with a shared head noun ("anatomical and temporal CompCor").
+  - **The "other" rule:** "other - X" and "other, X" forms.
+  - **Gate:** `scripts/reresolve_terms.py` on the five record sets, every changed value listed;
+    the table self-check passes.
 - **D2. Code that changes no prompt:**
   - B1's alias order and B5's table fixes, with tests;
   - the re-render gate on the five record sets used on 2026-11-24 (old records identical, every
@@ -374,15 +634,18 @@ extraction arm (the realignment and KB default fills use it). The proposal:
   - A table fix may change stored records' resolved values on re-read; every such change is listed.
 - **D3. Schema:**
   - B1's member and B2's retype, with the migration hops and tests;
+  - C7's term-and-member return and C9's members, where ruled in;
   - `scripts/export_schema.py` for the new version;
   - the version pins in tests/spec.
 - **D4. Prompts:**
-  - B2-B9 and B10's cleanups in one commit;
+  - B2-B9 and B10's cleanups in one commit, with B13 and the prompt lines of C7 and C9 where
+    ruled in;
   - each re-pinned hash with its dated note and the superseded hash;
   - the copies at PIN:388-396;
   - a DEVLOG entry naming every changed prompt.
 - **D5. Inference pass (B6):**
   - code and KB tables, tests;
+  - the three groups D1 measured (B6), where ruled in;
   - a dry run on stored records with the fills listed, no model call.
 - **D5b. Cost (C6):**
   - the replay mode for unchanged calls, and the gate skip for known-fMRI corpus papers;
