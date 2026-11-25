@@ -5498,3 +5498,64 @@ Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS
      affine.
 
 Commits here: `f58e493`, then this entry.
+
+## 2026-11-24 (6) — the vocabulary resolver audited and fixed; the prompt and schema design
+
+Committed under the author's override of the working-hours hook (ALLOW_WORKHOURS_COMMIT=1).
+
+- **The audit, no model calls:**
+  - **Scope:** every stored wording of the 39 vocabulary fields in `results/*/papers` (304
+    distinct field and wording pairs; held-out papers counted, never shown). Each was re-resolved
+    with the code at `0d9122c`.
+  - **Still wrong:**
+    - ten motion-expansion wordings resolved to 6param through the alias "6 parameters", three of
+      them 24-parameter models and one stating "12 parameters";
+    - "optiBET" resolved to bet through "BET", matched inside a word;
+    - two "outlier scans entered as regressors" wordings resolved to censor (debatable, kept).
+  - **Older flags were stale:** "cubic" → quadratic, "linear, quadratic" → quadratic and
+    native_surface → template_surface were stored by older resolvers; today's code does not
+    produce them.
+  - **Corrections to the 2026-11-24 analysis:**
+    - the motion `6param` values counted against Sonnet were the resolver's, not the model's; the
+      verbatim words were right in every case except schwartz_2018, whose own 6param token is
+      correct;
+    - "volterra" → friston24 (55 values) is item 3 of 2026-10-28, not a fault;
+    - recon-all → freesurfer_recon is a deliberate alias.
+- `ed97a8d` — the author's ruling of 2026-11-24 ("audit all fields first", then fix).
+  - **Whole words:** aliases match as whole words, with a plural "s" allowed. On the 304 pairs this
+    changes only optiBET.
+  - **Exact first:** an exact member token is that member before another member's alias can claim
+    it, unless a dated ruling sends it elsewhere (`TermRules.exact_overrides`: volterra →
+    friston24).
+  - **`coverage_fields.TERM_RULES`** for motion expansion:
+    - six with derivatives and squares (or quadratic terms) is friston24;
+    - any derivative, square, quadratic, expansion or regressor count blocks 6param.
+    12param waits for schema 0.8.0, so derivative-only wordings keep their words for now.
+  - **Result:** 13 of the 304 pairs change, all as intended: 5 to friston24, 7 to unresolved, and
+    optiBET unresolved.
+  - **Tests:** `tests/test_resolver_audit.py`, 25 cases built from the audited wordings.
+- `9b09f18` — `scripts/reresolve_terms.py`.
+  - **Why:** stored records keep the member resolved at extraction, so a resolver change reaches
+    them only through this script (the design draft had said "on re-read"; corrected). It re-runs
+    the resolver on the stored words and writes copies. A stored `other` is left as stored, since
+    its "other (phrase)" wrapper is not in the record; the first run dropped three of them, and
+    that was fixed before commit.
+  - **Run on the 2026-11-15 arms** (into `S_rr`, `B_rr` and `C_rr`, gitignored): motion expansion
+    and optiBET change; ciric_2017's stale "linear, quadratic" → quadratic becomes unresolved.
+  - **Re-score:** no score changed. The as-stated scorers do not see a corrected member whose words
+    differ from the label. The containment column adds one agreement in C.
+- `1f8737f` — `docs/design/DESIGN_prompt_schema_2026-11.md`.
+  - **The design** for the one prompt and schema change (a vintage event): items B1-B12 and the
+    author's rulings C1-C6. Schema 0.8.0 (multi-echo becomes 0.9.0); method fields stay the tool;
+    rulings 8, 12 and 13 go in the inference arm, which needs two new inference statuses.
+  - **C6:** no run yet. Measured cost is $2.00 per paper (arm B, 21 papers, $42.10), with the call
+    shares from the stored meters; replaying unchanged calls and skipping the gate would bring it
+    to about $1.45.
+  - **Added after the audit:** B11 (the report says when a term is not in AESPA's vocabulary) and
+    B12 (a standing audit of unrecognized terms after every run).
+- **Checks:**
+  - 7 mutations, each diff non-empty, all killed;
+  - root 332, extractor_mvp 1167 (2 live skipped);
+  - pre-commit clean on the second pass, after a mypy fix and an escaped character in a test.
+
+Commits here: `ed97a8d`, `9b09f18`, `1f8737f`, then this entry.
