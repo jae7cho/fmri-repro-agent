@@ -6,10 +6,10 @@ extraction error list (DEVLOG.md, entry 2026-11-24 (5)). Part C lists the decisi
 author. Part D is the build order, the checks and the run. No prompt, schema, hash pin or code has
 been changed for this note, and no model call has been made.
 
-**Since then:** D1 and D1b (2026-11-24), D2b and D3 (2026-11-25) are done; Part D says what each
-found or built. D1 was read-only; D1b and D2b changed code, scripts and tests, and D3 the schema
-as well (0.8.0). No prompt, request schema or hash pin has changed, and no model call has been
-made.
+**Since then:** D1 and D1b (2026-11-24), D2b, D3 and D2c (2026-11-25) are done; Part D says what
+each found or built. D1 was read-only; D1b, D2b and D2c changed code, scripts and tests, and D3
+the schema as well (0.8.0). No prompt, request schema or hash pin has changed, and no model call
+has been made.
 
 The change is one vintage event. Every prompt it touches is re-pinned together, so the run after
 it measures one prompt set, not a sequence of them.
@@ -50,8 +50,18 @@ it measures one prompt set, not a sequence of them.
   matches of the D1 sweep that D2b did not take.
 - **C14:** the detrend rule leaves `none` alone and is applied inside
   `checker_promotion.promote`. Negation and the 2026-06 collapse stay as they are.
-- The table and code items among these are step D2c in Part D, not started. **D3** (schema
-  0.8.0) is built (Part D).
+- The table and code items among these are step D2c in Part D. **D3** (schema 0.8.0) is built
+  (Part D).
+
+**2026-11-25, by the author, after D3:**
+
+> "start D2c"
+
+- Read as the go-ahead for the items already ruled: C10, C11, C13 and C14. **D2c** is built
+  (Part D).
+- What the reviews of D3 found in older code had no ruling, and neither has what the mapping and
+  the reviews of D2c found. None of it is built. Each is put to the author as a decision, C15 to
+  C22, with the facts and a recommendation.
 
 ## Part A: facts, read-only, at HEAD `0d9122c`
 
@@ -681,6 +691,153 @@ old-against-new resolver comparison of Part D; "both" means the two give the sam
     "fsaverage, then fsaverage5" reads as `fsaverage5` alone. The whole-word rule and the
     longer-alias rule now cover the case it was written for.
 
+### Put to the author after D2c (2026-11-25)
+
+Each fact below was run on 2026-11-25 under HEAD `4dd097b` and under the D2c working tree with the
+old-against-new resolver comparison of Part D; "both" means the two give the same result. C15 to
+C19 and C22 come from the D2c build, its mapping and its reviews. C20 and C21 are the two lists
+that stood under D2c in Part D until now, with a recommendation each.
+
+- **C15. One reading of a family value in the quote check.**
+  - The check of 2026-10-26 accepts an underspecified value when ANY family term of its field
+    stands in the quote. For the family names of C13 that rule failed both ways: "fs_LR32k" was
+    refused on a quote that holds it letter for letter, and "MSM" passed on a quote that names
+    only FreeSurfer. D2c therefore reads a value that holds only such a name by its own words, as
+    it was read before D2c, and the older family terms by the older rule.
+  - The older rule still lets a value pass on another term's quote ("MNI152" on "standard
+    space") and a value that says more than its quote ("MNI152" on "MNI space"). Since D2c it
+    also reads a blocked term that holds one of the older family terms: "MNI152 2009c
+    symmetric" passes on "standard space", where under HEAD it had the asymmetric member and
+    did not.
+  - Recommendation: one rule for every family value. It is supported by its own words in the
+    quote, or by a family term that its own words hold. On the 383 stored underspecified values
+    (1,031 record files; 38 of the values are in held-out papers, counted only) the older rule
+    and this one agree on every value.
+- **C16. The bare alias "FreeSurfer".**
+  - Both: "SAMSEG (FreeSurfer)", "aseg (FreeSurfer)" and "FastSurfer (FreeSurfer-compatible)"
+    resolve to `freesurfer_recon_all` (segmentation), and "FreeSurfer's mri_watershed" does too
+    (brain extraction). Of FreeSurfer's tools D2c blocks SynthSeg only, the ruled case
+    ("SynthSeg (FreeSurfer 7)"), on both fields. A list of FreeSurfer's tools cannot be closed,
+    as the list of SPM toolboxes could not (C12).
+  - Recommendation: C12's treatment. The bare alias resolves as the whole wording and names the
+    member elsewhere, built with C7 in D4.
+- **C17. Neighbours of the eight matches, and of the "or" rule.** Each is the fault of its ruled
+  neighbour in a wording no ruling names (both, unchanged, but for the bullet that begins "Since
+  D2c"). Each is a yes or no:
+  - "semi-rigid" → `rigid`; "non-affine" → `affine`. Recommendation: block both.
+  - "Fourier series regressors" and "Fourier set (SPM)" → `ideal_fft`. Recommendation: block a
+    Fourier set, series or regressors, as the basis set is blocked.
+  - "FD (RMS of the six realignment parameters)", "RMS framewise displacement", "FD(RMS)" and
+    "RMS (FD)" → `fd_power`. Recommendation: the block reads "RMS" anywhere in an item that
+    names FD.
+  - Three spellings of ruled forms: "FD_{RMS}" and "FD-RMSs" → `fd_power`, "after STC1" (a
+    footnote digit) → `after`. Recommendation: add the brace, the plural and the digit to the
+    two blocks.
+  - Spellings of the symmetric mesh and template that the two blocks do not read: "fsaverage
+    (symm.)", "fsaverage symetric" and "fsaverage_LRsym" → `fsaverage`; "MNI152 2009c symm." →
+    MNI152NLin2009cAsym. Recommendation: leave them. A list of abbreviations and misspellings
+    cannot be closed, and with C7 the model's member is checked against the term.
+  - "after correcting for slice timing" and "after 3dTshift" → `after`. Recommendation: leave
+    them. The forms name tools and verbs, and that list cannot be closed; with C7 the model's
+    member is checked against the term.
+  - Aliases of the scrub criteria that read inside a description, as an item of its own or
+    after a comma. DVARS written out ("root mean square of the temporal derivative > 0.5%")
+    resolves to `fd_jenkinson` through the bare "root mean square"; "an average BOLD change > 3
+    SD" resolves to `bold_pct` through "BOLD change", with a threshold that is no percentage;
+    "the relative RMS intensity difference to the reference volume" resolves to `fd_jenkinson`
+    through "relative RMS". The "or" rule of D2c parts none of them off. Recommendation:
+    replace the bare "root mean square" by "root mean square displacement", and leave the
+    other two with C7. Of the 193 stored scrub criteria, 9 resolve to `fd_jenkinson` (6
+    through "Jenkinson", 3 through "RMS displacement") and none through the bare alias.
+  - Since D2c: "framewise displacement (FD) or relative RMS displacement > 0.3 mm" is two
+    criteria, `fd_power` and `fd_jenkinson`, where the "or" gives a second name of one measure.
+    HEAD left the item unresolved, and gave the same two members with a comma in place of the
+    "or". Recommendation: leave it. The wording does not tell a second name from a second
+    criterion, and with C7 the model's reading is checked against the table's.
+  - The "or" rule reads a bare criterion and nothing wider (both, unchanged): "volumes with FD
+    > 0.5 mm or DVARS > 0.5%", "FD threshold of 0.5 mm or DVARS threshold of 5%", "DVARS > 1.5
+    standard deviations above the mean or FD > 0.5 mm" and a side with a citation stay one
+    unresolved item. Recommendation: leave it. Each addition is a word beside the name, and
+    with C7 the model returns the items and their members.
+- **C18. Two alias candidates.** smith_2013 writes "MSM folding" (MSM driven by folding alone)
+  and "MSM multimodal" (MSM also given myelin maps and resting-state network maps). Both are
+  family terms since D2c and have no member. Recommendation: add them, as aliases of `msm_sulc`
+  and `msm_all`.
+- **C19. The detrend rule and a negation in its quote.** The rule reads the member and the quote,
+  and no negation in the quote (both, unchanged):
+  - an extracted term that resolved to nothing takes the order its quote names, also where the
+    quote rules it out ("detrended" with "No linear detrending was applied" → `linear`);
+  - an order is raised by a quote that rules the higher order out ("linear" with "linear, but
+    not quadratic, trends were removed" → `quadratic`). Since D2c that holds for a supplied
+    order too;
+  - `rechecks.recheck_record` restores a stored detrend value without the rule, and the two
+    mirror scripts apply it.
+  - Recommendation: leave the first two with C7, which checks the model's member against the
+    term. Apply the rule in the re-check too, so that every path that fills the field agrees
+    with the mirrors.
+- **C20. Faults the reviews found in older code** (both, unchanged):
+  - The friston24 rule reads neither a negation nor "least squares": "six motion parameters and
+    their derivatives but not their squares" and "... estimated by ordinary least squares"
+    resolve to `friston24`. Recommendation: rebuild it as one closed pattern on the whole
+    wording, as D3 built `12param`.
+  - A derivative the rule does not read lets the 6param alias through ("... and their
+    derivitives" and "... their temporal gradients" → `6param`). Recommendation: leave it. A
+    list of misspellings and synonyms cannot be closed, and with C7 a table member that differs
+    from the model's keeps the paper's words.
+  - No alias table reads a negation. "no fieldmap" and "without a field map" resolve to
+    `fieldmap` on the method field and to `susceptibility_fieldmap` on the source field, and
+    "no DVARS" as an item of its own (after a comma) resolves to `dvars`. The "or" rule of D2c
+    parts no such side off, since a negation is a word beside the name. Recommendation: block
+    the two fieldmap members on "no" or "without" before the word, as on the "-less" forms;
+    leave the list items with C7, since a general rule would also read "non-linear".
+  - The block of D2b that keeps `bet` off "HD-BET" reads its word edge with `\b`, for which an
+    underscore is no edge: "HD-BET_mask" → `bet`. Recommendation: give it the alias table's
+    edge, as the block of D2c on "FD-RMS" has.
+  - On the source field the aliases of `fieldmap_less` read "field map less than ideal", and
+    "fieldmapless" swallows a fieldmap named beside it. Recommendation: the source field takes
+    the closed whole-item rule the method field has, and loses the aliases.
+  - The list splitter. Recommendations: drop the optional whitespace that makes it quadratic on
+    a long run of spaces (6 s at 20,000), which changes no item; let "plus" part two scrub
+    criteria under the rule of C11; read "AND" and "OR" as their lower-case forms; leave the
+    qualifier a comma cuts off ("DVARS, within the white-matter mask") and the slash inside one
+    term ("signal/noise" is two items), limits of list fields.
+  - The text repair maps seven Unicode hyphens and dashes to "-", and not the 18 others of the
+    Unicode dash category (the horizontal bar U+2015 among them). A ruled form written with one
+    of those keeps its wrong member ("non", the bar, "rigid" → `rigid`), and an alias written
+    with one is not matched.
+    Recommendation: map every character of the Unicode dash category at the next vintage; the
+    repair is read by every resolver and by the quote check, so it needs its own gates.
+  - The quote check's word reader joins the article "a" to a number that follows it, so an alias
+    that begins with a digit is not found after "a" ("a 24-regressor model of motion").
+    Recommendation: fix it with the quote check of C15.
+  - The pseudo-code prints "none" for a KB-inferred term that has a member and no words.
+    Recommendation: fix it in D5, with the display of the inference statuses.
+  - `extractor._apply_resolved_citations` writes past the `inference_applicable` gate, and the
+    record then fails to parse. Recommendation: fix it in D5; it is inference-arm code.
+  - `migrate_to_current` overwrites `written_under` on a document that states its origin, accepts
+    a stamp above the current version, and lets a NaN threshold and an empty extracted list
+    through. Recommendation: refuse each at the next schema bump (0.9.0); no stored record is
+    affected (0 of 1,014 hold a migration record).
+- **C21. Wordings D3 left unresolved on purpose** (both, unchanged): "motion parameters and
+  their derivatives" with no count; six with derivatives followed by anything; first
+  differences and "6P"; "six regressors and their derivatives"; the global signal with no
+  threshold in standard deviations; a fieldmap-less wording followed by anything outside its
+  short list ("fieldmap-less SyN-based SDC"), "fieldmap-free" and "SyN-based" on the method
+  field.
+  Recommendation: leave them until C7. Each then keeps the member the model reads, marked as the
+  model's, and the audit lists the wording as an alias candidate.
+- **C22. For D4: a block and the model's member.** Once the model returns the term and its
+  member (C7), a term the table leaves unresolved keeps the model's member. A blocked "after"
+  may then come back as the model's `after`.
+  - A value of the shared call is one string: its prompt asks for the member where the
+    paper's term maps to one, and for the paper's term otherwise. A term it returns in the
+    paper's words meets the field's blocks since D2c. A member it returns has no term beside
+    it, so no block reaches that member (both, unchanged): a returned `MNI152NLin2009cAsym` is
+    supported by the quote "Images were warped to the MNI152 2009c symmetric template",
+    through the alias "MNI152 2009c" in the quote.
+  - Recommendation: a member the field's block refuses for the term is refused from the model
+    too; the value keeps the paper's words and is flagged.
+
 ## Part D: build order, checks and the run
 
 - **D1. Done 2026-11-24, read-only (A6).** B5's two unknowns are traced. The trace was widened to
@@ -796,49 +953,246 @@ old-against-new resolver comparison of Part D; "both" means the two give the sam
   - the re-render gate on the five record sets used on 2026-11-24 (old records identical, every
     change attributed).
   - A table fix may change stored records' resolved values on re-read; every such change is listed.
-- **D2c. The table and code items of C10 to C14. Not started** (it waits for the author's
-  go-ahead; no prompt and no schema change):
-  - C10: "N3" leaves the aliases of `n4`.
-  - C11: "or" separates the items of scrub.criterion.
-  - C13: the two alias candidates; the five family names as underspecified terms of their
-    tables; the nouns that may follow a mesh density; rules for the eight matches of the D1 sweep.
-  - C14: the detrend rule leaves `none` alone and is applied inside `checker_promotion.promote`.
-  - Found by the reviews of D3 in code that D3 does not change (HEAD and D3 give the same
-    result). Each is a yes or no for the author:
-    - the friston24 rule reads neither a negation nor "least squares": "six motion parameters and
-      their derivatives but not their squares" and "... estimated by ordinary least squares"
-      resolve to `friston24`;
-    - a misspelt derivative lets the 6param alias through: "six motion parameters and their
-      derivitives" and "... their temporal gradients" resolve to `6param`;
-    - "no fieldmap" and "without a field map" resolve to `fieldmap`, and the "-free" forms stay
-      unresolved; `fieldmap_less` now exists for both;
-    - on the source field the aliases of `fieldmap_less` read more than they should: the 2026-06
-      collapse (C14) lets "fieldmapless" swallow a fieldmap named beside it ("fieldmap
-      (fieldmapless SyN as fallback)" is `fieldmap_less` alone), and "field map less than ideal"
-      is `fieldmap_less`, since a hyphen and a space are one separator to the alias table;
-    - the list splitter cuts a qualifier off an item, and no alias or rule sees it: "DVARS, within
-      the white-matter mask" is `dvars`, and "signal/noise" is two items. "plus" between two
-      criteria does not separate them (C11 covers "or"). On a word followed by a long run of
-      spaces the splitter is quadratic (`extractor._TERM_SPLIT`: 6 s at 20,000 spaces, 1.5 s at
-      10,000), under both trees;
-    - the pseudo-code prints "none" for a KB-inferred term that has a member and no words
-      (`kernel_type=none [D]` beside a field table that shows `gaussian`);
-    - `extractor._apply_resolved_citations` writes a citation-resolved default through
-      `model_copy`, past the `inference_applicable` gate; the record then fails to parse;
-    - `migrate_to_current` writes the stamp it read into `written_under`, also on a document that
-      was saved after an earlier migration and states its origin (no stored record is one: 0 of
-      1,014 hold a migration record); it accepts a stamp above the current version and re-stamps
-      it; a NaN threshold parses and does not survive a JSON round trip; an extracted list may be
-      empty, as the 0.6.0 list fields may.
-  - Left unresolved by D3 on purpose, also for the author:
-    - "motion parameters and their derivatives", with no count, since B1's rule asks for the six;
-    - six with derivatives followed by anything, a citation or "(12 regressors)" included;
-    - first or backward differences in place of derivatives, and "6P" as the count;
-    - "six regressors and their derivatives", with no motion word;
-    - the global signal named with no threshold, or with a threshold that is not in standard
-      deviations ("global signal", "global signal z-score > 3");
-    - a fieldmap-less wording followed by anything outside its short list ("fieldmap-less
-      SyN-based SDC"), "fieldmap-free", and "SyN-based" alone on the method field.
+- **D2c. The table and code items of C10, C11, C13 and C14. Built 2026-11-25** (tables, rules,
+  extractor code, two scripts and tests; no prompt, no request schema, no spec schema and no
+  model call; the go-ahead is in section 0). A mapping of the code each item touches came first
+  (eight read-only agents). It was built eight times, each rebuild after a review, with a
+  mutation gate. Where the build differs from the ruling, the item says so. The decisions it
+  leaves are C15 to C22.
+  - **C10, "N3".** The alias is gone from `n4`: "N3" stays in the paper's words, and the report
+    says the term is outside the vocabulary. One block came with it: a term that names N3 beside
+    FAST named two methods and stayed unresolved, and with the alias gone it would have resolved
+    to `fast_bias` alone. The frozen phrases that support `performed` keep "N3"; they are
+    another table, with its own hash.
+  - **C11, "or", built narrower than ruled.** A plain separator gave wrong members and junk
+    items: "FD computed per Power or Jenkinson" became two criteria, "FD > 0.5 mm or no DVARS"
+    recorded DVARS, and "0.5 mm or more" left an item "more". As built, an item of
+    scrub.criterion is parted at its "or"s only where every item that makes is a criterion of
+    its own, with another member than the item beside it (`extractor._parted_at_or`,
+    `_or_member`). Where one is not, nothing is made of the item and it resolves as it did.
+    - A criterion of its own is one measure with at most its threshold
+      (`coverage_fields.bare_criterion`): the names of one member, then a threshold. A
+      threshold is a number with a comparison before it (in signs or words, "of" and "over"
+      among them) or a unit after it, then a rate and a comparative if there are any: "FD > 0.2
+      mm/TR", "DVARS of 3 SD or above", "framewise displacement (FD) greater than or equal to
+      0.5 mm", "DVARS > 0.5% ΔBOLD". Brackets count as what they hold. "either" or an article
+      may open it and a full stop may close it. An item that the field's rule reads whole is
+      one too ("global signal > 3 SD").
+    - The unit is the measure's own, from a closed list (`coverage_fields.OR_UNITS`): a length
+      for the two displacements ("mm", "cm", "voxels"); a percentage ("%", "percent", "% BOLD")
+      or standard deviations ("SD", "s.d.", or written out) for DVARS; a percentage for a BOLD
+      change. A unit of another kind says the name stands for another measure: "relative RMS >
+      0.5% BOLD" is a root mean square of intensities, which is DVARS, and it is no criterion.
+      A unit in a spelling the list does not hold ("millimetres", "per cent") is no threshold
+      either, and its item stays as it was.
+    - Any other word beside the name makes it none: a negation in any words ("no DVARS",
+      "rather than FD", "DVARS (not used)"), a qualifier ("standardized DVARS"), a citation
+      ("FD (Smyser et al., 2010)"), a number with neither comparison nor unit ("FD 2012"), a
+      description that happens to hold an alias ("the RMS of the volume-to-volume BOLD change",
+      "an average BOLD change > 3 SD"), and what a later "or" adds to the last item ("DVARS >
+      5% or both").
+    - A name too weak to make a criterion alone does not count
+      (`coverage_fields.OR_WEAK_ALIASES`): the name of a measure's author ("Power",
+      "Jenkinson"), and the bare "root mean square", which DVARS is too. Beside a name that is
+      not weak it stands as a name ("FD (Power) > 0.5 mm").
+    - An "or" that opens an item is dropped where the rest of the item is a criterion or parts
+      into criteria, and so is each of several in a row. An item opens with "or" where a list
+      separator before it parted the list (a comma, a semicolon, a slash, "and", "+", and so
+      "and/or"), or where the value does. "FD > 0.5 mm, DVARS > 5%, or global signal > 3 SD" is
+      three criteria, and "FD and/or DVARS" is two with no "or" left in their words. Where the
+      rest is neither, the item keeps its "or" and is as it was ("or more", "or DVARS > 5% or
+      both").
+    - The rule gives a member to nothing but its own items. The list resolver of D2b completes
+      an unresolved item with the head noun of the item after it, and an item the rule makes
+      resolves where the item it came from did not. Where that would give another member to an
+      item the rule did not part ("global intensity RMS, framewise displacement or DVARS > 5%"),
+      the value is split as it was before D2c (`extractor._field_items`).
+    - An item with more than eight "or"s stays whole. An "or" inside round brackets and the
+      "or" of a "than or equal to" are held before the count and are not in it. Each "or"
+      resolves the text on its sides, and without the limit a value made of "or"s cost seconds.
+    - What the rule makes of an "or" is what a comma already made: under HEAD the same items
+      joined by commas resolve to the same members, but for an item that D2c's own block on
+      "FD-RMS" leaves unresolved (checked on every changed wording, below).
+    - No other list field parts at "or". The two mirror scripts do not split a stored record's
+      items again. `rechecks.recheck_record` reads a stored raw value through the extraction's
+      own path, so the rule reaches a value it restores, as every resolver change does. No
+      stored scrub criterion holds an "or" (193 stored terms, 0 in held-out papers).
+    - This form is the fourth. The first three let any text stand beside the alias and listed
+      what to refuse: negation words, a block on a root mean square of a signal, then weak
+      aliases in its place. Each review found the next description that held an alias and
+      became a criterion after "or", where it had been unresolved. The list of such
+      descriptions cannot be closed; the form of a bare criterion can. A criterion the form
+      does not read ("volumes with FD > 0.5 mm", "FD threshold of 0.5 mm") is not parted off
+      and stays as it was. The two builds after it tightened the form: the last item is read
+      again once a later "or" has grown it, the items the rule did not part are guarded, a
+      number alone is no threshold, and a threshold takes the unit of its own measure.
+    - One case stays. Two names of one measure that are aliases of two members read as two
+      criteria ("framewise displacement (FD) or relative RMS displacement"), since the wording
+      does not say that the "or" renames (C17).
+  - **C13, the two aliases.** "24-regressor model of motion" (`friston24`, oconnor_2017) and
+    "ICBM 152 Nonlinear Asymmetrical template version 2009c" (MNI152NLin2009cAsym,
+    ladouceur_2023). Each is the paper's wording and no shorter form. A term that names the
+    second beside another space now names two members and stays unresolved.
+  - **C13, the five family names.** "fs_LR" (four spellings of its joint), "MSM", "Montreal
+    Neurological Institute", "ICBM" and "CompCor" are underspecified terms of their tables, as
+    "MNI" is. Their terms now carry the status "underspecified".
+    - The quote check gives every value whose member D2c leaves as it was the outcome it had
+      (C15). A first build let the status choose the check, as it does for "MNI". That refused
+      "fs_LR32k" on a quote that holds it, and passed "MSM" on a quote that names only
+      FreeSurfer.
+    - A family list is read as a plain substring. A name glued to more text ("fs_LR32k",
+      "MSMv3") therefore holds a family term now, and the report no longer says of it that it
+      is outside the vocabulary.
+    - `FAMILY_NAMES` stays for the report's note on the wordings it alone reads. It reads whole
+      words with the separators folded.
+  - **C13, the noun after a mesh density, built narrower than ruled.** One of "surface",
+    "space", "template" or "mesh" may follow the density of fsaverage5 or fsaverage6 written
+    apart from the name, where the term is the mesh and its noun and nothing else: "fsaverage 6
+    surface" is `fsaverage6` and "the fsaverage 5 template" is `fsaverage5`. Brackets, quote
+    marks, closing punctuation and the separators the alias table folds (a hyphen, a dash, an
+    underscore) may stand around the wording, and "the" before it. With a word or a number
+    more in the term the density is read as it was: "fsaverage 6 surface, smoothed" and
+    "projected to the fsaverage 6 surface" stay unresolved. A plural of the noun does not
+    count, and no other alias that ends in a digit takes a noun. The density may carry the
+    plural "s" that the alias table allows after any alias ("fsaverage 6s surface"). The name
+    written as one word ("fsaverage6") resolved before and needs no noun.
+    - The first seven builds asked only that the noun end its phrase, so a term could go on
+      after a comma. What followed could say that the mesh is another one ("fsaverage 6
+      template, symm."), and the term then had a member under D2c that it had not had under
+      HEAD. The eighth and ninth reviews found it. No list of what may not follow can be
+      closed, so the eighth build closes the wording.
+  - **C13, the eight matches.** Each is a block: the member is kept out and the paper's words
+    stay. A block reads the whole term, so it also takes the member where the term names it
+    properly beside the blocked form ("rigid-body, not non-rigid").
+    - Five are on coverage fields, each on the field of its match: the order of slice timing
+      and motion correction ("after" or "before", then slice timing, slice acquisition or
+      "STC", with nothing between them or one of "the", "a", "an", "its", "their", "our"),
+      "FD-RMS" on the scrub criterion, "non-rigid" on the coregistration transform, "SynthSeg"
+      on the segmentation method, "Fourier basis" on the filter type. Each is read in the
+      spellings of its joints: "slice time", "slicetiming" and "STCs" as well, and FD and RMS
+      in either order with a hyphen, a space, an underscore or nothing between them ("RMS FD").
+      "SynthSeg" is blocked on the brain extraction method too, the one other field that has
+      FreeSurfer's member: there "SynthSeg (FreeSurfer 7)" gave the same member.
+    - Three are on fields of the shared call, which read no rule until now: MSM beside
+      "folding-based registration", the symmetric 2009c template, "fsaverage_sym". The shared
+      call resolves through `coverage_fields.resolve_shared`, and so do the two mirror scripts.
+    - A blocked term reads the family list again, and the quote check follows what it finds.
+      "MNI152 2009c symmetric" holds the older family term "MNI": it is underspecified and is
+      read by the older rule (C15). It passes on a quote that holds any of the older family
+      terms of its field ("standard space"), where the member it had needed one of that
+      member's names in the quote; a quote that holds only a name D2c added ("ICBM") does not
+      support it. A blocked term that holds only a name D2c added ("MSM folding-based
+      registration") or no family term ("Fonov 2009c symmetric") must stand in the quote in its
+      own words, as any term without a member. Under HEAD "Fonov 2009c symmetric" passed on a
+      quote that says "MNI152 2009c", through its member, and it does not now.
+    - All three read more than the ruled wording, on the safe side. FreeSurfer's registration is
+      blocked wherever the term holds "MSM" at the start of a word, or "multimodal surface
+      matching" with its words apart, whatever alias named it. The asymmetric template is
+      blocked wherever the term holds "sym" as a word, or a word that begins with "symmetr"
+      ("symmetric", "symmetry", "symmetrised"), or one of them glued to the release ("2009cSym").
+      The "symmetric normalization" of ANTs is such a word, and so is the rest of an "asymmetric"
+      that a line wrap broke after its "a-". The three fsaverage meshes are blocked on the same
+      words wherever they stand in the term ("fsaverage5_sym", "symmetric fsaverage", "fsaverage
+      template symmetric"), a "symmetric" of something else included ("fsaverage, smoothed with a
+      symmetric kernel"). The first six builds read the word only next to the mesh and missed the
+      third of these (the eighth review). A spelling the word does not hold keeps its member (C17).
+    - A word edge in these patterns is the alias table's: an underscore is an edge. The first
+      build used `\b`, which is not, and missed "N3_FAST" and "motion_correction_after_STC".
+    - The neighbours of each match that no ruling names are as they were (C16, C17).
+    - A blocked term is unresolved, so it also gives no head noun to the list item before it:
+      in "relative and FD RMS" the first item was completed to `fd_jenkinson` from "FD RMS", and
+      is unresolved now that "FD RMS" is.
+    - Two readers follow the blocks. `term_audit.py` reads a quote through them, so a member
+      named properly counts as not in the quote when another clause of the quote holds a
+      blocked form, and the audit lists the token to be read. The `resolutions` log of a record
+      takes its matched alias from the same resolution: for a blocked or a family term it is
+      the family entry, or empty.
+  - **C14, the detrend rule, built narrower than ruled in `promote`.** The rule leaves the
+    member `none` alone. `checker_promotion.promote` applies it to an order the checking pass
+    supplies (`coverage_extractor.detrend_field_raised`, one function for both paths; the move
+    is logged under `rule` and joins the record's diagnostics).
+    - A supplied term that resolved to nothing is left as it is. The checking pass can say that
+      no detrending was done only in words, since its "none" means no value, and the rule would
+      have handed such a term the order its sentence rules out ("linear detrending was omitted"
+      gave `linear`).
+    - The two mirror scripts read a supplied value the same way. A record made before D2c may
+      therefore change on re-resolve.
+  - **What a new run sends that an old one did not.** No prompt text changed. Two model-facing
+    inputs are built from resolution and follow it:
+    - the draft the checking pass reads prints a member, or the paper's words when there is
+      none. A term D2c leaves unresolved is sent in its words, and a term it resolves or parts
+      is sent as its members with the paper's words beside them;
+    - where the citing paper defers its base pipeline to a cited paper, the citation hop asks
+      that paper for the tool of each method the citing paper reports without naming one. A
+      method term D2c leaves unresolved ("N3", "SynthSeg (FreeSurfer 7)") adds that question
+      there.
+  - **Gates, run on 2026-11-25, `4dd097b` against the eighth build.** After the capture one
+    comment was reworded and test rows were added. The code is the same, and every wording
+    below resolves in the tree as committed as it did in the capture.
+    - Request schemas of the seven calls and the eight prompt hashes: byte-identical.
+    - The checking pass's draft for 148 stored records: byte-identical.
+    - Every stored record through `parse_any_version` (1,031 files): 1,009 documents identical,
+      5 fail under both trees.
+    - The 18 scorers on arms S, B, C and corpus_full_v3: each of the 72 reports identical.
+    - Every wording at hand (441,216 on the 39 fields that have a vocabulary: 23,370 from D3's
+      gates and reviews, and the rows the mapping and the first nine reviews of D2c probed):
+      372,615 resolve the same under both trees and 68,601 differently. Each changed row is
+      attributed to one item of the rulings by a condition written in the comparison script and
+      not taken from the code; none is left over.
+    - Every wording the "or" rule changes (35,121), by six checks written apart from the
+      code: the items are the value's own text parted at its "or"s; HEAD gives the same items
+      and members where the "or" is written as a comma (756 rows are equal but for an item
+      that D2c's block on "FD-RMS" leaves unresolved); an item the rule makes names its measure
+      by a name that is not weak, holds no word beside its measure and threshold, and has its
+      threshold in a unit of its measure; an item the rule did not part keeps its member. No
+      row fails a check. The same checks flag the third, fourth and fifth builds on the same
+      rows.
+    - Every wording of the target surface that holds "sym" or a longer form of it as a word,
+      and every wording of brain extraction or segmentation that names SynthSeg:
+      none of the 55,329 and none of the 3,752 has the blocked member. Under HEAD 12,722 and
+      1,171 had it, and under the sixth build 10,543 and 708.
+    - Every wording of the target surface that has a member where HEAD gives none:
+      each of the 547 is the mesh, its density and one of the four nouns and nothing else, and its
+      member is the mesh of that density. Under the seventh build 4,270 of 4,817 such wordings held
+      more than that.
+    - The value-in-quote check on those wordings, each against the wording in a sentence, a
+      sentence without it, and one sentence per family term of its field (1,388,508 checks):
+      a row whose member D2c leaves as it was has the same outcome on every quote. Of the rows
+      whose member or items changed, 1,677 have another outcome on some quote.
+    - `reresolve_terms.py` on six record sets (1,944 terms): 7 change, none in a held-out
+      paper. The two aliases resolve (oconnor_2017 in arms B and S and in the corpus set,
+      ladouceur_2023 in arm S and the corpus set), and "MSM folding" and "MSM multimodal"
+      (smith_2013) take the status underspecified.
+    - Re-render of five record sets: 12 lines change, each the old line with the note that the
+      term is outside the vocabulary taken off (the two aliases; the reports and pseudo-code of
+      three sets).
+    - `term_audit.py` on the six sets: the two aliases resolve and leave the list of alias
+      candidates, the two MSM terms change status, and the count of aliases goes from 451 to
+      452.
+    - Mutation: eleven runs on a scratch copy of both trees, each mutant's diff shown non-empty
+      before its run. Five runs left survivors (4 of 112 mutants, 8 of 162, 4 of 236, 1 of 353
+      and 5 of 388). Each was then killed by a new test, or the code it stood in was simplified
+      or taken out; one of them was left out as equivalent. Six mutants in all are left out as
+      equivalent, each with its reason beside the list, and none of them changes the
+      resolution of a wording at hand. A seventh was left out on the same ground until the
+      tenth review found a wording on which it differs; it is listed now. The last three
+      runs killed 420 of 420 on the sixth build, 430 of 430 on the eighth and 443 of 443 on
+      the tree as committed. One more run, on the seventh build, was stopped when that
+      build was replaced: 164 of its 422 mutants had run, each killed.
+    - Reviews: ten rounds of read-only agents, each finding re-checked by a second agent that had
+      to reproduce it. The first six read the whole change: 29 of 36 findings confirmed, then 19 of
+      25, 15 of 23, 16 of 19, 14 of 21 and 3 of 10. Nine of them are in older code. Rounds 7 and 8
+      read this text and the decisions alone, sentence by sentence against the code: 7 of 11 and 4
+      of 6 confirmed, each a sentence wider than the code, and one of them a fault in the code (the
+      block on the symmetric fsaverage). Rounds 9 and 10 reviewed the seventh and the eighth build:
+      6 of 8 and 5 of 7 confirmed. All are fixed or, where the fix is the author's call, listed
+      under C15 to C22. The agents worked in code-only copies of the trees and did not open the
+      repository. Their transcripts were read by script (82 agents, 2,304 tool calls, 120,636 lines
+      of output): no call names a path under the repository but the two interpreters, none runs git
+      and none reaches the network.
+    - Suites: extractor_mvp 2,572 passed (2 live skipped), root 375; pre-commit clean on
+      both passes. The code commit passes on its own in a scratch export of `4dd097b`
+      (2,570 and 372 passed; the tests that read untracked files skip there, as in CI).
 - **D3. Schema 0.8.0. Built 2026-11-25** (models, migration, extractor code and tests; no prompt
   text, no request schema and no model call; the go-ahead is in section 0). It was built three
   times, each rebuild after a review, and reviewed six times. Where the build differs from the
