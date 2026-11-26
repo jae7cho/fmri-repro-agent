@@ -60,8 +60,10 @@ it measures one prompt set, not a sequence of them.
 - Read as the go-ahead for the items already ruled: C10, C11, C13 and C14. **D2c** is built
   (Part D).
 - What the reviews of D3 found in older code had no ruling, and neither has what the mapping and
-  the reviews of D2c found. None of it is built. Each is put to the author as a decision, C15 to
-  C22, with the facts and a recommendation.
+  the reviews of D2c found beyond the ruled items. None of it is built. Each is put to the
+  author as a decision, C15 to C22, with the facts and a recommendation. What the reviews found
+  in D2c's own code is fixed or, where the fix is the author's call, put to the author with the
+  rest (Part D).
 
 ## Part A: facts, read-only, at HEAD `0d9122c`
 
@@ -696,14 +698,17 @@ old-against-new resolver comparison of Part D; "both" means the two give the sam
 Each fact below was run on 2026-11-25 under HEAD `4dd097b` and under the D2c working tree with the
 old-against-new resolver comparison of Part D; "both" means the two give the same result. C15 to
 C19 and C22 come from the D2c build, its mapping and its reviews. C20 and C21 are the two lists
-that stood under D2c in Part D until now, with a recommendation each.
+that stood under D2c in Part D until now, with a recommendation each. C20 also holds faults in
+older code that came up during D2c (among them the word edge of the HD-BET block, the dashes the
+text repair does not map and the quote check's word reader).
 
 - **C15. One reading of a family value in the quote check.**
   - The check of 2026-10-26 accepts an underspecified value when ANY family term of its field
     stands in the quote. For the family names of C13 that rule failed both ways: "fs_LR32k" was
     refused on a quote that holds it letter for letter, and "MSM" passed on a quote that names
-    only FreeSurfer. D2c therefore reads a value that holds only such a name by its own words, as
-    it was read before D2c, and the older family terms by the older rule.
+    only FreeSurfer. D2c therefore reads an underspecified value that holds only such a name by
+    its own words, the check an unrecognized term met before D2c, and the older family terms by
+    the older rule.
   - The older rule still lets a value pass on another term's quote ("MNI152" on "standard
     space") and a value that says more than its quote ("MNI152" on "MNI space"). Since D2c it
     also reads a blocked term that holds one of the older family terms: "MNI152 2009c
@@ -963,7 +968,8 @@ that stood under D2c in Part D until now, with a recommendation each.
     says the term is outside the vocabulary. One block came with it: a term that names N3 beside
     FAST named two methods and stayed unresolved, and with the alias gone it would have resolved
     to `fast_bias` alone. The frozen phrases that support `performed` keep "N3"; they are
-    another table, with its own hash.
+    another table, with its own hash. The quote check follows the alias table: a value "N4" is
+    no longer supported by a quote that names only N3.
   - **C11, "or", built narrower than ruled.** A plain separator gave wrong members and junk
     items: "FD computed per Power or Jenkinson" became two criteria, "FD > 0.5 mm or no DVARS"
     recorded DVARS, and "0.5 mm or more" left an item "more". As built, an item of
@@ -1002,11 +1008,12 @@ that stood under D2c in Part D until now, with a recommendation each.
       three criteria, and "FD and/or DVARS" is two with no "or" left in their words. Where the
       rest is neither, the item keeps its "or" and is as it was ("or more", "or DVARS > 5% or
       both").
-    - The rule gives a member to nothing but its own items. The list resolver of D2b completes
-      an unresolved item with the head noun of the item after it, and an item the rule makes
-      resolves where the item it came from did not. Where that would give another member to an
-      item the rule did not part ("global intensity RMS, framewise displacement or DVARS > 5%"),
-      the value is split as it was before D2c (`extractor._field_items`).
+    - The rule changes the member of nothing but its own items. The list resolver of D2b
+      completes an unresolved item with the head noun of the item after it, and an item the rule
+      makes resolves where the item it came from did not. Where that would change the member of
+      an item the rule did not part, give it one ("global intensity RMS, framewise displacement
+      or DVARS > 5%") or take one away ("global signal > 3, FD > 0.5 mm or global signal > 3
+      SD"), the value is split as it was before D2c (`extractor._field_items`).
     - An item with more than eight "or"s stays whole. An "or" inside round brackets and the
       "or" of a "than or equal to" are held before the count and are not in it. Each "or"
       resolves the text on its sides, and without the limit a value made of "or"s cost seconds.
@@ -1036,10 +1043,12 @@ that stood under D2c in Part D until now, with a recommendation each.
   - **C13, the five family names.** "fs_LR" (four spellings of its joint), "MSM", "Montreal
     Neurological Institute", "ICBM" and "CompCor" are underspecified terms of their tables, as
     "MNI" is. Their terms now carry the status "underspecified".
-    - The quote check gives every value whose member D2c leaves as it was the outcome it had
-      (C15). A first build let the status choose the check, as it does for "MNI". That refused
-      "fs_LR32k" on a quote that holds it, and passed "MSM" on a quote that names only
-      FreeSurfer.
+    - The quote check reads an underspecified value that holds only such a name by its own
+      words, the check an unrecognized term met before D2c (C15). A first build let the status
+      choose the check, as it does for "MNI". That refused "fs_LR32k" on a quote that holds it.
+      It would also have passed "MSM" on a quote that names only FreeSurfer, so that build did
+      not make "MSM" an underspecified term. The second build did, with the check by its own
+      words.
     - A family list is read as a plain substring. A name glued to more text ("fs_LR32k",
       "MSMv3") therefore holds a family term now, and the report no longer says of it that it
       is outside the vocabulary.
@@ -1091,11 +1100,13 @@ that stood under D2c in Part D until now, with a recommendation each.
       blocked wherever the term holds "sym" as a word, or a word that begins with "symmetr"
       ("symmetric", "symmetry", "symmetrised"), or one of them glued to the release ("2009cSym").
       The "symmetric normalization" of ANTs is such a word, and so is the rest of an "asymmetric"
-      that a line wrap broke after its "a-". The three fsaverage meshes are blocked on the same
-      words wherever they stand in the term ("fsaverage5_sym", "symmetric fsaverage", "fsaverage
-      template symmetric"), a "symmetric" of something else included ("fsaverage, smoothed with a
-      symmetric kernel"). The first six builds read the word only next to the mesh and missed the
-      third of these (the eighth review). A spelling the word does not hold keeps its member (C17).
+      that a line wrap broke after its "a-". The three fsaverage meshes are blocked on the two
+      word forms wherever they stand in the term ("fsaverage5_sym", "symmetric fsaverage",
+      "fsaverage template symmetric"), a "symmetric" of something else included ("fsaverage,
+      smoothed with a symmetric kernel"), and on the word glued to the name of the mesh. The form
+      glued to the release is the template's alone: "fsaverage 2009cSym" keeps its member. The
+      first six builds read the word only next to the mesh and missed "fsaverage template
+      symmetric" (the eighth review). A spelling the word does not hold keeps its member (C17).
     - A word edge in these patterns is the alias table's: an underscore is an edge. The first
       build used `\b`, which is not, and missed "N3_FAST" and "motion_correction_after_STC".
     - The neighbours of each match that no ruling names are as they were (C16, C17).
@@ -1113,8 +1124,9 @@ that stood under D2c in Part D until now, with a recommendation each.
     is logged under `rule` and joins the record's diagnostics).
     - A supplied term that resolved to nothing is left as it is. The checking pass can say that
       no detrending was done only in words, since its "none" means no value, and the rule would
-      have handed such a term the order its sentence rules out ("linear detrending was omitted"
-      gave `linear`).
+      have handed such a term the order its sentence rules out: in the first build a supplied
+      "omitted", beside the sentence "Linear detrending was omitted for the task data.", took
+      `linear`.
     - The two mirror scripts read a supplied value the same way. A record made before D2c may
       therefore change on re-resolve.
   - **What a new run sends that an old one did not.** No prompt text changed. Two model-facing
