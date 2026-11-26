@@ -5907,3 +5907,228 @@ Commits here: `50c8d3c`, `73ae243`, `b332fef`, `2469939`, then this entry.
 - **Checks:** root 375, extractor_mvp 1901 (2 live skipped); pre-commit clean on the second pass.
 
 Commits here: `fc41355`, `8c413ef`, then this entry.
+
+## 2026-11-26 — D2c of the prompt and schema design: the table and code items of C10, C11, C13 and C14
+
+Committed and pushed under the author's override of the working-hours hook
+(ALLOW_WORKHOURS_COMMIT=1), on a holiday. Claude Code ran the commands at the author's request.
+
+- **The author's go-ahead (2026-11-25):** "start D2c".
+  - It is read as the go-ahead for the items already ruled: C10, C11, C13 and C14.
+  - What the reviews of D3 found in older code, and what the mapping and the reviews of D2c
+    found beyond the ruled items, has no ruling and is not built. Each is put to the author as
+    a decision, C15 to C22, with the facts and a recommendation. What the reviews found in
+    D2c's own code is fixed or, where the fix is the author's call, put to the author with the
+    rest.
+- **What D2c is** (built and gated on 2026-11-25, committed on 2026-11-26): alias tables, field
+  rules, extractor code, two scripts and tests. No prompt text, request schema, spec schema,
+  hash pin or pinned scorer changed, and the project code made no model call. No stored record
+  was rewritten.
+- `5910cf8` — the resolver change (15 files).
+  - **C10.** "N3" is no alias of `n4`; the term stays in the paper's words. One block came with
+    it: a term that names N3 beside FAST would otherwise resolve to `fast_bias` alone.
+  - **C11.** An item of scrub.criterion is parted at its "or"s only where every item that makes
+    is a criterion of its own, with another member than the item beside it
+    (`extractor._parted_at_or`, `_or_member`, `coverage_fields.bare_criterion`).
+    - A criterion of its own is one measure with at most its threshold, or a wording the
+      field's rule reads whole. A name too weak to make a criterion alone does not count
+      (`coverage_fields.OR_WEAK_ALIASES`: the name of a measure's author, and the bare "root
+      mean square"); beside a name that is not weak it stands as a name. A unit the threshold
+      carries is one of its own measure, from a closed list (`coverage_fields.OR_UNITS`).
+    - Where one item is none, the rule makes nothing of the item. An item with more than eight
+      "or"s stays whole (those inside round brackets and in "than or equal to" are not
+      counted).
+    - An "or" that opens an item is dropped where the rest of the item is a criterion or parts
+      into criteria.
+    - The rule changes the member of nothing but its own items. Where an item it makes would
+      change the member of an item the rule did not part (give it one, another, or none), the
+      value is split as it was before D2c (`extractor._field_items`), and an "or" that opens an
+      item stays.
+    - No other list field parts at "or".
+  - **C13, two aliases**, each the paper's wording and no shorter form: "24-regressor model of
+    motion" (`friston24`) and "ICBM 152 Nonlinear Asymmetrical template version 2009c"
+    (MNI152NLin2009cAsym).
+  - **C13, five family names** ("fs_LR", "MSM", "Montreal Neurological Institute", "ICBM",
+    "CompCor") are underspecified terms of their tables. The quote check reads an
+    underspecified value that holds only such a name by its own words, the check an
+    unrecognized term met before D2c (`quote_support._family_term_supported`).
+  - **C13, a noun after a mesh density.** One of "surface", "space", "template" or "mesh" may
+    follow the density of fsaverage5 or fsaverage6 written apart from the name, where the term
+    is the mesh and its noun and nothing else ("fsaverage 6 surface", "the fsaverage 5
+    template"). The design lists what may stand around the wording ("the" before it, brackets,
+    quote marks, closing punctuation and folded separators) and the plural "s" the alias table
+    allows on the density.
+  - **C13, the eight matches** are each a block: the member is kept out and the paper's words
+    stay. Five are on coverage fields. Three are on fields of the shared call, which read no
+    rule until now and resolve through `coverage_fields.resolve_shared`; the two mirror scripts
+    do the same.
+  - **C14.** The detrend rule leaves the member `none` alone, and `checker_promotion.promote`
+    applies it to an order the checking pass supplies
+    (`coverage_extractor.detrend_field_raised`, one function for both paths).
+  - Tests: `tests/test_resolver_d2c.py` is new; six older test files changed with it.
+- `14e7003` — the design: the go-ahead in section 0, D2c as built in Part D, decisions C15 to
+  C22 at the end of Part C. The two lists that stood under D2c in Part D (faults the reviews of
+  D3 found in older code, wordings D3 left unresolved) are now C20 and C21, each with a
+  recommendation. C20 also holds faults in older code that came up during D2c (among them the
+  word edge of the HD-BET block, the dashes the text repair does not map and the quote check's
+  word reader).
+- `d969747` — the design, eight passages corrected after the check of this entry (under
+  "Method and limits").
+- **Where the build differs from the rulings:**
+  - **"or" is no plain separator.** A plain one gave wrong members and junk items: "FD computed
+    per Power or Jenkinson" became two criteria, "FD > 0.5 mm or no DVARS" recorded DVARS, and
+    "0.5 mm or more" left an item "more". The first three forms of the rule let any text stand
+    beside an alias and listed what to refuse; each review found the next description that held
+    an alias and became a criterion after "or". The fourth form closes the positive side, a
+    bare criterion, and two more builds tightened it: the last item is read again once a later
+    "or" has grown it, the items the rule did not part are guarded, a number alone is no
+    threshold, and a threshold takes the unit of its own measure.
+  - **The noun after a mesh density** counts only where the term is that wording and nothing
+    else, and no other alias that ends in a digit takes a noun.
+  - **The blocks read more than the ruled wordings, on the safe side.** FreeSurfer's
+    registration is blocked wherever the term holds "MSM" at the start of a word, or
+    "multimodal surface matching" with its words apart. The asymmetric template is blocked
+    wherever the term holds "sym" as a word, or a word that begins with "symmetr" (a digit may
+    touch either), or one of them glued to the release ("2009cSym"). The three fsaverage meshes
+    are blocked on the two word forms wherever they stand in the term, and on the word glued to
+    the name of the mesh; the form glued to the release is the template's alone. "SynthSeg" is
+    blocked on the segmentation method and on the brain extraction method, the two fields that
+    have the member `freesurfer_recon_all`. A spelling the blocks do not read ("symm.") keeps
+    the member it had (C17).
+  - **In `promote` the detrend rule leaves a term that resolved to nothing alone.** The checking
+    pass can say that no detrending was done only in words, and the rule would have given such
+    a term the order its sentence rules out. In the first build a supplied "omitted", beside
+    the sentence "Linear detrending was omitted for the task data.", took `linear`.
+- **Eight builds.** Each rebuild followed a review. The last two came after the gates of the
+  sixth had passed.
+  - The seventh came from the eighth review, which read the design text sentence by sentence
+    against the code: the block on the symmetric fsaverage read its word only next to the mesh.
+    It now reads the word wherever it stands, and "SynthSeg" is blocked on brain extraction too.
+  - The eighth came from the eighth and ninth reviews: the noun after a mesh density had only
+    to end its phrase, so a term could go on after a comma and say that the mesh is another
+    one. "fsaverage 6 template, symm." then had the member `fsaverage6` under D2c, where it had
+    none under HEAD. No list of what may not follow can be closed, so the rule is closed to the
+    whole wording.
+  - Every gate below was run again on the eighth build. After that capture one comment was
+    reworded and test rows were added; the code is the same (compared as syntax trees), and
+    each of the 441,216 wordings resolves in the committed tree as it did in the capture.
+- **Gates (run on 2026-11-25, `4dd097b` against the eighth build):**
+  - request schemas of the seven calls and the eight prompt hashes: byte-identical;
+  - the checking pass's draft (`verifier.compact_draft`) for 148 stored records:
+    byte-identical;
+  - every wording at hand on the 39 fields that have a vocabulary (441,216: 23,370 from D3's
+    gates and reviews, and the rows the mapping and the first nine reviews of D2c probed):
+    372,615 resolve the same and 68,601 differently. Each changed row is attributed to one item
+    of the rulings by a condition written in the comparison script; none is left over;
+  - the 35,121 wordings the "or" rule changes, by six checks written apart from the code: no
+    row fails one. The same checks flag the third, fourth and fifth builds;
+  - every wording of the target surface that holds "sym" or a longer form of it as a word
+    (55,329), and every wording of brain extraction or segmentation that names SynthSeg
+    (3,752): none has the blocked member. Under HEAD 12,722 and 1,171 had it, and under the
+    sixth build 10,543 and 708;
+  - every wording of the target surface that has a member where HEAD gives none (547): each is
+    the mesh, its density and one of the four nouns and nothing else. Under the seventh build
+    4,270 of 4,817 such wordings held more than that;
+  - the value-in-quote check on the 441,216 wordings, each against a sentence that holds it, a
+    sentence without it and one sentence per family term of its field (1,388,508 checks per
+    tree): a row whose member D2c leaves as it was has the same outcome on each of them. 1,677
+    rows whose member or items changed have another outcome on some quote;
+  - `reresolve_terms.py` on six record sets (1,944 terms): 7 terms change. The two aliases
+    resolve (oconnor_2017, ladouceur_2023), and "MSM folding" and "MSM multimodal" (smith_2013)
+    take the status underspecified. Held-out papers: 0 terms changed;
+  - every stored record read through `parse_any_version` (1,031 files): 1,009 documents
+    identical, 5 fail under both trees;
+  - re-render of five record sets: 12 lines change, each the old line with the note taken off;
+  - the 18 scorers on arms S, B, C and corpus_full_v3: each of the 72 reports identical;
+  - `term_audit.py` on the six sets: the two aliases resolve and leave the alias candidates,
+    the two MSM terms change status, and 451 aliases become 452;
+  - mutation: eleven runs on a scratch copy of both trees, each mutant's diff shown non-empty
+    before its run. Five runs left survivors (4 of 112, 8 of 162, 4 of 236, 1 of 353, 5 of
+    388). Each was then killed by a new test, or the code it stood in was simplified or taken
+    out; one of them was left out as equivalent. Six mutants in all are left out as equivalent,
+    each with its reason, and none changes the resolution of a wording at hand. A seventh was
+    left out on that ground until the tenth review found a wording on which it differs; it is
+    listed now. The last three runs killed 420 of 420 on the sixth build, 430 of 430 on the
+    eighth and 443 of 443 on the committed tree. One more run, on the seventh build, was
+    stopped when that build was replaced (164 of its 422 mutants had run, each killed);
+  - both suites pass in a scratch export of `4dd097b` with the 15 files of `5910cf8` laid over
+    it (root 372 and extractor_mvp 2570; the tests that read untracked files skip there, as in
+    CI).
+- **Reviews:** ten rounds, each finding re-checked by a second agent that had to reproduce it.
+  - Rounds 1 to 6 read the whole change and confirmed 29 of 36, 19 of 25, 15 of 23, 16 of 19,
+    14 of 21 and 3 of 10 findings. Nine of them are in older code.
+  - Rounds 7 and 8 read the design text alone, sentence by sentence against the code: 7 of 11
+    and 4 of 6 confirmed, each a sentence wider than the code. One of them was also a fault in
+    the code, the one that led to the seventh build.
+  - Round 9 reviewed the seventh build: 6 of 8 confirmed, among them the wording that led to
+    the eighth, three rows the tests lacked and one fault in older code.
+  - Round 10 reviewed the eighth build: 5 of 7 confirmed, none a wrong member (a comment, three
+    sentences and rows the tests lacked). Its code reviewer constructed 729,276 values of the
+    target surface: every member D2c gives where HEAD gives none is right for the words.
+  - Among the findings: a block written with `\b` missed "N3_FAST" (an underscore is no word
+    edge there); the first build let the status choose the quote check for the family names,
+    which refused "fs_LR32k" on a quote that holds it, and it did not make "MSM" an
+    underspecified term because that check would pass "MSM" on a quote that names only
+    FreeSurfer; the "or"
+    rule made criteria of descriptions that hold an alias ("the RMS of the volume-to-volume
+    BOLD change"), of negated sides and of sides whose threshold is in another measure's unit
+    ("relative RMS > 0.5% BOLD"); an item the rule made let the list resolver give a member to
+    the item before it.
+- **Put to the author (not ruled), in the design as C15 to C22:**
+  - C15: one reading of a family value in the quote check;
+  - C16: the bare alias "FreeSurfer" ("SAMSEG (FreeSurfer)" resolves to
+    `freesurfer_recon_all`);
+  - C17: neighbours of the eight matches and of the "or" rule ("semi-rigid", "Fourier series
+    regressors", "RMS framewise displacement", "fsaverage (symm.)", the bare alias "root mean
+    square");
+  - C18: "MSM folding" and "MSM multimodal" as aliases;
+  - C19: the detrend rule and a negation in its quote;
+  - C20: faults in older code (the friston24 rule, the 6param alias behind a derivative the
+    rule does not read, the negations no alias table reads, the word edge of the HD-BET block,
+    the source field's aliases, the list splitter, the dashes the text repair does not map, the
+    quote check's word reader, the pseudo-code's "none" for an inferred term,
+    `extractor._apply_resolved_citations`, `migrate_to_current`);
+  - C21: wordings D3 left unresolved on purpose;
+  - C22: for D4, a block and the model's member. Recommended: a member the field's block
+    refuses for the term is refused from the model too.
+- **Method and limits:**
+  - 82 Claude Code subagents in eleven workflows (8 to map the code D2c touches, then 16, 10,
+    8, 8, 8, 6, 6, 4, 4 and 4 for the ten review rounds): session usage, not an extraction run.
+    Their transcripts hold 2,304 tool calls and 120,636 lines of output. The agents worked in
+    code-only copies of the trees under the session's scratch folder. No call names a path
+    under the repository but the two interpreters, none runs git, and none reaches the network.
+    No line of output begins with a path under results, labels, ground truth, tested_lit, a
+    corpus folder or this log. The copies were checked after the reviews: no file in them
+    changed but Python's bytecode caches;
+  - this entry was checked before it was committed (2026-11-26), sentence by sentence against
+    the committed code, the earlier builds and the design text, in four more rounds: 22 agents,
+    each finding re-checked by a second one. They confirmed 7 of 15, 4 of 10, 2 of 3 and 0 of 2
+    findings, each a sentence that did not match the code or credited a thing to the wrong
+    build; none is a fault in the code. Eight passages of the design had such faults too and
+    are corrected in `d969747`: what was built or fixed and what was put to the author; where
+    C20 comes from; how the quote check reads a value that holds only a family name (C13,
+    C15), and what the first build did with "MSM"; what the guard of the "or" rule guards; the
+    words the block on the fsaverage meshes reads; the example under C14; and, added under
+    C10, what the quote check does once "N3" has left `n4`. Their transcripts (479 tool calls,
+    27,530 lines of output) pass the same audit, and the copies they read are unchanged;
+  - the reviewers' wordings are constructed. The gates compare resolution on wordings at hand
+    and on stored records. No extraction was run, so the effect on new model output is not
+    measured;
+  - the "or" rule reads a bare criterion and nothing wider. A criterion with a citation, a
+    qualifier or a unit in another spelling stays inside its item, and the rule leaves that
+    item whole;
+  - a block reads the whole term, so a term that names the member properly beside the blocked
+    form loses it too ("rigid-body, not non-rigid");
+  - the quote check follows the alias tables: with "N3" gone from `n4`, a value "N4" is no
+    longer supported by a quote that names only N3. The gate above reads no quote of that kind;
+  - the two mirror scripts do not split a stored record's items again. The re-check reads a
+    stored raw value through the extraction's own path, so the "or" rule reaches a value it
+    restores. No stored scrub criterion holds an "or" (193 stored terms, none of them in a
+    held-out paper);
+  - gate scripts and outputs: `extractor_mvp/results/d2c_gates_2026-11-25/` (gitignored). The
+    rendered reports, re-resolved copies and migrated documents the gates made are not kept
+    there, since they hold held-out text.
+- **Checks:** root 375, extractor_mvp 2572 (2 live skipped), run again on the committed tree
+  before the push; pre-commit clean on both passes. CI on `14e7003`: both jobs passed.
+
+Commits here: `5910cf8`, `14e7003`, `d969747`, then this entry.
