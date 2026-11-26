@@ -18,9 +18,10 @@ Run it after every extraction run, before scoring. For the 39 vocabulary fields 
    of the words, ``model_mapped``, and the table resolves them to nothing; the row is an alias
    candidate) and ``the model read`` (the table resolves such words to another member). A term
    stored as ``other`` that is not ``model_mapped`` keeps that member: its "other (phrase)"
-   wrapper is not in the record. The detrend field is resolved as the extractor resolves it: the term, then
-   the highest order its quote names, for a value the coverage call extracted (a part of a varied
-   value and a value the checking pass supplied do not go through that step).
+   wrapper is not in the record. The detrend field is resolved as the extractor resolves it: the
+   term, then the highest order its quote names, for an extracted value. Since D2c that includes
+   a value the checking pass supplied, when it resolved to an order (a supplied term that
+   resolved to nothing, and a part of a varied value, do not go through that step).
 3. **Unresolved wordings by how often they recur across papers.** A wording that recurs is the
    signal to add a member or an alias, as a dated change with tests. Aliases are not guessed ahead
    of the papers.
@@ -30,10 +31,13 @@ Run it after every extraction run, before scoring. For the 39 vocabulary fields 
    wording the table lacks, an inference, or a forced token; also a member that has no alias,
    unless the quote is as a whole the wording its rule reads). The member is the one today's
    resolver gives the token; the record's members are the stored ones and today's. The quote is
-   read as the resolver reads a value: the longer alias wins, and the field's rules apply. On the
-   detrend field the highest-order rule decides: a lower order named beside the token's is no
-   competitor, and a higher one always is. Quote spans are put in text order first; their stored
-   order is the model's.
+   read as the resolver reads a value: the longer alias wins, and the field's rules apply. A
+   block reads the whole quote, as it reads a whole term: a member named properly in one clause
+   counts as not in quote when another clause holds the blocked form ("rigid-body registration
+   ... followed by non-rigid warping"). Such a token is listed to be read, which is the safe
+   side. On the detrend field the highest-order rule decides: a lower order named beside the
+   token's is no competitor, and a higher one always is. Quote spans are put in text order
+   first; their stored order is the model's.
 
 Held-out papers (liu_2005, tang_2025, wheaton_2004) are counted and never shown: no field,
 wording or quote of theirs reaches the report. A record is held out when its file name contains
@@ -61,6 +65,7 @@ from extractor_mvp.coverage_extractor import _DETREND_ORDER, detrend_highest_ord
 from extractor_mvp.coverage_fields import (
     COVERAGE_SPECS,
     TERM_RULES,
+    resolve_shared,
     rule_hits,
     rules_name,
     rules_resolve,
@@ -86,7 +91,7 @@ def is_held_out(paper: str) -> bool:
 @dataclasses.dataclass(frozen=True)
 class Field:
     """One vocabulary field: 35 are resolved by ``extractor._resolve_term`` (the coverage calls),
-    4 by ``synonym_resolver.resolve_to_literal`` with the exact-member fallback (the shared call)."""
+    4 by ``coverage_fields.resolve_shared`` with the exact-member fallback (the shared call)."""
 
     dotted: str
     is_list: bool
@@ -133,17 +138,21 @@ def resolve(
     words: list[str],
     value_context: float | None = None,
     rule_quote: str | None = None,
+    raise_only: bool = False,
 ) -> list[tuple[str | None, str]]:
     """(member, resolution) for each stored item, as the extractor resolves them today.
     ``rule_quote`` is the field's quote as the extractor joins it (stored order, one space): the
     detrend field takes the highest order that quote names (coverage_extractor, 2026-10-28). The
-    extractor runs that step after resolution, on a value the coverage call extracted: not on a
-    part of a varied value, and not on a value the checking pass supplied (``checker_supplied``),
-    which is promoted after the step has run. For those the caller passes no quote."""
+    extractor runs that step after resolution, on an extracted value: the coverage call's, and
+    since D2c (2026-11-25) one the checking pass supplied (``checker_supplied``), which went
+    without it until then. For a supplied value the caller sets ``raise_only``: promote() raises
+    an order and leaves a term that resolved to nothing as it is. The step never runs on a part
+    of a varied value; for that the caller passes no quote. The four fields of the shared call
+    read their table and then their blocks (``coverage_fields.resolve_shared``, D2c)."""
     if field.shared:
         out: list[tuple[str | None, str]] = []
         for w in words:
-            r = resolve_to_literal(w, field.synonyms, field.underspecified, value_context)
+            r = resolve_shared(field.dotted, w, value_context)
             if r.status == "resolved":
                 out.append((r.resolved, "resolved"))
             elif w in field.members:
@@ -157,7 +166,13 @@ def resolve(
     else:
         terms = [ex._resolve_term(w, field.literal_type, field.table, field.dotted) for w in words]
     resolved = [(t.resolved, str(t.resolution)) for t in terms]
-    if field.dotted == DETREND and rule_quote is not None and len(resolved) == 1:
+    unresolved_and_supplied = raise_only and len(resolved) == 1 and resolved[0][0] is None
+    if (
+        field.dotted == DETREND
+        and rule_quote is not None
+        and len(resolved) == 1
+        and not unresolved_and_supplied
+    ):
         highest = detrend_highest_order(resolved[0][0], rule_quote)
         if highest != resolved[0][0]:
             resolved = [(highest, "resolved")]
@@ -186,7 +201,7 @@ def self_check() -> tuple[int, list[tuple[str, str, str, list[str | None]]]]:
                 term, _, value = alias.rpartition("@") if "@" in alias else (alias, "", "")
                 context = float(value) if value else None
                 if field.is_list:
-                    items = ex._split_terms(term, ex._keep_whole(field.dotted, field.table))
+                    items = ex._field_items(field.dotted, term, field.literal_type, field.table)
                 else:
                     items = [term]
                 got = [m for m, _resolution in resolve(field, items, context)]
@@ -272,10 +287,12 @@ def iter_values(record: dict[str, Any], paper: str) -> Iterator[Value]:
                 if value_context is None and field.shared:
                     value_context = gated_value(field, items[0].get("resolved"))
                 # the quote the detrend rule reads: see resolve()
-                no_rule = is_part or bool(ext.get("checker_supplied"))
-                rule_quote = None if no_rule else " ".join(str(s.get("text", "")) for s in spans)
+                rule_quote = None if is_part else " ".join(str(s.get("text", "")) for s in spans)
+                supplied = bool(ext.get("checker_supplied"))
                 words = [str(it["verbatim"]) for it in items]
-                now = tuple(resolve(field, words, value_context, rule_quote))
+                now = tuple(resolve(field, words, value_context, rule_quote, supplied))
+                if supplied and len(now) == 1 and now[0][0] is None:
+                    rule_quote = None  # the rule did not read this value: see resolve()
                 read.append((items, spans, value_context, rule_quote, now))
             returned = frozenset(
                 [str(it["resolved"]) for items, *_ in read for it in items if it.get("resolved")]

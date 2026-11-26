@@ -18,6 +18,11 @@ same methods text. If it passes, the field takes that value, marked ``checker_su
 
 Every verdict considered is logged in the checking pass's record under ``supplied``: the field, the
 value and sentence, the parts, and whether it was filled or stayed a flag (and why). No model call.
+
+A supplied detrend order goes through the highest-order rule of 2026-10-28, as the coverage call's
+own value does (D2c, 2026-11-25, the author's ruling C14). Before, the rule ran ahead of this step
+and such a value never met it. The log entry records a move under ``rule``. A supplied term that
+resolves to nothing is left as it is (``coverage_extractor.detrend_field_raised``, ``raise_only``).
 """
 
 from __future__ import annotations
@@ -66,10 +71,18 @@ def _field(prep: Any, path: str) -> tuple[Any, str] | None:
     return step, name
 
 
-def promote(preprocessing: Any, verifier: dict[str, Any] | None, text: str) -> list[dict[str, Any]]:
-    """Fill the fields the checking pass supplied a passing value for, in place. Returns the log."""
+def promote(
+    preprocessing: Any,
+    verifier: dict[str, Any] | None,
+    text: str,
+    diagnostics: list[Any] | None = None,
+) -> list[dict[str, Any]]:
+    """Fill the fields the checking pass supplied a passing value for, in place. Returns the log.
+    ``diagnostics``, when given, receives the diagnostic of a rule that moved a supplied value
+    (the detrend field's highest-order rule), as the extraction's own list does."""
     from fmri_repro.spec.provenance import Extracted, Varied
 
+    from extractor_mvp.coverage_extractor import detrend_field_raised
     from extractor_mvp.extraction_result import StepFieldResult, VariantResult
     from extractor_mvp.extractor import _process_field
     from extractor_mvp.rechecks import _spec_for
@@ -122,6 +135,13 @@ def promote(preprocessing: Any, verifier: dict[str, Any] | None, text: str) -> l
         pf, diag, _ = _process_field(
             spec["field_id"], path, fe, spec["literal_type"], spec["t"], text, None, **kwargs
         )
+        if path == "nuisance_regression.detrend":
+            moved = detrend_field_raised(pf, raise_only=True)
+            if moved is not None:
+                pf, raised = moved
+                entry["rule"] = raised.failure_reason
+                if diagnostics is not None:
+                    diagnostics.append(raised)
         ext = pf.extraction
         if isinstance(ext, Extracted):
             new_ext: Any = ext.model_copy(update={"checker_supplied": True})

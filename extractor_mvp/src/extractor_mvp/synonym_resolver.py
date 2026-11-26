@@ -66,6 +66,8 @@ TARGET_SPACE_SYNONYMS: dict[str, list[str]] = {
         "MNI152 2009c",
         "Fonov 2009c",  # the distinctive published tag
         "Fonov MNI152",
+        # D2c (2026-11-25, C13): ladouceur_2023 writes the template's name out
+        "ICBM 152 Nonlinear Asymmetrical template version 2009c",
     ],
     "Talairach": ["Talairach", "Talairach atlas"],
     "native_volume": [
@@ -99,6 +101,11 @@ TARGET_SPACE_UNDERSPECIFIED: list[str] = [
     "standard volumetric space",
     "MNI template",
     "MNI atlas",
+    # D2c (2026-11-25, the author's ruling C13): the family under its other two names. Until now
+    # they were read for the report's note only (coverage_fields.FAMILY_NAMES). "ICBM" also
+    # reads "ICBM152" and "ICBM 152", as "MNI" reads "MNI152".
+    "Montreal Neurological Institute",
+    "ICBM",
 ]
 
 SURFACE_REGISTRATION_SYNONYMS: dict[str, list[str]] = {
@@ -129,7 +136,26 @@ SURFACE_REGISTRATION_UNDERSPECIFIED: list[str] = [
     "via FreeSurfer",
     "sphere registration",
     "spherical registration",
+    # D2c (2026-11-25, the author's ruling C13): "MSM" with no variant names the family
+    "MSM",
 ]
+
+#: D2c (2026-11-25, the author's ruling C13): "fs_LR" with no density names the family and no
+#: mesh. An entry is read as a plain substring, with no folding of separators, so each spelling
+#: of the joint is listed.
+TARGET_SURFACE_UNDERSPECIFIED: list[str] = ["fs_LR", "fsLR", "fs-LR", "fs LR"]
+
+#: The entries of the family lists that D2c added: the five family names of C13 ("CompCor" among
+#: them, whose list is coverage_fields.COMPCOR_UNDERSPECIFIED). They give a term its status,
+#: "underspecified". The quote check does not read them as it reads the older entries: a value
+#: that holds only such a name must stand in its quote in its own words, as it had to before D2c
+#: (quote_support._family_term_supported). So the move changes a status and no outcome of the
+#: check. It does change the report's note: an entry is a plain substring, so a name glued to
+#: more text ("fs_LR32k", "MSMv3") holds a family term now, and the report no longer says of it
+#: that it is outside the vocabulary (coverage_fields.names_no_member).
+FAMILY_NAME_ENTRIES: frozenset[str] = frozenset(
+    {"Montreal Neurological Institute", "ICBM", "MSM", "CompCor", *TARGET_SURFACE_UNDERSPECIFIED}
+)
 
 TARGET_SURFACE_SYNONYMS: dict[str, list[str]] = {
     "native": ["native midthickness", "native surface", "subject's native surface"],
@@ -327,7 +353,8 @@ def members_named(
     6" is the mesh fsaverage6; in "fsaverage 6 mm FWHM", "fsaverage 6 millimetre kernel" and
     "fsaverage 5 subjects" the number belongs to what follows, and no list of units can be
     closed. There both members stay named and the term stays ambiguous, as it was before D2b.
-    "fsaverage 6 surface" is such a case too and stays unresolved.
+    Since D2c one of four nouns may follow the density of a mesh where the term is the mesh and
+    its noun and nothing else (:data:`_MESH_NOUN_ENDS`): "fsaverage 6 surface" is fsaverage6.
 
     The text is read as :func:`repair_text` gives it. When that reading names no member and a line
     break split a word at a hyphen, the rejoined text is read instead."""
@@ -365,6 +392,24 @@ def members_named(
 #: What may follow an alias that ends in a digit for its number to end the phrase: nothing, or
 #: closing and list punctuation. A word after the number may be what it counts.
 _PHRASE_ENDS = re.compile(r"""\s*(?:\Z|[)\],;:.!?"'])""")
+#: D2c (2026-11-25, the author's ruling C13): after the density of a mesh one noun may stand that
+#: names what the mesh is: "fsaverage 6 surface", "fsaverage 5 space", "the fsaverage 6
+#: template", "fsaverage 5 mesh". The list is closed, and so is the wording: the term is the mesh
+#: and its noun and nothing else, but for "the" before it and for brackets, quote marks and
+#: closing punctuation around it. The wording is read with its separators folded, so a hyphen,
+#: a dash or an underscore at either end counts as nothing ("fsaverage 6 surface -"), and the
+#: density may carry the plural "s" that every alias may ("fsaverage 6s surface"). A plural of
+#: the noun is not in the list ("fsaverage 6 surfaces" may count six surfaces). Only the two
+#: meshes take a noun: on any other alias that ends in a digit the number still has to end the
+#: phrase.
+#:
+#: A first form asked only that the noun end its phrase. The term could go on after a comma, and
+#: what followed could say that the mesh is another one ("fsaverage 6 template, symm."), so that
+#: the term took a member it had not had before D2c (the reviews of D2c). No list of what may
+#: not follow can be closed; the whole wording can.
+_MESH_MEMBERS = frozenset({"fsaverage5", "fsaverage6"})
+_MESH_NOUN_ENDS = re.compile(r"""\s(?:surface|space|template|mesh)[\s)\].,;:!?"']*\Z""")
+_MESH_OPENS = re.compile(r"""[\s(\["']*(?:the\s[\s(\["']*)?""")
 
 
 def _members_named(
@@ -379,7 +424,15 @@ def _members_named(
             if term is None:
                 continue
             for m in _alias_regex(term).finditer(raw_folded):
-                wins = not term[-1:].isdigit() or bool(_PHRASE_ENDS.match(raw_folded, m.end()))
+                wins = (
+                    not term[-1:].isdigit()
+                    or bool(_PHRASE_ENDS.match(raw_folded, m.end()))
+                    or (
+                        member in _MESH_MEMBERS
+                        and bool(_MESH_NOUN_ENDS.match(raw_folded, m.end()))
+                        and bool(_MESH_OPENS.fullmatch(raw_folded, 0, m.start()))
+                    )
+                )
                 found.setdefault(member, []).append((alias, m.start(), m.end(), wins))
 
     def shadowed(member: str, start: int, end: int) -> bool:
@@ -456,6 +509,6 @@ TS_METHOD_SYNONYMS: dict[str, list[str]] = {
 SYNONYMS_BY_FIELD: dict[str, tuple[dict[str, list[str]], list[str] | None]] = {
     "target_space": (TARGET_SPACE_SYNONYMS, TARGET_SPACE_UNDERSPECIFIED),
     "surface_registration": (SURFACE_REGISTRATION_SYNONYMS, SURFACE_REGISTRATION_UNDERSPECIFIED),
-    "target_surface": (TARGET_SURFACE_SYNONYMS, None),
+    "target_surface": (TARGET_SURFACE_SYNONYMS, TARGET_SURFACE_UNDERSPECIFIED),
     "convention": (INTENSITY_CONVENTION_SYNONYMS, None),
 }

@@ -14,6 +14,7 @@ nothing from the extractor.
 from __future__ import annotations
 
 import dataclasses
+import functools
 import hashlib
 import json
 import re
@@ -59,10 +60,13 @@ from fmri_repro.spec.preprocessing import (
 
 from extractor_mvp.synonym_resolver import (
     SYNONYMS_BY_FIELD,
+    SynonymResolution,
+    _alias_regex,
     _fold_separators,
     _rejoin_line_wraps,
     members_named,
     repair_text,
+    resolve_to_literal,
 )
 
 #: ``number_list`` (schema 0.8.0, 2026-11-25): the scrub thresholds, a list. One number is read
@@ -208,6 +212,9 @@ COMPCOR_VARIANT: dict[str, list[str]] = {
     "a": ["aCompCor", "anatomical CompCor", "anatomical component"],
     "t": ["tCompCor", "temporal CompCor", "temporal component"],
 }
+#: D2c (2026-11-25, the author's ruling C13): "CompCor" with no kind names the family and neither
+#: variant. An underspecified term, as "MNI" is for the target space.
+COMPCOR_UNDERSPECIFIED: list[str] = ["CompCor"]
 MOTION_EXPANSION: dict[str, list[str]] = {
     "none": ["none"],
     "6param": [
@@ -230,6 +237,8 @@ MOTION_EXPANSION: dict[str, list[str]] = {
         "24-parameter",
         "24 parameters",
         "24 regressors",
+        # D2c (2026-11-25, C13): a stored record's wording; the plural above does not read it
+        "24-regressor model of motion",
         "24 head motion",
         "24 nuisance",
         "24 movement",
@@ -324,6 +333,67 @@ class TermRules:
 #:   The bare alias "SPM" is as it was: "CONN toolbox (SPM)" still resolves to the SPM member, and
 #:   whether it should is put to the author.
 _FIELDMAP_FREE = r"field[\s_-]*map[\s_-]*(?:less|free)"
+#: D2c (2026-11-25, the author's ruling C13): the eight wrong-member matches of the D1 sweep that
+#: D2b did not take. Each is a block, as above: the member is kept out and the paper's words stay.
+#: A block reads the whole term, so it also keeps the member out where the term names it properly
+#: beside the blocked form ("rigid-body, not non-rigid"); unresolved is the safe direction.
+#:
+#: - slice timing against motion correction: "realignment was performed after slice timing
+#:   correction" resolved to after through the bare alias. The sentence gives the order of the
+#:   other step, so slice timing came BEFORE. The mirror form resolved to before;
+#: - scrub criterion: "FD-RMS" resolved to fd_power through "FD". It is Jenkinson's measure, or
+#:   an RMS over the series;
+#: - coregistration transform: "non-rigid" resolved to rigid;
+#: - segmentation: "SynthSeg (FreeSurfer 7)" resolved to recon-all through "FreeSurfer". The
+#:   same wording gave the same member on brain extraction, the other field that has it, and
+#:   is blocked there too;
+#: - filter type: SPM's "Fourier basis set" resolved to ideal_fft through "Fourier". It is a set
+#:   of regressors;
+#: - surface registration: "MSM folding-based registration" resolved to FreeSurfer's
+#:   registration through "folding-based registration";
+#: - target space: "MNI152 2009c symmetric" resolved to the asymmetric template;
+#: - target surface: "fsaverage_sym" resolved to fsaverage.
+#:
+#: The last three fields belong to the shared call, which reads its blocks in
+#: :func:`resolve_shared`.
+#:
+#: A word edge is written as the alias table reads it (``_L``, ``_R``): any character that is no
+#: letter and no digit, an underscore included. ``\b`` counts an underscore as part of the word,
+#: and the first build of these blocks missed "N3_FAST" and "motion_correction_after_STC" that way
+#: (the review of D2c).
+_L = r"(?<![a-z0-9])"
+_R = r"(?![a-z0-9])"
+_ARTICLE = r"(?:(?:the|a|an|its|their|our)[\s_-]+)?"
+_SLICE_TIMING = rf"(?:slice[\s_-]*(?:tim|acquisition)|STCs?{_R})"
+_AFTER_SLICE_TIMING = rf"{_L}after[\s_-]+{_ARTICLE}{_SLICE_TIMING}"
+_BEFORE_SLICE_TIMING = rf"{_L}before[\s_-]+{_ARTICLE}{_SLICE_TIMING}"
+_FD_RMS = rf"{_L}FD[\s_-]*RMS{_R}|{_L}RMS[\s_-]*FD{_R}"
+_NON_RIGID = rf"{_L}non[\s_-]*rigid"
+_SYNTHSEG = r"synth[\s_-]*seg"
+_FOURIER_BASIS = r"fourier[\s_-]*bas[ie]s"
+_NAMES_MSM = rf"{_L}MSM|multi[\s_-]*modal[\s_-]+surface[\s_-]+matching"
+#: "sym", "symmetric", "symmetrical", "symmetry" as a word of its own: the "sym" of "Asym" and
+#: "asymmetric" follows a letter. TemplateFlow's name of the symmetric template glues the word to
+#: the release ("MNI152NLin2009cSym"), which the second form reads (the review of D2c). The word
+#: is read wherever it stands: a term that names the template beside the "symmetric
+#: normalization" of ANTs loses the member too, on the safe side. So does "asymmetric" broken
+#: after its first letter by a line wrap ("a-", newline, "symmetric"): a pattern is read in the
+#: text as written as well as with the wrap put back (:func:`rule_hits`), and as written the
+#: word stands alone. Reading the rejoined text alone would miss a form that a wrap glues
+#: ("after-", newline, "slice timing"), which is the unsafe side.
+_SYM_WORD = r"sym(?:metr[a-z]*)?(?![a-z])"
+_SYMMETRIC = rf"(?<![a-z]){_SYM_WORD}|2009c{_SYM_WORD}"
+#: The symmetric fsaverage ("fsaverage_sym"). The word is read wherever it stands in the term,
+#: as for the template, or glued to the name of the mesh ("fsaveragesym"; after a density the
+#: word follows a digit, which the first form reads). A first form read it only next to the
+#: mesh and missed "fsaverage template symmetric" (the review of D2c). A term that names a mesh
+#: beside a "symmetric" of something else loses the member, on the safe side.
+_FSAVERAGE_SYM = rf"(?<![a-z]){_SYM_WORD}|fsaverage{_SYM_WORD}"
+#: D2c (C10): with "N3" gone from the aliases of n4, a term that names N3 beside FAST would
+#: resolve to fast_bias alone, where it named two methods and stayed unresolved before. The
+#: pattern reads "N3" where the alias did: as a word, a plural "s" allowed, and not as the head
+#: of a longer number ("N3.1").
+_N3 = rf"{_L}N3s?{_R}(?![.,]\d)"
 _DERIVATIVE = r"derivat|\bderivs?\b"
 #: schema 0.8.0 (2026-11-25): the members it adds with no alias of their own (12param,
 #: global_signal, and fieldmap_less on the method) are each resolved by ONE pattern that must
@@ -433,20 +503,39 @@ TERM_RULES: dict[str, TermRules] = {
         },
         exact_overrides={"volterra": "friston24"},
     ),
-    "scrub.criterion": TermRules(require_all={"global_signal": (_GLOBAL_SIGNAL_ITEM,)}),
+    "scrub.criterion": TermRules(
+        require_all={"global_signal": (_GLOBAL_SIGNAL_ITEM,)},
+        block={"fd_power": (_FD_RMS,)},
+    ),
     "distortion_correction.method": TermRules(
         require_all={"fieldmap_less": (_FIELDMAP_LESS_ITEM,)},
         block={"fieldmap": (_FIELDMAP_FREE,)},
     ),
     "distortion_correction.source": TermRules(block={"susceptibility_fieldmap": (_FIELDMAP_FREE,)}),
-    "brain_extraction.method": TermRules(block={"bet": (r"\bhd[\s_-]*bet\b",)}),
+    "brain_extraction.method": TermRules(
+        block={"bet": (r"\bhd[\s_-]*bet\b",), "freesurfer_recon_all": (_SYNTHSEG,)}
+    ),
     "nuisance_regression.method": _spm_member("spm"),
-    "segmentation.method": _spm_member("spm_segment"),
+    "segmentation.method": dataclasses.replace(
+        _spm_member("spm_segment"), block={"freesurfer_recon_all": (_SYNTHSEG,)}
+    ),
     "slice_time_correction.method": _spm_member("spm_slice_timing"),
     "coregistration.method": _spm_member("spm_coreg"),
     "spatial_smoothing.method": _spm_member("spm_smooth"),
     "slice_time_correction.reference": TermRules(
         block={"specific_slice": (r"slice[\s-]*acquisition[\s-]*range",)}
+    ),
+    "slice_time_correction.relative_to_motion_correction": TermRules(
+        block={"after": (_AFTER_SLICE_TIMING,), "before": (_BEFORE_SLICE_TIMING,)}
+    ),
+    "coregistration.transform": TermRules(block={"rigid": (_NON_RIGID,)}),
+    "temporal_filtering.filter_type": TermRules(block={"ideal_fft": (_FOURIER_BASIS,)}),
+    "intensity_correction.method": TermRules(block={"fast_bias": (_N3,)}),
+    # the three fields of the shared call (resolve_shared)
+    "surface_projection.surface_registration": TermRules(block={"freesurfer_recon": (_NAMES_MSM,)}),
+    "spatial_normalization.target_space": TermRules(block={"MNI152NLin2009cAsym": (_SYMMETRIC,)}),
+    "surface_projection.target_surface": TermRules(
+        block={m: (_FSAVERAGE_SYM,) for m in ("fsaverage", "fsaverage5", "fsaverage6")}
     ),
     "spatial_smoothing.space": TermRules(
         block={
@@ -467,6 +556,114 @@ COMPOUND_TERMS: dict[str, tuple[str, ...]] = {
     "distortion_correction.tool": (r"realign\w*\s+and\s+unwarp\w*",),
     "distortion_correction.method": (r"realign\w*\s+and\s+unwarp\w*",),
 }
+
+#: D2c (2026-11-25, the author's ruling C11): the list fields in which "or" may part two items.
+#: Scrub criteria joined by "or" are both applied ("FD > 0.2 mm or DVARS > 5%"); in a tool or
+#: method list "or" joins alternatives of which one was used, so no other field is here.
+OR_JOINS_ITEMS: frozenset[str] = frozenset({"scrub.criterion"})
+#: Aliases that do not make a side of an "or" a criterion of its own (:func:`bare_criterion`). A
+#: side that names its member only through one of these stays inside its item, and the item
+#: resolves as it did before D2c:
+#:
+#: - the name of a measure's author. "Power or DVARS" names a paper and a measure;
+#: - the bare "root mean square". DVARS is a root mean square too, so "root mean square > 0.5"
+#:   does not say which of the two measures it is.
+#:
+#: After a comma such a side is an item of its own and resolves through the alias, as it did
+#: before D2c. That is the alias's reach, which no ruling of D2c covers (put to the author).
+OR_WEAK_ALIASES: dict[str, tuple[str, ...]] = {
+    "scrub.criterion": ("Power", "Jenkinson", "root mean square")
+}
+
+#: D2c, the fourth form of the "or" rule (2026-11-25). A side of an "or" is a criterion of its
+#: own only as ONE MEASURE WITH AT MOST ITS THRESHOLD: the aliases of one member and a threshold.
+#: A threshold is a number with a comparison before it (in signs or words) or a unit after it, or
+#: both, then a rate and a comparative if there are any: "FD > 0.2 mm/TR", "DVARS of 3 SD or
+#: above", "framewise displacement (FD) greater than or equal to 0.5 mm". A number with neither
+#: is none: beside a name it is as likely a year or a reference ("FD 2012", "FD [12]"). Brackets
+#: are read as what they hold; "either" or an article may open the side and a full stop may
+#: close it. Any other word beside the name leaves the side inside its item: a negation in any
+#: words ("no DVARS", "rather than FD", "DVARS (not used)"), a qualifier ("standardized DVARS"),
+#: a citation ("FD (Smyser et al., 2010)"), a description that happens to hold an alias ("the RMS
+#: of the volume-to-volume BOLD change", "an average BOLD change > 3 SD").
+#:
+#: The three earlier forms let any text stand beside the alias and listed what to refuse: negation
+#: words, weak aliases, then a block. Each review found the next description that held an alias of
+#: some member and became a criterion after "or" where it had been unresolved before. The list of
+#: such descriptions cannot be closed; the form of a bare criterion can. A criterion the form
+#: does not read ("volumes with FD > 0.5 mm", "FD threshold of 0.5 mm") is not parted off, and
+#: its item is as it was before D2c.
+_OR_COMPARISON = (
+    r"(?:[<>=~\u2264\u2265\u2248]"
+    r"|(?:greater|more|less|larger|smaller|higher|lower) than(?: or equal to)?"
+    r"|above|below|over|under|exceeding|exceeds|exceeded|exceed|at least|at most|of|equal to)"
+)
+_OR_NUMBER = r"(?:\d+(?:[.,]\d+)?|\.\d+)"
+_OR_RATE = (
+    r"(?: ?/ ?| per )(?:tr|s|sec|seconds?|ms|min|volumes?|vols?|frames?|scans?|time ?points?)"
+)
+_OR_COMPARATIVE = r" or (?:more|above|greater|higher|larger|less|below|lower|smaller)"
+#: The unit a threshold may be in, by what the measure is. A displacement is a length. DVARS is a
+#: percentage of the BOLD signal ("DVARS > 0.5% \u0394BOLD", Power's wording; the delta is the
+#: Greek letter or the increment sign, and lower case by the time it is read) or a number of
+#: standard deviations. A percentage BOLD change is a percentage. A unit of another kind beside
+#: the name says the name stands for another measure: "relative RMS > 0.5% BOLD" is a root mean
+#: square of intensities, which is DVARS and not Jenkinson's displacement. One shared list of
+#: units parted that side off as the displacement (the review of D2c).
+_OR_LENGTH = r"(?:mm|cm|voxels?)"
+_OR_PERCENT = r"(?:% ?[\u03b4\u2206]? ?bold|%|percent)"
+_OR_SD = r"(?:sds?|s\.d\.|standard deviations?)"
+OR_UNITS: dict[str, dict[str, str]] = {
+    "scrub.criterion": {
+        "fd_power": _OR_LENGTH,
+        "fd_jenkinson": _OR_LENGTH,
+        "dvars": rf"(?:{_OR_PERCENT}|{_OR_SD})",
+        "bold_pct": _OR_PERCENT,
+    }
+}
+_BRACKETS = str.maketrans("()[]", "    ")
+
+
+@functools.cache
+def _bare_form(unit: str | None) -> re.Pattern[str]:
+    """The form of a bare criterion whose threshold is in ``unit`` (a pattern of
+    :data:`OR_UNITS`; None: the threshold has no unit). It is matched against the side as
+    :func:`bare_criterion` reduces it: lower case, separators folded, brackets taken off their
+    text, and every character of the member's aliases written as ``\x01``."""
+    threshold = rf"(?:{_OR_COMPARISON} ?)+{_OR_NUMBER}"
+    if unit is not None:
+        threshold = rf"(?:{threshold} ?{unit}?|{_OR_NUMBER} ?{unit})"
+    return re.compile(
+        rf"(?:either )?(?:(?:the|an?) )?(?:\x01 ?)+"
+        rf"(?:{threshold}(?:{_OR_RATE})?(?:{_OR_COMPARATIVE})?)?"
+        rf" ?\.?"
+    )
+
+
+def bare_criterion(
+    words: str,
+    aliases: list[str],
+    weak: frozenset[str] = frozenset(),
+    unit: str | None = None,
+) -> bool:
+    """Whether the words are one measure with at most its threshold (see :func:`_bare_form`).
+    ``aliases`` are the names of ONE member, its token among them. ``weak`` are the aliases, in
+    lower case, that alone do not make a criterion (:data:`OR_WEAK_ALIASES`): at least one alias
+    that is not weak must stand in the words. ``unit`` is the unit that member's threshold may be
+    in (:data:`OR_UNITS`).
+
+    The words are read as the alias table reads them: repaired, in lower case, with underscore,
+    hyphen and space as one separator, and an alias as whole words with a plural "s" allowed. A
+    control character typed in the words is read as it stands: the one the form writes a name
+    as can pad a name, and hides no word and no unit."""
+    text = _fold_separators(repair_text(words).lower().translate(_BRACKETS))
+    chars = list(text)
+    strong = False
+    for alias in aliases:
+        for m in _alias_regex(_fold_separators(alias.lower())).finditer(text):
+            chars[m.start() : m.end()] = "\x01" * (m.end() - m.start())
+            strong = strong or alias.lower() not in weak
+    return strong and _bare_form(unit).fullmatch("".join(chars)) is not None
 
 
 TISSUE_REGRESSOR: dict[str, list[str]] = {
@@ -665,7 +862,10 @@ INTENSITY_TARGET: dict[str, list[str]] = {
     ],
 }
 INTENSITY_METHOD: dict[str, list[str]] = {
-    "n4": ["N4", "N4BiasFieldCorrection", "N3"],
+    # D2c (2026-11-25, the author's ruling C10): "N3" is no alias of n4. N3 is another algorithm
+    # (the one FreeSurfer's nu_correct runs), and a method field names the tool (C3). The term
+    # stays in the paper's words until the vocabulary holds a member for it.
+    "n4": ["N4", "N4BiasFieldCorrection"],
     "fast_bias": ["FAST"],
     "other": [],
 }
@@ -839,7 +1039,14 @@ CALL_T_SPECS: tuple[CoverageFieldSpec, ...] = (
     _spec("T", "ica_aggressive", "ica_denoise", "aggressive", "bool"),
     _spec("T", "compcor_performed", "compcor", "performed", "bool"),
     _spec(
-        "T", "compcor_variant", "compcor", "variant", "term_list", CompCorVariant, COMPCOR_VARIANT
+        "T",
+        "compcor_variant",
+        "compcor",
+        "variant",
+        "term_list",
+        CompCorVariant,
+        COMPCOR_VARIANT,
+        COMPCOR_UNDERSPECIFIED,
     ),
     _spec("T", "compcor_n_components", "compcor", "n_components", "int"),
     _spec("T", "compcor_variance_threshold", "compcor", "variance_threshold", "number"),
@@ -1363,6 +1570,25 @@ def vocabulary_table(dotted: str) -> tuple[dict[str, list[str]], list[str] | Non
     return SYNONYMS_BY_FIELD.get(field_id) if field_id else None
 
 
+def resolve_shared(
+    dotted: str, words: str, value_context: float | None = None
+) -> SynonymResolution:
+    """A term of one of the shared call's four fields against its table, then against the
+    field's blocks (D2c, 2026-11-25). Until then these fields read no rule: the three
+    wrong-member matches the D1 sweep found on them ("MSM folding-based registration", "MNI152
+    2009c symmetric", "fsaverage_sym") could not be stopped. A blocked member leaves the term
+    unresolved, in the paper's words; a family term in those words still says which family, so
+    the family list is read again. The extractor and its two mirror scripts all resolve these
+    fields here."""
+    synonyms, underspecified = SYNONYMS_BY_FIELD[SHARED_VOCABULARY_FIELDS[dotted]]
+    resolution = resolve_to_literal(words, synonyms, underspecified, value_context)
+    rules = TERM_RULES.get(dotted)
+    blocks = rules.block.get(resolution.resolved or "", ()) if rules else ()
+    if any(rule_hits(p, words) for p in blocks):
+        return resolve_to_literal(words, {}, underspecified)
+    return resolution
+
+
 def rule_hits(pattern: str, words: str) -> bool:
     """Whether a TERM_RULES pattern occurs in the words: as written, as repaired (a ligature, a
     Unicode hyphen, a soft hyphen inside a word), or with a word that a line break split put back
@@ -1374,13 +1600,20 @@ def rule_hits(pattern: str, words: str) -> bool:
     )
 
 
-#: Names of a FAMILY whose members the vocabulary holds, read for the report's note only (B11).
-#: A term that holds one says which family and not which member ("fs_LR" with no density, "MSM"
+#: Names of a FAMILY whose members the vocabulary holds, read for the report's note (B11). A
+#: term that holds one says which family and not which member ("fs_LR" with no density, "MSM"
 #: with no variant, "CompCor" with no kind), so the report does not call it outside the
-#: vocabulary. Resolution is untouched: the term stays unresolved, in the paper's words. The
-#: tables hold such terms for one field only ("MNI" and its kin, as underspecified terms of the
-#: target space); whether these join them, which changes their resolution status, is put to the
-#: author.
+#: vocabulary. This table resolves nothing.
+#:
+#: D2c (2026-11-25, the author's ruling C13): the five families are now underspecified terms of
+#: their tables as well, as "MNI" is (the lists of synonym_resolver, and COMPCOR_UNDERSPECIFIED
+#: here). That gives their terms the resolution status "underspecified". A family list is read
+#: as a plain substring, so it covers nearly every term this table reads, and a name glued to
+#: more text besides ("fs_LR32k", "MSMv3"): such a term is a family term now and no longer
+#: carries the note. The table stays for the wordings it alone reads, since it folds the
+#: separators and reads whole words: "fs  LR" with two spaces,
+#: "Montreal-Neurological-Institute". tests/test_resolver_d2c.py checks that every name here
+#: holds a family term of its field.
 FAMILY_NAMES: dict[str, tuple[str, ...]] = {
     "surface_projection.target_surface": ("fsLR", "fs_LR"),
     "surface_projection.surface_registration": ("MSM",),

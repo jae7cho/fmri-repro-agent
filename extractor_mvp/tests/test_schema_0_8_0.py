@@ -69,7 +69,7 @@ def _resolved(dotted: str, raw: str) -> list[str | None]:
     s = _SPEC[dotted]
     syn = (s.synonyms, s.underspecified) if s.synonyms else None
     if s.value_kind == "term_list":
-        items = ex._split_terms(raw, ex._keep_whole(dotted, syn))
+        items = ex._field_items(dotted, raw, s.literal_type, syn)
         return [t.resolved for t in ex._resolve_term_list(items, s.literal_type, syn, dotted)]
     return [ex._resolve_term(raw, s.literal_type, syn, dotted).resolved]
 
@@ -515,7 +515,10 @@ def test_refusing_a_wording_costs_no_more_than_its_length(
     assert small < 0.25  # first, so that a pattern that backtracks fails here and not after minutes
     large = _fastest(dotted, make(8_000))
     # four times the length: about four times the time, on any machine. The square would be 16.
-    assert large < 10 * max(small, 2e-4)
+    # The floor is far above one pass and far below a pattern that backtracks (seconds at this
+    # length): with a floor of 0.2 ms the bound was 2 ms, and a busy machine broke it (the review
+    # of D2c: one run in three).
+    assert large < 10 * max(small, 5e-3)
 
 
 # --- fieldmap_less, other (C9) and the Literals -------------------------------------------------

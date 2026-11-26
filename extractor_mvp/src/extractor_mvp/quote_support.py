@@ -26,7 +26,9 @@ Which aliases count as "an alias of the returned value":
 
 * a value the resolver mapped to a canonical member → that member's table entry (the member's own
   token is included, since it is a name of the value);
-* an ``underspecified`` value (a family term such as "MNI") → the field's underspecified list;
+* an ``underspecified`` value that holds a family term of the 2026-10-26 lists ("MNI",
+  "FreeSurfer") → the terms of that list; one that holds only a family name added by D2c ("MSM",
+  "fs_LR", "CompCor") → the value itself, as an unrecognized one (``_family_term_supported``);
 * an ``unrecognized`` value (free text the table does not know) → the value itself, whole.
 
 Everything here is pure and firewall-clean: no KB, no model, only the model's value and the text the
@@ -50,13 +52,16 @@ from extractor_mvp.coverage_fields import (
 )
 from extractor_mvp.span_resolver import _first_use_variants, normalize_with_offset_map
 from extractor_mvp.synonym_resolver import (
+    FAMILY_NAME_ENTRIES,
     INTENSITY_CONVENTION_SYNONYMS,
     SURFACE_REGISTRATION_SYNONYMS,
     SURFACE_REGISTRATION_UNDERSPECIFIED,
     TARGET_SPACE_SYNONYMS,
     TARGET_SPACE_UNDERSPECIFIED,
     TARGET_SURFACE_SYNONYMS,
+    TARGET_SURFACE_UNDERSPECIFIED,
     TS_METHOD_SYNONYMS,
+    repair_text,
 )
 
 #: Reason base for a step-field value the quote does not support (ruling 6).
@@ -71,7 +76,7 @@ SUPPORT_TABLES: dict[str, tuple[dict[str, list[str]], list[str] | None]] = {
         SURFACE_REGISTRATION_SYNONYMS,
         SURFACE_REGISTRATION_UNDERSPECIFIED,
     ),
-    "surface_projection.target_surface": (TARGET_SURFACE_SYNONYMS, None),
+    "surface_projection.target_surface": (TARGET_SURFACE_SYNONYMS, TARGET_SURFACE_UNDERSPECIFIED),
     "intensity_normalization.convention": (INTENSITY_CONVENTION_SYNONYMS, None),
     "temporal_standardization.method": (TS_METHOD_SYNONYMS, None),
 }
@@ -279,6 +284,33 @@ def _alias_text(alias: str) -> str:
     return alias.split("@", 1)[0]
 
 
+def _family_term_supported(
+    verbatim: str, entries: list[str], quote: str, own_words: str | None = None
+) -> bool:
+    """An ``underspecified`` value against its quote.
+
+    A value that holds a family term of the 2026-10-26 lists ("MNI", "FreeSurfer") is supported by
+    any term of that list in the quote, or by a longer identifier that begins with one: the
+    ruling of that date, unchanged.
+
+    A value that holds only a family NAME added by D2c (2026-11-25, C13: "fs_LR", "MSM",
+    "CompCor", "ICBM", "Montreal Neurological Institute") must stand in the quote in its own
+    words. That is the check such a value met before D2c, when its status was "unrecognized".
+    Read through the older rule, "fs_LR32k" failed on a quote that holds it letter for letter (a
+    family term is matched by the start of a token, and "lr" is too short to start one), and
+    "MSM" passed on a quote that names only FreeSurfer (the review of D2c).
+
+    The older term is looked for in the whole value, as the resolver that gave the status looked
+    for it (``synonym_resolver.resolve_to_literal``). ``own_words`` is the phrase a value of the
+    second kind is checked by, where that is not the whole value: a step field cuts a ``@<value>``
+    marker off (:func:`_alias_text`), and an older term may stand after the marker."""
+    ruled = [c for c in entries if c not in FAMILY_NAME_ENTRIES]
+    words = repair_text(verbatim).lower()
+    if any(c.lower() in words for c in ruled):
+        return any(phrase_in_quote(c, quote, family_term=True) for c in ruled)
+    return phrase_in_quote(verbatim if own_words is None else own_words, quote)
+
+
 def literal_value_supported(
     dotted: str, verbatim: str, resolved: str | None, resolution: str, quote: str
 ) -> bool:
@@ -298,10 +330,15 @@ def literal_value_supported(
         # the check pretends to close: a spurious ``other`` asserts no specific value.
         return True
     elif resolution == "underspecified":
-        # A family term is supported by the family term OR by a longer identifier that begins with
-        # it: the value is then LESS specific than its quote, which asserts nothing the quote does not.
-        return any(
-            phrase_in_quote(_alias_text(c), quote, family_term=True) for c in underspecified or []
+        # A family term of the 2026-10-26 lists is supported by a term of its list OR by a longer
+        # identifier that begins with one: the value is then LESS specific than its quote, which
+        # asserts nothing the quote does not. A value that holds only a family name of D2c must
+        # stand in the quote in its own words (_family_term_supported).
+        return _family_term_supported(
+            verbatim,
+            [_alias_text(c) for c in underspecified or []],
+            quote,
+            own_words=_alias_text(verbatim),
         )
     else:
         candidates = [verbatim]
@@ -369,7 +406,7 @@ def _term_supported(dotted: str, item: object, quote: str) -> bool:
     elif resolved is not None:
         return True
     elif resolution == "underspecified":
-        return any(phrase_in_quote(c, quote, family_term=True) for c in underspecified or [])
+        return _family_term_supported(str(verbatim), list(underspecified or []), quote)
     else:
         candidates = [str(verbatim)]
     return any(phrase_in_quote(c, quote) for c in candidates)

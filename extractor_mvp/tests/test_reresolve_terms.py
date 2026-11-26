@@ -206,7 +206,9 @@ def test_the_detrend_rule_is_applied_as_the_extractor_applies_it() -> None:
     # no quote at all: nothing to read the order from, so the term keeps what its words give
     rec = _detrend({"status": "EXTRACTED", "value": _t("linear, quadratic", "quadratic")})
     assert reresolve_record(rec)["nuisance_regression.detrend"] == 1
-    # a value the checking pass supplied is promoted after the rule has run: left to _resolve_term
+    # a value the checking pass supplied goes through the rule too, since D2c (C14): the extractor
+    # runs it inside promote(). Until then such a value was promoted after the rule and left as
+    # _resolve_term gave it, so a record made before D2c changes here.
     rec = _detrend(
         {
             "status": "EXTRACTED",
@@ -215,7 +217,9 @@ def test_the_detrend_rule_is_applied_as_the_extractor_applies_it() -> None:
             "checker_supplied": True,
         }
     )
-    assert sum(reresolve_record(rec).values()) == 0
+    assert reresolve_record(rec)["nuisance_regression.detrend"] == 1
+    supplied = rec["preprocessing"]["steps"][0]["detrend"]["extraction"]
+    assert supplied["value"]["resolved"] == "quadratic" and supplied["checker_supplied"] is True
     # the spans are joined as stored, by one space: the order phrase runs over two of them
     split = [{"text": "Data were detrended with a second-order"}, {"text": "polynomial."}]
     rec = _detrend({"status": "EXTRACTED", "value": _t("detrended", "quadratic"), "spans": split})

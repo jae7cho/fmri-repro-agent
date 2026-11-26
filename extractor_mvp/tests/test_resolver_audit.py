@@ -52,7 +52,8 @@ def _resolved(dotted: str, verbatim: str) -> str | None:
         ("12param", "12param"),
         # no count is stated, so no member is claimed
         ("motion parameters and their derivatives", None),
-        ("24-regressor model of motion", None),
+        # D2c (2026-11-25, C13): an alias since then; the plural "24 regressors" did not read it
+        ("24-regressor model of motion", "friston24"),
     ],
 )
 def test_motion_expansion_wordings(verbatim: str, want: str | None) -> None:

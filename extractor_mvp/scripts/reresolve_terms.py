@@ -21,10 +21,12 @@ lists each changed term (paper, field, the paper's words, member before and afte
 papers get one total: no field of theirs is printed, in the counts or in the list.
 
 The detrend field is re-resolved as the extractor resolves it: ``_resolve_term``, then the
-highest order its quote names (coverage_extractor's rule of 2026-10-28), for a value the coverage
-call extracted. A part of a varied value and a value the checking pass supplied do not go through
-that rule in the extractor, and do not here. Until D2b this script re-ran only ``_resolve_term``
-and wrote such a value back unresolved.
+highest order its quote names (coverage_extractor's rule of 2026-10-28), for an extracted value.
+Since D2c (2026-11-25) that includes an order the checking pass supplied: the extractor now runs
+the rule on it too, so a record made before D2c may change here. A supplied term that resolves
+to nothing, and a part of a varied value, do not go through that rule in the extractor, and do
+not here. Until D2b this script re-ran only ``_resolve_term`` and wrote such a value back
+unresolved.
 
     uv run python scripts/reresolve_terms.py --in results/arms_2026-11-15/B --out results/arms_2026-11-15/B_reresolved --show
 """
@@ -50,10 +52,15 @@ Change = tuple[str, str, str | None, str | None]
 
 
 def _reresolve_value(
-    value: Any, field: ta.Field, context: float | None, rule_quote: str | None = None
+    value: Any,
+    field: ta.Field,
+    context: float | None,
+    rule_quote: str | None = None,
+    raise_only: bool = False,
 ) -> tuple[Any, list[Change]]:
-    """The value with every term re-resolved, and the terms that changed. ``rule_quote``: see
-    ``term_audit.resolve`` (the detrend field's highest-order rule reads the quote)."""
+    """The value with every term re-resolved, and the terms that changed. ``rule_quote`` and
+    ``raise_only``: see ``term_audit.resolve`` (the detrend field's highest-order rule reads the
+    quote, and only raises an order for a value the checking pass supplied)."""
     items = value if isinstance(value, list) else [value]
     # "other (phrase)" was stored as resolved other with only the phrase kept; the phrase alone
     # cannot show the resolver that the model said "other", so it is left as stored.
@@ -74,7 +81,7 @@ def _reresolve_value(
     ]
     if context is None and field.shared and isinstance(items[0], dict):
         context = ta.gated_value(field, items[0].get("resolved"))
-    now = ta.resolve(field, words, context, rule_quote)
+    now = ta.resolve(field, words, context, rule_quote, raise_only)
     changes: list[Change] = []
     out = []
     for it, keep, word, (member, resolution) in zip(items, kept, words, now, strict=True):
@@ -106,17 +113,20 @@ def reresolve_record(record: dict[str, Any], changes: list[Change] | None = None
                 continue
             ext = pf.get("extraction") or {}
             # each holder of a value with the quote the detrend rule reads: the extraction's own
-            # spans as the extractor joins them; none for a part of a varied value, and none for a
-            # value the checking pass supplied, which the extractor promotes after the rule has run
+            # spans as the extractor joins them (a value the checking pass supplied included,
+            # since D2c); none for a part of a varied value
             holders: list[tuple[dict[str, Any], str | None]] = []
             if ext.get("status") == "EXTRACTED":
                 quote = " ".join(str(s.get("text", "")) for s in ext.get("spans") or [])
-                holders.append((ext, None if ext.get("checker_supplied") else quote))
+                holders.append((ext, quote))
             holders += [(v, None) for v in ext.get("variants") or [] if isinstance(v, dict)]
+            supplied = bool(ext.get("checker_supplied"))
             for h, rule_quote in holders:
                 if h.get("value") is None:
                     continue
-                h["value"], changed = _reresolve_value(h["value"], field, context, rule_quote)
+                h["value"], changed = _reresolve_value(
+                    h["value"], field, context, rule_quote, supplied
+                )
                 counts[field.dotted] += len(changed)
                 if changes is not None:
                     changes.extend(changed)

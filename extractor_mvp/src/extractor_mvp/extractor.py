@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from datetime import date
 
     from fmri_repro.spec.provenance import InferredDefault
@@ -85,8 +86,14 @@ from pydantic import BaseModel, Field, model_validator
 
 from extractor_mvp.coverage_fields import (
     COMPOUND_TERMS,
+    OR_JOINS_ITEMS,
+    OR_UNITS,
+    OR_WEAK_ALIASES,
+    SHARED_VOCABULARY_FIELDS,
     SPECS_BY_KIND,
     TERM_RULES,
+    bare_criterion,
+    resolve_shared,
     rule_hits,
     rules_name,
     rules_resolve,
@@ -109,7 +116,11 @@ from extractor_mvp.quote_support import (
     step_value_supported,
 )
 from extractor_mvp.span_resolver import SpanResolution, quote_supports_value, resolve_quote
-from extractor_mvp.synonym_resolver import SYNONYMS_BY_FIELD, resolve_to_literal
+from extractor_mvp.synonym_resolver import (
+    SYNONYMS_BY_FIELD,
+    SynonymResolution,
+    resolve_to_literal,
+)
 
 
 def _coerce_float(v: Any) -> float | None:
@@ -757,7 +768,7 @@ def _process_field(
         elif value_kind == "term":
             value = _resolve_term(str(fe.value), literal_type, synonyms, dotted)
         elif value_kind == "term_list":
-            items = _split_terms(str(fe.value), _keep_whole(dotted, synonyms))
+            items = _field_items(dotted, str(fe.value), literal_type, synonyms)
             if not items:
                 return (
                     _missing_pf(field_id, t, "value_not_in_literal"),
@@ -791,8 +802,7 @@ def _process_field(
         # the collision warrants while exactly one caller needs to opt out.
         synonyms_entry = SYNONYMS_BY_FIELD.get(field_id) if use_synonym_table else None
         if synonyms_entry is not None:
-            syns, under = synonyms_entry
-            res = resolve_to_literal(verbatim, syns, under, value_context)
+            res = _resolve_shared_term(field_id, dotted, verbatim, value_context)
             if res.status == "resolved":
                 resolved, res_status = res.resolved, "resolved"
             elif fe.value in typing.get_args(literal_type):
@@ -1190,6 +1200,18 @@ _UNIT_RATIO = re.compile(
 )
 
 
+#: "or" as a word of its own, read as "and" is: not joined by a hyphen, lower case.
+_OR = re.compile(r"(?<![\w-])or(?![\w-])")
+#: An item with more "or"s than this is no list of criteria and stays whole. Each "or" resolves
+#: the text on its sides (both, or the right one alone for an "or" that opens the item), the left
+#: one grown by every "or" that did not part, and where an item was begun as a criterion the last
+#: item is resolved once more at the end. So the bound also keeps the work linear in the length
+#: of the value (the review of D2c: 10 s on a value of 20,000 characters made of "or"s).
+_OR_LIMIT = 8
+#: A comparison that holds an "or" of its own. It is held whole where "or" may part two items, so
+#: that "FD greater than or equal to 0.5 mm" is read as one side wherever it stands (the review
+#: of D2c: it parted as the first side of an "or" and not as the second).
+_THAN_OR_EQUAL = re.compile(r"\bthan\s+or\s+equal\s+to\b", re.IGNORECASE)
 _PAREN = re.compile(r"\([^()]*\)")
 #: "other (the paper's phrase)" or "other: the paper's phrase" (2026-11-03, the author's ruling on
 #: the distortion method: "other" must carry the paper's phrase and is checked against it). D2b
@@ -1244,10 +1266,115 @@ def _keep_whole(
     return (*patterns, *COMPOUND_TERMS.get(dotted, ()))
 
 
-def _split_terms(raw: str, keep_whole: tuple[str, ...] = ()) -> list[str]:
+def _resolve_shared_term(
+    field_id: str, dotted: str, verbatim: str, value_context: float | None
+) -> SynonymResolution:
+    """A term of a field of the shared call: its table, then its blocks
+    (coverage_fields.resolve_shared, D2c). A field that shares a bare id with one of the four and
+    is not one of them reads the table alone, as every such field did before."""
+    if dotted in SHARED_VOCABULARY_FIELDS:
+        return resolve_shared(dotted, verbatim, value_context)
+    syns, under = SYNONYMS_BY_FIELD[field_id]
+    return resolve_to_literal(verbatim, syns, under, value_context)
+
+
+def _or_member(
+    dotted: str,
+    literal_type: Any,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+) -> Callable[[str], str | None] | None:
+    """For a list field in which "or" may part two items (coverage_fields.OR_JOINS_ITEMS; D2c,
+    2026-11-25, the author's ruling C11): the member a piece of text has as a criterion of its
+    own, else None. For every other field, None: "or" parts nothing there.
+
+    A piece is a criterion of its own when it resolves to a member as an item would, and is that
+    one measure with at most its threshold, in a unit of that measure (coverage_fields
+    .bare_criterion and OR_UNITS: "FD > 0.2 mm/TR", "DVARS of 3 SD or above"), or is read whole
+    by a rule of the field ("global signal > 3 SD").
+    Any other word beside the name leaves it inside its item: a negation ("no DVARS", "rather
+    than FD"), a qualifier, a description that holds an alias ("the RMS of the volume-to-volume
+    BOLD change"). So does a name that is too weak to make a criterion alone
+    (coverage_fields.OR_WEAK_ALIASES: an author's name, the bare "root mean square").
+
+    This decides where an "or" parts and nothing else. An item is resolved by the table
+    afterwards, as an item after a comma is: there "no DVARS" resolves to dvars, as it did before
+    D2c."""
+    if dotted not in OR_JOINS_ITEMS or synonyms is None:
+        return None
+    syns, _under = synonyms
+    weak = frozenset(name.lower() for name in OR_WEAK_ALIASES.get(dotted, ()))
+    units = OR_UNITS.get(dotted, {})
+
+    def member(piece: str) -> str | None:
+        if not piece:
+            return None
+        got = _resolve_term(piece, literal_type, synonyms, dotted).resolved
+        if got is None or got in rules_resolve(dotted, piece):
+            return got  # no member; or a rule that reads the whole item, which is closed already
+        names = [got, *syns.get(got, [])]
+        return got if bare_criterion(piece, names, weak, units.get(got)) else None
+
+    return member
+
+
+def _field_items(
+    dotted: str,
+    raw: str,
+    literal_type: Any,
+    synonyms: tuple[dict[str, list[str]], list[str] | None] | None,
+) -> list[str]:
+    """The items of a list value of this field. The one splitter call of the extractor;
+    term_audit's self-check of the alias tables makes the same call. A stored record's items are
+    never split again (reresolve_terms.py).
+
+    Where the "or" rule made something of the value (D2c), it may give a member to nothing but
+    its own items. The list resolver completes an unresolved item with the head noun of the item
+    after it when that one resolved (:func:`_resolve_term_list`), and an item the rule makes
+    resolves where the item it came from did not: "global intensity RMS, framewise displacement
+    or DVARS > 5%" gave its first item the noun of "framewise displacement", and with it
+    Jenkinson's displacement (the review of D2c). So each item the rule did not part must resolve
+    as it does in the list without the rule. Where one does not, the value is split as it was
+    before D2c."""
+    groups = _split_groups(
+        raw, _keep_whole(dotted, synonyms), _or_member(dotted, literal_type, synonyms)
+    )
+    items = [part for _item, parts in groups for part in parts]
+    if all(parts == [item] for item, parts in groups):
+        return items
+    plain = [item for item, _parts in groups]
+    before = _resolve_term_list(plain, literal_type, synonyms, dotted)
+    after = iter(_resolve_term_list(items, literal_type, synonyms, dotted))
+    for (item, parts), was in zip(groups, before, strict=True):
+        now = [next(after) for _part in parts]
+        if parts == [item] and now[0].resolved != was.resolved:
+            return plain
+    return items
+
+
+def _split_terms(
+    raw: str,
+    keep_whole: tuple[str, ...] = (),
+    or_member: Callable[[str], str | None] | None = None,
+) -> list[str]:
     """A comma/and-separated list value into its items, empty items dropped. A parenthesised
     phrase is one piece ("other (unwarping and resampling)" is not split at its "and"), nested
-    parentheses included; so are a unit ratio and every ``keep_whole`` term (D2b, 2026-11-25)."""
+    parentheses included; so are a unit ratio and every ``keep_whole`` term (D2b, 2026-11-25).
+
+    With ``or_member`` (D2c; see :func:`_parted_at_or`), an item is parted at its "or"s where
+    every item that makes is a criterion of its own: "FD > 0.2 mm or DVARS > 5%" is two criteria.
+    Anywhere else the item is as it was. A plain separator cut "0.5 mm or more" and "greater than
+    or equal to", and made a second member of "Jenkinson" and of "no DVARS"."""
+    return [part for _item, parts in _split_groups(raw, keep_whole, or_member) for part in parts]
+
+
+def _split_groups(
+    raw: str,
+    keep_whole: tuple[str, ...] = (),
+    or_member: Callable[[str], str | None] | None = None,
+) -> list[tuple[str, list[str]]]:
+    """:func:`_split_terms`, with each item beside what the "or" rule made of it: (the item as a
+    comma or "and" leaves it, its items). The second is the first alone wherever the rule made
+    nothing, and always without ``or_member``."""
     held: list[str] = []
 
     def hold(m: re.Match[str]) -> str:
@@ -1258,6 +1385,8 @@ def _split_terms(raw: str, keep_whole: tuple[str, ...] = ()) -> list[str]:
     for pattern in keep_whole:
         masked = re.sub(pattern, hold, masked, flags=re.IGNORECASE)
     masked = _UNIT_RATIO.sub(hold, masked)
+    if or_member is not None:
+        masked = _THAN_OR_EQUAL.sub(hold, masked)
     while True:  # innermost pair first, then the pair around it
         masked, n = _PAREN.subn(hold, masked)
         if not n:
@@ -1271,7 +1400,59 @@ def _split_terms(raw: str, keep_whole: tuple[str, ...] = ()) -> list[str]:
             text = _HELD.sub(lambda m: held[int(m.group(1))], text)
         return text
 
-    return [restore(item.strip()) for item in _TERM_SPLIT.split(masked) if item.strip()]
+    groups: list[tuple[str, list[str]]] = []
+    for item in _TERM_SPLIT.split(masked):
+        if not item.strip():
+            continue
+        parts = [item] if or_member is None else _parted_at_or(item, or_member, restore)
+        groups.append((restore(item.strip()), [restore(p.strip()) for p in parts if p.strip()]))
+    return groups
+
+
+def _parted_at_or(
+    item: str, or_member: Callable[[str], str | None], restore: Callable[[str], str]
+) -> list[str]:
+    """One item of a list field in which "or" may part two items (D2c, the author's ruling C11),
+    as the items the rule makes of it: the item alone wherever it makes none.
+
+    The item is read from the left. It is cut at an "or" where the text before it, as it has
+    grown, and the text after it, up to the next "or", are each a criterion of their own
+    (:func:`_or_member`) and the two members differ. Every "or" that opens the item, a separator
+    before it having parted the list ("FD > 0.2 mm, DVARS > 5%, or global signal > 3 SD"), is
+    dropped where a criterion follows it. An "or" that does neither stays in the text and the
+    text grows over it: after a comparative ("0.5 mm or more"), between two names for one
+    measure ("FD or framewise displacement"), beside anything that is no bare criterion. The "or"
+    of "than or equal to" is not read here: the comparison is held whole before the item comes
+    (:data:`_THAN_OR_EQUAL`).
+
+    The last item was read as a criterion up to its next "or" only, and what it grew by after
+    that has to leave it one, of the same member ("DVARS of 3 SD or above"). Where it does not,
+    NOTHING is made of the item: it stays whole, as it was before D2c. Without that check
+    "global signal > 3 SD or no DVARS" left the rule as one item, which no rule and no bare form
+    reads, and the table gave it the member of the side the form had refused (the review of D2c).
+    So every item the rule makes is a criterion of its own."""
+    pieces = _OR.split(item)
+    if len(pieces) - 1 > _OR_LIMIT:
+        return [item]
+    made: list[str] = []
+    current = pieces[0]
+    last: str | None = None  # the member the last item was begun as a criterion of
+    for piece in pieces[1:]:
+        right = or_member(restore(piece.strip()))
+        if not current.strip():
+            # The "or" opens the item and is dropped. Where no criterion follows it, ``last`` is
+            # None, and unless what follows grows into one, nothing is made of the item.
+            current, last = piece, right
+            continue
+        left = or_member(restore(current.strip()))
+        if left is not None and right is not None and left != right:
+            made.append(current)
+            current, last = piece, right
+        else:
+            current = f"{current}or{piece}"
+    if last is None or or_member(restore(current.strip())) != last:
+        return [item]
+    return [*made, current]
 
 
 def _resolve_term(
@@ -2390,11 +2571,9 @@ def _extract_from_prompt(
         if resolutions is not None and isinstance(field_pf.extraction, Extracted):
             matched_alias = None
             if literal_type is not None:
-                synonyms_entry = SYNONYMS_BY_FIELD.get(field_id)
-                if synonyms_entry is not None:
-                    syns, under = synonyms_entry
-                    matched_alias = resolve_to_literal(
-                        str(fe.value), syns, under, value_context
+                if SYNONYMS_BY_FIELD.get(field_id) is not None:
+                    matched_alias = _resolve_shared_term(
+                        field_id, dotted, str(fe.value), value_context
                     ).matched_alias
             _resolved_val = field_pf.extraction.value
             resolutions.append(
@@ -2741,6 +2920,6 @@ def extract(
         # passes the extraction's own checks fills a field left without a value (checker_supplied)
         from extractor_mvp.checker_promotion import promote
 
-        checked["supplied"] = promote(preprocessing, checked, parsed_paper.text)
+        checked["supplied"] = promote(preprocessing, checked, parsed_paper.text, diagnostics)
         verifier_out.append(checked)
     return preprocessing, diagnostics, deferral_records

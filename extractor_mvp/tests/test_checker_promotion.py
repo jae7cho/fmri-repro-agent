@@ -226,3 +226,103 @@ def test_both_verdicts_fill(verdict: str) -> None:
         TEXT,
     )
     assert _step(prep, "scrub").threshold.extraction.status == "EXTRACTED"
+
+
+# --- D2c (2026-11-25, the author's ruling C14): the detrend rule inside promote() ---------------
+
+TRENDS_TEXT = (
+    "Linear and quadratic trends were removed from each run. "
+    "No detrending or linear trend removal was applied to the task data. "
+    "Only a linear trend was removed from the rest data."
+)
+BOTH_ORDERS = "Linear and quadratic trends were removed from each run."
+ONE_ORDER = "Only a linear trend was removed from the rest data."
+RULED_OUT = "No detrending or linear trend removal was applied to the task data."
+
+
+def _supplied_detrend(value: str, sentence: str) -> tuple[Any, dict[str, Any], list[Any]]:
+    prep = _prep()
+    assert _step(prep, "nuisance_regression").detrend.extraction.status == "MISSING_FROM_PAPER"
+    diagnostics: list[Any] = []
+    verdict = {"verdict": "missed", "better_value": value, "relied_on": sentence}
+    (entry,) = promote(
+        prep, _verifier(nuisance_regression__detrend=verdict), TRENDS_TEXT, diagnostics
+    )
+    return _step(prep, "nuisance_regression").detrend.extraction, entry, diagnostics
+
+
+def test_a_supplied_detrend_value_takes_the_highest_order_its_sentence_names() -> None:
+    """Until D2c promote() ran after the highest-order rule, and a supplied value never met it."""
+    ext, entry, diagnostics = _supplied_detrend("linear", BOTH_ORDERS)
+    assert ext.status == "EXTRACTED" and ext.checker_supplied is True
+    assert (ext.value.verbatim, ext.value.resolved) == ("linear", "quadratic")
+    assert [s.text for s in ext.spans] == [BOTH_ORDERS]
+    moved = "detrend_highest_order_named:linear->quadratic"
+    assert entry["outcome"] == "filled" and entry["rule"] == moved
+    assert [(d.field, d.failure_reason) for d in diagnostics] == [
+        ("nuisance_regression.detrend", moved)
+    ]
+    # the order is raised and never lowered
+    ext, entry, diagnostics = _supplied_detrend("quadratic", ONE_ORDER)
+    assert ext.value.resolved == "quadratic" and "rule" not in entry and diagnostics == []
+
+
+def test_a_supplied_detrend_value_with_no_higher_order_named_is_as_supplied() -> None:
+    ext, entry, diagnostics = _supplied_detrend("linear", ONE_ORDER)
+    assert (ext.value.resolved, ext.checker_supplied) == ("linear", True)
+    assert "rule" not in entry and diagnostics == []
+    # without a list to receive it, the move is still made and logged
+    prep = _prep()
+    verdict = {"verdict": "missed", "better_value": "linear", "relied_on": BOTH_ORDERS}
+    (entry,) = promote(prep, _verifier(nuisance_regression__detrend=verdict), TRENDS_TEXT)
+    assert _step(prep, "nuisance_regression").detrend.extraction.value.resolved == "quadratic"
+    assert entry["rule"] == "detrend_highest_order_named:linear->quadratic"
+
+
+OMITTED = "Linear detrending was omitted for the task data."
+NONE_OF = "None of the task runs were detrended beyond a linear fit."
+
+
+@pytest.mark.parametrize(
+    ("words", "sentence"),
+    [
+        ("No detrending", RULED_OUT),
+        ("no detrending", RULED_OUT),
+        ("omitted", OMITTED),  # the sentence rules the order out in a word no list holds
+        ("detrended", NONE_OF),  # "none" in the sentence is not the member none
+        ("detrended", BOTH_ORDERS),  # nor is an order handed to a term that names none
+    ],
+)
+def test_a_supplied_term_that_resolved_to_nothing_is_given_no_member(
+    words: str, sentence: str
+) -> None:
+    """promote() raises an order and does no more. The checking pass can say that no detrending
+    was done only in words, since its "none" means no value; such a term resolves to nothing,
+    and the rule would hand it the order its sentence rules out (the review of D2c)."""
+    text = TRENDS_TEXT + " " + OMITTED + " " + NONE_OF
+    prep = _prep()
+    diagnostics: list[Any] = []
+    verdict = {"verdict": "missed", "better_value": words, "relied_on": sentence}
+    (entry,) = promote(prep, _verifier(nuisance_regression__detrend=verdict), text, diagnostics)
+    ext = _step(prep, "nuisance_regression").detrend.extraction
+    assert ext.status == "EXTRACTED" and ext.checker_supplied is True
+    assert (ext.value.verbatim, ext.value.resolved) == (words, None)
+    assert entry["outcome"] == "filled" and "rule" not in entry and diagnostics == []
+
+
+def test_the_rule_in_promote_is_the_detrend_field_s_alone() -> None:
+    """Another field's sentence may name a detrend order; the rule does not read it."""
+    sentence = "After linear and quadratic detrending, frames above 0.9 mm were removed."
+    prep = _prep()
+    diagnostics: list[Any] = []
+    verdict = {"verdict": "missed", "better_value": "0.9", "relied_on": sentence}
+    (entry,) = promote(prep, _verifier(scrub__threshold=verdict), sentence, diagnostics)
+    assert _step(prep, "scrub").threshold.extraction.value == [0.9]
+    assert entry["outcome"] == "filled" and "rule" not in entry and diagnostics == []
+    # a single term of another field, whose member is no detrend order
+    sentence = "After quadratic detrending, a rigid-body transform aligned each run to the T1."
+    prep = _prep()
+    verdict = {"verdict": "missed", "better_value": "rigid-body", "relied_on": sentence}
+    (entry,) = promote(prep, _verifier(coregistration__transform=verdict), sentence, diagnostics)
+    assert _step(prep, "coregistration").transform.extraction.value.resolved == "rigid"
+    assert entry["outcome"] == "filled" and "rule" not in entry and diagnostics == []

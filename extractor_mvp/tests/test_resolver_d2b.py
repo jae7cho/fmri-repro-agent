@@ -44,7 +44,7 @@ def _terms(dotted: str, raw: str) -> list[typing.Any]:
     s = _SPEC[dotted]
     syn = (s.synonyms, s.underspecified) if s.synonyms else None
     if s.value_kind == "term_list":
-        items = ex._split_terms(raw, ex._keep_whole(dotted, syn))
+        items = ex._field_items(dotted, raw, s.literal_type, syn)
         return ex._resolve_term_list(items, s.literal_type, syn, dotted)
     return [ex._resolve_term(raw, s.literal_type, syn, dotted)]
 
@@ -160,7 +160,8 @@ def test_target_surface_with_a_space_before_the_density() -> None:
         ("fsaverage 6 cm", None),
         ("fsaverage 5 subjects", None),
         ("fsaverage 6 runs", None),
-        ("fsaverage 6 surface", None),
+        # D2c (2026-11-25, C13): one of four nouns may follow the density and end the phrase
+        ("fsaverage 6 surface", "fsaverage6"),
         ("fsaverage 6 (40,962 vertices)", None),
         # a decimal part or a thousands group: the alias's number is not in the text at all
         ("fsaverage 5.3", "fsaverage"),
@@ -449,7 +450,7 @@ def test_derived_and_different_are_not_derivative_and_difference(
 
 def _split(dotted: str, raw: str) -> list[str]:
     s = _SPEC[dotted]
-    return ex._split_terms(raw, ex._keep_whole(dotted, (s.synonyms, s.underspecified)))
+    return ex._field_items(dotted, raw, s.literal_type, (s.synonyms, s.underspecified))
 
 
 def test_nested_parentheses_are_one_piece() -> None:
@@ -854,7 +855,10 @@ def test_the_shared_vocabulary_fields_are_the_extractor_s() -> None:
         # controls: a family name of one field is no name on another, nor inside a longer word
         ("surface_projection.surface_registration", "CompCor", True),
         ("compcor.variant", "MSM", True),
-        ("surface_projection.surface_registration", "MSMx alignment", True),
+        # D2c (2026-11-25, C13): "MSM" is a family term of the table now, read as a plain
+        # substring as "MNI" is, so it is found inside a longer word too
+        ("surface_projection.surface_registration", "MSMx alignment", False),
+        ("surface_projection.surface_registration", "MSx alignment", True),
         # an SPM release inside a longer wording names the SPM member
         ("nuisance_regression.method", "CONN toolbox (SPM12)", False),
         ("nuisance_regression.method", "CONN toolbox", True),
@@ -1001,12 +1005,15 @@ def test_a_family_name_suppresses_the_note_and_resolves_nothing() -> None:
     from extractor_mvp.coverage_fields import FAMILY_NAMES
 
     assert set(FAMILY_NAMES) <= {*_SPEC, *_SHARED}
+    # D2c (2026-11-25, C13): the five families are underspecified terms of their tables as
+    # well, so their status is "underspecified"
     for dotted, names in FAMILY_NAMES.items():
         for name in names:
             assert names_no_member(dotted, name) is False, (dotted, name)
             if dotted in _SPEC:
-                assert _resolved(dotted, name) == [None], (dotted, name)
+                (term,) = _terms(dotted, name)
+                assert (term.resolved, term.resolution) == (None, "underspecified"), (dotted, name)
             else:
                 syns, under = SYNONYMS_BY_FIELD[_SHARED[dotted][0]]
                 got = resolve_to_literal(name, syns, under)
-                assert got.resolved is None and got.status == "no_match", (dotted, name)
+                assert (got.resolved, got.status) == (None, "underspecified"), (dotted, name)

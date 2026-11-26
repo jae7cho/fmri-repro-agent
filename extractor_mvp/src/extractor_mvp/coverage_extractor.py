@@ -505,7 +505,15 @@ def detrend_highest_order(resolved: str | None, quote: str) -> str | None:
     """The detrend member after the highest-order rule: the highest order the quote names, when
     that is above ``resolved`` or nothing was resolved; else ``resolved`` as it is. A function of
     the member and the quote alone, so the scripts that re-resolve stored records apply the same
-    rule (D2b, 2026-11-25: they had re-run only ``_resolve_term`` and un-resolved these values)."""
+    rule (D2b, 2026-11-25: they had re-run only ``_resolve_term`` and un-resolved these values).
+
+    ``none`` is left alone (D2c, 2026-11-25, the author's ruling C14): the rule read "No linear
+    detrending was applied" as naming the linear order and raised the value none to linear. A
+    sentence that says no detrending was done names the order it rules out. The rule reads no
+    other negation: a term that resolved to nothing takes the order its quote names, also where
+    the quote rules that order out (put to the author)."""
+    if resolved == "none":
+        return resolved
     named = [
         member
         for member in _DETREND_ORDER
@@ -519,34 +527,61 @@ def detrend_highest_order(resolved: str | None, quote: str) -> str | None:
     return highest
 
 
-def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
-    """``nuisance_regression.detrend``: when the located quote names a higher order than the value
-    resolved to ("linear or quadratic trends" with value "linear"), the resolved member becomes the
-    highest order named; the paper's words stay as verbatim; a diagnostic records the move."""
-    pf = out.fields.get("nuisance_regression", {}).get("detrend")
-    if pf is None or not isinstance(pf.extraction, Extracted):
-        return
+def detrend_field_raised(
+    pf: ProvenancedField, *, raise_only: bool = False
+) -> tuple[ProvenancedField, ExtractionDiagnostic] | None:
+    """``nuisance_regression.detrend`` after the highest-order rule, with the diagnostic that
+    records the move; None when the rule changes nothing. When the located quote names a higher
+    order than the value resolved to ("linear or quadratic trends" with value "linear"), the
+    resolved member becomes the highest order named; the paper's words stay as verbatim.
+
+    Only an EXTRACTED value is read, never a part of a varied one. The quote is the value's own
+    spans joined with one space, in stored order. One function for the coverage call's value and
+    for a value the checking pass supplied (D2c, 2026-11-25, the author's ruling C14: promote()
+    ran after the rule, and such a value never met it).
+
+    ``raise_only``: a term that resolved to nothing is left as it is. promote() asks for that.
+    The checking pass can say that no detrending was done only in words, since its "none" means
+    no value; such a term resolves to nothing, and the rule would hand it the order its sentence
+    rules out, or the member none for a sentence that holds the word (the review of D2c: "linear
+    detrending was omitted" gave linear). A supplied order is raised as an extracted one is."""
+    if not isinstance(pf.extraction, Extracted):
+        return None
     term = pf.extraction.value
     quote = " ".join(s.text for s in pf.extraction.spans)
     current = getattr(term, "resolved", None)
+    if raise_only and current is None:
+        return None
     highest = detrend_highest_order(current, quote)
     if highest is None or highest == current:
-        return
-    out.fields["nuisance_regression"]["detrend"] = _extracted_pf(
+        return None
+    raised = _extracted_pf(
         "detrend",
         SpecifiedTerm[Detrend],
         SpecifiedTerm(verbatim=term.verbatim, resolved=highest, resolution="resolved"),
         list(pf.extraction.spans),
         pf.extraction.span_recovered,
     )
-    out.diagnostics.append(
-        ExtractionDiagnostic(
-            "nuisance_regression.detrend",
-            f"{DETREND_HIGHEST_ORDER}:{current}->{highest}",
-            term.verbatim,
-            quote,
-        )
+    diagnostic = ExtractionDiagnostic(
+        "nuisance_regression.detrend",
+        f"{DETREND_HIGHEST_ORDER}:{current}->{highest}",
+        term.verbatim,
+        quote,
     )
+    return raised, diagnostic
+
+
+def _apply_detrend_highest_order(out: CoverageExtraction) -> None:
+    """The highest-order rule on the coverage call's own detrend value (see
+    :func:`detrend_field_raised`)."""
+    pf = out.fields.get("nuisance_regression", {}).get("detrend")
+    if pf is None:
+        return
+    moved = detrend_field_raised(pf)
+    if moved is None:
+        return
+    out.fields["nuisance_regression"]["detrend"], diagnostic = moved
+    out.diagnostics.append(diagnostic)
 
 
 def _process_software(extraction: BaseModel, text: str, out: CoverageExtraction) -> None:

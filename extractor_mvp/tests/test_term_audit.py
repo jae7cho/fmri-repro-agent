@@ -209,11 +209,14 @@ def test_the_detrend_field_is_resolved_as_the_extractor_resolves_it(tmp_path: Pa
         _step("nuisance_regression", detrend=(_term("linear", "linear"), plain)),
     )
     assert ta.audit([tmp_path / "e"]).wordings[(field, "linear", "linear")]["stale"] == set()
-    # a value the checking pass supplied is promoted after the rule has run: not moved, not stale
+    # a value the checking pass supplied goes through the rule too, since D2c (C14): a record
+    # made before that holds the member the words gave, and is stale against today's rule
     supplied = _step("nuisance_regression", detrend=(_term("linear", "linear"), quote))
     supplied["detrend"]["extraction"]["checker_supplied"] = True
     _write(tmp_path / "f", "paper_f", supplied)
-    assert ta.audit([tmp_path / "f"]).wordings[(field, "linear", "linear")]["stale"] == set()
+    assert ta.audit([tmp_path / "f"]).wordings[(field, "linear", "quadratic")]["stale"] == {
+        "linear"
+    }
     # the quote is the spans as stored, joined by one space, as the extractor joins them: the
     # order phrase runs over two spans whose stored order is not their order in the text
     split = [_span("Data were detrended with a second-order", 60), _span("polynomial.", 10)]
