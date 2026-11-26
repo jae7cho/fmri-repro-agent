@@ -6132,3 +6132,58 @@ Committed and pushed under the author's override of the working-hours hook
   before the push; pre-commit clean on both passes. CI on `14e7003`: both jobs passed.
 
 Commits here: `5910cf8`, `14e7003`, `d969747`, then this entry.
+
+## 2026-11-26 (2) — the example in the docstring of the detrend rule
+
+Committed and pushed under the author's override of the working-hours hook
+(ALLOW_WORKHOURS_COMMIT=1), on a holiday. Claude Code ran the commands at the author's request.
+
+- **The author's go-ahead (2026-11-26):** "go ahead and commit both and push when done". Asked
+  which two things and when, the author chose "Comment fix + DEVLOG" and "Now, with the
+  override".
+- **`f13b9ad`, two docstrings reworded; no code changed.** The check of the entry above
+  corrected the example under C14 in the design (`d969747`) and in the entry. The docstring of
+  `coverage_extractor.detrend_field_raised` still carried it.
+  - The example. The docstring said: "the review of D2c: "linear detrending was omitted" gave
+    linear". Those words, supplied as the term, resolve to `linear` through the alias table,
+    with no rule, in each of the four trees run (`4dd097b`, the first build, the second build,
+    the committed tree). The docstring now gives the design's example: in the first build a
+    supplied "omitted", beside the sentence "Linear detrending was omitted for the task
+    data.", took `linear`. The other three trees leave that term without a member.
+  - Three clauses of the same sentence were wider than the code.
+    - "Such a term resolves to nothing": a supplied "none applied" resolves to `none`. The
+      docstring now names two wordings that do resolve to nothing ("omitted", "no
+      detrending").
+    - "The rule would hand it the order its sentence rules out": the rule hands such a term
+      the highest order its sentence names, also one the sentence affirms. Beside "Quadratic
+      detrending was applied; linear detrending was omitted." the rule without `raise_only`
+      gives a supplied "omitted" the member `quadratic`. The docstring now says "the highest
+      order its sentence names, also one the sentence rules out".
+    - "The member none for a sentence that holds the word": the rule gives such a term `none`
+      where the sentence holds the alias "none" and no alias of linear or quadratic, and only
+      there. Beside "None of the task runs were detrended." the rule without `raise_only`
+      gives `none`, and beside "None of the task runs were detrended beyond a linear fit." it
+      gives `linear`. The docstring now gives that condition.
+  - The docstring of the test that pins the case
+    (`test_a_supplied_term_that_resolved_to_nothing_is_given_no_member`) had the first two of
+    the three clauses and is reworded with them.
+- **Checks.**
+  - With docstrings removed, the syntax tree of each of the two files is the one it had at
+    `469776b`. The same comparison reports a changed token in a copy of each.
+  - The sentences were run: `promote` on twelve pairs of a supplied wording and a sentence in
+    the four trees, and the rule with and without `raise_only` on fourteen pairs in the tree
+    with the fix.
+  - Fresh agents read the reworded docstrings and this entry against the code in three
+    rounds (the third on the one clause reworded after the second), in code-only copies of
+    five trees (the four above and the tree with the fix), each finding re-checked by a
+    second agent: 8 agents; 2 of 4 findings confirmed, then 0 of 2, then no finding. The two
+    confirmed were the second clause above, which the first rewording had kept, and a
+    sentence of this entry on the third. A reader of the first round and a reader of the
+    second found the wording of the third clause unclear (not confirmed); it was made exact
+    before the third round. Their transcripts (71 tool calls, 5,421 lines of output) pass the
+    audit of the entry above, and the copies they read are unchanged.
+  - root 375, extractor_mvp 2572 (2 live skipped); pre-commit clean on both passes.
+  - Scripts and outputs: `extractor_mvp/results/d2c_gates_2026-11-25/post_commit/comment_fix/`
+    (gitignored).
+
+Commits here: `f13b9ad`, then this entry.
