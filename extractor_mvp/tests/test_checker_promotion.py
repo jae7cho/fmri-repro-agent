@@ -297,8 +297,9 @@ def test_a_supplied_term_that_resolved_to_nothing_is_given_no_member(
     words: str, sentence: str
 ) -> None:
     """promote() raises an order and does no more. The checking pass can say that no detrending
-    was done only in words, since its "none" means no value; such a term resolves to nothing,
-    and the rule would hand it the order its sentence rules out (the review of D2c)."""
+    was done only in words, since its "none" means no value. The wordings above resolve to
+    nothing, and the rule would hand such a term an order its sentence names, also one the
+    sentence rules out (the review of D2c)."""
     text = TRENDS_TEXT + " " + OMITTED + " " + NONE_OF
     prep = _prep()
     diagnostics: list[Any] = []

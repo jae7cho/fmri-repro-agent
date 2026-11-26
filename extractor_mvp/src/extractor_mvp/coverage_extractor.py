@@ -542,9 +542,12 @@ def detrend_field_raised(
 
     ``raise_only``: a term that resolved to nothing is left as it is. promote() asks for that.
     The checking pass can say that no detrending was done only in words, since its "none" means
-    no value; such a term resolves to nothing, and the rule would hand it the order its sentence
-    rules out, or the member none for a sentence that holds the word (the review of D2c: "linear
-    detrending was omitted" gave linear). A supplied order is raised as an extracted one is."""
+    no value. A wording such as "omitted" or "no detrending" resolves to nothing, and the rule
+    would hand it the highest order its sentence names, also one the sentence rules out, or the
+    member none where the sentence holds the alias "none" and no alias of linear or quadratic
+    (the review of D2c). In the first build of D2c a supplied "omitted", beside the sentence
+    "Linear detrending was omitted for the task data.", took linear. A supplied order is raised
+    as an extracted one is."""
     if not isinstance(pf.extraction, Extracted):
         return None
     term = pf.extraction.value
